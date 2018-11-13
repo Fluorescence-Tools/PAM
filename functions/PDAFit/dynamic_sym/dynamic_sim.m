@@ -1,6 +1,6 @@
-function states = dynamic_sim(dynamic_rates,simtime,frequency)
+function time_in_state1 = dynamic_sim(dynamic_rates,simtime,frequency,number_of_timewindows)
 %%% Simulates dynamic system interconverting between size(dynamic_rates,1)
-%%% states.
+%%% states. Currently only supports two states!
 %%%
 %%% Input parameters:
 %%% dynamic_rates   -   Rate matrix where element ij describes the rate
@@ -22,20 +22,20 @@ function states = dynamic_sim(dynamic_rates,simtime,frequency)
 %%%                     matrix. Given in Hz
 %%%
 %%% Output parameters:
-%%% states          -   state sequency evaluated at every step
+%%% time_in_state1   -   number of time steps spent in state1
 
 
 % input check
-if nargin < 3
-    disp('Not enough inputs given. Requires 3 inputs.');
+if nargin < 4
+    disp('Not enough inputs given. Requires 4 inputs.');
     return;
 end
 if size(dynamic_rates,1) ~= size(dynamic_rates,2)
     disp('Rate matrix must be square.');
     return;
 end
- % convert simTime to number of TimeSteps
- timesteps = round(simtime * frequency);
+% convert simTime to number of TimeSteps
+timesteps = round(simtime * frequency);
 %%% convert to probability per step
 % Assuming k/f is close to zero, we can approximate:
 % pTrans = dynamic_rates./frequency;
@@ -65,11 +65,19 @@ end
 
 % get number of states
 n_states = size(dynamic_rates,1);
-% roll initial state
-initial_state = randi(n_states)-1; % substract one to match C indexing starting at 0
+% roll initial state based on equlibrium distribution
+p1 = dynamic_rates(2,1)/(dynamic_rates(2,1)+dynamic_rates(1,2));
+% note: This needs to be adapted for 3 or more states!
+
+initial_state = binornd(n_states-1,1-p1,1,number_of_timewindows);
 % generate seed
 seed = randi([1,2^20],1);
 % simulate states
-states = dyn_Sim(timesteps,n_states,p,initial_state,seed);
-% convert to double and revert to matlab indexing starting at 1
-states = double(states)+1;
+time_in_state2 = dyn_Sim_mac_advanced(timesteps,n_states,p,initial_state,seed,number_of_timewindows);
+% note: the function returns the sum over the state trajectory.
+% Since state1 == 0 and state2 == 1 in C, the functions thus return the
+% number of time steps in state2.
+% The C function needs to be adapted for 3 or more states!
+
+% return time in state 1 as fraction
+time_in_state1 = 1-double(time_in_state2)./timesteps;

@@ -3675,7 +3675,9 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
 end
 %%% remove donor only fraction, not implemented here
-fitpar= fitpar(1:end-1);
+if mod(numel(fitpar),3) ~= 0
+    fitpar= fitpar(1:end-1);
+end
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 
@@ -3785,11 +3787,12 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         hFit = hFit + A(j).*H_res_dummy(:,j);
     end
 else %%% dynamic model
-    n_states = 2;
-    Freq = 1E6; % Hz
+    n_states = 2;    
     SimTime = dur/1000; % time bin in seconds
     DynRates = 1000 * [0, fitpar(1,1); ...
                 fitpar(2,1), 0];  % rates in Hz
+    %%% set frequency to 100 times of the fastest timescale
+    Freq = 100*max(DynRates(:)); %1E6; % Hz
     R = [fitpar(1,2),fitpar(2,2)];
     sigmaR = [fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
@@ -3798,10 +3801,7 @@ else %%% dynamic model
     end
     for k = 1:sampling
         fracTauT = zeros(numel(BSD),1);
-        for b = 1:numel(BSD)
-            states = dynamic_sim(DynRates,SimTime,Freq);
-            fracTauT(b,1) = (sum(states==1)/numel(states));
-        end
+        fracTauT = dynamic_sim(DynRates,SimTime,Freq,numel(BSD));
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
