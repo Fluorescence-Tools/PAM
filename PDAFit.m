@@ -3806,7 +3806,16 @@ else %%% dynamic model
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
         BSD_bg = BSD-BG_gg-BG_gr;
-        f_i(:,1) = binornd(BSD_bg,fracTauT);
+        %%% brightness correction to transform fracTauT into number of
+        %%% photons, i.e. fractional intensity fracInt1
+        %%% read out brightnesses of species
+        Q = ones(2,1);
+        for c = 1:2
+            Q(c) = calc_relative_brightness(fitpar(c,2),file);
+        end
+        fracInt1 = Q(1)*fracTauT./(Q(1)*fracTauT + Q(2)*(1-fracTauT));
+        
+        f_i(:,1) = binornd(BSD_bg,fracInt1);
         f_i(:,2) = BSD_bg - f_i(:,1);
         a_i = zeros(numel(BSD),n_states);
         for i = 1:n_states  
