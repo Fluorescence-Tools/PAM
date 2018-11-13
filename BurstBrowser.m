@@ -12173,10 +12173,10 @@ formats = struct('type',{},'style',{},'items',{}, ...
     'format', {}, 'limits', {}, 'size', {});
 formats(1,1).type = 'list';formats(1,1).style = 'radiobutton';formats(1,1).items = {'Burst Variance Analysis','E vs. TauD','FRET-2CDE'};
 formats(1,2).type = 'edit';formats(1,2).format = 'integer';formats(1,2).limits = [2,inf];
-formats(2,1).type   = 'edit';formats(2,1).format = 'integer';formats(2,1).limits = [2 inf];
-formats(3,1).type   = 'edit';formats(3,1).format = 'integer';formats(3,1).limits = [1 inf];
-formats(2,2).type   = 'edit';formats(2,2).format = 'integer';formats(2,2).limits = [3 inf];
-formats(3,2).type   = 'edit';formats(3,2).format = 'float';formats(3,2).limits = [0 100];
+formats(2,1).type = 'edit';formats(2,1).format = 'integer';formats(2,1).limits = [2 inf];
+formats(3,1).type = 'edit';formats(3,1).format = 'integer';formats(3,1).limits = [1 inf];
+formats(2,2).type = 'edit';formats(2,2).format = 'integer';formats(2,2).limits = [3 inf];
+formats(3,2).type = 'edit';formats(3,2).format = 'float';formats(3,2).limits = [0 100];
 formats(4,1).type = 'list';formats(4,1).style = 'radiobutton';formats(4,1).items = {'Proximity Ratio','FRET Efficiency'};
 
 defaultanswer = {UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method;...
@@ -12225,7 +12225,18 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 end
                 
             case 3
-                channel = cellfun(@(x) x(x < 5),photons.Channel,'UniformOutput',false);
+                                % channel : 1,2   Donor blue Par Perp
+                %           3,4   FRET blue green Par Perp
+                %           5,6   FRET blue red Par Perp
+                %           7,8   Donor/ALEX green Par Perp
+                %           9,10  FRET green red Par Perp
+                %           11,12 ALEX red Par Perp
+                channel = cellfun(@(x) x(x>2 & x<7 | x>8 & x<11),photons.Channel,'UniformOutput',false);
+                for i = 1:numel(channel)
+                    M = reshape(channel{i,1}(1:fix(numel(channel{i,1})/n)*n),n,[]); % create photon windows
+                    sPerBurst(i,1) = std(sum(M==3|M==4)/n); % observed standard deviation of E for each burst
+                    sPerBurst(i,2) = std(sum(M==5|M==6)/n);
+                    sPerBurst(i,3) = std(sum(M==9|M==10)/n);
             case 5
                 % channel : 1 Donor
                 %           2 FRET
