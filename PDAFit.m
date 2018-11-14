@@ -3116,10 +3116,33 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
 else %%% dynamic model
     %%% calculate PofT
     dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
-    N = 100;
-    k1 = fitpar(3*1-2);
-    k2 = fitpar(3*2-2);
-    PofT = calc_dynamic_distribution(dT,N,k1,k2);
+    dyn_sim = 'analytic';%'analytic'; % monte carlo sim of kinetics?
+    switch dyn_sim
+        case 'analytic'
+            N = 100;
+            k1 = fitpar(3*1-2);
+            k2 = fitpar(3*2-2);
+            PofT = calc_dynamic_distribution(dT,N,k1,k2);
+        case 'montecarlo'
+            SimTime = dT*1E-3; % time bin in seconds
+            DynRates = 1000 * [0, fitpar(3*2-2); ...
+                         fitpar(3*1-2), 0];
+%             DynRates = 1000 * [0, fitpar(2,1),rates_state3(1); ...
+%                         fitpar(1,1), 0,rates_state3(2);... 
+%                         rates_state3(3),rates_state3(4),0];
+            % rates in Hz
+            % The DynRates matrix has the form:
+            % ( 11 21 31 ... )
+            % ( 12 22 32 ... )
+            % ( 13 23 33 ... )
+            % ( .. .. .. ... )
+            %%% set frequency to 100 times of the fastest timescale
+            Freq = 100*max(DynRates(:)); %1E6; % Hz
+            n_states = size(DynRates,1);
+            PofT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,sum(PDAMeta.valid{i}));
+            PofT = histcounts(PofT(:,1),linspace(0,1,102));
+            PofT = PofT./sum(PofT);
+    end
     %%% generate P(eps) distribution for both components
     PE = cell(2,1);
     for c = 1:2
@@ -3127,11 +3150,9 @@ else %%% dynamic model
     end
     %%% read out brightnesses of species
     Q = ones(2,1);
-    %if h.SettingsTab.Use_Brightness_Corr.Value
-        for c = 1:2
-            Q(c) = calc_relative_brightness(fitpar(3*c-1),i);
-        end
-    %end
+    for c = 1:2
+        Q(c) = calc_relative_brightness(fitpar(3*c-1),i);
+    end
     %%% calculate mixtures with brightness correction (always active!)
     Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
     Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
