@@ -72,6 +72,10 @@ end
 dynamic_rates(end+1,:) = ones(1,n_states);
 b = zeros(n_states,1); b(end+1) = 1;
 p_eq = dynamic_rates\b;
+% ensure that p is a row vector
+if size(p_eq,1) > size(p_eq,2)
+    p_eq = p_eq';
+end
 % roll initial state based on equlibrium distribution
 initial_state_random = mnrnd(1,p_eq,number_of_timewindows);
 for i = 1:number_of_timewindows
