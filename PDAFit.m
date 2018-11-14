@@ -3724,7 +3724,23 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(file,:);
-    fitpar_dummy(~PDAMeta.Fixed(file,:)) = fitpar;
+    fixed_dummy = PDAMeta.Fixed(file,:);
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        %%% add sigma fraction to end
+        fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+    end
+    if h.SettingsTab.DynamicModel.Value
+        % Read the rates from the table
+        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        fitpar_dummy = [fitpar_dummy, rates];
+        fixed_dummy = [fixed_dummy, fixed_rates];
+    end
+    % overwrite free fit parameters
+    fitpar_dummy(~fixed_dummy) = fitpar; 
     fitpar = fitpar_dummy;
 end
 %%% if dynamic model, rates for third state are appended to fitpar array
