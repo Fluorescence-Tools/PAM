@@ -1803,6 +1803,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.MarkerSize was incomplete');
     end
     P.BurstBrowser.Display.MarkerSize = S.BurstBrowser.Display.MarkerSize;
+    %%% Checks, if BurstBrowser.Display.ContourFill subfield exists
+    if ~isfield(S.BurstBrowser.Display,'ContourFill')
+        S.BurstBrowser.Display.ContourFill=1;
+        disp('UserValues.BurstBrowser.Display.ContourFill was incomplete');
+    end
+    P.BurstBrowser.Display.ContourFill = S.BurstBrowser.Display.ContourFill;
     %%% Checks, if BurstBrowser.Display.MarkerColor subfield exists
     if ~isfield(S.BurstBrowser.Display,'MarkerColor')
         S.BurstBrowser.Display.MarkerColor=[0,0,0];
