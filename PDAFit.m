@@ -602,10 +602,33 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor',Look.TableFore,...
         'BackgroundColor',[Look.Table1;Look.Table2],...
         'FontSize',12,...
-        'Position',[0 0 1 1],...
+        'Position',[0 0 .8 1],...
         'CellEditCallback',{@Update_FitTable,3},...
         'CellSelectionCallback',{@Update_FitTable,3});
+        
     
+        initial_rates = ones(3);
+        data = cell(size(initial_rates,1),2*size(initial_rates,2));
+        for i = 1:size(initial_rates,2)
+            data(:,2*i-1) = num2cell(initial_rates(:,i));
+            data(:,2*i) = num2cell(false(size(initial_rates,1),1));
+        end
+        columnnames = {'1','F','2','F','3','F'};
+        rownames = {'1','2','3'};
+        columnwidth = {50,25,50,25,50,25};
+        columnformat = {'numeric','logical','numeric','logical','numeric','logical'};
+     h.KineticRates_table = uitable(...
+        'Data',data,'ColumnName',columnnames,'RowName',rownames,...
+        'ColumnWidth',columnwidth,'ColumnFormat',columnformat,...
+        'ColumnEditable',true,...
+        'Parent',h.FitTab.Panel,...
+        'Tag','KineticRates_table',...
+        'Units','normalized',...
+        'ForegroundColor',Look.TableFore,...
+        'BackgroundColor',[Look.Table1;Look.Table2],...
+        'FontSize',12,...
+        'Position',[0.8 0 .2 1]);
+
     %% Parameters tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     h.ParametersTab.Tab = uitab(...
@@ -2475,6 +2498,24 @@ if ~do_global
                 UB(end+1) = 1;
             end
         end 
+        
+        if strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+                && h.SettingsTab.DynamicModel.Value
+            %%% If using MonteCarlo and DynamicModel, consider up to three states
+            % Append the additional rates associated with the third state here
+            % fitpar = [...,k31,k32,k13,k23]       x
+            % Read them from the table
+            rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+            rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+            fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+            fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+            LB_rates = zeros(1,4); UB_rates = Inf(1,4);
+            LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
+            fitpar = [fitpar, rates];
+            fixed = [fixed,fixed_rates];
+            LB = [LB,LB_rates];
+            UB = [UB,UB_rates];
+        end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
             A = [];
@@ -2633,6 +2674,22 @@ if ~do_global
         
         % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+        
+        if strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+                && h.SettingsTab.DynamicModel.Value
+            %%% last 4 elements are kinetic rates to and from state 3
+            rates_state3 = fitpar(end-3:end); fitpar(end-3:end) = [];
+            %%% sort values into rate matrix table
+            rates = h.KineticRates_table.Data;
+            rates{1,5} = rates_state3(1);
+            rates{2,5} = rates_state3(2);
+            rates{3,1} = rates_state3(3);
+            rates{3,3} = rates_state3(4);
+            %%% assign k12 and k21 as well to table
+            rates{1,3} = fitpar(1);
+            rates{2,1} = fitpar(4);
+            h.KineticRates_table.Data = rates;
+        end
         
         %%% If sigma was fixed at fraction of R, update edit box here and
         %%% remove from fitpar array
@@ -3670,14 +3727,18 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
     fitpar_dummy(~PDAMeta.Fixed(file,:)) = fitpar;
     fitpar = fitpar_dummy;
 end
+%%% if dynamic model, rates for third state are appended to fitpar array
+if h.SettingsTab.DynamicModel.Value
+    rates_state3 = fitpar(end-3:end);
+    fitpar(end-3:end) = [];
+end
 %%% if sigma is fixed at fraction of, read value here before reshape
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
 end
 %%% remove donor only fraction, not implemented here
-if mod(numel(fitpar),3) ~= 0
-    fitpar= fitpar(1:end-1);
-end
+fitpar= fitpar(1:end-1);
+
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 
@@ -3731,30 +3792,6 @@ H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
 
-%% to do
-%     if numel(PDAMeta.Comp{i}) > 2
-%         %%% normalize Amplitudes
-%         % amplitudes of the static components are normalized to the total area 
-%         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
-%         % the k12 and k21 parameters are left untouched here so they will 
-%         % appear in the table. The area fractions are calculated in Update_Plots
-%         norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
-%         fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
-%         
-%         for c = PDAMeta.Comp{i}(3:end)
-%             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-%             P_eps = (fitpar(3*c-2)./norm).*Pe;
-%             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-%             for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-%                 hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-%             end
-%         end
-%         hFit_Dyn = hFit_Dyn./norm;
-%         hFit_Ind{1} = hFit_Ind{1}./norm;
-%         hFit_Ind{2} = hFit_Ind{2}./norm;
-%     end
-%     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
-
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% normalize Amplitudes
     fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
@@ -3786,11 +3823,11 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     for j = PDAMeta.Comp{file}
         hFit = hFit + A(j).*H_res_dummy(:,j);
     end
-else %%% dynamic model
-    n_states = 2;    
+else %%% dynamic model 
     SimTime = dur/1000; % time bin in seconds
-    DynRates = 1000 * [0, fitpar(2,1); ...
-                fitpar(1,1), 0];  % rates in Hz
+    DynRates = 1000 * [0, fitpar(2,1),rates_state3(1); ...
+                fitpar(1,1), 0,rates_state3(2);... 
+                rates_state3(3),rates_state3(4),0]; % rates in Hz
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
     % ( 12 22 32 ... )
@@ -3799,14 +3836,13 @@ else %%% dynamic model
     %%% set frequency to 100 times of the fastest timescale
     Freq = 100*max(DynRates(:)); %1E6; % Hz
     n_states = size(DynRates,1);
-    R = [fitpar(1,2),fitpar(2,2)];
-    sigmaR = [fitpar(1,3),fitpar(2,3)];
+    R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
+    sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
     for k = 1:sampling
-        fracTauT = zeros(numel(BSD),1);
         fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
