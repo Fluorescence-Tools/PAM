@@ -2106,6 +2106,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.NumberOfBins_BVA was incomplete');
     end
     P.BurstBrowser.Settings.NumberOfBins_BVA = S.BurstBrowser.Settings.NumberOfBins_BVA;
+        %%% Check, if BurstBrowser.Settings.FRETpair_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'FRETpair_BVA')
+        S.BurstBrowser.Settings.FRETpair_BVA=3;
+        disp('UserValues.BurstBrowser.FRETpair was incomplete');
+    end
+    P.BurstBrowser.Settings.FRETpair_BVA = S.BurstBrowser.Settings.FRETpair_BVA;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};

@@ -12167,7 +12167,7 @@ h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 prompt = {'Method:';'Number of bins:';'Number of photons per window (for BVA):';'Burst per bin threshold:';...
-    'Confidence sampling number:';'Confidence level \alpha:';'Choose X-axis for BVA:'};
+    'Confidence sampling number:';'Confidence level \alpha:';'Choose X-axis for BVA:'; 'Choose FRET pair (for 3 color data):'};
 name = 'Dynamic Analysis Parameters';
 formats = struct('type',{},'style',{},'items',{}, ...
     'format', {}, 'limits', {}, 'size', {});
@@ -12178,6 +12178,7 @@ formats(3,1).type = 'edit';formats(3,1).format = 'integer';formats(3,1).limits =
 formats(2,2).type = 'edit';formats(2,2).format = 'integer';formats(2,2).limits = [3 inf];
 formats(3,2).type = 'edit';formats(3,2).format = 'float';formats(3,2).limits = [0 100];
 formats(4,1).type = 'list';formats(4,1).style = 'radiobutton';formats(4,1).items = {'Proximity Ratio','FRET Efficiency'};
+formats(5,1).type = 'list';formats(5,1).style = 'radiobutton';formats(5,1).items = {'Blue/Green','Blue/Red','Green/Red'};
 
 defaultanswer = {UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method;...
     UserValues.BurstBrowser.Settings.NumberOfBins_BVA;...
@@ -12185,7 +12186,8 @@ defaultanswer = {UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method;...
     UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;...
     UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;...
     UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;...
-    UserValues.BurstBrowser.Settings.BVA_X_axis};
+    UserValues.BurstBrowser.Settings.BVA_X_axis;...
+    UserValues.BurstBrowser.Settings.FRETpair_BVA};
 [bva_parameters,canceled] = inputsdlg(prompt,name,formats,defaultanswer);
 if canceled == 1
     return;
@@ -12199,13 +12201,26 @@ UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = bva_parameters(4,1)
 UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA = bva_parameters(5,1);
 UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = bva_parameters(6,1);
 UserValues.BurstBrowser.Settings.BVA_X_axis = bva_parameters(7,1);
+UserValues.BurstBrowser.Settings.FRETpair_BVA = bva_parameters(8,1);
 
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData{file})
     Load_Photons();
 end
-E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+    E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+    case 3
+        switch UserValues.BurstBrowser.Settings.FRETpair_BVA
+            case 1
+                E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio BG (raw)'));
+            case 2
+                E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio BR (raw)'));
+            case 3
+                E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio GR (raw)'));
+        end
+end
 photons = BurstTCSPCData{file};
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
@@ -12225,18 +12240,25 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 end
                 
             case 3
-                                % channel : 1,2   Donor blue Par Perp
+                % channel : 1,2   Donor blue Par Perp
                 %           3,4   FRET blue green Par Perp
                 %           5,6   FRET blue red Par Perp
                 %           7,8   Donor/ALEX green Par Perp
                 %           9,10  FRET green red Par Perp
                 %           11,12 ALEX red Par Perp
                 channel = cellfun(@(x) x(x>2 & x<7 | x>8 & x<11),photons.Channel,'UniformOutput',false);
+                sPerBurst=zeros(size(channel));
                 for i = 1:numel(channel)
                     M = reshape(channel{i,1}(1:fix(numel(channel{i,1})/n)*n),n,[]); % create photon windows
-                    sPerBurst(i,1) = std(sum(M==3|M==4)/n); % observed standard deviation of E for each burst
-                    sPerBurst(i,2) = std(sum(M==5|M==6)/n);
-                    sPerBurst(i,3) = std(sum(M==9|M==10)/n);
+                    switch UserValues.BurstBrowser.Settings.FRETpair_BVA % observed standard deviation of E for each burst
+                        case 1
+                            sPerBurst(i,1) = std(sum(M==3|M==4)/n);
+                        case 2
+                            sPerBurst(i,1) = std(sum(M==5|M==6)/n);
+                        case 3
+                            sPerBurst(i,1) = std(sum(M==9|M==10)/n);
+                    end
+                end
             case 5
                 % channel : 1 Donor
                 %           2 FRET
@@ -12269,7 +12291,16 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 switch BurstData{file}.BAMethod
                     case {1,2}
                         EPerBin = sum(MPerBin==3|MPerBin==4)/n;
-                    case {5}
+                    case 3
+                        switch UserValues.BurstBrowser.Settings.FRETpair_BVA
+                            case 1
+                                EPerBin = sum(MPerBin==3|MPerBin==4)/n;
+                            case 2
+                                EPerBin = sum(MPerBin==5|MPerBin==6)/n;
+                            case 3
+                                EPerBin = sum(MPerBin==9|MPerBin==10)/n;
+                        end
+                    case 5
                         EPerBin = sum(MPerBin==2)/n;
                 end
                 if numel(BurstsPerBin)>UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA
@@ -12299,7 +12330,19 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 ylabel('SD of E*, s');
                 BinCenters = BinCenters';
                 sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
-                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+                switch BurstData{file}.BAMethod
+                    case {1,2,5}
+                        X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+                    case 3
+                        switch UserValues.BurstBrowser.Settings.FRETpair_BVA
+                            case 1
+                                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio BG (raw)'));
+                            case 2
+                                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio BR (raw)'));
+                            case 3
+                                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio GR (raw)'));
+                        end
+                end
             case 2
                 xlabel('FRET Efficiency'); 
                 ylabel('SD of FRET, s');
@@ -12330,7 +12373,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
             case 'Hex'
                 hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
-        %patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.2,'edgecolor','none','HandleVisibility','off');
         
         % Plot confidence intervals
         alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
