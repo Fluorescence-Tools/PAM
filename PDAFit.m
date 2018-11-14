@@ -3789,10 +3789,16 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
 else %%% dynamic model
     n_states = 2;    
     SimTime = dur/1000; % time bin in seconds
-    DynRates = 1000 * [0, fitpar(1,1); ...
-                fitpar(2,1), 0];  % rates in Hz
+    DynRates = 1000 * [0, fitpar(2,1); ...
+                fitpar(1,1), 0];  % rates in Hz
+    % The DynRates matrix has the form:
+    % ( 11 21 31 ... )
+    % ( 12 22 32 ... )
+    % ( 13 23 33 ... )
+    % ( .. .. .. ... )
     %%% set frequency to 100 times of the fastest timescale
     Freq = 100*max(DynRates(:)); %1E6; % Hz
+    n_states = size(DynRates,1);
     R = [fitpar(1,2),fitpar(2,2)];
     sigmaR = [fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
@@ -3801,7 +3807,7 @@ else %%% dynamic model
     end
     for k = 1:sampling
         fracTauT = zeros(numel(BSD),1);
-        fracTauT = dynamic_sim(DynRates,SimTime,Freq,numel(BSD));
+        fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
@@ -3809,14 +3815,16 @@ else %%% dynamic model
         %%% brightness correction to transform fracTauT into number of
         %%% photons, i.e. fractional intensity fracInt1
         %%% read out brightnesses of species
-        Q = ones(2,1);
-        for c = 1:2
+        Q = ones(1,n_states);
+        for c = 1:n_states
             Q(c) = calc_relative_brightness(fitpar(c,2),file);
         end
-        fracInt1 = Q(1)*fracTauT./(Q(1)*fracTauT + Q(2)*(1-fracTauT));
-        
-        f_i(:,1) = binornd(BSD_bg,fracInt1);
-        f_i(:,2) = BSD_bg - f_i(:,1);
+        fracInt = zeros(size(fracTauT));
+        totalQ = sum(repmat(Q,[numel(BSD),1]).*fracTauT,2);
+        for i = 1:n_states
+            fracInt(:,i) = Q(i)*fracTauT(:,i)./totalQ;
+        end        
+        f_i = mnrnd(BSD_bg,fracInt);        
         a_i = zeros(numel(BSD),n_states);
         for i = 1:n_states  
             r = normrnd(R(i),sigmaR(i),size(BSD));
