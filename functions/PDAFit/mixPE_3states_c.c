@@ -26,7 +26,7 @@ void mixPeps(double *eps, double *PE1, double *PE2, double* PE3, unsigned int N_
         for (l=0;l<N_bins_T-k;l++)
         {
             T2 = (double)l;
-            T3 = (double)(N_bins_T-k-l);
+            T3 = (double)(N_bins_T-k-l-1);
             for (i=0;i<N_bins_eps;i++)
             {   
                 if (PE1[i]>1E-3)

@@ -3157,7 +3157,7 @@ else %%% dynamic model
             %%% set frequency to 100 times of the fastest timescale
             Freq = 100*max(DynRates(:)); %1E6; % Hz
             n_states = size(DynRates,1);
-            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,sum(PDAMeta.valid{i}));
+            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E4);%sum(PDAMeta.valid{i}));
             % PofT describes the joint probability to see T1 and T2
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,21),linspace(0,1,21));
             PofT = PofT./sum(PofT(:));
@@ -3200,12 +3200,18 @@ else %%% dynamic model
             hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
         end
         hFit_Ind{1} = hFit_Ind_dyn{1};
-        hFit_Ind{2} = Fit_Ind_dyn{end};
+        hFit_Ind{2} = hFit_Ind_dyn{end};
         hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
     elseif n_states > 2
         Peps = mixPE_3states_c(PDAMeta.eps_grid{i},PE{1},PE{2},PE{3},size(PofT,1),numel(PDAMeta.eps_grid{i}),Q(1),Q(2),Q(3));
+        %%% as defined in the C code:
+        %%% dimensions of Peps are eps,T2,T1
         Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),size(PofT,1),size(PofT,1));
-        %%% normalize
+        % that means: Peps(E,t2,t1) is the probability to see E when the
+        % molecule was T1 = t1 in state 1, T2 = t2 in state 2 and T3 =
+        % T-T1-T1 in state 3.
+        
+        %%% normalize Peps
         Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
         Peps(isnan(Peps)) = 0;
         %%% combine mixtures, weighted with PofT (probability to see a certain
@@ -3216,7 +3222,8 @@ else %%% dynamic model
             for t2 = 1:size(PofT,1)
                 for k =1:numel(PDAMeta.eps_grid{i})
                     %%% construct sum of histograms
-                    hFit_Dyn = hFit_Dyn + PofT(t1,t2)*Peps(k,t1,t2).*PDAMeta.P{i,k};
+                    hFit_Dyn = hFit_Dyn + PofT(t1,t2)*Peps(k,t2,t1).*PDAMeta.P{i,k};
+                    % note the indexing of Peps as described above
                 end
             end
         end
