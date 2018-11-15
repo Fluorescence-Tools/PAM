@@ -3811,7 +3811,7 @@ set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. logL = ' sprintf('%1.2f',m
 %%% store logL in PDAMeta
 PDAMeta.Last_logL = mean_logL;
 
-% Model for Monte Carle based fitting (not global) 
+% Model for Monte Carlo based fitting (not global) 
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
 %%% iterate the counter
