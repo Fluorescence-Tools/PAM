@@ -2499,8 +2499,9 @@ if ~do_global
             end
         end 
         
-        if strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-                && h.SettingsTab.DynamicModel.Value
+        if h.SettingsTab.DynamicModel.Value
+            %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+                %&& h.SettingsTab.DynamicModel.Value
             %%% If using MonteCarlo and DynamicModel, consider up to three states
             % Append the additional rates associated with the third state here
             % fitpar = [...,k31,k32,k13,k23]       x
@@ -2678,8 +2679,9 @@ if ~do_global
         % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
         
-        if strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-                && h.SettingsTab.DynamicModel.Value
+        if h.SettingsTab.DynamicModel.Value
+            %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+            %    && h.SettingsTab.DynamicModel.Value
             %%% last 4 elements are kinetic rates to and from state 3
             rates_state3 = fitpar(end-3:end); fitpar(end-3:end) = [];
             %%% sort values into rate matrix table
@@ -3066,16 +3068,31 @@ end
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
+    fitpar_dummy = PDAMeta.FitParams(file,:);
+    fixed_dummy = PDAMeta.Fixed(file,:);
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         %%% add sigma fraction to end
-        fitpar_dummy = [PDAMeta.FitParams(i,:), str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
-        fixed = [PDAMeta.Fixed(i,:), h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
-        fitpar_dummy(~fixed) = fitpar; %overwrite input fitparameters
-    else
-        fitpar_dummy = PDAMeta.FitParams(i,:);
-        fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
+        fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
-    fitpar = fitpar_dummy;
+    if h.SettingsTab.DynamicModel.Value
+        % Read the rates from the table
+        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        fitpar_dummy = [fitpar_dummy, rates];
+        fixed_dummy = [fixed_dummy, fixed_rates];
+    end
+    % overwrite free fit parameters
+    fitpar_dummy(~fixed_dummy) = fitpar; 
+    fitpar = fitpar_dummy;    
+end
+
+%%% if dynamic model, rates for third state are appended to fitpar array
+if h.SettingsTab.DynamicModel.Value
+    rates_state3 = fitpar(end-3:end);
+    fitpar(end-3:end) = [];
 end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
@@ -3116,20 +3133,21 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
 else %%% dynamic model
     %%% calculate PofT
     dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
-    dyn_sim = 'analytic';%'analytic'; % monte carlo sim of kinetics?
+    dyn_sim = 'montecarlo';%'analytic';'montecarlo'; % monte carlo sim of kinetics?
     switch dyn_sim
         case 'analytic'
+            n_states = 2;
             N = 100;
             k1 = fitpar(3*1-2);
             k2 = fitpar(3*2-2);
             PofT = calc_dynamic_distribution(dT,N,k1,k2);
         case 'montecarlo'
             SimTime = dT*1E-3; % time bin in seconds
-            DynRates = 1000 * [0, fitpar(3*2-2); ...
-                         fitpar(3*1-2), 0];
-%             DynRates = 1000 * [0, fitpar(2,1),rates_state3(1); ...
-%                         fitpar(1,1), 0,rates_state3(2);... 
-%                         rates_state3(3),rates_state3(4),0];
+%             DynRates = 1000 * [0, fitpar(3*2-2); ...
+%                          fitpar(3*1-2), 0];
+            DynRates = 1000 * [0, fitpar(3*2-2),rates_state3(1); ...
+                        fitpar(3*1-2), 0,rates_state3(2);... 
+                        rates_state3(3),rates_state3(4),0];
             % rates in Hz
             % The DynRates matrix has the form:
             % ( 11 21 31 ... )
@@ -3139,43 +3157,78 @@ else %%% dynamic model
             %%% set frequency to 100 times of the fastest timescale
             Freq = 100*max(DynRates(:)); %1E6; % Hz
             n_states = size(DynRates,1);
-            PofT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,sum(PDAMeta.valid{i}));
-            PofT = histcounts(PofT(:,1),linspace(0,1,102));
-            PofT = PofT./sum(PofT);
+            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,sum(PDAMeta.valid{i}));
+            % PofT describes the joint probability to see T1 and T2
+            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,21),linspace(0,1,21));
+            PofT = PofT./sum(PofT(:));
+%             for s = 1:n_states
+%                 PofT(:,s) = histcounts(FracT(:,s),linspace(0,1,102));
+%                 PofT(:,s) = PofT(:,s)./sum(PofT(:,s));
+%             end
     end
     %%% generate P(eps) distribution for both components
     PE = cell(2,1);
-    for c = 1:2
+    for c = 1:n_states
         PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
     end
     %%% read out brightnesses of species
-    Q = ones(2,1);
-    for c = 1:2
+    Q = ones(n_states,1);
+    for c = 1:n_states
         Q(c) = calc_relative_brightness(fitpar(3*c-1),i);
     end
     %%% calculate mixtures with brightness correction (always active!)
-    Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
-    Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
-    %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
-    Peps(:,end) = PE{1};
-    Peps(:,1) = PE{2};
-    %%% normalize
-    Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
-    %%% combine mixtures, weighted with PofT (probability to see a certain
-    %%% combination)
-    hFit_Ind_dyn = cell(numel(PofT),1);
-    for t = 1:numel(PofT)
-        hFit_Ind_dyn{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-        for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-            %%% construct sum of histograms
-            hFit_Ind_dyn{t} = hFit_Ind_dyn{t} + Peps(k,t).*PDAMeta.P{i,k};
+    if n_states == 2
+        Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
+        %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
+        Peps(:,end) = PE{1};
+        Peps(:,1) = PE{2};
+        
+        %%% normalize
+        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+        Peps(isnan(Peps)) = 0;
+        %%% combine mixtures, weighted with PofT (probability to see a certain
+        %%% combination)
+        hFit_Ind_dyn = cell(numel(PofT),1);
+        for t = 1:numel(PofT)
+            hFit_Ind_dyn{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+            for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                %%% construct sum of histograms
+                hFit_Ind_dyn{t} = hFit_Ind_dyn{t} + Peps(k,t).*PDAMeta.P{i,k};
+            end
+            %%% weight by probability of occurence
+            hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
         end
-        %%% weight by probability of occurence
-        hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
+        hFit_Ind{1} = hFit_Ind_dyn{1};
+        hFit_Ind{2} = Fit_Ind_dyn{end};
+        hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
+    elseif n_states > 2
+        Peps = mixPE_3states_c(PDAMeta.eps_grid{i},PE{1},PE{2},PE{3},size(PofT,1),numel(PDAMeta.eps_grid{i}),Q(1),Q(2),Q(3));
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),size(PofT,1),size(PofT,1));
+        %%% normalize
+        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+        Peps(isnan(Peps)) = 0;
+        %%% combine mixtures, weighted with PofT (probability to see a certain
+        %%% combination)
+        %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
+        hFit_Dyn = zeros(numel(PDAMeta.eps_grid{i}),1);
+        for t1 = 1:size(PofT,1)
+            for t2 = 1:size(PofT,1)
+                for k =1:numel(PDAMeta.eps_grid{i})
+                    %%% construct sum of histograms
+                    hFit_Dyn = hFit_Dyn + PofT(t1,t2)*Peps(k,t1,t2).*PDAMeta.P{i,k};
+                end
+            end
+        end
+        hFit_Ind{1} = hFit_Dyn;%hFit_Ind_dyn{1};
+        hFit_Ind{2} = hFit_Dyn;%hFit_Ind_dyn{end};
+        %hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
+        hFit_Ind_dyn = cell(size(PofT,1),1);
+        for s = 1:size(PofT,1)
+            hFit_Ind_dyn{s} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        end
     end
-    hFit_Ind{1} = hFit_Ind_dyn{1};
-    hFit_Ind{2} = hFit_Ind_dyn{end};
-    hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
+    
     %%% Add static models
     norm = 1;
     if numel(PDAMeta.Comp{i}) > 2
