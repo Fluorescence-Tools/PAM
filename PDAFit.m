@@ -3227,18 +3227,37 @@ else %%% dynamic model
                 end
             end
         end
-        hFit_Ind{1} = hFit_Dyn;%hFit_Ind_dyn{1};
-        hFit_Ind{2} = hFit_Dyn;%hFit_Ind_dyn{end};
-        %hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
-        hFit_Ind_dyn = cell(size(PofT,1),1);
-        for s = 1:size(PofT,1)
-            hFit_Ind_dyn{s} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        % pure state histograms
+        hFit_Ind{1} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Ind{2} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Ind{3} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        % only state 1
+        t1 = size(PofT,1);
+        t2 = 1;
+        for k = 1:numel(PDAMeta.eps_grid{i})
+           hFit_Ind{1} = hFit_Ind{1} + Peps(k,t2,t1).*PDAMeta.P{i,k};       
         end
+        hFit_Ind{1} = hFit_Ind{1} * PofT(t1,t2);   
+        % only state 2
+        t1 = 1;
+        t2 = size(PofT,1);
+        for k = 1:numel(PDAMeta.eps_grid{i})
+            hFit_Ind{2} = hFit_Ind{2} + Peps(k,t2,t1).*PDAMeta.P{i,k};        
+        end
+        hFit_Ind{2} = hFit_Ind{2} * PofT(t1,t2);
+        % only state 2
+        t1 = 1;
+        t2 = 1;
+        for k = 1:numel(PDAMeta.eps_grid{i})
+            hFit_Ind{3} = hFit_Ind{3} + Peps(k,t2,t1).*PDAMeta.P{i,k};     
+        end
+        hFit_Ind{3} = hFit_Ind{3} * PofT(t1,t2);     
+        hFit_Ind_dyn = cell(size(PofT,1),1);
     end
     
     %%% Add static models
     norm = 1;
-    if numel(PDAMeta.Comp{i}) > 2
+    if numel(PDAMeta.Comp{i}) > n_states
         %%% normalize Amplitudes
         % amplitudes of the static components are normalized to the total area 
         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
@@ -3247,7 +3266,7 @@ else %%% dynamic model
         norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
         fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
         
-        for c = PDAMeta.Comp{i}(3:end)
+        for c = PDAMeta.Comp{i}(n_states:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = (fitpar(3*c-2)./norm).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -3256,15 +3275,18 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
-        hFit_Ind{1} = hFit_Ind{1}./norm;
-        hFit_Ind{2} = hFit_Ind{2}./norm;
+        for i = 1:n_states
+            hFit_Ind{i} = hFit_Ind{i}./norm;
+        end
     end
-    hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
+    hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{n_states+1:end})),2)';
     
-    % the whole dynamic part
-    %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
-    % only the dynamic bursts
-    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
+    if n_states == 2
+        % only the dynamic bursts
+        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
+    elseif n_states == 3
+        PDAMeta.hFit_onlyDyn{i} = hFit_Dyn - sum(horzcat(hFit_Ind{:}),2);
+    end
 end
 
 
