@@ -1638,6 +1638,8 @@ switch mode
                 PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
                 % state 2
                 PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
+                % state 3
+                PDAMeta.Plots.Fit_Single{1,4}.Color = [0.4706 0.6706 0.18821];
                 % in between 1 and 2
                 PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
             end
