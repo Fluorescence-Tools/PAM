@@ -3068,8 +3068,8 @@ end
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
-    fitpar_dummy = PDAMeta.FitParams(file,:);
-    fixed_dummy = PDAMeta.Fixed(file,:);
+    fitpar_dummy = PDAMeta.FitParams(i,:);
+    fixed_dummy = PDAMeta.Fixed(i,:);
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         %%% add sigma fraction to end
         fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
