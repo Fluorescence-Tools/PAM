@@ -3161,7 +3161,8 @@ else %%% dynamic model
             n_states = size(DynRates,1);
             FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E4);%sum(PDAMeta.valid{i}));
             % PofT describes the joint probability to see T1 and T2
-            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,21),linspace(0,1,21));
+            n_bins_T = 20;
+            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
             PofT = PofT./sum(PofT(:));
 %             for s = 1:n_states
 %                 PofT(:,s) = histcounts(FracT(:,s),linspace(0,1,102));
