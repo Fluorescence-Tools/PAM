@@ -5945,9 +5945,11 @@ switch obj
             % (maybe implement later to only fit par or per channel)
             
             % check if anisotropy model is selected 
-            if isempty(strfind(TauFitData.FitType,'Anisotropy'))
-                disp('Select an anisotropy model.');
-                return;
+            if TauFitData.BAMethod ~= 5
+                if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                    disp('Select an anisotropy model.');
+                    return;
+                end
             end
             
             chan = h.ChannelSelect_Popupmenu.Value;
@@ -5968,18 +5970,28 @@ switch obj
                         case 3 % RR
                             Par = 11; Per = 12;
                     end
+                case 5
+                    switch chan
+                        case 1 %GG
+                            Par = 1;
+                        case 2 %RR
+                            Par = 3;
+                    end
             end
             
             % reconstruct mi pattern
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
             mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-            mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
-           
+            if TauFitData.BAMethod ~= 5
+                mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            end
             % define output
             MIPattern = cell(0);
             MIPattern{TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par)}=mi_pattern1;
-            MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
+            if TauFitData.BAMethod ~= 5
+                MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
+            end
             
             FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
             Path = TauFitData.Path;
