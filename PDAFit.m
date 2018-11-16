@@ -2467,6 +2467,10 @@ else %%% check if fix sigma at fraction of R option is enable
             end
         end
     end
+    %%% check if three-state model is used
+    if h.SettingsTab.DynamicModel.Value
+        do_global = true;
+    end
 end
 % if do_global
 %     disp('Global fit');
@@ -2844,6 +2848,9 @@ else
                     problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',[],'beq',[],'lb',LB,'ub',UB,'options',opts);
                     gs = GlobalSearch;
                     fitpar = run(gs,problem);
+                case 'Simulated Annealing'
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100);
+                    fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
             end
 
             %Calculate chi^2
@@ -3203,7 +3210,7 @@ else %%% dynamic model
             %%% set frequency to 100 times of the fastest timescale
             Freq = 100*max(DynRates(:)); %1E6; % Hz
             n_states = size(DynRates,1);
-            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E4);%sum(PDAMeta.valid{i}));
+            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E5);%sum(PDAMeta.valid{i}));
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
