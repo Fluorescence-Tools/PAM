@@ -3514,10 +3514,13 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 %% Calculates trace
                 %%% Takes PIE channel macrotimes
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
-                PamMeta.BinsPCH{i} = 0:1:10;
-                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                if mode == 1 % reset trace
+                    PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
+                elseif mode == 2 % reset PCH
+                    PamMeta.BinsPCH{i} = 0:1:10;
+                    PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                    PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                end
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
