@@ -5961,6 +5961,7 @@ switch obj
                         case 2 % RR
                             Par = 5; Per = 6;
                     end
+                    chan_names = {'GG','RR'};
                 case {3,4}
                     switch chan
                         case 1 % BB
@@ -5970,6 +5971,7 @@ switch obj
                         case 3 % RR
                             Par = 11; Per = 12;
                     end
+                    chan_names = {'BB','GG','RR'};
                 case 5
                     switch chan
                         case 1 %GG
@@ -5977,6 +5979,7 @@ switch obj
                         case 2 %RR
                             Par = 3;
                     end
+                    chan_names = {'GG','RR'};
             end
             
             % reconstruct mi pattern
@@ -6001,7 +6004,19 @@ switch obj
         if all(File==0)
             return
         end
-        save(fullfile(Path,File),'MIPattern');
+        %%% previously, the microtime pattern was stored as MATLAB file
+        % save(fullfile(Path,File),'MIPattern');
+        %%% Now,it is saved as a text file for easier readability
+        %%% write header
+        fid = fopen(fullfile(Path,File),'w');
+        fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+        %%% write detector - routing assigment        
+        fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
+        if TauFitData.BAMethod ~= 5
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
+        end     
+        fclose(fid);
+        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
         if strcmp(h.Result_Plot.Visible, 'on')
