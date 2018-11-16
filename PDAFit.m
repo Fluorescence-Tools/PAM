@@ -2063,7 +2063,7 @@ PDAMeta.FitInProgress = 1;
 %%% Specify the update interval (used for interrupting of fit and updating
 %%% of chi2 display)
 %%% given in units of fit iterations (function evaluations)
-PDAMeta.UpdateInterval = 10;
+PDAMeta.UpdateInterval = 1;
 %%% Set the fit iteration (function evaluation) counter to 0
 PDAMeta.Fit_Iter_Counter = 0;
 Update_Plots(obj,[],3); % reset plots
@@ -2757,7 +2757,29 @@ else
         PDAMeta.UB(:,end+1) = 1;
         fraction = PDAMeta.FitParams(end);
     end 
-    
+    % if three-state model, add other rates here and set all rates as global parameters
+    if h.SettingsTab.DynamicModel.Value == 1
+        %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+            %&& h.SettingsTab.DynamicModel.Value
+        %%% If using MonteCarlo and DynamicModel, consider up to three states
+        % Append the additional rates associated with the third state here
+        % fitpar = [...,k31,k32,k13,k23]       x
+        % Read them from the table
+        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        LB_rates = zeros(1,4); UB_rates = Inf(1,4);
+        LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
+        PDAMeta.FitParams(:,end+1:end+4) =  repmat(rates,size(PDAMeta.FitParams,1),1);
+        PDAMeta.Fixed(:,end+1:end+4) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
+        PDAMeta.LB(:,end+1:end+4) = repmat(LB_rates,size(PDAMeta.LB,1),1);
+        PDAMeta.UB(:,end+1:end+4) = repmat(UB_rates,size(PDAMeta.UB,1),1);
+        %%% set all rates global
+        PDAMeta.Global(:,end+1:end+4) = true(size(PDAMeta.Global,1),numel(rates));
+        PDAMeta.Global(:,[1,4]) = true(size(PDAMeta.Global,1),2);
+    end
+        
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
     UB = PDAMeta.UB(PDAMeta.Global); 
@@ -2857,7 +2879,29 @@ else
                 PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             end
-
+            
+            %%% if three-state dynamic model was used, update table and
+            %%% remove from fitpar array
+            if h.SettingsTab.DynamicModel.Value
+                %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
+                %    && h.SettingsTab.DynamicModel.Value
+                %%% last 4 elements are kinetic rates to and from state 3
+                rates_state3 = PDAMeta.FitParams(1,end-3:end); 
+                PDAMeta.FitParams(:,end-3:end) = [];
+                PDAMeta.Global(:,end-3:end) = [];
+                PDAMeta.Fixed(:,end-3:end) = [];
+                %%% sort values into rate matrix table
+                rates = h.KineticRates_table.Data;
+                rates{1,5} = rates_state3(1);
+                rates{2,5} = rates_state3(2);
+                rates{3,1} = rates_state3(3);
+                rates{3,3} = rates_state3(4);
+                %%% assign k12 and k21 as well to table
+                rates{1,3} = PDAMeta.FitParams(1,1);
+                rates{2,1} = PDAMeta.FitParams(1,4);
+                h.KineticRates_table.Data = rates;
+            end
+            
             %%% If sigma was fixed at fraction of R, update edit box here and
             %%% remove from fitpar array
             %%% if sigma is fixed at fraction of, read value here before reshape
@@ -3067,7 +3111,7 @@ if ~PDAMeta.FitInProgress
 end
 
 
-if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+if (PDAMeta.FitInProgress == 2) && sum(PDAMeta.Global) == 0 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(i,:);
@@ -3335,10 +3379,12 @@ PDAMeta.chi2(i) = chi2;
 for c = PDAMeta.Comp{i}
     PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
 end
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+if sum(PDAMeta.Global) == 0
+    set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+end
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
-if h.SettingsTab.LiveUpdate.Value
+if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
@@ -3408,166 +3454,7 @@ for j=1:sum(PDAMeta.Active)
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    
-    %%% if sigma is fixed at fraction of, change its value here
-    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-        P(3:3:end) = P(end).*P(2:3:end-1);
-        fraction_Donly = P(end-1);
-    else
-        fraction_Donly = P(end);
-    end
-
-    %%% create individual histograms
-    hFit_Ind = cell(5,1);
-    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-        %%% do not normalize Amplitudes, user can do this himself if he
-        %%% wants
-        %P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
-        
-        for c = PDAMeta.Comp{i}
-            [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
-            P_eps = P(3*c-2).*Pe;
-            hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-            for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-                hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-            end
-        end
-        hFit = sum(horzcat(hFit_Ind{:}),2)';
-    else % dynamic model
-        %%% calculate PofT
-        dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
-        N = 100;
-        k1 = P(3*1-2);
-        k2 = P(3*2-2);
-        PofT = calc_dynamic_distribution(dT,N,k1,k2);
-        %%% generate P(eps) distribution for both components
-        PE = cell(2,1);
-        for c = 1:2
-            PE{c} = Generate_P_of_eps(P(3*c-1), P(3*c), i);
-        end
-        %%% read out brightnesses of species
-        Q = ones(2,1);
-        %if h.SettingsTab.Use_Brightness_Corr.Value
-            for c = 1:2
-                Q(c) = calc_relative_brightness(P(3*c-1),i);
-            end
-        %end
-        %%% calculate mixtures with brightness correction (always active!)
-        Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
-        Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
-        %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
-        Peps(:,end) = PE{1};
-        Peps(:,1) = PE{2};
-        %%% normalize
-        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
-        %%% combine mixtures, weighted with PofT (probability to see a certain
-        %%% combination)
-        hFit_Ind_dyn = cell(numel(PofT),1);
-        for t = 1:numel(PofT)
-            hFit_Ind_dyn{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-            for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-                %%% construct sum of histograms
-                hFit_Ind_dyn{t} = hFit_Ind_dyn{t} + Peps(k,t).*PDAMeta.P{i,k};
-            end
-            %%% weight by probability of occurence
-            hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
-        end
-        % bursts that did not leave state 1 during the burst: to indicate
-        % where state 1 is in the Epr plot
-        hFit_Ind{1} = hFit_Ind_dyn{1};
-        % bursts that did not leave state 2 during the burst: to indicate
-        % where state 2 is in the Epr plot
-        hFit_Ind{2} = hFit_Ind_dyn{end};
-        
-        hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
-        %%% Add static models
-        norm = 1;
-        if numel(PDAMeta.Comp{i}) > 2
-            %%% normalize Amplitudes
-            % amplitudes of the static components are normalized to the total area
-            % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21)
-            % the k12 and k21 parameters are left untouched here so they will
-            % appear in the table. The area fractions are calculated in Update_Plots
-            norm = (sum(P(3*PDAMeta.Comp{i}(3:end)-2))+1);
-            P(3*PDAMeta.Comp{i}(3:end)-2) = P(3*PDAMeta.Comp{i}(3:end)-2)./norm;
-            for c = PDAMeta.Comp{i}(3:end)
-                [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i); %Pe is area-normalized
-                P_eps = P(3*c-2).*Pe;
-                hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-                for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-                    hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-                end
-            end
-            hFit_Dyn = hFit_Dyn./norm;
-            hFit_Ind{1} = hFit_Ind{1}./norm;
-            hFit_Ind{2} = hFit_Ind{2}./norm;
-        end
-        % sum the static and dynamic components
-        hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
-        
-        % the whole dynamic part
-        %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
-        % only the dynamic bursts
-        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
-    end
-
-    if fraction_Donly > 0
-        %%% Add donor only species
-        PDAMeta.hFit_Donly = fraction_Donly*PDAMeta.P_donly{i}';
-        hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
-        for k = 1:numel(hFit_Ind)
-            hFit_Ind{k} = hFit_Ind{k}*(1-fraction_Donly);
-        end
-    end
-
-    %%% correct for slight number deviations between hFit and hMeasured
-%     for c = PDAMeta.Comp{i}
-%         hFit_Ind{c} = hFit_Ind{c}./sum(hFit).*sum(PDAMeta.hProx{i});
-%     end
-%     hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
-    
-    
-    %%% Calculate Chi2
-    switch h.SettingsTab.Chi2Method_Popupmenu.Value
-        case 2 %%% Assume gaussian error on data, normal chi2
-            error = sqrt(PDAMeta.hProx{i});
-            error(error == 0) = 1;
-            PDAMeta.w_res{i} = (hFit-PDAMeta.hProx{i})./error;
-            if PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-                loglikelihood(i) = (-1/2)*sum(PDAMeta.w_res{i}.^2); %%% loglikelihood is the negative of chi2 divided by two
-            end
-        case 1 %%% Assume poissonian error on data, MLE poissonian
-            %%%% see:
-            %%% Laurence, T. A. & Chromy, B. A. Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7, 338?339 (2010).
-            log_term = -2*PDAMeta.hProx{i}.*log(hFit./PDAMeta.hProx{i});
-            log_term(isnan(log_term)) = 0;
-            dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term;
-            PDAMeta.w_res{i} = sign(hFit-PDAMeta.hProx{i}).*sqrt(dev_mle);
-            if PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-                %%% compute loglikelihood without normalization to P(x|x)
-                log_term = PDAMeta.hProx{i}.*log(hFit);log_term(isnan(log_term)) = 0;
-                loglikelihood(i) = sum(log_term-hFit);
-            end
-    end   
-    PDAMeta.hFit{i} = hFit;
-    usedBins = sum(PDAMeta.hProx{i} ~= 0);
-    if ~h.SettingsTab.OuterBins_Fix.Value
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(usedBins-sum(~Fixed(i,:))-1);
-    else
-        % disregard last bins
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(usedBins-sum(~Fixed(i,:))-3);
-        PDAMeta.w_res{i}(1) = 0;
-        PDAMeta.w_res{i}(end) = 0;
-    end
-    if j == h.SingleTab.Popup.Value
-        set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
-    end
-    for c = PDAMeta.Comp{i}
-        PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
-    end
-    if h.SettingsTab.LiveUpdate.Value
-        Update_Plots([],[],5)
-    end 
+    PDAHistogramFit_Single(P,h);   
 end
 mean_chi2 = mean(PDAMeta.chi2);
 %Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
@@ -3582,6 +3469,13 @@ if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of 
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
     mean_chi2 = sum(loglikelihood);
 end
+
+if h.SettingsTab.LiveUpdate.Value
+    for i = find(PDAMeta.Active)'
+        PDAMeta.file = i;
+        Update_Plots([],[],5);
+    end
+end 
 
 % function that generates Equation 10 from Antonik 2006 J Phys Chem B
 function [Pe] = Generate_P_of_eps(RDA, sigma, i)
