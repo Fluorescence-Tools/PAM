@@ -3317,10 +3317,10 @@ else %%% dynamic model
         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
-        norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
-        fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
+        norm = (sum(fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2))+1);
+        fitpar(3*PDAMeta.Comp{i}(n_states:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
         
-        for c = PDAMeta.Comp{i}(n_states:end)
+        for c = PDAMeta.Comp{i}(n_states+1:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = (fitpar(3*c-2)./norm).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -3329,8 +3329,8 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
-        for i = 1:n_states
-            hFit_Ind{i} = hFit_Ind{i}./norm;
+        for j = 1:n_states
+            hFit_Ind{j} = hFit_Ind{j}./norm;
         end
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{n_states+1:end})),2)';
@@ -3339,7 +3339,7 @@ else %%% dynamic model
         % only the dynamic bursts
         PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
     elseif n_states == 3
-        PDAMeta.hFit_onlyDyn{i} = hFit_Dyn - sum(horzcat(hFit_Ind{:}),2);
+        PDAMeta.hFit_onlyDyn{i} = (hFit_Dyn - sum(horzcat(hFit_Ind{1:n_states}),2))./norm;
     end
 end
 
