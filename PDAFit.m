@@ -2607,7 +2607,7 @@ if ~do_global
                         gs = GlobalSearch;
                         fitpar = run(gs,problem);
                     case 'Simulated Annealing'
-                        opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100);
+                        opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                         fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
                 end
             case {h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC}
@@ -2849,7 +2849,7 @@ else
                     gs = GlobalSearch;
                     fitpar = run(gs,problem);
                 case 'Simulated Annealing'
-                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100);
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                     fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
             end
 
