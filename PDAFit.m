@@ -1233,6 +1233,12 @@ for i = 1:numel(FileName)
                 UserValues.PDA.Dynamic = SavedData.Dynamic;
                 LSUserValues(1)
             end
+            if isfield(SavedData,'DynamicSystem')
+                h.SettingsTab.DynamiSystem.Value = SavedData.DynamicSystem;
+            end
+            if isfield(SavedData,'ThreeStateModel');
+                h.KineticRates_table.Data = SavedData.ThreeStateModel;
+            end
             if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
                 PDAData.Type{end+1} = SavedData.Type;
             else
@@ -1289,6 +1295,9 @@ Update_GUI(h.SettingsTab.DynamicModel,[]);
 Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
 Update_FitTable([],[],1);
 Update_ParamTable([],[],1);
+if h.SettingsTab.DynamicSystem.Value == 2 % three-state model
+    Update_GUI(h.KineticRates_table,[]);
+end
 Update_Plots([],[],3);
 
 % Save data and fit table back into each individual file 
@@ -1310,6 +1319,8 @@ for i = 1:numel(PDAData.FileName)
         str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String),...
         h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
+    SavedData.DynamicSystem = h.SettingsTab.DynamicSystem.Value;
+    SavedData.ThreeStateModel = h.KineticRates_table.Data;
     SavedData.MinN = str2double(h.SettingsTab.NumberOfPhotMin_Edit.String);
     SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
     SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
