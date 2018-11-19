@@ -608,6 +608,9 @@ if isempty(h.GlobalPDAFit)
         
     
         initial_rates = ones(3);
+        initial_rates(1,1) = NaN;
+        initial_rates(2,2) = NaN;
+        initial_rates(3,3) = NaN;
         data = cell(size(initial_rates,1),2*size(initial_rates,2));
         for i = 1:size(initial_rates,2)
             data(:,2*i-1) = num2cell(initial_rates(:,i));
@@ -5047,6 +5050,11 @@ if obj == h.KineticRates_table
    h.FitTab.Table.Data(1:end-2,11) = deal(h.KineticRates_table.Data(1,3));
    h.FitTab.Table.Data(1:end-2,20) = deal(h.KineticRates_table.Data(1,5));
    h.FitTab.Table.Data(1:end-2,21) = deal(h.KineticRates_table.Data(1,6));
+   %%% if diagonal elements were clicked, reset them to NaN to indicate
+   %%% that they are not used
+   h.KineticRates_table.Data(1,1) = {NaN};
+   h.KineticRates_table.Data(2,3) = {NaN};
+   h.KineticRates_table.Data(3,5) = {NaN};
 end
 % function for loading of brightness reference, i.e. donor only sample
 function Load_Brightness_Reference(obj,~,mode)
