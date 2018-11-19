@@ -3799,6 +3799,7 @@ elseif obj == h.Trace.Log
         h.Trace.Log.Checked='off';
     end
     Update_Display([],[],11)
+    Update_Display([],[],5)
     
     %%% Switches IRF Check Display
     if strcmp(h.MI.IRF.Checked,'on')
@@ -4646,6 +4647,7 @@ end
 if any(mode==11)
     if strcmp(h.Trace.Log.Checked, 'on')
         h.Trace.Axes.YScale='Log';
+        h.Trace.Axes.YLim=[1 h.Trace.Axes.YLim(1,2)];       
     else
         h.Trace.Axes.YScale='Linear';
     end
