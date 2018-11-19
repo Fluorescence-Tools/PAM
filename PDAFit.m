@@ -2714,8 +2714,8 @@ if ~do_global
             rates{3,1} = rates_state3(2);
             rates{3,3} = rates_state3(3);
             %%% assign k12 and k21 as well to table
-            rates{1,3} = fitpar(1);
-            rates{2,1} = fitpar(4);
+            rates{2,1} = fitpar(1);
+            rates{1,3} = fitpar(4);
             rates{1,5} = fitpar(7);
             h.KineticRates_table.Data = rates;
         end
@@ -2797,8 +2797,8 @@ else
         PDAMeta.LB(:,end+1:end+3) = repmat(LB_rates,size(PDAMeta.LB,1),1);
         PDAMeta.UB(:,end+1:end+3) = repmat(UB_rates,size(PDAMeta.UB,1),1);
         %%% set all rates that are not fixed global
-        PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(:,end-2:end)%true(size(PDAMeta.Global,1),numel(rates));
-        PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(:,[1,4,7]);%true(size(PDAMeta.Global,1),2);
+        PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(1,end-2:end);%true(size(PDAMeta.Global,1),numel(rates));
+        PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(1,[1,4,7]);%true(size(PDAMeta.Global,1),2);
     end
         
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
@@ -3158,7 +3158,7 @@ if (PDAMeta.FitInProgress == 2) && sum(PDAMeta.Global) == 0 %%% we are estimatin
 end
 
 %%% if dynamic model, rates for third state are appended to fitpar array
-if h.SettingsTab.DynamicModel.Value
+if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
     rates_state3 = fitpar(end-2:end);
     fitpar(end-2:end) = [];
 end
@@ -3243,7 +3243,7 @@ else %%% dynamic model
 %             end
     end
     %%% generate P(eps) distribution for both components
-    PE = cell(2,1);
+    PE = cell(n_states,1);
     for c = 1:n_states
         PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
     end
@@ -5054,6 +5054,10 @@ if obj == h.KineticRates_table
    h.KineticRates_table.Data(1,1) = {NaN};
    h.KineticRates_table.Data(2,3) = {NaN};
    h.KineticRates_table.Data(3,5) = {NaN};
+   %%% reset fixed to false for diagonal as well
+   h.KineticRates_table.Data(1,2) = {false};
+   h.KineticRates_table.Data(2,4) = {false};
+   h.KineticRates_table.Data(3,6) = {false};
 end
 % function for loading of brightness reference, i.e. donor only sample
 function Load_Brightness_Reference(obj,~,mode)
