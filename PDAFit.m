@@ -613,7 +613,7 @@ if isempty(h.GlobalPDAFit)
             data(:,2*i-1) = num2cell(initial_rates(:,i));
             data(:,2*i) = num2cell(false(size(initial_rates,1),1));
         end
-        columnnames = {'1','F','2','F','3','F'};
+        columnnames = {'1->','F','2->','F','3->','F'};
         rownames = {'1','2','3'};
         columnwidth = {50,25,50,25,50,25};
         columnformat = {'numeric','logical','numeric','logical','numeric','logical'};
@@ -627,6 +627,8 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor',Look.TableFore,...
         'BackgroundColor',[Look.Table1;Look.Table2],...
         'FontSize',12,...
+        'Visible','on',...
+        'CellEditCallback',@Update_GUI,...
         'Position',[0.8 0 .2 1]);
 
     %% Parameters tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -895,9 +897,21 @@ if isempty(h.GlobalPDAFit)
         'Style','checkbox',...
         'String','Dynamic Model',...
         'Value',UserValues.PDA.Dynamic,...
-        'TooltipString',sprintf('Only works for Histogram Library Approach!\nSpecies 3 and onward will be treated as static.'),...
+        'TooltipString',sprintf('Only works for Histogram Library and Monte Carlo Approach!\n For two-state system, species 3 and onward will be treated as static.\n For three-state system, species 4 and 5 and onward will be treated as static.'),...
         'Callback',@Update_GUI,...
-        'Position',[0.65 0.55 0.1 0.15]);
+        'Position',[0.65 0.55 0.075 0.15]);
+    h.SettingsTab.DynamicSystem = uicontrol(...
+        'Parent',h.SettingsTab.Panel,...
+        'Tag','DynamicModel',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', [1,1,1],...
+        'ForegroundColor', [0,0,0],...
+        'Style','popupmenu',...
+        'String',{'Two-state system','Three-state system'},...
+        'Value',1,...
+        'Callback',@Update_GUI,...
+        'Position',[0.725 0.55 0.075 0.15]);
     h.SettingsTab.FixSigmaAtFractionOfR = uicontrol(...
         'Parent',h.SettingsTab.Panel,...
         'Tag','FixSigmaAtFractionOfR',...
@@ -1638,8 +1652,10 @@ switch mode
                 PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
                 % state 2
                 PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
-                % state 3
-                PDAMeta.Plots.Fit_Single{1,4}.Color = [0.4706 0.6706 0.18821];
+                if h.SettingsTab.DynamicSystem.Value == 2
+                    % state 3
+                    PDAMeta.Plots.Fit_Single{1,4}.Color = [0.4706 0.6706 0.18821];
+                end
                 % in between 1 and 2
                 PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
             end
@@ -1697,7 +1713,7 @@ switch mode
             end
             
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
-            if h.SettingsTab.DynamicModel.Value
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 1
                 % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
                 tmp = fitpar(4)/(fitpar(1)+fitpar(4));
                 tmp2 = fitpar(1)/(fitpar(1)+fitpar(4));
@@ -2469,7 +2485,9 @@ else %%% check if fix sigma at fraction of R option is enable
     end
     %%% check if three-state model is used
     if h.SettingsTab.DynamicModel.Value
-        do_global = true;
+        if sum(PDAMeta.Active) > 1 %%% more than one file active
+            do_global = true;
+        end
     end
 end
 % if do_global
@@ -2505,23 +2523,22 @@ if ~do_global
             end
         end 
         
-        if h.SettingsTab.DynamicModel.Value
-            %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-                %&& h.SettingsTab.DynamicModel.Value
-            %%% If using MonteCarlo and DynamicModel, consider up to three states
+        if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2            
+            %%% DynamicModel with up to three states
             % Append the additional rates associated with the third state here
-            % fitpar = [...,k31,k32,k13,k23]       x
+            % rate k31 is taken from the amplitude of species 3!
+            % fitpar = [...,k32,k13,k23]
             % Read them from the table
             rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-            rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+            rates = [rates(2,3),rates(3,1),rates(3,2)];
             fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-            fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-            LB_rates = zeros(1,4); UB_rates = Inf(1,4);
+            fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+            LB_rates = zeros(1,3); UB_rates = Inf(1,3);
             LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
             fitpar = [fitpar, rates];
             fixed = [fixed,fixed_rates];
             LB = [LB,LB_rates];
-            UB = [UB,UB_rates];
+            UB = [UB,UB_rates];            
         end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
@@ -2685,20 +2702,18 @@ if ~do_global
         % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
         
-        if h.SettingsTab.DynamicModel.Value
-            %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-            %    && h.SettingsTab.DynamicModel.Value
+        if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
             %%% last 4 elements are kinetic rates to and from state 3
-            rates_state3 = fitpar(end-3:end); fitpar(end-3:end) = [];
+            rates_state3 = fitpar(end-2:end); fitpar(end-2:end) = [];
             %%% sort values into rate matrix table
-            rates = h.KineticRates_table.Data;
-            rates{1,5} = rates_state3(1);
-            rates{2,5} = rates_state3(2);
-            rates{3,1} = rates_state3(3);
-            rates{3,3} = rates_state3(4);
+            rates = h.KineticRates_table.Data;           
+            rates{2,5} = rates_state3(1);
+            rates{3,1} = rates_state3(2);
+            rates{3,3} = rates_state3(3);
             %%% assign k12 and k21 as well to table
             rates{1,3} = fitpar(1);
             rates{2,1} = fitpar(4);
+            rates{1,5} = fitpar(7);
             h.KineticRates_table.Data = rates;
         end
         
@@ -2762,26 +2777,25 @@ else
         fraction = PDAMeta.FitParams(end);
     end 
     % if three-state model, add other rates here and set all rates as global parameters
-    if h.SettingsTab.DynamicModel.Value == 1
-        %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-            %&& h.SettingsTab.DynamicModel.Value
-        %%% If using MonteCarlo and DynamicModel, consider up to three states
+    if h.SettingsTab.DynamicModel.Value == 1 && h.SettingsTab.DynamicSystem.Value == 2      
+        %%% DynamicModel with up to three states
         % Append the additional rates associated with the third state here
-        % fitpar = [...,k31,k32,k13,k23]       x
+        % rate k31 is taken from the amplitude of species 3!
+        % fitpar = [...,k32,k13,k23]
         % Read them from the table
         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        rates = [rates(2,3),rates(3,1),rates(3,2)];
         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        LB_rates = zeros(1,4); UB_rates = Inf(1,4);
+        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        LB_rates = zeros(1,3); UB_rates = Inf(1,3);
         LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
-        PDAMeta.FitParams(:,end+1:end+4) =  repmat(rates,size(PDAMeta.FitParams,1),1);
-        PDAMeta.Fixed(:,end+1:end+4) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
-        PDAMeta.LB(:,end+1:end+4) = repmat(LB_rates,size(PDAMeta.LB,1),1);
-        PDAMeta.UB(:,end+1:end+4) = repmat(UB_rates,size(PDAMeta.UB,1),1);
-        %%% set all rates global
-        PDAMeta.Global(:,end+1:end+4) = true(size(PDAMeta.Global,1),numel(rates));
-        PDAMeta.Global(:,[1,4]) = true(size(PDAMeta.Global,1),2);
+        PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
+        PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
+        PDAMeta.LB(:,end+1:end+3) = repmat(LB_rates,size(PDAMeta.LB,1),1);
+        PDAMeta.UB(:,end+1:end+3) = repmat(UB_rates,size(PDAMeta.UB,1),1);
+        %%% set all rates that are not fixed global
+        PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(:,end-2:end)%true(size(PDAMeta.Global,1),numel(rates));
+        PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(:,[1,4,7]);%true(size(PDAMeta.Global,1),2);
     end
         
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
@@ -2889,23 +2903,21 @@ else
             
             %%% if three-state dynamic model was used, update table and
             %%% remove from fitpar array
-            if h.SettingsTab.DynamicModel.Value
-                %strcmp('MonteCarlo',h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}) ...
-                %    && h.SettingsTab.DynamicModel.Value
-                %%% last 4 elements are kinetic rates to and from state 3
-                rates_state3 = PDAMeta.FitParams(1,end-3:end); 
-                PDAMeta.FitParams(:,end-3:end) = [];
-                PDAMeta.Global(:,end-3:end) = [];
-                PDAMeta.Fixed(:,end-3:end) = [];
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                %%% last 3 elements are kinetic rates k32, k13, k23
+                rates_state3 = PDAMeta.FitParams(1,end-2:end); 
+                PDAMeta.FitParams(:,end-2:end) = [];
+                PDAMeta.Global(:,end-2:end) = [];
+                PDAMeta.Fixed(:,end-2:end) = [];
                 %%% sort values into rate matrix table
                 rates = h.KineticRates_table.Data;
-                rates{1,5} = rates_state3(1);
-                rates{2,5} = rates_state3(2);
-                rates{3,1} = rates_state3(3);
-                rates{3,3} = rates_state3(4);
+                rates{2,5} = rates_state3(1);
+                rates{3,1} = rates_state3(2);
+                rates{3,3} = rates_state3(3);
                 %%% assign k12 and k21 as well to table
                 rates{1,3} = PDAMeta.FitParams(1,1);
                 rates{2,1} = PDAMeta.FitParams(1,4);
+                rates{1,5} = PDAMeta.FitParams(1,7);
                 h.KineticRates_table.Data = rates;
             end
             
@@ -3128,12 +3140,12 @@ if (PDAMeta.FitInProgress == 2) && sum(PDAMeta.Global) == 0 %%% we are estimatin
         fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
         fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
-    if h.SettingsTab.DynamicModel.Value
+    if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
         % Read the rates from the table
         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        rates = [rates(2,3),rates(3,1),rates(3,2)];
         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
         fitpar_dummy = [fitpar_dummy, rates];
         fixed_dummy = [fixed_dummy, fixed_rates];
     end
@@ -3144,8 +3156,8 @@ end
 
 %%% if dynamic model, rates for third state are appended to fitpar array
 if h.SettingsTab.DynamicModel.Value
-    rates_state3 = fitpar(end-3:end);
-    fitpar(end-3:end) = [];
+    rates_state3 = fitpar(end-2:end);
+    fitpar(end-2:end) = [];
 end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
@@ -3186,7 +3198,16 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
 else %%% dynamic model
     %%% calculate PofT
     dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
-    dyn_sim = 'montecarlo';%'analytic';'montecarlo'; % monte carlo sim of kinetics?
+    switch h.SettingsTab.DynamicSystem.Value
+        case 1
+            %%% two-state system
+            % solve analytically
+            dyn_sim = 'analytic';
+        case 2
+            %%% three-state system
+            % use monte carlo to evaluate kinetics
+            dyn_sim = 'montecarlo';
+    end
     switch dyn_sim
         case 'analytic'
             n_states = 2;
@@ -3196,11 +3217,9 @@ else %%% dynamic model
             PofT = calc_dynamic_distribution(dT,N,k1,k2);
         case 'montecarlo'
             SimTime = dT*1E-3; % time bin in seconds
-%             DynRates = 1000 * [0, fitpar(3*2-2); ...
-%                          fitpar(3*1-2), 0];
-            DynRates = 1000 * [0, fitpar(3*2-2),rates_state3(1); ...
-                        fitpar(3*1-2), 0,rates_state3(2);... 
-                        rates_state3(3),rates_state3(4),0];
+            DynRates = 1000 * [0, fitpar(3*2-2),fitpar(3*3-2); ...
+                        fitpar(3*1-2), 0,rates_state3(1);... 
+                        rates_state3(2),rates_state3(3),0];
             % rates in Hz
             % The DynRates matrix has the form:
             % ( 11 21 31 ... )
@@ -3740,12 +3759,13 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
         fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
         fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
-    if h.SettingsTab.DynamicModel.Value
+    if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+        %%% three-state system
         % Read the rates from the table
         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(1,3),rates(2,3),rates(3,1),rates(3,2)];
+        rates = [rates(2,3),rates(3,1),rates(3,2)];
         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(1,3),fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
         fitpar_dummy = [fitpar_dummy, rates];
         fixed_dummy = [fixed_dummy, fixed_rates];
     end
@@ -3753,10 +3773,10 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
     fitpar_dummy(~fixed_dummy) = fitpar; 
     fitpar = fitpar_dummy;
 end
-%%% if dynamic model, rates for third state are appended to fitpar array
-if h.SettingsTab.DynamicModel.Value
-    rates_state3 = fitpar(end-3:end);
-    fitpar(end-3:end) = [];
+%%% if dynamic model of three-state system, rates for third state are appended to fitpar array
+if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+    rates_state3 = fitpar(end-2:end);
+    fitpar(end-2:end) = [];
 end
 %%% if sigma is fixed at fraction of, read value here before reshape
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -3851,14 +3871,22 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     end
 else %%% dynamic model 
     SimTime = dur/1000; % time bin in seconds
-    DynRates = 1000 * [0, fitpar(2,1),rates_state3(1); ...
-                fitpar(1,1), 0,rates_state3(2);... 
-                rates_state3(3),rates_state3(4),0]; % rates in Hz
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
     % ( 12 22 32 ... )
     % ( 13 23 33 ... )
     % ( .. .. .. ... )
+    switch h.SettingsTab.DynamicSystem.Value
+        case 1
+            %%% two-state system
+            DynRates = 1000 * [0, fitpar(2,1); ...
+                        fitpar(1,1), 0]; % rates in Hz
+        case 2
+            %%% three-state systme
+            DynRates = 1000 * [0, fitpar(2,1),fitpar(3,1); ...
+                        fitpar(1,1), 0,rates_state3(1);... 
+                        rates_state3(2),rates_state3(3),0]; % rates in Hz
+    end
     %%% set frequency to 100 times of the fastest timescale
     Freq = 100*max(DynRates(:)); %1E6; % Hz
     n_states = size(DynRates,1);
@@ -4964,30 +4992,62 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
     h.SettingsTab.SigmaAtFractionOfR_edit.ForegroundColor = [0,0,0];
     h.SettingsTab.SigmaAtFractionOfR_edit.BackgroundColor = [1,1,1];
     drawnow;
-elseif obj == h.SettingsTab.DynamicModel
+elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
     switch h.SettingsTab.DynamicModel.Value
-        case 1 %%% switched to dynamic
-            %%% Change label of Fit Parameter Table
-            h.FitTab.Table.ColumnName{2} = '<HTML><b>k<sub>12</sub> [ms<sup>-1</sup>]</b>';
-            h.FitTab.Table.ColumnName{11} = '<HTML><b>k<sub>21</sub> [ms<sup>-1</sup>]</b>';
-            h.FitTab.Table.ColumnWidth{2} = 70;
-            h.FitTab.Table.ColumnWidth{11} = 70;
-            %%% Only enable Histogram Library in PDA Method
-            %h.SettingsTab.PDAMethod_Popupmenu.Value = 1;
-            %h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
+        case 1 %%% switched to dynamic            
+                % two state sytem
+                %%% Change label of Fit Parameter Table
+                h.FitTab.Table.ColumnName{2} = '<HTML><b>k<sub>12</sub> [ms<sup>-1</sup>]</b>';
+                h.FitTab.Table.ColumnName{11} = '<HTML><b>k<sub>21</sub> [ms<sup>-1</sup>]</b>';
+                h.FitTab.Table.ColumnWidth{2} = 70;
+                h.FitTab.Table.ColumnWidth{11} = 70;
+                h.FitTab.Table.Position(3) = 1;
+                h.KineticRates_table.Visible = 'off';
+                h.FitTab.Table.ColumnEditable([2,4,11,13,20,22]) = deal(true);
+                if h.SettingsTab.DynamicSystem.Value == 2 %%% three-state model
+                    h.FitTab.Table.ColumnName{20} = '<HTML><b>k<sub>31</sub> [ms<sup>-1</sup>]</b>';
+                    h.FitTab.Table.ColumnWidth{20} = 70; 
+                    %%% disable columns for amplitudes of species 1,2 and 3
+                    %%% use rate table instead
+                    %%% Rates are always global, so disable global checkbox
+                    %%% and global to false
+                    h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(false);
+                    h.FitTab.Table.Data(1:end-2,[4,13,22]) = deal({false});
+                    %%% unfix third amplitude and set to one
+                    h.FitTab.Table.Data(1:end-2,20) = deal({1});
+                    h.FitTab.Table.Data(1:end-2,21) = deal({false});
+                    %%% unhide rate table
+                    h.KineticRates_table.Visible = 'on';
+                    %%% change fit table width
+                    h.FitTab.Table.Position(3) = 0.8;                    
+            end
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
             h.FitTab.Table.ColumnName{11} = '<HTML><b>A<sub>2</sub></b>';
+            h.FitTab.Table.ColumnName{20} = '<HTML><b>A<sub>3</sub></b>';
             h.FitTab.Table.ColumnWidth{2} = 40;
             h.FitTab.Table.ColumnWidth{11} = 40;
-            %%% Revert to all PDA Methods
-            %if ~h.SettingsTab.DeconvoluteBackground.Value
-            %    h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
-            %end
+            h.FitTab.Table.ColumnWidth{20} = 40;
+            %%% re-enable columns for amplitudes of species 1,2 and 3 (used
+            %%% for rates when dynamic model is seleceted)
+            h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(true);
+            %%% change fit table width
+            h.FitTab.Table.Position(3) = 1;
+             %%% hide rate table
+            h.KineticRates_table.Visible = 'off';
     end
 end
-
+if obj == h.KineticRates_table
+   %%% Update the fields in the fit table for k12, k21 and k31 (value + fixed state)
+   h.FitTab.Table.Data(1:end-2,2) = deal(h.KineticRates_table.Data(2,1));
+   h.FitTab.Table.Data(1:end-2,3) = deal(h.KineticRates_table.Data(2,2));
+   h.FitTab.Table.Data(1:end-2,11) = deal(h.KineticRates_table.Data(1,3));
+   h.FitTab.Table.Data(1:end-2,12) = deal(h.KineticRates_table.Data(1,4));
+   h.FitTab.Table.Data(1:end-2,11) = deal(h.KineticRates_table.Data(1,3));
+   h.FitTab.Table.Data(1:end-2,20) = deal(h.KineticRates_table.Data(1,5));
+   h.FitTab.Table.Data(1:end-2,21) = deal(h.KineticRates_table.Data(1,6));
+end
 % function for loading of brightness reference, i.e. donor only sample
 function Load_Brightness_Reference(obj,~,mode)
 global PDAData UserValues PDAMeta
