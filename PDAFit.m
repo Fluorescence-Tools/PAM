@@ -1764,7 +1764,14 @@ switch mode
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
                 'YData', real(ydatares));
-            for c = PDAMeta.Comp{i}
+            
+            comp = PDAMeta.Comp{i};
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                % for three-state model, some rates may be fixed to zero,
+                % but the states should still be plotted
+                comp = [1,2,3,comp(comp > 3)];
+            end
+            for c = comp
                 if h.SettingsTab.OuterBins_Fix.Value
                     % do not display or take into account during fitting, the
                     % outer bins of the histogram.
