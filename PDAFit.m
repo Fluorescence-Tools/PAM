@@ -5043,13 +5043,12 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
 end
 if obj == h.KineticRates_table
    %%% Update the fields in the fit table for k12, k21 and k31 (value + fixed state)
-   h.FitTab.Table.Data(1:end-2,2) = deal(h.KineticRates_table.Data(2,1));
-   h.FitTab.Table.Data(1:end-2,3) = deal(h.KineticRates_table.Data(2,2));
-   h.FitTab.Table.Data(1:end-2,11) = deal(h.KineticRates_table.Data(1,3));
-   h.FitTab.Table.Data(1:end-2,12) = deal(h.KineticRates_table.Data(1,4));
-   h.FitTab.Table.Data(1:end-2,11) = deal(h.KineticRates_table.Data(1,3));
-   h.FitTab.Table.Data(1:end-2,20) = deal(h.KineticRates_table.Data(1,5));
-   h.FitTab.Table.Data(1:end-2,21) = deal(h.KineticRates_table.Data(1,6));
+   h.FitTab.Table.Data(1:end-2,2) = deal({num2str(h.KineticRates_table.Data{2,1})});
+   h.FitTab.Table.Data(1:end-2,3) = deal({h.KineticRates_table.Data{2,2}});
+   h.FitTab.Table.Data(1:end-2,11) = deal({num2str(h.KineticRates_table.Data{1,3})});
+   h.FitTab.Table.Data(1:end-2,12) = deal({h.KineticRates_table.Data{1,4}});
+   h.FitTab.Table.Data(1:end-2,20) = deal({num2str(h.KineticRates_table.Data{1,5})});
+   h.FitTab.Table.Data(1:end-2,21) = deal({h.KineticRates_table.Data{1,6}});
    %%% if diagonal elements were clicked, reset them to NaN to indicate
    %%% that they are not used
    h.KineticRates_table.Data(1,1) = {NaN};
