@@ -3519,10 +3519,13 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 %% Calculates trace
                 %%% Takes PIE channel macrotimes
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
-                PamMeta.BinsPCH{i} = 0:1:10;
-                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                if mode == 1 % reset trace
+                    PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
+                elseif mode == 2 % reset PCH
+                    PamMeta.BinsPCH{i} = 0:1:10;
+                    PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                    PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                end
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
@@ -11019,10 +11022,12 @@ switch obj
             end
             [~,PamMeta.fFCS.MIPattern_Name{i},~] = fileparts(filename{1}{1});
             PamMeta.fFCS.MIPattern{i} = MIPattern;
-            %dummy = load(fullfile(Path,File{i}),'-mat');
-            %[~, FileName, ~] = fileparts(File{i});
-            %PamMeta.fFCS.MIPattern_Name{i} = FileName;
-            %PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
+                
+            % BurstBrowser exports mat files, use this code instead
+            % dummy = load(fullfile(Path,File{i}),'-mat');
+            % [~, FileName, ~] = fileparts(File{i});
+            % PamMeta.fFCS.MIPattern_Name{i} = FileName;
+            % PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
         end
         Update_fFCS_GUI(obj,[]);
 end
@@ -11062,11 +11067,13 @@ switch obj
             for j = 1:(numel(PamMeta.fFCS.MIPattern_Name)+1)
                 if j < (numel(PamMeta.fFCS.MIPattern_Name)+1)
                     if isempty(UserValues.PIE.Combined{i}) %exclude combined channels
-                        if ~isempty(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)})
-                            % there is data in the corresponding detector/router channel
-                            if sum(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
-                                % there is data in the PIE channel range
-                                PIEexist(i,j) = 1;
+                        if (size(PamMeta.fFCS.MIPattern{j},1) >= UserValues.PIE.Detector(i)) && (size(PamMeta.fFCS.MIPattern{j},2) >= UserValues.PIE.Router(i))
+                            if ~isempty(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)})
+                                % there is data in the corresponding detector/router channel
+                                if sum(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                                    % there is data in the PIE channel range
+                                    PIEexist(i,j) = 1;
+                                end
                             end
                         end
                     end

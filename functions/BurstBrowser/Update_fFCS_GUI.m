@@ -46,21 +46,56 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
 else
     %%% popupmenu selection was changed
     if obj.Value == numel(obj.String) %%% we clicked the last element, which is used to load a synthetic pattern
-        [FileName,PathName] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Choose a synthetic microtime pattern',UserValues.File.BurstBrowserPath);
-        if FileName == 0
+        [File,Path] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Choose a synthetic microtime pattern',UserValues.File.BurstBrowserPath);
+        if File == 0
             return;
         end
+        File = {File};
         if ~isfield(BurstMeta,'fFCS')
             BurstMeta.fFCS = [];
         end
         if ~isfield(BurstMeta.fFCS,'syntheticpatterns_names')
             BurstMeta.fFCS.syntheticpatterns_names = [];
         end
-        BurstMeta.fFCS.syntheticpatterns_names{end+1} = FileName(1:end-3);
+        %BurstMeta.fFCS.syntheticpatterns_names{end+1} = FileName(1:end-3);
         if ~isfield(BurstMeta.fFCS,'syntheticpatterns')
             BurstMeta.fFCS.syntheticpatterns = [];
         end
-        BurstMeta.fFCS.syntheticpatterns{end+1} = load(fullfile(PathName,FileName),'-mat');
+        % previously, microtime patterns were stored as mat files
+        %BurstMeta.fFCS.syntheticpatterns{end+1} = load(fullfile(PathName,FileName),'-mat');
+        % now, they are stored as text files
+        % read data from text files and store in "MIPattern" cell array
+        PamMeta.fFCS.MIPattern = cell(0);
+        PamMeta.fFCS.MIPattern_Name = cell(0);
+        for i = 1:1%numel(File)
+            header_lines = 0;
+            while 1
+                try
+                    data = dlmread(fullfile(Path,File{i}),',',header_lines,0);
+                    break;
+                catch
+                    %%% read text as stringvbnm
+                    header_lines = header_lines + 1;
+                end
+            end
+            %%% process header information
+            fid = fopen(fullfile(Path,File{i}),'r');
+            line = fgetl(fid);
+            filename = textscan(line,'Microtime patterns of measurement: %s\n');
+            for j = 1:(header_lines-1)
+                line = fgetl(fid);
+                temp = textscan(line,['Channel ' num2str(j) ': Detector %d and Routing %d\n']);
+                Det(j) = temp{1};
+                Rout(j) = temp{2};
+            end
+            fclose(fid);
+            MIPattern = cell(0);
+            for j = 1:numel(Det)
+                MIPattern{Det(j),Rout(j)} = data(:,j);
+            end
+            [~,BurstMeta.fFCS.syntheticpatterns_names{end+1},~] = fileparts(filename{1}{1});
+            BurstMeta.fFCS.syntheticpatterns{end+1}.MIPattern = MIPattern;
+        end
         Update_fFCS_GUI([],[]);
     else
         %%% a different pattern was selected, do nothing
