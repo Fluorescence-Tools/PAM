@@ -505,13 +505,19 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotScat was incomplete');
     end
     P.Settings.Pam.PlotScat = S.Settings.Pam.PlotScat;
-    %%% Checksm if Pam.PlotLog subfield exists
+    %%% Checks if Pam.PlotLog subfield exists
     if ~isfield(S.Settings.Pam, 'PlotLog')
         S.Settings.Pam.PlotLog='off';
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
-    %%% Checksm if Pam.AutoSaveProfile subfield exists
+    %%% Checks if Pam.PlotLogTrace subfield exists
+    if ~isfield(S.Settings.Pam, 'PlotLogTrace')
+        S.Settings.Pam.PlotLogTrace='off';
+        disp('UserValues.Settings.Pam.PlotLogTrace was incomplete');
+    end
+    P.Settings.Pam.PlotLogTrace = S.Settings.Pam.PlotLogTrace;
+    %%% Checks if Pam.AutoSaveProfile subfield exists
     if ~isfield(S.Settings.Pam, 'AutoSaveProfile')
         S.Settings.Pam.AutoSaveProfile='off';
         disp('UserValues.Settings.Pam.AutoSaveProfile was incomplete');

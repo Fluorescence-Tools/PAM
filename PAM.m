@@ -367,7 +367,7 @@ h.MI.All_Panel = uibuttongroup(...
     'Position',[0 0 1 1]);
 %%% Contexmenu for all microtime axes
 h.MI.Menu = uicontextmenu;
-%%% Menu for Log scal plotting
+%%% Menu for Log scale plotting
 h.MI.Log = uimenu(...
     'Parent',h.MI.Menu,...
     'Label','Plot as log scale',...
@@ -376,7 +376,7 @@ h.MI.Log = uimenu(...
     'Callback',@Calculate_Settings);
 %%% Contextmenu for individual microtime axes
 h.MI.Menu_Individual = uicontextmenu;
-%%% Menu for Log scal plotting
+%%% Menu for Log scale plotting
 h.MI.Log_Ind = uimenu(...
     'Parent',h.MI.Menu_Individual,...
     'Label','Plot as log scale',...
@@ -2093,6 +2093,11 @@ h.Trace.Axes.YLabel.Color=Look.Fore;
 h.Plots.Trace{1}=handle(plot([0 1],[0 0],'b'));
 
 h.Trace.Menu = uicontextmenu;
+h.Trace.Log = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Plot as log scale',...
+    'Checked',UserValues.Settings.Pam.PlotLogTrace,...
+    'Callback',@Calculate_Settings);
 h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
@@ -3787,7 +3792,18 @@ elseif obj == h.MI.Log_Ind || obj == h.MI.Log
     end
     Update_Display([],[],9)
     Update_Display([],[],5)
-elseif obj == h.MI.IRF
+elseif obj == h.Trace.Log
+    %%% Puts Y-axis of Trace in log scale
+    if strcmp(h.Trace.Log.Checked,'off')
+        UserValues.Settings.Pam.PlotLogTrace = 'on';
+        h.Trace.Log.Checked='on';
+    else
+        UserValues.Settings.Pam.PlotLogTrace = 'off';
+        h.Trace.Log.Checked='off';
+    end
+    Update_Display([],[],11)
+    Update_Display([],[],5)
+    
     %%% Switches IRF Check Display
     if strcmp(h.MI.IRF.Checked,'on')
         h.MI.IRF.Checked = 'off';
@@ -3939,6 +3955,7 @@ h = guidata(findobj('Tag','Pam'));
 %%% 8: Plot IRF or Scatter Pattern
 %%% 9: Y-axis log
 %%% 10: PCH plot
+%%% 11: Y-axis log of Trace
 if nargin<3 || any(mode==0)
     mode=[1:5, 6, 8, 9, 10];
 end
@@ -4625,6 +4642,17 @@ if any(mode==9)
         end
         h.MI.Phasor_Axes.YScale='Linear';
         h.MI.Calib_Axes.YScale='Linear';
+    end
+end
+
+%% Plot Trace Y-axis in log %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this has to be before mode == 5 PIE Patches!
+if any(mode==11)
+    if strcmp(h.Trace.Log.Checked, 'on')
+        h.Trace.Axes.YScale='Log';
+        h.Trace.Axes.YLim=[1 h.Trace.Axes.YLim(1,2)];       
+    else
+        h.Trace.Axes.YScale='Linear';
     end
 end
 
@@ -7289,8 +7317,7 @@ BAMethod = UserValues.BurstSearch.Method;
 SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
-ChunkSize = 30; %30 minutes, hard-coded for now
-Number_of_Chunks = ceil(FileInfo.MeasurementTime/(ChunkSize*60));
+Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
 %%% Preallocation
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
@@ -7304,17 +7331,17 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Channel_all = cell(Number_of_Chunks,1);
 end
 
-for i = 1:Number_of_Chunks
+for i = find(PamMeta.Selected_MT_Patches)'
     Progress((i-1)/Number_of_Chunks,h.Progress.Axes, h.Progress.Text,'Performing Burst Search...');
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons
         %read out macrotimes for all channels
-        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
-        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Macrotime',i,ChunkSize);
-        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,ChunkSize);
-        Photons{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Macrotime',i,ChunkSize);
-        Photons{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,ChunkSize);
-        Photons{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Macrotime',i,ChunkSize);
+        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,Number_of_Chunks);
+        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Macrotime',i,Number_of_Chunks);
+        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,Number_of_Chunks);
+        Photons{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Macrotime',i,Number_of_Chunks);
+        Photons{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,Number_of_Chunks);
+        Photons{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Macrotime',i,Number_of_Chunks);
         AllPhotons_unsort = vertcat(Photons{:});
         %sort macrotime and use index to sort microtime and channel
         %information
@@ -7328,12 +7355,12 @@ for i = 1:Number_of_Chunks
         clear chan_temp
         
         %%% read out microtimes for all channels
-        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,ChunkSize);
-        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Microtime',i,ChunkSize);
-        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,ChunkSize);
-        MI{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Microtime',i,ChunkSize);
-        MI{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,ChunkSize);
-        MI{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Microtime',i,ChunkSize);
+        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,Number_of_Chunks);
+        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Microtime',i,Number_of_Chunks);
+        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,Number_of_Chunks);
+        MI{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Microtime',i,Number_of_Chunks);
+        MI{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,Number_of_Chunks);
+        MI{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Microtime',i,Number_of_Chunks);
         
         MI = vertcat(MI{:});
         AllPhotons_Microtime = MI(index);
@@ -7352,18 +7379,18 @@ for i = 1:Number_of_Chunks
             [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
         end
     elseif any(BAMethod == [3,4])
-        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
-        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Macrotime',i,ChunkSize);
-        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,ChunkSize);
-        Photons{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Macrotime',i,ChunkSize);
-        Photons{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,ChunkSize);
-        Photons{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Macrotime',i,ChunkSize);
-        Photons{7} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1},'Macrotime',i,ChunkSize);
-        Photons{8} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2},'Macrotime',i,ChunkSize);
-        Photons{9} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1},'Macrotime',i,ChunkSize);
-        Photons{10} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2},'Macrotime',i,ChunkSize);
-        Photons{11} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1},'Macrotime',i,ChunkSize);
-        Photons{12} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2},'Macrotime',i,ChunkSize);
+        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,Number_of_Chunks);
+        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Macrotime',i,Number_of_Chunks);
+        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,Number_of_Chunks);
+        Photons{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Macrotime',i,Number_of_Chunks);
+        Photons{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,Number_of_Chunks);
+        Photons{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Macrotime',i,Number_of_Chunks);
+        Photons{7} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1},'Macrotime',i,Number_of_Chunks);
+        Photons{8} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2},'Macrotime',i,Number_of_Chunks);
+        Photons{9} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1},'Macrotime',i,Number_of_Chunks);
+        Photons{10} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2},'Macrotime',i,Number_of_Chunks);
+        Photons{11} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1},'Macrotime',i,Number_of_Chunks);
+        Photons{12} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2},'Macrotime',i,Number_of_Chunks);
         AllPhotons_unsort = vertcat(Photons{:});
         %sort
         [AllPhotons, index] = sort(AllPhotons_unsort);
@@ -7378,18 +7405,18 @@ for i = 1:Number_of_Chunks
         clear chan_temp
         
         %%% read out microtimes
-        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,ChunkSize);
-        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Microtime',i,ChunkSize);
-        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,ChunkSize);
-        MI{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Microtime',i,ChunkSize);
-        MI{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,ChunkSize);
-        MI{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Microtime',i,ChunkSize);
-        MI{7} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1},'Microtime',i,ChunkSize);
-        MI{8} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2},'Microtime',i,ChunkSize);
-        MI{9} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1},'Microtime',i,ChunkSize);
-        MI{10} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2},'Microtime',i,ChunkSize);
-        MI{11} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1},'Microtime',i,ChunkSize);
-        MI{12} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2},'Microtime',i,ChunkSize);
+        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,Number_of_Chunks);
+        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Microtime',i,Number_of_Chunks);
+        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,Number_of_Chunks);
+        MI{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Microtime',i,Number_of_Chunks);
+        MI{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,Number_of_Chunks);
+        MI{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Microtime',i,Number_of_Chunks);
+        MI{7} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1},'Microtime',i,Number_of_Chunks);
+        MI{8} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2},'Microtime',i,Number_of_Chunks);
+        MI{9} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1},'Microtime',i,Number_of_Chunks);
+        MI{10} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2},'Microtime',i,Number_of_Chunks);
+        MI{11} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1},'Microtime',i,Number_of_Chunks);
+        MI{12} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2},'Microtime',i,Number_of_Chunks);
         
         MI = vertcat(MI{:});
         AllPhotons_Microtime = MI(index);
@@ -7412,9 +7439,9 @@ for i = 1:Number_of_Chunks
     elseif BAMethod == 5 %2 color no MFD
         %prepare photons
         %read out macrotimes for all channels
-        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
-        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,ChunkSize);
-        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,ChunkSize);
+        Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,Number_of_Chunks);
+        Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,Number_of_Chunks);
+        Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,Number_of_Chunks);
         AllPhotons_unsort = vertcat(Photons{:});
         %sort
         [AllPhotons, index] = sort(AllPhotons_unsort);
@@ -7426,9 +7453,9 @@ for i = 1:Number_of_Chunks
         clear chan_temp
         
         %%%read out microtimes
-        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,ChunkSize);
-        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,ChunkSize);
-        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,ChunkSize);
+        MI{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Microtime',i,Number_of_Chunks);
+        MI{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Microtime',i,Number_of_Chunks);
+        MI{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Microtime',i,Number_of_Chunks);
         
         MI = vertcat(MI{:});
         AllPhotons_Microtime = MI(index);
@@ -7462,6 +7489,7 @@ for i = 1:Number_of_Chunks
         % Channel_all{i} = uint8(Channel);
     end
 end
+
 %%% Concatenate data from chunks
 Macrotime = vertcat(Macrotime_dummy{:});
 Microtime = vertcat(Microtime_dummy{:});
