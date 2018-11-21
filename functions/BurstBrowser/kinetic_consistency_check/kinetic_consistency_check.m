@@ -12,12 +12,12 @@ Microtime = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
 Channel = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 %%% recolor channel photons based on kinetic scheme
 R0 = BurstData{file}.Corrections.FoersterRadius;
-n_states = 3;
+n_states = 2;
 switch n_states
     case 2
-        rate_matrix = 1000*[0, 0.836; 0.932,0]; %%% rates in Hz
+        rate_matrix = 1000*[0, 0.836; 0.932,0]; %%% rates in Hz %1000*[0,0.01;0.01,0];%
         %E_states = [0.2,0.8];
-        R_states = [40,62];
+        R_states = [40,60];
         sigmaR_states = [0.1,0.1];
     case 3
         rate_matrix = 1000*[0, .5,0; .5,0,.25;0,.25,0]; %%% rates in Hz
@@ -47,12 +47,33 @@ for i = 1:numel(mt) %%% loop over bursts
     %%% evaluate kinetic scheme
     states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
 end
-            
+
+% convert macrotime to units of freq
+mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
+
+gamma = BurstData{file}.Corrections.Gamma_GR;
+ct = BurstData{file}.Corrections.CrossTalk_GR;
+de = BurstData{file}.Corrections.DirectExcitation_GR;
+
+%%% brightness correction
+% do this by discarding photons of dimmer species a priori
+% Note: This violates the photon statistics, as less photons are
+% used here.
+brightness_correction = true;
+if brightness_correction
+    for i = 1:n_states
+        Qr(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
+    end
+    %%% normalize by maximum brightness
+    Qr = Qr./max(Qr);
+    detected = cellfun(@(x,y) binornd(1,Qr(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
+    %%% remove invalid photon detections from mt_freq   
+    mt_freq = cellfun(@(x,y) x(y==1),mt_freq,detected,'UniformOutput',false);  
+end
+
 switch type
     case 'BVA'
-        %%% generate channel variable based on kinetic scheme
-        % convert macrotime to units of freq
-        mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
+        %%% generate channel variable based on kinetic scheme       
         %%% assign channel based on states
         %%% without conformational broadening
         % channel = cellfun(@(x,y) binornd(1,E_states(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
@@ -66,7 +87,8 @@ switch type
         BG_FRET = 1000*dur*(BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp);
         for b = 1:numel(mt_freq)
             E_burst{b} = 1./(1+(normrnd(R_states,sigmaR_states)/R0).^6);
-            % convert to proximity ratio (see SI of ALEX paper)  
+            % convert to proximity ratio (see SI of ALEX paper) 
+            %E_burst{b} = ((gamma-ct)*E_burst{b}+ct+de)./((gamma-ct-1).*E_burst{b}+ct+de+1);
             E_burst{b} = (gamma*E_burst{b}+ct*(1-E_burst{b})+de)./(gamma*E_burst{b}+ct*(1-E_burst{b})+de + (1-E_burst{b}));
             % with background
             E_burst{b} = ((numel(mt_freq{b})-BG_Donor(b)-BG_FRET(b)).*E_burst{b}+BG_FRET(b))./numel(mt_freq{b});
@@ -112,16 +134,11 @@ switch type
         plot_BVA(E,sSelected,BinCenters,sPerBin)
     case 'Lifetime' % Do both E-tau and phasor
         %%% generate channel and microtime variable based on kinetic scheme
-        % convert macrotime to units of freq
-        mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
         %%% assign channel based on states
         %%% with conformational broadening
         % roll efficiencies of each state for every burst       
         R_burst = cell(numel(mt_freq),1); % center distance for every burst --> use for linker width inclusion
-        E_burst = cell(numel(mt_freq),1);
-        gamma = BurstData{file}.Corrections.Gamma_GR;
-        ct = BurstData{file}.Corrections.CrossTalk_GR;
-        de = BurstData{file}.Corrections.DirectExcitation_GR;
+        E_burst = cell(numel(mt_freq),1);        
         %%% generate randomized average distance of each state for every
         %%% burst to account for conformational heterogeneity
         for b = 1:numel(mt_freq)
@@ -134,12 +151,13 @@ switch type
         R_randomized = cellfun(@(x,y,z) normrnd(x(y(min(z,end))),lw),R_burst,states,mt_freq,'UniformOutput',false);
         %%% calculate randomized efficiency for every photon
         E_randomized = cellfun(@(x) 1./(1+(x/R0).^6),R_randomized,'UniformOutput',false);
-        % convert idealized to proximity ratio based on correction factors (see SI of ALEX paper)  
-        E_randomized = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
-        %%% discard photons based on E_randomized to only have donor photons
-        channel = cellfun(@(x) binornd(1,x),E_randomized,'UniformOutput',false);
+        % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
+        E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
+        %%% roll photons based on randomized proximity ratio to only have donor photons
+        channel = cellfun(@(x) binornd(1,x),E_randomized_PR,'UniformOutput',false);
+        %%% discard acceptor photons
         E_randomized = cellfun(@(x,y) x(y==0),E_randomized,channel,'UniformOutput',false);
-        %%% roll microtime based on E_randomized
+        %%% roll microtime based on E_randomized (use ideal FRET here!)
         mi = cellfun(@(x) exprnd(tauD0*(1-x)),E_randomized,'UniformOutput',false);
         % compute resampled average FRET efficiencies
         E = cell2mat(cellfun(@(x) sum(x == 1)/numel(x),channel,'UniformOutput',false));
@@ -164,6 +182,8 @@ end
 
 function plot_BVA(E,sSelected,BinCenters,sPerBin)
 global UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
+
 %%% create BVA plot
 hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
 hold on;
@@ -192,7 +212,7 @@ switch UserValues.BurstBrowser.Display.PlotType
         hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
 end        
 patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.2,'edgecolor','none','HandleVisibility','off');
-
+colormap(hfig,colormap(h.BurstBrowser));
 % plot of expected STD
 plot(X_expectedSD,sigm,'k','LineWidth',1);
 
@@ -250,3 +270,8 @@ ax.YLim = [0,0.75];
 xlabel('g');
 ylabel('s');
 set(gca,'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+
+%%% Calculate the relative brightness based on FRET value
+function Qr = calc_relative_brightness(R,gamma,ct,de,R0)
+E = 1/(1+(R/R0).^6);
+Qr = (1-de)*(1-E) + (gamma/(1+ct))*(de+E*(1-de));
