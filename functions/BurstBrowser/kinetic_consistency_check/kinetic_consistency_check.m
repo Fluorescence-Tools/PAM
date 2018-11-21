@@ -11,7 +11,7 @@ photons = BurstTCSPCData{file};
 
 %%% recolor channel photons based on kinetic scheme
 R0 = 50;
-n_states = 3;
+n_states = 2;
 switch n_states
     case 2
         rate_matrix = 1000*[0, 1; 1,0]; %%% rates in Hz
