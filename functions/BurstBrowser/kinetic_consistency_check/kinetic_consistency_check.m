@@ -56,19 +56,39 @@ ct = BurstData{file}.Corrections.CrossTalk_GR;
 de = BurstData{file}.Corrections.DirectExcitation_GR;
 
 %%% brightness correction
-% do this by discarding photons of dimmer species a priori
-% Note: This violates the photon statistics, as less photons are
-% used here.
+%
+% Do this either by discarding photons of dimmer species a priori
+%   (Note: This violates the photon statistics, as less photons are
+%   used here.)
+% Or by duplicating/removing photons under the assumption of Poissonian
+% statistics.
+%   (Note: This keeps photons roughly constant.)
 brightness_correction = true;
+discard = false;
 if brightness_correction
     for i = 1:n_states
         Qr(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
     end
-    %%% normalize by maximum brightness
-    Qr = Qr./max(Qr);
-    detected = cellfun(@(x,y) binornd(1,Qr(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
-    %%% remove invalid photon detections from mt_freq   
-    mt_freq = cellfun(@(x,y) x(y==1),mt_freq,detected,'UniformOutput',false);  
+    if discard
+        %%% normalize by maximum brightness
+        Qr = Qr./max(Qr);
+        detected = cellfun(@(x,y) binornd(1,Qr(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
+        mt_freq = cellfun(@(x,y) x(y==1),mt_freq,detected,'UniformOutput',false);
+    else
+        %%% normalize by medium brightness
+        Qr = Qr./mean(Qr);
+        % draw poisson distrubted random numbers for each photon
+        detected = cellfun(@(x,y) poissrnd(Qr(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
+        %%% remove invalid 3photon detections from mt_freq, and duplicate those with detected > 1
+        for i = 1:numel(mt_freq)
+            mt_freq_resampled = mt_freq{i};
+            mt_freq_resampled(detected{i} == 0) = [];
+            for j = 2:max(detected{i})
+                mt_freq_resampled = [mt_freq_resampled; mt_freq{i}(detected{i} == j)];
+            end
+            mt_freq{i} = sort(mt_freq_resampled);
+        end
+    end
 end
 
 switch type
