@@ -11,16 +11,16 @@ Macrotime = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 Microtime = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
 Channel = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 %%% recolor channel photons based on kinetic scheme
-R0 = 50;
+R0 = BurstData{file}.Corrections.FoersterRadius;
 n_states = 3;
 switch n_states
     case 2
-        rate_matrix = 1000*[0, 0.5; 0.5,0]; %%% rates in Hz
+        rate_matrix = 1000*[0, 0.836; 0.932,0]; %%% rates in Hz
         %E_states = [0.2,0.8];
-        R_states = [40,60];
+        R_states = [40,62];
         sigmaR_states = [0.1,0.1];
     case 3
-        rate_matrix = 1000*[0, .5,0.75; .5,0,.25;0.75,.25,0]; %%% rates in Hz
+        rate_matrix = 1000*[0, .5,0; .5,0,.25;0,.25,0]; %%% rates in Hz
         R_states = [40,55,80];
         sigmaR_states = [0.1,0.1,0.1];
 end
@@ -122,28 +122,36 @@ switch type
         gamma = BurstData{file}.Corrections.Gamma_GR;
         ct = BurstData{file}.Corrections.CrossTalk_GR;
         de = BurstData{file}.Corrections.DirectExcitation_GR;
+        %%% for the microtime of the donor, roll linker width at every evaluation
+        lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
+        tauD0 = BurstData{file}.Corrections.DonorLifetime; % donor only lifetime
         for b = 1:numel(mt_freq)
             R_burst{b} = normrnd(R_states,sigmaR_states);
-            E_burst{b} = 1./(1+(R_burst{b}/R0).^6);
+            %%% generate randomized efficiency for every photon
+            %E_burst{b} = 1./(1+(R_burst{b}/R0).^6);
             % convert to proximity ratio (see SI of ALEX paper)  
-            E_burst{b} = (gamma*E_burst{b}+ct*(1-E_burst{b})+de)./(gamma*E_burst{b}+ct*(1-E_burst{b})+de + (1-E_burst{b}));
-            
+            %E_burst{b} = (gamma*E_burst{b}+ct*(1-E_burst{b})+de)./(gamma*E_burst{b}+ct*(1-E_burst{b})+de + (1-E_burst{b}));
         end
-        channel = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
-        %%% for the microtime of the donor, roll linker width at every evaluation
-        lw = 0.01; % 5 angstrom linker width
-        tauD0 = 4; % donor only lifetime
-        %%% generate randomized efficiency for every photon
-        E_randomized = cellfun(@(x,y,c,z) 1./(1+(normrnd(z(x(min(y(c==0),end))),lw)/R0).^6),states,mt_freq,channel,R_burst,'UniformOutput',false);
+        %E_randomized = cellfun(@(x,y,c,z) 1./(1+(normrnd(z(x(min(y(c==0),end))),lw)/R0).^6),states,mt_freq,channel,R_burst,'UniformOutput',false);
+        %channel = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
+        
+        %%% generate randomized distance for every photon
+        R_randomized = cellfun(@(x,y,z) normrnd(x(y(min(z,end))),lw),R_burst,states,mt_freq,'UniformOutput',false);
+        %%% calculate randomized efficiency for every photon
+        E_randomized = cellfun(@(x) 1./(1+(x/R0).^6),R_randomized,'UniformOutput',false);
+        %%% discard photons based on E_randomized to only have donor photons
+        channel = cellfun(@(x) binornd(1,x),E_randomized,'UniformOutput',false);
+        E_randomized = cellfun(@(x,y) x(y==0),E_randomized,channel,'UniformOutput',false);
         %%% roll microtime based on E_randomized
         mi = cellfun(@(x) exprnd(tauD0*(1-x)),E_randomized,'UniformOutput',false);
         % compute resampled average FRET efficiencies
         E = cell2mat(cellfun(@(x) sum(x == 1)/numel(x),channel,'UniformOutput',false));
- 
+        % convert back to accurate FRET efficiencies
+        E_cor = (1-(1+ct+de)*(1-E))./(1-(1+ct-gamma).*(1-E));
         % averaged lifetime (intensity weighting is already considered due
-        % to the FRET evaluation!)
+        % to the FRET evaluation, i.e. discarding of photons based on FRET efficiency)
         tau_average = cellfun(@mean,mi)./tauD0;
-        plot_E_tau(E,tau_average);
+        plot_E_tau(E_cor,tau_average);
         if isfield(BurstData{file},'Phasor')
             PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
             omega = 1/PIE_channel_width; % in ns^(-1)
@@ -196,7 +204,8 @@ sPerBin(sPerBin == 0) = NaN;
 scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
 
 function plot_E_tau(E,tauD)
-global UserValues
+global UserValues BurstMeta BurstData
+file = BurstMeta.SelectedFile;
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% plot smoothed dynamic FRET line
 [H,x,y] = histcounts2(E,tauD,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
@@ -211,8 +220,8 @@ ax.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 % plot patch to phase contour plot out
 %patch([0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
 %%% add static FRET line
-plot(linspace(0,1,1000),1-linspace(0,1,1000),'-','LineWidth',2,'Color',[0,0,0]);
-%plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+%plot(linspace(0,1,1000),1-linspace(0,1,1000),'-','LineWidth',2,'Color',[0,0,0]);
+plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
 %plot(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
 ax.XLim = [0,1.2];
 ax.YLim = [0,1];
@@ -223,6 +232,7 @@ set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor
 
 function plot_Phasor(g,s)
 global UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
 %%% plot phasors
 [H,x,y] = histcounts2(g,s,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,0.75]);
 H = H./max(H(:));
@@ -232,7 +242,7 @@ ax = gca;
 ax.CLimMode = 'auto';
 ax.CLim(1) = 0;
 ax.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
-
+colormap(f,colormap(h.BurstBrowser));
 %%% plot circle
 g_circle = linspace(0,1,1000);
 s_circle = sqrt(0.25-(g_circle-0.5).^2);
