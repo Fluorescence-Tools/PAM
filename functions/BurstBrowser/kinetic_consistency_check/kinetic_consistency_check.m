@@ -122,23 +122,20 @@ switch type
         gamma = BurstData{file}.Corrections.Gamma_GR;
         ct = BurstData{file}.Corrections.CrossTalk_GR;
         de = BurstData{file}.Corrections.DirectExcitation_GR;
+        %%% generate randomized average distance of each state for every
+        %%% burst to account for conformational heterogeneity
+        for b = 1:numel(mt_freq)
+            R_burst{b} = normrnd(R_states,sigmaR_states);
+        end
         %%% for the microtime of the donor, roll linker width at every evaluation
         lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
         tauD0 = BurstData{file}.Corrections.DonorLifetime; % donor only lifetime
-        for b = 1:numel(mt_freq)
-            R_burst{b} = normrnd(R_states,sigmaR_states);
-            %%% generate randomized efficiency for every photon
-            %E_burst{b} = 1./(1+(R_burst{b}/R0).^6);
-            % convert to proximity ratio (see SI of ALEX paper)  
-            %E_burst{b} = (gamma*E_burst{b}+ct*(1-E_burst{b})+de)./(gamma*E_burst{b}+ct*(1-E_burst{b})+de + (1-E_burst{b}));
-        end
-        %E_randomized = cellfun(@(x,y,c,z) 1./(1+(normrnd(z(x(min(y(c==0),end))),lw)/R0).^6),states,mt_freq,channel,R_burst,'UniformOutput',false);
-        %channel = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
-        
-        %%% generate randomized distance for every photon
+        %%% generate randomized distance for every photon, accounting for linker width
         R_randomized = cellfun(@(x,y,z) normrnd(x(y(min(z,end))),lw),R_burst,states,mt_freq,'UniformOutput',false);
         %%% calculate randomized efficiency for every photon
         E_randomized = cellfun(@(x) 1./(1+(x/R0).^6),R_randomized,'UniformOutput',false);
+        % convert idealized to proximity ratio based on correction factors (see SI of ALEX paper)  
+        E_randomized = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
         %%% discard photons based on E_randomized to only have donor photons
         channel = cellfun(@(x) binornd(1,x),E_randomized,'UniformOutput',false);
         E_randomized = cellfun(@(x,y) x(y==0),E_randomized,channel,'UniformOutput',false);
