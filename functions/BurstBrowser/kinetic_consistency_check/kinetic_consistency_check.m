@@ -1,22 +1,10 @@
-function kinetic_consistency_check(type)
+function kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
 global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 %%% recolor channel photons based on kinetic scheme
 R0 = BurstData{file}.Corrections.FoersterRadius;
-n_states = 2;
-switch n_states
-    case 2
-        rate_matrix = 1000*[0, 0.836; 0.932,0]; %%% rates in Hz %1000*[0,0.01;0.01,0];%
-        %E_states = [0.2,0.8];
-        R_states = [40,60];
-        sigmaR_states = [0.1,0.1];
-    case 3
-        rate_matrix = 1000*[0, .5,0; .5,0,.25;0,.25,0]; %%% rates in Hz
-        R_states = [40,55,80];
-        sigmaR_states = [0.1,0.1,0.1];
-end
 
 
 gamma = BurstData{file}.Corrections.Gamma_GR;
