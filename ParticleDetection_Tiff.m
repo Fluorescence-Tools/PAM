@@ -59,6 +59,11 @@ h.Load_Particle_Phr = uimenu(...
     'Label','Load Tiff Data',...
     'Callback',{@Load_Particle_Data,2},...
     'Tag','Load_Particle_Tiff');
+h.Load_Particle_Phr = uimenu(...
+    'Parent',h.Load_Particle,...
+    'Label','Load CZI Data',...
+    'Callback',{@Load_Particle_Data,3},...
+    'Tag','Load_Particle_CZI');
 % h.Load_Particle = uimenu(...
 %     'Parent',h.Particle,...
 %     'Label','Load Phasor Data',...
@@ -563,6 +568,22 @@ LSUserValues(1);
     end
     
     TIFF_Handle.close(); % Close tif reference    
+    case 3
+        [FileName,PathName] = uigetfile({'*.czi'}, 'Choose a Zeiss data file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+        %%% Only execute, if at least one file was selected
+        if all(FileName==0)
+            return
+        end
+        %%% Saves Path
+        UserValues.File.PhasorPath=PathName;
+        LSUserValues(1);
+        %%% Loads Data
+        [ParticleData.Data.Intensity] = double(uint8(Read_CZI(fullfile(PathName,FileName), 'info', 'off')/256));
+%         min_max = cast(round(stretchlim(ParticleData.Data.Intensity(:,:,1), [0.2 0.98])*double(intmax(class(ParticleData.Data.Intensity)))), class(ParticleData.Data.Intensity));
+%         ParticleData.Data.Intensity = uint8((ParticleData.Data.Intensity-min_max(1))./((min_max(2)-min_max(1))/255));
+
+        
+%         [ParticleData.Data.Intensity] = cast(Read_CZI(fullfile(PathName,FileName), 'info', 'off')/(intmax('uint16')/256), 'uint8');
 end
 
 ParticleData.FileName = FileName;
@@ -667,7 +688,7 @@ if any(mode==0)
     if Frame == 0 %% Summed up image
         Int = ParticleData.Int_Sum;
     else %%% Framewise image
-        Int = ParticleData.Data.Intensity(:,:,Frame);
+        Int = double(ParticleData.Data.Intensity(:,:,Frame));
     end
     %%% Adjusts to range
     if h.Particle_ManualScale.Value
@@ -791,7 +812,7 @@ if any(mode==2)
             if Frame == 0 %% Summed up image
                 Int = ParticleData.Int_Sum;
             else %%% Framewise image
-                Int = ParticleData.Data.Intensity(:,:,Frame);
+                Int = double(ParticleData.Data.Intensity(:,:,Frame));
             end
         end
         %%% Adjusts to range
