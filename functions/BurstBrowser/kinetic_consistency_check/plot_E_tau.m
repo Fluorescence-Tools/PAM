@@ -1,13 +1,11 @@
 function plot_E_tau(E,tauD)
 global UserValues BurstMeta BurstData
 file = BurstMeta.SelectedFile;
-h = guidata(findobj('Tag','BurstBrowser'));
+% h = guidata(findobj('Tag','BurstBrowser'));
 %%% plot smoothed dynamic FRET line
 [H,x,y] = histcounts2(E,tauD,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
 H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
-colormap(f,colormap(h.BurstBrowser));
+contour(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'LineWidth',1,'EdgeColor','k');
 ax = gca;
 ax.CLimMode = 'auto';
 ax.CLim(1) = 0;

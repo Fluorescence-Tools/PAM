@@ -620,7 +620,7 @@ if isempty(h.GlobalPDAFit)
             data(:,2*i-1) = num2cell(initial_rates(:,i));
             data(:,2*i) = num2cell(false(size(initial_rates,1),1));
         end
-        columnnames = {'1->','F','2->','F','3->','F'};
+        columnnames = {'<HTML> 1 &rarr;','F','<HTML> 2 &rarr;','F','<HTML> 3 &rarr;','F'};
         rownames = {'1','2','3'};
         columnwidth = {50,25,50,25,50,25};
         columnformat = {'numeric','logical','numeric','logical','numeric','logical'};
@@ -643,6 +643,11 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.FitTab_Menu,...
         'Label','Copy Results to Clipboard',...
         'Callback',{@PDAFitMenuCallback,1});
+    
+    h.Export_BB = uimenu(...
+        'Parent',h.FitTab_Menu,...
+        'Label','Copy Results to Burst Browser',...
+        'Callback',{@PDAFitMenuCallback,2});
 
     %% Parameters tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5306,7 +5311,7 @@ end
 
 function PDAFitMenuCallback(~,~,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
-global PDAData
+global PDAData UserValues 
 switch mode
     case 1 %%% Exports Fit Result to Clipboard
         PDAFitResult = cell(numel(PDAData.FileName),1);
@@ -5322,8 +5327,32 @@ switch mode
                 end
             end
         end
-        PDAFitResult = horzcat(ParamNames,horzcat(PDAFitResult{:}));
+        PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:}));
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
-        
+        UserValues.BurstBrowser.Settings.KineticRates_table3 = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
+        params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
+        hb = guidata(findobj('Tag','BurstBrowser'));
+        for i = 1:numel(PDAData.FileName)
+            if active(i)
+                UserValues.BurstBrowser.Settings.BVA_R1 = params(1,2);
+                UserValues.BurstBrowser.Settings.BVA_R2 = params(1,5);
+                UserValues.BurstBrowser.Settings.BVA_R3 = params(1,8);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(1,3);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(1,6);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(1,9);
+                hb.KineticRates_table2.Data(1,2) = num2cell(params(1,1));
+                hb.KineticRates_table2.Data(2,1) = num2cell(params(1,2));
+                hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
+                hb.Rstate1_edit.String = num2str(params(1,2));
+                hb.Rsigma1_edit.String = num2str(params(1,3));
+                hb.Rstate2_edit.String = num2str(params(1,5));
+                hb.Rsigma2_edit.String = num2str(params(1,6));
+                hb.Rstate3_edit.String = num2str(params(1,8));
+                hb.Rsigma3_edit.String = num2str(params(1,9));
+            end
+            break
+        end
+        %UserValues.BurstBrowser.Settings.KineticRates_table2 = 
 end
