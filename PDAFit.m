@@ -4479,7 +4479,7 @@ switch mode
         h.FitTab.Table.CellEditCallback=[];
         %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-2) && e.Indices(2)~=1)
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-1) && e.Indices(2)~=1)
                 h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
                 return;
             end
