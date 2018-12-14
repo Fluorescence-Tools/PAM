@@ -674,3 +674,4 @@ if any(BurstData{file}.BAMethod == [3,4])
         end
     end
 end
+UpdateCorrections([],[],h);
