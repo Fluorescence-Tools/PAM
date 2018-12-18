@@ -223,21 +223,19 @@ if transformed
 end
 
 %% Simulation for PDA comparison
-
-n_states = 2;
-switch n_states
+switch UserValues.BurstBrowser.Settings.BVA_Nstates
     case 2
-        rate_matrix = 1000*cell2mat(h.KineticRates_table.Data(1:2,1:2)); %%% rates in Hz %1000*[0,0.01;0.01,0];%
+        rate_matrix = 1000*cell2mat(h.KineticRates_table2.Data(1:2,1:2)); %%% rates in Hz %1000*[0,0.01;0.01,0];%
         %E_states = [0.2,0.8];
         R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String)]; %[40,60];
         sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String)];
     case 3
-        rate_matrix = 1000*cell2mat(h.KineticRates_table.Data); %%% rates in Hz
+        rate_matrix = 1000*cell2mat(h.KineticRates_table3.Data); %%% rates in Hz
         R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String),str2double(h.Rstate3_edit.String)];
         sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String),str2double(h.Rsigma3_edit.String)];
 end
 rate_matrix(isnan(rate_matrix)) = 0;
-kinetic_consistency_check('Lifetime',n_states,rate_matrix,R_states,sigmaR_states,f);
+kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states,f);
 
 % switch UserValues.BurstBrowser.Display.PlotType
 %     case {'Contour','Scatter'}
