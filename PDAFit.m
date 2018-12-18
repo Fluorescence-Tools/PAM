@@ -582,10 +582,13 @@ if isempty(h.GlobalPDAFit)
     
     %% Fit tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    h.FitTab_Menu = uicontextmenu;
+    h.FitTab.UIContextMenu = h.FitTab_Menu;
     h.FitTab.Tab = uitab(...
         'Parent',h.Tabgroup_Down,...
         'Tag','Fit_Tab',...
-        'Title','Fit');
+        'Title','Fit',...
+        'UIContextMenu',h.FitTab_Menu);
     h.FitTab.Panel = uibuttongroup(...
         'Parent',h.FitTab.Tab,...
         'BackgroundColor', Look.Back,...
@@ -594,7 +597,8 @@ if isempty(h.GlobalPDAFit)
         'ShadowColor', Look.Shadow,...
         'Units','normalized',...
         'Position',[0 0 1 1],...
-        'Tag','Fit_Panel');
+        'Tag','Fit_Panel',...
+        'UIContextMenu',h.FitTab_Menu);
     h.FitTab.Table = uitable(...
         'Parent',h.FitTab.Panel,...
         'Tag','Fit_Table',...
@@ -604,9 +608,9 @@ if isempty(h.GlobalPDAFit)
         'FontSize',12,...
         'Position',[0 0 .8 1],...
         'CellEditCallback',{@Update_FitTable,3},...
-        'CellSelectionCallback',{@Update_FitTable,3});
-        
-    
+        'CellSelectionCallback',{@Update_FitTable,3},...
+        'UIContextMenu',h.FitTab_Menu);
+
         initial_rates = ones(3);
         initial_rates(1,1) = NaN;
         initial_rates(2,2) = NaN;
@@ -616,11 +620,11 @@ if isempty(h.GlobalPDAFit)
             data(:,2*i-1) = num2cell(initial_rates(:,i));
             data(:,2*i) = num2cell(false(size(initial_rates,1),1));
         end
-        columnnames = {'1->','F','2->','F','3->','F'};
+        columnnames = {'<HTML> 1 &rarr;','F','<HTML> 2 &rarr;','F','<HTML> 3 &rarr;','F'};
         rownames = {'1','2','3'};
         columnwidth = {50,25,50,25,50,25};
         columnformat = {'numeric','logical','numeric','logical','numeric','logical'};
-     h.KineticRates_table = uitable(...
+    h.KineticRates_table = uitable(...
         'Data',data,'ColumnName',columnnames,'RowName',rownames,...
         'ColumnWidth',columnwidth,'ColumnFormat',columnformat,...
         'ColumnEditable',true,...
@@ -632,7 +636,18 @@ if isempty(h.GlobalPDAFit)
         'FontSize',12,...
         'Visible','on',...
         'CellEditCallback',@Update_GUI,...
-        'Position',[0.8 0 .2 1]);
+        'Position',[0.8 0 .2 1],...
+        'UIContextMenu',h.FitTab_Menu);
+    
+    h.Export_Clipboard = uimenu(...
+        'Parent',h.FitTab_Menu,...
+        'Label','Copy Results to Clipboard',...
+        'Callback',{@PDAFitMenuCallback,1});
+    
+    h.Export_BB = uimenu(...
+        'Parent',h.FitTab_Menu,...
+        'Label','Copy Results to Burst Browser',...
+        'Callback',{@PDAFitMenuCallback,2});
 
     %% Parameters tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4359,7 +4374,6 @@ switch mode
         Rows{end-1}='Lower bound';
         Rows{end}='Upper bound';
         h.FitTab.Table.RowName=Rows;
-        
         %%% Create table data:
         %%% 1           = Active
         %%% 2:3:end-3   = Parameter value
@@ -4389,6 +4403,7 @@ switch mode
         Data(1,4:3:end)=deal({false});
         Data(2:end,4:3:end)=deal({[]});
         h.FitTab.Table.Data=Data;
+        PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
         h.FitTab.Table.ColumnEditable=[true(1,numel(Columns)-1),false];
         %%% Enables cell callback again
         h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
@@ -4452,17 +4467,19 @@ switch mode
         %%% Enables cell callback again
         h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
         PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
+        PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 2 %%% Re-loads table from loaded data upon File menu - load fit parameters
         for i = 1:numel(PDAData.FileName)
             h.FitTab.Table.Data(i,:) = PDAData.FitTable{i};
         end
+        PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
         % when user touches the all row, value is applied to all cells
         h.FitTab.Table.CellEditCallback=[];
         %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-2) && e.Indices(2)~=1)
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-1) && e.Indices(2)~=1)
                 h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
                 return;
             end
@@ -4655,6 +4672,7 @@ switch mode
         %%% Adds new files
         h.ParametersTab.Table.Data = Data;
         PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
+        PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 2 %%% Loading params again from data
         h.ParametersTab.Table.CellEditCallback=[];
         for i = 1:numel(PDAData.FileName)
@@ -5289,4 +5307,52 @@ while FileName ~= 0
         FileName = FileName{end};
     end
     PathName= fullfile(PathName,'..',filesep);%%% go one layer above since .*pda files are nested
+end
+
+function PDAFitMenuCallback(~,~,mode)
+h = guidata(findobj('Tag','GlobalPDAFit'));
+global PDAData UserValues 
+switch mode
+    case 1 %%% Exports Fit Result to Clipboard
+        PDAFitResult = cell(numel(PDAData.FileName),1);
+        active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
+        Params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
+        ParamNames = [h.FitTab.Table.ColumnName(1);h.FitTab.Table.ColumnName(2:3:end,1)];
+        for i = 1:numel(PDAData.FileName)
+            if active(i)
+                PDAFitResult{i} = cell(size(Params,1),1);
+                PDAFitResult{i}{1} = PDAData.FileName{i};
+                for j=2:size(Params,2)+1
+                    PDAFitResult{i}{j} = Params(i,j-1);
+                end
+            end
+        end
+        PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:}));
+        Mat2clip(PDAFitResult);
+    case 2 %%% Exports Fit Result to BVA Tab
+        UserValues.BurstBrowser.Settings.KineticRates_table3 = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
+        params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
+        hb = guidata(findobj('Tag','BurstBrowser'));
+        for i = 1:numel(PDAData.FileName)
+            if active(i)
+                UserValues.BurstBrowser.Settings.BVA_R1 = params(1,2);
+                UserValues.BurstBrowser.Settings.BVA_R2 = params(1,5);
+                UserValues.BurstBrowser.Settings.BVA_R3 = params(1,8);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(1,3);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(1,6);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(1,9);
+                hb.KineticRates_table2.Data(1,2) = num2cell(params(1,1));
+                hb.KineticRates_table2.Data(2,1) = num2cell(params(1,4));
+                hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
+                hb.Rstate1_edit.String = num2str(params(1,2));
+                hb.Rsigma1_edit.String = num2str(params(1,3));
+                hb.Rstate2_edit.String = num2str(params(1,5));
+                hb.Rsigma2_edit.String = num2str(params(1,6));
+                hb.Rstate3_edit.String = num2str(params(1,8));
+                hb.Rsigma3_edit.String = num2str(params(1,9));
+            end
+            break
+        end
+        %UserValues.BurstBrowser.Settings.KineticRates_table2 = 
 end

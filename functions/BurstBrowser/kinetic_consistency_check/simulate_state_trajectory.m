@@ -36,7 +36,7 @@ if size(dynamic_rates,1) ~= size(dynamic_rates,2)
 end
 
 % convert simTime to number of TimeSteps
-timesteps = round(simtime * frequency);
+timesteps = ceil(simtime * frequency);
 
 %%% convert to probability per step
 % Assuming k/f is close to zero, we can approximate:

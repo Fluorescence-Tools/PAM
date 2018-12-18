@@ -1,22 +1,10 @@
-function kinetic_consistency_check(type)
+function kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states,f1,f2)
 global BurstData BurstTCSPCData UserValues BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+%h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 %%% recolor channel photons based on kinetic scheme
 R0 = BurstData{file}.Corrections.FoersterRadius;
-n_states = 2;
-switch n_states
-    case 2
-        rate_matrix = 1000*[0, 0.836; 0.932,0]; %%% rates in Hz %1000*[0,0.01;0.01,0];%
-        %E_states = [0.2,0.8];
-        R_states = [40,60];
-        sigmaR_states = [0.1,0.1];
-    case 3
-        rate_matrix = 1000*[0, .5,0; .5,0,.25;0,.25,0]; %%% rates in Hz
-        R_states = [40,55,80];
-        sigmaR_states = [0.1,0.1,0.1];
-end
 
 
 gamma = BurstData{file}.Corrections.Gamma_GR;
@@ -148,7 +136,7 @@ switch type
                 M = cellfun(@(x) reshape(x(1:fix(numel(x)/n)*n),n,[]),BurstsPerBin,'UniformOutput',false);
                 MPerBin = cat(2,M{:});
                 EPerBin = sum(MPerBin==1)/n;                        
-                if numel(BurstsPerBin)>UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA
+                if numel(BurstsPerBin)>50 %UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA
                     sPerBin(j,1) = std(EPerBin);
                 end
             end
@@ -222,19 +210,20 @@ switch type
         % averaged lifetime (intensity weighting is already considered due
         % to the FRET evaluation, i.e. discarding of photons based on FRET efficiency)
         tau_average = cellfun(@mean,mi)./tauD0;
-        
+        figure(f1)
         plot_E_tau(E_cor,tau_average);
-        if isfield(BurstData{file},'Phasor')
-            PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
-            omega = 1/PIE_channel_width; % in ns^(-1)
-            g = cell2mat(cellfun(@(x) sum(cos(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
-            s = cell2mat(cellfun(@(x) sum(sin(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
-            %%% project values
-            neg=find(g<0 & s<0);
-            g(neg)=-g(neg);
-            s(neg)=-s(neg);
-            plot_Phasor(g,s);
-        end
+%         if isfield(BurstData{file},'Phasor')
+%             PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
+%             omega = 1/PIE_channel_width; % in ns^(-1)
+%             g = cell2mat(cellfun(@(x) sum(cos(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+%             s = cell2mat(cellfun(@(x) sum(sin(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+%             %%% project values
+%             neg=find(g<0 & s<0);
+%             g(neg)=-g(neg);
+%             s(neg)=-s(neg);
+%             figure(f2)
+%             plot_Phasor(g,s);
+%         end
         
         %% old - the following can be replaced by the new code
         old = false;
