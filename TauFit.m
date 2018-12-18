@@ -5829,7 +5829,9 @@ if strcmp(TauFitData.Who,'Burstwise') && obj ==  h.Calc_Burstwise_Phasor
         h.Select_Burstwise_Phasor_Reference.Visible = 'off';
     end
 end
-
+if strcmp(TauFitData.Who,'Burstwise') && obj == h.Select_Burstwise_Phasor_Reference
+    UserValues.BurstSearch.PhasorReference = obj.Value;
+end
 if obj == h.LineStyle_Menu
     ChangeLineStyle(h);
 end
@@ -5843,8 +5845,6 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
-    case h.Select_Burstwise_Phasor_Reference
-        UserValues.BurstSearch.PhasorReference = obj.Value;
 end
 LSUserValues(1);
 
