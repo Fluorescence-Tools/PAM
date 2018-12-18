@@ -57,7 +57,9 @@ if obj == h.DetermineCorrectionsButton
         %%% same order of parameters in NameArray...)
     end
     %% plot raw FRET Efficiency for S>0.9
-    x_axis = linspace(-0.1,0.3,120);
+    Emin = UserValues.BurstBrowser.Settings.E_Donly_Min;
+    Emax = UserValues.BurstBrowser.Settings.E_Donly_Max;
+    x_axis = linspace(Emin,Emax,120);
     Smin = UserValues.BurstBrowser.Settings.S_Donly_Min;
     Smax = UserValues.BurstBrowser.Settings.S_Donly_Max;
     S_threshold = (data_for_corrections(:,indS)>Smin) & (data_for_corrections(:,indS)<Smax);
@@ -95,9 +97,11 @@ if obj == h.DetermineCorrectionsButton
     Smin = UserValues.BurstBrowser.Settings.S_Aonly_Min;
     Smax = UserValues.BurstBrowser.Settings.S_Aonly_Max;
     Emin = UserValues.BurstBrowser.Settings.E_Aonly_Min;
+    Emax = UserValues.BurstBrowser.Settings.E_Aonly_Max;
     x_axis = linspace(Smin,Smax,100);
     S_threshold = (data_for_corrections(:,indS)<Smax) & (data_for_corrections(:,indS)>Smin) & ...
-        (data_for_corrections(:,indE)>Emin);
+        (data_for_corrections(:,indE)>Emin) & ...
+        (data_for_corrections(:,indE)<Emax);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
     NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);

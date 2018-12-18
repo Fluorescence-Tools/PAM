@@ -2040,6 +2040,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.E_Aonly_Min was incomplete');
     end
     P.BurstBrowser.Settings.E_Aonly_Min = S.BurstBrowser.Settings.E_Aonly_Min;
+        %%% Check, if BurstBrowser.Settings.E_Aonly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Aonly_Max')
+        S.BurstBrowser.Settings.E_Aonly_Max=1.05;
+        disp('UserValues.BurstBrowser.Settings.E_Aonly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Aonly_Max = S.BurstBrowser.Settings.E_Aonly_Max;
+        %%% Check, if BurstBrowser.Settings.E_Donly_Min subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Donly_Min')
+        S.BurstBrowser.Settings.E_Donly_Min=-0.1;
+        disp('UserValues.BurstBrowser.Settings.E_Donly_Min was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Donly_Min = S.BurstBrowser.Settings.E_Donly_Min;
+        %%% Check, if BurstBrowser.Settings.E_Donly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Donly_Max')
+        S.BurstBrowser.Settings.E_Donly_Max=0.3;
+        disp('UserValues.BurstBrowser.Settings.E_Donly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Donly_Max = S.BurstBrowser.Settings.E_Donly_Max;
     %%% Check, if BurstBrowser.Settings.Normalize_Multiplot subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'Normalize_Multiplot')
         S.BurstBrowser.Settings.Normalize_Multiplot=true;
