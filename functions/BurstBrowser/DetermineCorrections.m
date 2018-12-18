@@ -84,7 +84,7 @@ if obj == h.DetermineCorrectionsButton
     if ~isnan(ct) && (ct > 0)
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
     end
-    
+
     if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
     else %%% Update for all files contributing
@@ -93,6 +93,7 @@ if obj == h.DetermineCorrectionsButton
             BurstData{Files(i)}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
         end
     end
+
     %% plot raw data for S < 0.25 for direct excitation
     Smin = UserValues.BurstBrowser.Settings.S_Aonly_Min;
     Smax = UserValues.BurstBrowser.Settings.S_Aonly_Max;
@@ -678,4 +679,11 @@ if any(BurstData{file}.BAMethod == [3,4])
         end
     end
 end
+%%% Save and Update GUI
+% Save UserValues
+LSUserValues(1);
+% Update Correction Table Data
 UpdateCorrections([],[],h);
+% Apply Corrections
+ApplyCorrections(gcbo,[]);
+
