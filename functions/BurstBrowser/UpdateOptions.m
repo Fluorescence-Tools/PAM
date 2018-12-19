@@ -147,16 +147,37 @@ switch obj
     case h.Threshold_S_Aonly_Max_Edit
         newVal = str2double(obj.String);
         if isnan(newVal)
-             h.Threshold_S_Aonly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Aonly_Max);
+            h.Threshold_S_Aonly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Aonly_Max);
         else
             UserValues.BurstBrowser.Settings.S_Aonly_Max = newVal;
         end
     case h.Threshold_E_Aonly_Min_Edit
         newVal = str2double(obj.String);
         if isnan(newVal)
-             h.Threshold_E_Aonly_Min_Edit.String = num2str(UserValues.BurstBrowser.Settings.E_Aonly_Min);
+            h.Threshold_E_Aonly_Min_Edit.String = num2str(UserValues.BurstBrowser.Settings.E_Aonly_Min);
         else
             UserValues.BurstBrowser.Settings.E_Aonly_Min = newVal;
+        end
+    case h.Threshold_E_Aonly_Max_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+            h.Threshold_E_Aonly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.E_Aonly_Max);
+        else
+            UserValues.BurstBrowser.Settings.E_Aonly_Max = newVal;
+        end
+    case h.Threshold_E_Donly_Min_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+            h.Threshold_E_Donly_Min_Edit.String = num2str(UserValues.BurstBrowser.Settings.E_Donly_Min);
+        else
+            UserValues.BurstBrowser.Settings.E_Donly_Min = newVal;
+        end
+    case h.Threshold_E_Donly_Max_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+            h.Threshold_E_Donly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.E_Donly_Max);
+        else
+            UserValues.BurstBrowser.Settings.E_Donly_Max = newVal;
         end
     case h.ArbitraryCutInvertCheckbox
         switch h.ArbitraryCutInvertCheckbox.Checked

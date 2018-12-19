@@ -97,8 +97,17 @@ for i=1:NumChans
             %%% Save the correlation file
             %%% Generates filename
             filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-            Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j} '_tw_' sprintf('%d',UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
-            
+            Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j}];
+            switch UserValues.BurstBrowser.Settings.fFCS_Mode
+                case {2} % burstwise with time window
+                    Current_FileName=[Current_FileName '_tw_' sprintf('%d',UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
+                case {1} % burstwise
+                    Current_FileName=[Current_FileName '_bw.mcor'];
+                case {3} % total photon stream
+                    Current_FileName=[Current_FileName '_ps.mcor'];
+                case {4} % total photon stream + donor only
+                    Current_FileName=[Current_FileName '_ps_donly.mcor'];
+            end
             BurstMeta.fFCS.Result.FileName{end+1} = Current_FileName;
             BurstMeta.fFCS.Result.Header{end+1} = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
             BurstMeta.fFCS.Result.Counts{end+1} = [0,0];
@@ -120,8 +129,13 @@ end
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%% show fit result in result axis
-% but only up to timewindowsize/2 to avoid the edge artifacts
-max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < 1E-3*UserValues.BurstBrowser.Settings.Corr_TimeWindowSize/2, 1, 'last');
+switch UserValues.BurstBrowser.Settings.fFCS_Mode
+    case {2} % burstwise with time window
+        % but only up to timewindowsize/2 to avoid the edge artifacts
+        max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < 1E-3*UserValues.BurstBrowser.Settings.Corr_TimeWindowSize/2, 1, 'last');
+    otherwise
+        max_time = BurstMeta.fFCS.Result.Cor_Times{end}/2;
+end
 BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
 BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1}(1:max_time);
 BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2}(1:max_time);
