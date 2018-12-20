@@ -4475,7 +4475,6 @@ switch mode
         PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
-        % when user touches the all row, value is applied to all cells
         h.FitTab.Table.CellEditCallback=[];
         %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
@@ -4694,13 +4693,11 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         % touching a ALL value cell applies that value everywhere
         h.ParametersTab.Table.CellEditCallback=[];
-        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=size(h.ParametersTab.Table.Data,1) && e.Indices(2)~=1)                                                                                             
-                h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
-                return;
-            end
-            NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected                                                                                            
+            h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
+            return;
         end
+        NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
         if isprop(e,'NewData')
             if e.Indices(2) ~= 7
                 NewData = e.NewData;
@@ -5333,6 +5330,10 @@ switch mode
         UserValues.BurstBrowser.Settings.KineticRates_table3 = cell2mat(h.KineticRates_table.Data(:,1:2:end));
         active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
         params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
+        if isempty(findobj('Tag','BurstBrowser'))
+            msgbox('Burst Browser is not open.', 'Error','error');
+            return
+        end
         hb = guidata(findobj('Tag','BurstBrowser'));
         for i = 1:numel(PDAData.FileName)
             if active(i)
