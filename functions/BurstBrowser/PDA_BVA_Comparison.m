@@ -2,6 +2,10 @@ function PDA_BVA_Comparison(~,~)
 global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
+if isempty(BurstData)
+    msgbox('No data selected', 'Error','error');
+    return
+end
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData{file})
     Load_Photons();
@@ -140,8 +144,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
 %                 end
             end
         end
-        Progress(99,h.Progress_Axes,h.Progress_Text,'Plotting...');
-        % Plots
+        
+        %%% Plots
         hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
         hold on;
         X_expectedSD = linspace(0,1,1000);
@@ -229,60 +233,60 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         rate_matrix(isnan(rate_matrix)) = 0;
         kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states)
         
-        switch UserValues.BurstBrowser.Display.PlotType
-            case {'Contour','Scatter'}
-                legend('Burst SD','Expected SD','Binned SD','PDA model','PDA bins','Location','northeast')
-            case {'Image','Hex'}
-                legend('Expected SD','Binned SD','Location','northeast')
-                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
-        end
-        
-        %%% Combine the Original FileName and the parameter names
-        if isfield(BurstData{file},'FileNameSPC')
-            if strcmp(BurstData{file}.FileNameSPC,'_m1')
-                FileName = BurstData{file}.FileNameSPC(1:end-3);
-            else
-                FileName = BurstData{file}.FileNameSPC;
-            end
-        else
-            FileName = BurstData{file}.FileName(1:end-4);
-        end
-        
-        if BurstData{file}.SelectedSpecies(1) ~= 0
-            SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
-            if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
-                SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
-            end
-        else
-            SpeciesName = '';
-        end
-        FigureName = [FileName SpeciesName '_BVA'];
-        %%% remove spaces
-        FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
-        hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
-        
-        %%% add burst-wise standard deviation as additional parameter
-        if ~isfield(BurstData{file},'AdditionalParameters')
-            BurstData{file}.AdditionalParameters = [];
-        end
-        if ~isfield(BurstData{file}.AdditionalParameters,'BVAStandardDeviation')
-            BurstData{file}.AdditionalParameters.BVAStandardDeviation = NaN(size(BurstData{file}.DataArray,1),1);
-            
-        end
-        BurstData{file}.AdditionalParameters.BVAStandardDeviation = sSelected;
-        %%% Add parameters to list
-        AddDerivedParameters([],[],h);
-        set(h.ParameterListX, 'String', BurstData{file}.NameArray);
-        set(h.ParameterListY, 'String', BurstData{file}.NameArray);
-        UpdateCuts();
-        UpdatePlot([],[],h);
-    case {3} % E vs Tau with conf int
-        FRET_2CDE_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
-            UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
-            UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
-    case {2} % FREt-2CDE vs E with conf int
-        E_tau_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
-            UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
-            UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+%         switch UserValues.BurstBrowser.Display.PlotType
+%             case {'Contour','Scatter'}
+%                 legend('Burst SD','Expected SD','Binned SD','PDA model','PDA bins','Location','northeast')
+%             case {'Image','Hex'}
+%                 legend('Expected SD','Binned SD','Location','northeast')
+%                 BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+%         end
+%         
+%         %%% Combine the Original FileName and the parameter names
+%         if isfield(BurstData{file},'FileNameSPC')
+%             if strcmp(BurstData{file}.FileNameSPC,'_m1')
+%                 FileName = BurstData{file}.FileNameSPC(1:end-3);
+%             else
+%                 FileName = BurstData{file}.FileNameSPC;
+%             end
+%         else
+%             FileName = BurstData{file}.FileName(1:end-4);
+%         end
+%         
+%         if BurstData{file}.SelectedSpecies(1) ~= 0
+%             SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+%             if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+%                 SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+%             end
+%         else
+%             SpeciesName = '';
+%         end
+%         FigureName = [FileName SpeciesName '_BVA'];
+%         %%% remove spaces
+%         FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+%         hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
+%         
+%         %%% add burst-wise standard deviation as additional parameter
+%         if ~isfield(BurstData{file},'AdditionalParameters')
+%             BurstData{file}.AdditionalParameters = [];
+%         end
+%         if ~isfield(BurstData{file}.AdditionalParameters,'BVAStandardDeviation')
+%             BurstData{file}.AdditionalParameters.BVAStandardDeviation = NaN(size(BurstData{file}.DataArray,1),1);
+%             
+%         end
+%         BurstData{file}.AdditionalParameters.BVAStandardDeviation = sSelected;
+%         %%% Add parameters to list
+%         AddDerivedParameters([],[],h);
+%         set(h.ParameterListX, 'String', BurstData{file}.NameArray);
+%         set(h.ParameterListY, 'String', BurstData{file}.NameArray);
+%         UpdateCuts();
+%         UpdatePlot([],[],h);
+%     case {3} % E vs Tau with conf int
+%         FRET_2CDE_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
+%             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
+%             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+%     case {2} % FREt-2CDE vs E with conf int
+%         E_tau_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
+%             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
+%             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
 end
-Progress(100,h.Progress_Axes,h.Progress_Text,'Done');
+Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
