@@ -119,10 +119,8 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_x), datatoplot(:,idx_y),[nbinsX nbinsY], x_lim, y_lim);
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
-        x_lim = [-0.1,1.1];
-        y_lim = [0, 0.75];
         NameArray = BurstData{file}.NameArray;
-        [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{x_lim, y_lim});
+        [H,xbins,ybins,x_lim,y_lim,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y});
         if iscell(H)
             HH = zeros(numel(ybins),numel(xbins));
             for i = 1:numel(H)
