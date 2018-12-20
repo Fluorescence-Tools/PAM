@@ -1,4 +1,4 @@
-function kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states,f1,f2)
+function kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -125,7 +125,7 @@ switch type
         BinCenters = BinEdges(1:end-1)+0.025;
         sPerBin = zeros(numel(BinEdges)-1,1);
         sampling = UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;
-        PsdPerBin = zeros(numel(BinEdges)-1,sampling);
+        %PsdPerBin = zeros(numel(BinEdges)-1,sampling);
         for j = 1:numel(N) % 1 : number of bins
             burst_id = find(bin==j); % find indices of bursts in bin j
             if ~isempty(burst_id)
@@ -210,8 +210,25 @@ switch type
         % averaged lifetime (intensity weighting is already considered due
         % to the FRET evaluation, i.e. discarding of photons based on FRET efficiency)
         tau_average = cellfun(@mean,mi)./tauD0;
-        figure(f1)
+        % average lifetime in FRET efficiency bins
+        %selected = BurstData{file}.Selected;
+        %E = E(selected);
+        %tauD0 = BurstData{file}.Corrections.DonorLifetime;
+        %tauD = tauD(selected)./tauD0;
+        threshold = UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
+        bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
+        bin_edges = linspace(0,1,bin_number); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+        [~,~,bin] = histcounts(E_cor,bin_edges);
+        mean_tau = NaN(1,numel(bin_edges)-1);
+        N_phot = N_phot';
+        for i = 1:numel(bin_edges)-1
+            %%% compute bin-wise intensity-averaged lifetime for donor
+            if sum(bin == i) > threshold
+                mean_tau(i) = sum(N_phot(bin==i).*tau_average(bin==i))./sum(N_phot(bin==i));
+            end
+        end
         plot_E_tau(E_cor,tau_average);
+        scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
 %         if isfield(BurstData{file},'Phasor')
 %             PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
 %             omega = 1/PIE_channel_width; % in ns^(-1)
