@@ -48,11 +48,29 @@ else %%% 2018b and upward
     %%% (e.g. axis zoom etc)
     delete(toolbar_items);
 end
-
-h.Load_Particle = uimenu(...
+%%%Load either .Phf or .Tiff or CZI file
+h.Load_Particle= uimenu(...
     'Parent',h.Particle,...
+    'Label','Load...',...
+    'Tag','Load_Particle Data');
+%%%% Load Phf data
+h.Load_Particle_Phr = uimenu(...
+    'Parent',h.Load_Particle,...
     'Label','Load Phasor Data',...
-    'Callback',@Load_Particle_Data);
+    'Callback',{@Load_Particle_Data,1},...
+    'Tag','Load_Particle_Phr');
+%%%% Load Tiff data
+h.Load_Particle_Phr = uimenu(...
+    'Parent',h.Load_Particle,...
+    'Label','Load Tiff Data',...
+    'Callback',{@Load_Particle_Data,2},...
+    'Tag','Load_Particle_Tiff');
+%%%Load CZI data
+h.Load_Particle_Phr = uimenu(...
+    'Parent',h.Load_Particle,...
+    'Label','Load CZI Data',...
+    'Callback',{@Load_Particle_Data,3},...
+    'Tag','Load_Particle_CZI');
 
 h.Load_MaskData = uimenu(...
     'Parent',h.Particle,...
@@ -409,7 +427,7 @@ h.Particle_Save_Method = uicontrol(...
     'Callback',{@Misc},...
     'String',{'Save Average',...
     'Save FLIM Trace',...
-    'Save Text'});
+    'Save Text', 'Save Tiff Mat', 'Save Tiff Text', 'Save CZI Mat'});
 %%% Frames to use
 h.Particle_Frames_Sum_Text = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -505,11 +523,14 @@ Method_Update([],[],0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads new phasor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Particle_Data(~,~)
+function Load_Particle_Data(~,~, mode)
 h = guidata(findobj('Tag','Particle'));
 global ParticleData UserValues
 LSUserValues(0);
 
+%%% Choose files to load
+switch mode
+    case 1
 %%% Choose files to load
 [FileName,PathName] = uigetfile({'*.phf'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
 %%% Only esecutes, if at least one file was selected
@@ -522,9 +543,47 @@ LSUserValues(1);
 
 %%% Loads Data
 ParticleData.Data=load(fullfile(PathName, FileName),'-mat');
+
+case 2
+    [FileName,PathName] = uigetfile({'*.tif'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+%%% Only esecutes, if at least one file was selected
+if all(FileName==0)
+    return
+end
+%%% Saves Path
+UserValues.File.PhasorPath=PathName;
+LSUserValues(1);
+%%% Loads Data
+    Info=imfinfo(fullfile(PathName,FileName));
+    Frames = numel(Info);
+    ParticleData.Data={};
+    ParticleData.Data.Intensity = zeros(Info(1).Height,Info(1).Width,Frames);
+    ParticleData.Data.Frames = Frames;
+    ParticleData.Data.Lines=Info(1).Height;
+    ParticleData.Data.Pixels=Info(1).Width;
+    TIFF_Handle = Tiff(fullfile(PathName,FileName),'r'); % Open tif reference
+    for i=1:Frames
+        TIFF_Handle.setDirectory(i);
+        ParticleData.Data.Intensity(:,:,i) = TIFF_Handle.read();
+    end
+    
+    TIFF_Handle.close(); % Close tif reference    
+    case 3
+        [FileName,PathName] = uigetfile({'*.czi'}, 'Choose a Zeiss data file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+        %%% Only execute, if at least one file was selected
+        if all(FileName==0)
+            return
+        end
+        %%% Saves Path
+        UserValues.File.PhasorPath=PathName;
+        LSUserValues(1);
+        %%% Loads Data
+        [ParticleData.Data.Intensity] = double(uint8(Read_CZI(fullfile(PathName,FileName), 'info', 'off')/256));
+end
+
+   
 ParticleData.FileName = FileName;
 ParticleData.PathName = PathName;
-
 %%% Removed detected particle data
 if isfield(ParticleData,'Regions')
     ParticleData = rmfield(ParticleData,'Regions');
@@ -1296,10 +1355,16 @@ switch h.Particle_Save_Method.Value
         Save_FLIM_Trace
     case 3 %%% Save Text
         Save_Text
+    case 4 %%% Save Tiff data
+        Save_Tiff_Trace
+    case 5 %%% Save Tiff data
+        Save_Tiff_Text
+    case 6 %%% Save Tiff data
+        Save_CZI_Trace
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Averages the selected regions and frames and saves the FLIM image
+%%% Averages the selected regions and frames and saves the FLIM image 
 function Save_Averaged
 h = guidata(findobj('Tag','Particle'));
 global ParticleData
@@ -1559,6 +1624,183 @@ else
     writetable(tab,fullfile(PathName,FileName));
 end
 
+%%%%%%Save Tiff file data as .Phr extensiton of .mat
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Save the Tiff image data in .mat form
+function Save_Tiff_Trace
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.mat','Save Tiff Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+Frames_Sum = str2double(h.Particle_Frames_Sum.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+%%% Applies particle averaging
+Int = ParticleData.Data.Intensity(:,:,From:To);
+
+%%% Creates arrays with size(Particle,Frames)
+Intensity=NaN(numel(ParticleData.Regions),To-From+1);
+
+%%%Calculates frame-wise average for each particle
+for i=1:numel(ParticleData.Regions)
+    PixelId = ParticleData.Regions(i).PixelIdxList - (From-1)*size(Int, 1)*size(Int, 2);
+    Intensity(i,ParticleData.Regions(i).Frame)=ParticleData.Regions(i).TotalCounts';
+    [~,~,z] = ind2sub(size(Int),PixelId);
+end
+%%% Cuts size to a multiple of the Frames_Sum
+Intensity= Intensity(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
+%%% Summs up frame range
+Intensity = squeeze(sum(reshape(Intensity,size(Intensity,1),Frames_Sum,[]),2,'omitnan'));
+Intensity(isnan(Intensity))=0;
+
+%%% Updates secondary parameters
+Lines = ParticleData.Data.Lines;
+Pixels = ParticleData.Data.Pixels;
+Frames = ParticleData.Data.Frames;
+Regions =ParticleData.Regions; % removes particle regions with invalid phasor information
+
+save(fullfile(PathName,FileName), 'Lines', 'Pixels', 'Intensity','Frames','Regions');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Save the Save the Tiff image data as a text or excel file
+function Save_Tiff_Text
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName, FilterIndex] = uiputfile({'*.txt';'*.csv';'*.xlsx';},'Save Particle Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+Mask = logical(squeeze(sum(ParticleData.Mask,3)));
+Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+
+%%% Applies particle averaging
+x=zeros(numel(ParticleData.Regions),1);
+y=zeros(numel(ParticleData.Regions),1);
+for i=1:numel(ParticleData.Regions)
+    %%% Extracts first pixel position of each particle
+    x(i) = ParticleData.Regions(i).PixelList(1,1);
+    y(i) = ParticleData.Regions(i).PixelList(1,2);
+    %%% Calculate particle properties
+    TotalCounts(i) = sum(ParticleData.Regions(i).TotalCounts);
+    MeanIntensity(i) = mean(ParticleData.Regions(i).MeanIntensity);
+    MaxIntensity(i) = max(ParticleData.Regions(i).MaxIntensity);
+    Area(i) = mean(ParticleData.Regions(i).Area);
+end
+
+VarNames = {'TotalPhotons','MeanPhotons','MaxPhotons','Area','x','y'};
+%%% Creates table variable for saving
+tab = table(TotalCounts.',... Total photons of particle
+            MeanIntensity.',... Average photons per pixel
+            MaxIntensity.',... Brightest pixel counts
+            Area.',... Particle area in photons
+            x,... x position of first pixel
+            y,... y position of first pixel
+            'VariableNames',VarNames);
+
+%%% Saves data as text or table
+if FilterIndex == 1 %%% Use tab sepparation for .txt files
+    writetable(tab,fullfile(PathName,FileName),'Delimiter','tab');
+else
+    writetable(tab,fullfile(PathName,FileName));
+end
+
+
+%%% Save the CZI image data as a .mat file
+function Save_CZI_Trace
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.mat','Save CZI Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+Frames_Sum = str2double(h.Particle_Frames_Sum.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+%%% Applies particle averaging
+Int = ParticleData.Data.Intensity(:,:,From:To);
+
+%%% Creates arrays with size(Particle,Frames)
+Intensity=NaN(numel(ParticleData.Regions),To-From+1);
+
+%%%Calculates frame-wise average for each particle
+for i=1:numel(ParticleData.Regions)
+     PixelId = ParticleData.Regions(i).PixelIdxList - (From-1)*size(Int, 1)*size(Int, 2);
+    Intensity(i,ParticleData.Regions(i).Frame)=ParticleData.Regions(i).TotalCounts';
+    [~,~,z] = ind2sub(size(Int),PixelId);
+end
+%%% Cuts size to a multiple of the Frames_Sum
+Intensity= Intensity(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
+%%% Summs up frame range
+Intensity = squeeze(sum(reshape(Intensity,size(Intensity,1),Frames_Sum,[]),2,'omitnan'));
+Intensity(isnan(Intensity))=0;
+
+Regions =ParticleData.Regions; % removes particle regions with invalid phasor information
+
+save(fullfile(PathName,FileName), 'Intensity','Regions');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Collection of various small functions
