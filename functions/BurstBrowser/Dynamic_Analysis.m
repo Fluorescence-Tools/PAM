@@ -341,11 +341,11 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         set(h.ParameterListY, 'String', BurstData{file}.NameArray);
         UpdateCuts();
         UpdatePlot([],[],h);
-    case {3} % E vs Tau with conf int
+    case {3} % FRET-2CDE vs E with conf int
         FRET_2CDE_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
-    case {2} % FREt-2CDE vs E with conf int
+    case {2} % E vs Tau with conf int
         E_tau_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
