@@ -324,5 +324,13 @@ if do_phasor
 
     xlabel('g');
     ylabel('s');
-    set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+    set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top','Units','pixel');
+       
+    %%% add a second axis for the colorbar of the FRET efficiency
+    ax_cbar = axes('Parent',f,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
+        'Visible','off');
+    colormap(ax_cbar,autumn);
+    cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',16);
+    cbar.Position = [421   446   109    18];
+    cbar.Label.String = 'E';
 end
