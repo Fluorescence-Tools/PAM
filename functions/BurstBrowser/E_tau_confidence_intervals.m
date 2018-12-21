@@ -208,6 +208,7 @@ patch([0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','non
 plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
 plot(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
 
+plot(mean_tau,bin_centers,'--k','LineWidth',2);
 scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
 %plot(mean_tau_static,bin_centers,'-g','LineWidth',2);
 scatter(mean_tau_static_R,bin_centers_cor,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
@@ -272,7 +273,8 @@ if transformed
     tau_line = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime;
     E_line = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData; 
     plot(1-E_line,(1-E_line).*(tau_line-(1-E_line)),'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-
+    
+    plot(data_mean_tauDA,data_mean_var_tauDA,'--k','LineWidth',2);
     scatter(data_mean_tauDA,data_mean_var_tauDA,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
     scatter(mean_tauDA_static,mean_var_tauDA_static,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
     
@@ -304,12 +306,18 @@ if do_phasor
     patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
     %%% add phasor circle
     add_universal_circle(ax,1);
-    % FRET-averaged phasor
-    scatter(mean_g,mean_s,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
     % conf int
-    scatter(mean_g_static,mean_s_static,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+    %scatter(mean_g_static,mean_s_static,80,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
     patch([g_ci_lower,fliplr(g_ci_upper)],[s_ci_lower,fliplr(s_ci_upper)],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
     set(gca,'Color',[1,1,1]);
+
+    % FRET-averaged phasor    
+    %smooth_g = sgolayfilt(mean_g, 3, 5);
+    %smooth_s = sgolayfilt(mean_s, 3, 5);
+    %plot(smooth_g,smooth_s,'--k','LineWidth',2);
+    plot(mean_g,mean_s,'--k','LineWidth',2);
+    color = autumn(numel(bin_centers));   
+    scatter(mean_g,mean_s,100,color,'diamond','filled','MarkerEdgeColor',[0,0,0],'LineWidth',2);
 
     ax.XLim = xlim;
     ax.YLim = ylim;
