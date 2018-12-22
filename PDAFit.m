@@ -4692,15 +4692,15 @@ switch mode
         PDAMeta.PreparationDone = zeros(numel(PDAData.FileName),1);
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
-        % touching a ALL value cell applies that value everywhere
+        % Since R2018a touching an ALL value cell does not apply that
+        % value everywhere
+        
         h.ParametersTab.Table.CellEditCallback=[];
-        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=size(h.ParametersTab.Table.Data,1) && e.Indices(2)~=1)                                                                                             
-                h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
-                return;
-            end
-            NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected                                                                                            
+            h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
+            return;
         end
+        
         if isprop(e,'NewData')
             if e.Indices(2) ~= 7
                 NewData = e.NewData;
