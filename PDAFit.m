@@ -5352,8 +5352,8 @@ switch mode
                 hb.Rsigma2_edit.String = num2str(params(1,6));
                 hb.Rstate3_edit.String = num2str(params(1,8));
                 hb.Rsigma3_edit.String = num2str(params(1,9));
+                break
             end
-            break
         end
         %UserValues.BurstBrowser.Settings.KineticRates_table2 = 
 end
