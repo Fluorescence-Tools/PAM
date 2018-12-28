@@ -2206,6 +2206,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.BVA_KineticRatesTable3 = S.BurstBrowser.Settings.BVA_KineticRatesTable3;
     
+    %%% Check, if BurstBrowser.Settings.DynamicAnalysisMethod subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynamicAnalysisMethod')
+        S.BurstBrowser.Settings.DynamicAnalysisMethod=1;
+        disp('UserValues.BurstBrowser.Settings.DynamicAnalysisMethod was incomplete');
+    end
+    P.BurstBrowser.Settings.DynamicAnalysisMethod = S.BurstBrowser.Settings.DynamicAnalysisMethod;
+    
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};
