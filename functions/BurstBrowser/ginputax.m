@@ -1,4 +1,4 @@
-function [out1,out2,out3,out4] = ginputax(ax,arg1)
+function [out1,out2,out3,out4] = ginputax(ax,arg1,h)
 %GINPUT Graphical input from mouse.
 %   [X,Y] = GINPUTAX(N) gets N points from the current axes and returns
 %   the X- and Y-coordinates in length N vectors X and Y.  The cursor
@@ -40,8 +40,7 @@ function [out1,out2,out3,out4] = ginputax(ax,arg1)
 %   Copyright 1984-2011 The MathWorks, Inc.
 %   $Revision: 5.32.4.18 $  $Date: 2011/05/17 02:35:09 $
 %   Modified by Pedro Teodoro  $Date: 2013/01/10 
-
-h = guidata(findobj('Tag','BurstBrowser'));
+%h = guidata(obj);
 out1 = []; out2 = []; out3 = []; y = [];
 c = computer;
 if ~strcmp(c(1:2),'PC')
@@ -116,7 +115,7 @@ else
     if nargin<2
         ax=[];
     end
-    initialState = setupFcn(fig,ax);
+    initialState = setupFcn(fig);
     % onCleanup object to restore everything to original state in event of
     % completion, closing of figure errors or ctrl+c. 
     c = onCleanup(@() restoreFcn(initialState));
@@ -183,7 +182,6 @@ else
             outax=find(ax==axes_handle);
             
             how_many = how_many - 1;
-            %textfield = strcat('Remaining: ',num2str(how_many));
             if(char == 13) % & how_many ~= 0)
                 % if the return key was pressed, char will == 13,
                 % and that's our signal to break out of here whether
@@ -253,10 +251,10 @@ if nargout>0, key = keydown; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
 
-function initialState = setupFcn(fig,ax)
+function initialState = setupFcn(fig)
 % Store Figure Handle. 
 initialState.figureHandle = fig; 
-
+h.PlotDynamicFRETButton.String = 'Move cursor to E-Tau plot';
 % Suspend figure functions
 initialState.uisuspendState = uisuspend(fig);
 
@@ -298,9 +296,8 @@ if ishghandle(initialState.figureHandle)
 end
 end
 
-function dummy(fig,~)
+function dummy(fig)
 % do nothing, this is there to update the GINPUT WindowButtonMotionFcn. 
-
 %if mouse is inside the axes specified by the user, then a
 %crosshair is shown
 cdata = NaN(32,32);cdata(15:17,:)=2;cdata(:,15:17)=2;
@@ -313,6 +310,7 @@ set(fig,'Pointer','custom','PointerShapeCData',cdata)
 %     if  pos(1)>posax(1)+posfig(1) && pos(1)<posax(1)+posax(3)+posfig(1) ...
 %      && pos(2)>posax(2)+posfig(2) && pos(2)<posax(2)+posax(4)+posfig(2)
 %         set(fig,'Pointer','custom','PointerShapeCData',cdata)
+%         h.PlotDynamicFRETButton.String = ['Remaining: ',num2str(how_many)];
 %     end
 % end
 

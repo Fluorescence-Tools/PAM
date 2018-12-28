@@ -52,12 +52,11 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     switch h.LifetimeTabgroup.SelectedTab.Title
                         case 'All'
                             h.lifetime_ind_popupmenu.Value = 1;
-                            [x,y,button] = ginputax(h.axes_EvsTauGG,2);
+                            [x,y,button] = ginputax(h.axes_EvsTauGG,2,h);
                         case 'Individual'
-                            [x,y,button] = ginputax(h.axes_lifetime_ind_2d,2);
+                            [x,y,button] = ginputax(h.axes_lifetime_ind_2d,2,h);
                     end
                     h.PlotDynamicFRETButton.String = 'Dynamic FRET line';
-                    %[x,y,button] = ginput(2);
                 else % 2018b onwards
                     [x,y,button] = my_ginput(2);
                 end
