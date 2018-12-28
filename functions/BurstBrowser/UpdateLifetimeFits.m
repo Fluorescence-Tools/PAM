@@ -49,16 +49,14 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
                 %%% Query Lifetimes using ginput
                 if verLessThan('MATLAB','9.5')
-                    %ha = get(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1),'parent');
-%                     ind_axes = flipud(h.axes_lifetime_ind_2d.Children);
-%                     if strcmp(ind_axes(1).Visible,'off')
-                    %ha = h.axes_lifetime_ind_2d;
                     switch h.LifetimeTabgroup.SelectedTab.Title
                         case 'All'
+                            h.lifetime_ind_popupmenu.Value = 1;
                             [x,y,button] = ginputax(h.axes_EvsTauGG,2);
                         case 'Individual'
                             [x,y,button] = ginputax(h.axes_lifetime_ind_2d,2);
                     end
+                    h.PlotDynamicFRETButton.String = 'Dynamic FRET line';
                     %[x,y,button] = ginput(2);
                 else % 2018b onwards
                     [x,y,button] = my_ginput(2);

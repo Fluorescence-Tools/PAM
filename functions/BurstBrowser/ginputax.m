@@ -41,7 +41,7 @@ function [out1,out2,out3,out4] = ginputax(ax,arg1)
 %   $Revision: 5.32.4.18 $  $Date: 2011/05/17 02:35:09 $
 %   Modified by Pedro Teodoro  $Date: 2013/01/10 
 
-
+h = guidata(findobj('Tag','BurstBrowser'));
 out1 = []; out2 = []; out3 = []; y = [];
 c = computer;
 if ~strcmp(c(1:2),'PC')
@@ -50,19 +50,19 @@ else
     tp = 'micro';
 end
 
-if ~strcmp(tp,'none') && ~strcmp(tp,'x') && ~strcmp(tp,'micro'),
-    if nargout == 1,
-        if nargin == 2,
+if ~strcmp(tp,'none') && ~strcmp(tp,'x') && ~strcmp(tp,'micro')
+    if nargout == 1
+        if nargin == 2
             out1 = trmginput(ax,arg1);
-        elseif nargin == 1,
+        elseif nargin == 1
             out1 = trmginput(ax);
         else
             out1 = trmginput;
         end
-    elseif nargout == 2 || nargout == 0,
-        if nargin == 2,
+    elseif nargout == 2 || nargout == 0
+        if nargin == 2
             [out1,out2] = trmginput(ax,arg1);
-        elseif nargin == 1,
+        elseif nargin == 1
             [out1,out2] = trmginput(ax);
         else
             [out1,out2] = trmginput;
@@ -70,18 +70,18 @@ if ~strcmp(tp,'none') && ~strcmp(tp,'x') && ~strcmp(tp,'micro'),
         if  nargout == 0
             out1 = [ out1 out2 ];
         end
-    elseif nargout == 3,
-        if nargin == 2,
+    elseif nargout == 3
+        if nargin == 2
             [out1,out2,out3] = trmginput(ax,arg1);
-        elseif nargin == 1,
+        elseif nargin == 1
             [out1,out2,out3] = trmginput(ax);
         else
             [out1,out2,out3] = trmginput;
         end
-    elseif nargout == 4,
-        if nargin == 2,
+    elseif nargout == 4
+        if nargin == 2
             [out1,out2,out3,out4] = trmginput(ax,arg1);
-        elseif nargin == 1,
+        elseif nargin == 1
             [out1,out2,out3,out4] = trmginput(ax);
         else
             [out1,out2,out3,out4] = trmginput;
@@ -117,7 +117,6 @@ else
         ax=[];
     end
     initialState = setupFcn(fig,ax);
-    
     % onCleanup object to restore everything to original state in event of
     % completion, closing of figure errors or ctrl+c. 
     c = onCleanup(@() restoreFcn(initialState));
@@ -130,7 +129,7 @@ else
     
     while how_many ~= 0
 %         set(fig,'WindowButtonMotionFcn',@changepointer)
-
+        h.PlotDynamicFRETButton.String = ['Remaining: ',num2str(how_many)];
         % Use no-side effect WAITFORBUTTONPRESS
         outax=[];
         waserr = 0;
@@ -184,7 +183,7 @@ else
             outax=find(ax==axes_handle);
             
             how_many = how_many - 1;
-            
+            %textfield = strcat('Remaining: ',num2str(how_many));
             if(char == 13) % & how_many ~= 0)
                 % if the return key was pressed, char will == 13,
                 % and that's our signal to break out of here whether
@@ -255,7 +254,6 @@ if nargout>0, key = keydown; end
 end
 
 function initialState = setupFcn(fig,ax)
-
 % Store Figure Handle. 
 initialState.figureHandle = fig; 
 
@@ -277,7 +275,7 @@ end
 % warning(oldwarnstate);
 
 % Adding this to enable automatic updating of currentpoint on the figure 
-set(fig,'WindowButtonMotionFcn',@(o,e) dummy(fig,ax));
+set(fig,'WindowButtonMotionFcn',@(o,e) dummy(fig));
 
 % Get the initial Figure Units
 initialState.fig_units = get(fig,'Units');
@@ -300,21 +298,23 @@ if ishghandle(initialState.figureHandle)
 end
 end
 
-function dummy(fig,ax)
+function dummy(fig,~)
 % do nothing, this is there to update the GINPUT WindowButtonMotionFcn. 
 
 %if mouse is inside the axes specified by the user, then a
 %crosshair is shown
-set(fig,'Pointer','arrow')
-posfig = getpixelposition(fig);
-for i=1:length(ax)
-    posax = getpixelposition(ax(i));
-    pos = get(0,'PointerLocation');
-    if  pos(1)>posax(1)+posfig(1) && pos(1)<posax(1)+posax(3)+posfig(1) ...
-     && pos(2)>posax(2)+posfig(2) && pos(2)<posax(2)+posax(4)+posfig(2)
-        set(fig,'Pointer','crosshair')
-    end
-end
+cdata = NaN(32,32);cdata(15:17,:)=2;cdata(:,15:17)=2;
+cdata(16,2:31)=1;cdata(2:31,16)=1;
+set(fig,'Pointer','custom','PointerShapeCData',cdata)
+% posfig = getpixelposition(fig);
+% for i=1:length(ax)
+%     posax = getpixelposition(ax(i));
+%     pos = get(0,'PointerLocation');
+%     if  pos(1)>posax(1)+posfig(1) && pos(1)<posax(1)+posax(3)+posfig(1) ...
+%      && pos(2)>posax(2)+posfig(2) && pos(2)<posax(2)+posax(4)+posfig(2)
+%         set(fig,'Pointer','custom','PointerShapeCData',cdata)
+%     end
+% end
 
 end
 
