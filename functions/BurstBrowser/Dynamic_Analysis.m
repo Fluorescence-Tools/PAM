@@ -29,8 +29,8 @@ switch BurstData{file}.BAMethod
 end
 photons = BurstTCSPCData{file};
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
-switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
-    case {1} % BVA
+switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
+    case 1 % BVA
         % Remove ALEX photons &  calculate STD per Burst
         n = UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA;
         switch BurstData{file}.BAMethod
