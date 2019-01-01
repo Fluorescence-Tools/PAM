@@ -1117,8 +1117,12 @@ if Mode==0 %%% Loads user values
     %%% Burst Search Method)
     if ~isfield(S.BurstSearch,'PIEChannelSelection')
         dummy = S.PIE.Name{1};
-        S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy}};
+        S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy},{dummy;dummy;dummy}};
         disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');
+    end
+    if numel(S.BurstSearch.PIEChannelSelection) < 6
+        dummy = S.PIE.Name{1};
+        S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy},{dummy;dummy;dummy}};
     end
     P.BurstSearch.PIEChannelSelection = S.BurstSearch.PIEChannelSelection;
     %%% Checks, if BurstSearch.SearchParameters exists
@@ -1130,6 +1134,10 @@ if Mode==0 %%% Loads user values
     end
     if size(S.BurstSearch.SearchParameters,1) < 2
         S.BurstSearch.SearchParameters(2,1:5)={[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
+    if size(S.BurstSearch.SearchParameters,2) < 6
+        S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
