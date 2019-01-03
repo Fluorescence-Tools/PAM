@@ -5337,21 +5337,21 @@ switch mode
         hb = guidata(findobj('Tag','BurstBrowser'));
         for i = 1:numel(PDAData.FileName)
             if active(i)
-                UserValues.BurstBrowser.Settings.BVA_R1 = params(1,2);
-                UserValues.BurstBrowser.Settings.BVA_R2 = params(1,5);
-                UserValues.BurstBrowser.Settings.BVA_R3 = params(1,8);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(1,3);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(1,6);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(1,9);
-                hb.KineticRates_table2.Data(1,2) = num2cell(params(1,1));
-                hb.KineticRates_table2.Data(2,1) = num2cell(params(1,4));
+                UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
+                UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
+                UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
+                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
+                hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
+                hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
                 hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
-                hb.Rstate1_edit.String = num2str(params(1,2));
-                hb.Rsigma1_edit.String = num2str(params(1,3));
-                hb.Rstate2_edit.String = num2str(params(1,5));
-                hb.Rsigma2_edit.String = num2str(params(1,6));
-                hb.Rstate3_edit.String = num2str(params(1,8));
-                hb.Rsigma3_edit.String = num2str(params(1,9));
+                hb.Rstate1_edit.String = num2str(params(i,2));
+                hb.Rsigma1_edit.String = num2str(params(i,3));
+                hb.Rstate2_edit.String = num2str(params(i,5));
+                hb.Rsigma2_edit.String = num2str(params(i,6));
+                hb.Rstate3_edit.String = num2str(params(i,8));
+                hb.Rsigma3_edit.String = num2str(params(i,9));
                 break
             end
         end
