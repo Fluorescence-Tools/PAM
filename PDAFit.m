@@ -5050,13 +5050,13 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                     h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(false);
                     h.FitTab.Table.Data(1:end-2,[4,13,22]) = deal({false});
                     %%% unfix third amplitude and set to one
-                    h.FitTab.Table.Data(1:end-2,20) = deal({1});
+                    h.FitTab.Table.Data(1:end-2,20) = deal({'1'});
                     h.FitTab.Table.Data(1:end-2,21) = deal({false});
                     %%% unhide rate table
                     h.KineticRates_table.Visible = 'on';
                     %%% change fit table width
                     h.FitTab.Table.Position(3) = 0.8;                    
-            end
+                end
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
