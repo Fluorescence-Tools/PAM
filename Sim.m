@@ -474,7 +474,7 @@ h.Text_T{1} = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'String','Pixel time [?s]:',...
+    'String',['Pixel time [',char(181),'s]:'],...
     'Position',[0.01 0.02 0.25 0.1]);
 %%% Pixel time in x
 h.Sim_Px_Time{1} = uicontrol(...
@@ -740,7 +740,7 @@ end
         'HorizontalAlignment','left',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'String','D [?m?/s]:',...
+        'String',['D [',char(181),'m^2/s]:'],...
         'Position',[0.21 0.04 0.12 0.08]);
     h.Sim_D = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -989,7 +989,7 @@ h.Sim_UseNoise = uicontrol(...
            'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
    end
 
-%% F?rster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Förster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Advanced Sim Settings Panel
 h.Sim_FRET_General_Panel = uibuttongroup(...
@@ -1011,7 +1011,7 @@ h.Text_FRET = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'String','F?rster radius [Angstrom]' ,...
+    'String','Förster radius [Angstrom]' ,...
     'Callback',@Sim_Settings,...
     'Position',[0.02 0.88 0.6 0.1]);
 
@@ -1052,7 +1052,7 @@ for i=1:3
         'Position',[0.05+0.19*i 0.74 0.19 0.08]);
    for j=1:3
        if j<=i
-           %%% F?rster radius
+           %%% Förster radius
            h.Sim_R0{i+1,j} = uicontrol(...
                'Parent',h.Sim_FRET_General_Panel,...
                'Units','normalized',...
@@ -1860,7 +1860,7 @@ switch Obj
                 /(sum(SimData.Species(Sel).Cross(:,i)));            
             h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
         end
-    case h.Sim_R0 %%% Changed F?rster radius
+    case h.Sim_R0 %%% Changed Förster radius
         for i=1:3
             for j=1:3   
                 if j<=i
@@ -1913,7 +1913,7 @@ SimData.General(File).Species = SimData.Species;
 function Update_Concentration(Sel,File)
 global SimData
 h = guidata(findobj('Tag','Sim'));
-c = SimData.Species(Sel).N./prod(SimData.General(File).BS)./1E-24./6.022E23./1E-9;
+c = SimData.Species(Sel).N./prod(SimData.General.BS)./1E-24./6.022E23./1E-9;
 h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -2499,33 +2499,38 @@ if advanced
     %%% This includes everything that should be independent of species,
     %%% i,e:
     %%% Focal volume dimensions and shift
-    %%% Crosstalk, direct excitation and detection/excitation probabilities
+    
     %%% Bleaching rates
     %%% Diffusion/Quenching maps
     i = 1;
     wr = zeros(4,1); wz = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
 
-    %%% Detection probability
-    DetP = SimData.Species(i).DetP;
-    %%% Excitation probability (including direct excitation)
-    ExP = SimData.Species(i).ExP;    
-    %%% Crosstalk
-    SimData.Species(i).Cross(1:5:16) = 1;
-    Cross = zeros(4,4);
-    for j=1:4
-        for k=1:4
-            Cross(j,k) =  DetP(k,k)/DetP(j,k)*SimData.Species(i).Cross(j,k);
+    %%% Crosstalk, direct excitation and detection/excitation are
+    %%% species-specific to allow for simulation of different dyes, different correction factors and donor- and acceptor only species
+    
+    for i = 1:numel(SimData.Species);
+        %%% Detection probability
+        DetP{i} = SimData.Species(i).DetP;
+        %%% Excitation probability (including direct excitation)
+        ExP{i} = SimData.Species(i).ExP;    
+        %%% Crosstalk
+        SimData.Species(i).Cross(1:5:16) = 1;
+        Cross{i} = zeros(4,4);
+        for j=1:4
+            for k=1:4
+                Cross{i}(j,k) =  DetP{i}(k,k)/DetP{i}(j,k)*SimData.Species(i).Cross(j,k);
+            end
+        end
+        %%% Bleaching probability (1/avg(#EmittedPhotons)
+        BlP{i} = SimData.Species(i).BlP;
+
+        for j = SimData.Species(i).Color+1:4
+            ExP{i}(j,:) = 0; %%% Set excitation of unused colors to 0
         end
     end
-    %%% Bleaching probability (1/avg(#EmittedPhotons)
-    BlP = SimData.Species(i).BlP;
+    i = 1;%%% set back to first species for other parameters
     
-    for j = SimData.Species(i).Color+1:4
-        ExP(j,:) = 0; %%% Set excitation of unused colors to 0
-        %FRET(j,:) = 0;
-    end
-
     %%% Determins barrier type and map (for quenching, barriers, ect.)
     Map_Type = h.Sim_Barrier.Value;
     switch Map_Type
@@ -2704,95 +2709,7 @@ if advanced
     for i = 1:size(pTrans,1)
         p = [p,pTrans(i,:)];
     end
-
-    %% old code to access DifSim_ani.mex   
-%     new = 1;
-%     %%% only used if new is set to 1
-%     type = 1;
-%     switch type
-%     case 1
-%         %%% Parameters for 2color 2 state dynamic simulation
-%         k12 = 1E3/Freq; %1 ms^-1
-%         k21 = 0.5*1E3/Freq; %0.5 ms^-1
-% 
-% 
-%         %%% Set dynamic step such that p_max = 0.1
-%         DynamicStep = round(0.1/max([k12 k21]));
-%         p12 = k12*DynamicStep;
-%         p21 = k21*DynamicStep;
-% 
-%         n_states = 1;
-%         k_dyn = [1-p12, p12,...
-%                  p21, 1-p21];
-% 
-%         final_state = randi(n_states,NoP,1)-1;
-% 
-%         %%% For sigmaDist simulations, we need to provide now:
-%         %%% Distances (only nonzero for cross-color elements!!!)
-%         %%% sigma Distances (only nonzero for cross-color elements!!!)
-%         %%% R0 (only non-zero for cross-color elements!!!)
-%         %%% Step for recalculation
-%         %%% linkerlength (one value only for now!)
-%         Dist = SimData.Species(i).R;
-%         R0 = SimData.Species(i).R0;
-%         Dist(R0 == 0) = 0;
-%         heterogeneity_step = round(10E-3*Freq*1E3);
-%         linkerlength = 5;
-%         Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
-%         Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
-%         Dist = [Dist1(:); Dist2(:)];
-%         sigmaDist = Dist./10;
-%         R0 = [R0(:); R0(:)];
-%         R0(Dist == 0) = 0;
-%         if new == 1
-%             FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
-%             FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
-%             FRET = [FRET1(:); FRET2(:)];
-%         end
-%     case 2
-%         %%% Parameters for 3color 2 state dynamic simulation
-%         k12 = 100*1E3/Freq; %2 ms^-1
-%         k21 = 100*1E3/Freq; %3 ms^-1
-% 
-%         DiffStep = 1;
-%         %%% Set dynamic step such that p_max = 0.1
-%         DynamicStep = round(0.1/max([k12 k21]));
-%         p12 = k12*DynamicStep;
-%         p21 = k21*DynamicStep;
-% 
-%         n_states = 2;
-%         k_dyn = [1-p12, p12,...
-%                  p21, 1-p21];
-% 
-%         final_state = randi(2,NoP,1)-1;
-% 
-%         R0 = 50;
-%         RGR1 = 55;
-%         RGR2 = 70;
-%         RBG1 = 45;
-%         RBG2 = 70;
-%         RBR1 = 65;
-%         RBR2 = 45;
-% 
-%         kGR1 = (R0/RGR1)^6;
-%         kGR2 = (R0/RGR2)^6;
-%         kBG1 = (R0/RBG1)^6;
-%         kBG2 = (R0/RBG2)^6;
-%         kBR1 = (R0/RBR1)^6;
-%         kBR2 = (R0/RBR2)^6;
-% 
-%         if new == 1
-%             FRET1 = [1,0,0,0;...
-%                      kBG1,1,0,0;...
-%                      kBR1,kGR1,1,0;...
-%                      0,0,0,0];   
-%             FRET2 = [1,0,0,0;...
-%                      kBG2,1,0,0;...
-%                      kBR2,kGR2,1,0;...
-%                      0,0,0,0];
-%             FRET = [FRET1(:); FRET2(:)];
-%         end
-%     end
+    
     %% Start simulation
     
     %%% When looping over species, reassign Number of Particles and start
@@ -2827,7 +2744,11 @@ if advanced
             'Period',1,...
             'ExecutionMode','fixedDelay');
         start(Update)
-
+        %%% read out ExP, DetP, Cross and BlP
+        ExP_i = ExP{i};
+        DetP_i = DetP{i};
+        Cross_i = Cross{i};
+        BlP_i = BlP{i};
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
@@ -2875,9 +2796,9 @@ if advanced
                     D*sqrt(DiffStep),Pos,... Particle parameters
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
-                    ExP,DetP,BlP,... %%% Probability parameters (excitation, Detection and Bleaching)
+                    ExP_i,DetP_i,BlP_i,... %%% Probability parameters (excitation, Detection and Bleaching)
                     LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
-                    Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross,... %%% Relative FRET and Crosstalk rates
+                    Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross_i,... %%% Relative FRET and Crosstalk rates
                     n_states, p, final_state_temp(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map

@@ -505,13 +505,19 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotScat was incomplete');
     end
     P.Settings.Pam.PlotScat = S.Settings.Pam.PlotScat;
-    %%% Checksm if Pam.PlotLog subfield exists
+    %%% Checks if Pam.PlotLog subfield exists
     if ~isfield(S.Settings.Pam, 'PlotLog')
         S.Settings.Pam.PlotLog='off';
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
-    %%% Checksm if Pam.AutoSaveProfile subfield exists
+    %%% Checks if Pam.PlotLogTrace subfield exists
+    if ~isfield(S.Settings.Pam, 'PlotLogTrace')
+        S.Settings.Pam.PlotLogTrace='off';
+        disp('UserValues.Settings.Pam.PlotLogTrace was incomplete');
+    end
+    P.Settings.Pam.PlotLogTrace = S.Settings.Pam.PlotLogTrace;
+    %%% Checks if Pam.AutoSaveProfile subfield exists
     if ~isfield(S.Settings.Pam, 'AutoSaveProfile')
         S.Settings.Pam.AutoSaveProfile='off';
         disp('UserValues.Settings.Pam.AutoSaveProfile was incomplete');
@@ -1803,6 +1809,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.MarkerSize was incomplete');
     end
     P.BurstBrowser.Display.MarkerSize = S.BurstBrowser.Display.MarkerSize;
+    %%% Checks, if BurstBrowser.Display.ContourFill subfield exists
+    if ~isfield(S.BurstBrowser.Display,'ContourFill')
+        S.BurstBrowser.Display.ContourFill=1;
+        disp('UserValues.BurstBrowser.Display.ContourFill was incomplete');
+    end
+    P.BurstBrowser.Display.ContourFill = S.BurstBrowser.Display.ContourFill;
     %%% Checks, if BurstBrowser.Display.MarkerColor subfield exists
     if ~isfield(S.BurstBrowser.Display,'MarkerColor')
         S.BurstBrowser.Display.MarkerColor=[0,0,0];
@@ -2034,6 +2046,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.E_Aonly_Min was incomplete');
     end
     P.BurstBrowser.Settings.E_Aonly_Min = S.BurstBrowser.Settings.E_Aonly_Min;
+        %%% Check, if BurstBrowser.Settings.E_Aonly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Aonly_Max')
+        S.BurstBrowser.Settings.E_Aonly_Max=1.05;
+        disp('UserValues.BurstBrowser.Settings.E_Aonly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Aonly_Max = S.BurstBrowser.Settings.E_Aonly_Max;
+        %%% Check, if BurstBrowser.Settings.E_Donly_Min subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Donly_Min')
+        S.BurstBrowser.Settings.E_Donly_Min=-0.1;
+        disp('UserValues.BurstBrowser.Settings.E_Donly_Min was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Donly_Min = S.BurstBrowser.Settings.E_Donly_Min;
+        %%% Check, if BurstBrowser.Settings.E_Donly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Donly_Max')
+        S.BurstBrowser.Settings.E_Donly_Max=0.3;
+        disp('UserValues.BurstBrowser.Settings.E_Donly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Donly_Max = S.BurstBrowser.Settings.E_Donly_Max;
     %%% Check, if BurstBrowser.Settings.Normalize_Multiplot subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'Normalize_Multiplot')
         S.BurstBrowser.Settings.Normalize_Multiplot=true;
@@ -2067,51 +2097,123 @@ if Mode==0 %%% Loads user values
     %%% Check, if BurstBrowser.Settings.PhotonsPerWindow_BVA subfield exists
     if ~isfield(S.BurstBrowser.Settings,'PhotonsPerWindow_BVA')
         S.BurstBrowser.Settings.PhotonsPerWindow_BVA=5;
-        disp('UserValues.BurstBrowser.PhotonsPerWindow_BVA was incomplete');
+        disp('UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA was incomplete');
     end
     P.BurstBrowser.Settings.PhotonsPerWindow_BVA = S.BurstBrowser.Settings.PhotonsPerWindow_BVA;
     %%% Check, if BurstBrowser.Settings.BurstsPerBinThreshold_BVA subfield exists
     if ~isfield(S.BurstBrowser.Settings,'BurstsPerBinThreshold_BVA')
         S.BurstBrowser.Settings.BurstsPerBinThreshold_BVA=100;
-        disp('UserValues.BurstBrowser.BurstsPerBinThreshold_BVA was incomplete');
+        disp('UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA was incomplete');
     end
     P.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = S.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
     %%% Check, if BurstBrowser.Settings.ConfidenceSampling_BVA subfield exists
     if ~isfield(S.BurstBrowser.Settings,'ConfidenceSampling_BVA')
         S.BurstBrowser.Settings.ConfidenceSampling_BVA=50;
-        disp('UserValues.BurstBrowser.ConfidenceSampling_BVA was incomplete');
+        disp('UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA was incomplete');
     end
     P.BurstBrowser.Settings.ConfidenceSampling_BVA = S.BurstBrowser.Settings.ConfidenceSampling_BVA;
     %%% Check, if BurstBrowser.Settings.ConfidenceLevelAlpha_BVA subfield exists
     if ~isfield(S.BurstBrowser.Settings,'ConfidenceLevelAlpha_BVA')
         S.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA=0.001;
-        disp('UserValues.BurstBrowser.ConfidenceLevelAlpha_BVA was incomplete');
+        disp('UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA was incomplete');
     end
     P.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = S.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;
     %%% Check, if BurstBrowser.Settings.BVA_X_axis subfield exists
     if ~isfield(S.BurstBrowser.Settings,'BVA_X_axis')
         S.BurstBrowser.Settings.BVA_X_axis=1;
-        disp('UserValues.BurstBrowser.BVA_X_axis was incomplete');
+        disp('UserValues.BurstBrowser.Settings.BVA_X_axis was incomplete');
     end
     P.BurstBrowser.Settings.BVA_X_axis = S.BurstBrowser.Settings.BVA_X_axis;
     %%% Check, if BurstBrowser.Settings.Dynamic_Analysis_Method subfield exists
     if ~isfield(S.BurstBrowser.Settings,'Dynamic_Analysis_Method')
         S.BurstBrowser.Settings.Dynamic_Analysis_Method=1;
-        disp('UserValues.BurstBrowser.Dynamic_Analysis_Method was incomplete');
+        disp('UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method was incomplete');
     end
     P.BurstBrowser.Settings.Dynamic_Analysis_Method = S.BurstBrowser.Settings.Dynamic_Analysis_Method;
     %%% Check, if BurstBrowser.Settings.NumberOfBins_BVA subfield exists
     if ~isfield(S.BurstBrowser.Settings,'NumberOfBins_BVA')
         S.BurstBrowser.Settings.NumberOfBins_BVA=20;
-        disp('UserValues.BurstBrowser.NumberOfBins_BVA was incomplete');
+        disp('UserValues.BurstBrowser.Settings.NumberOfBins_BVA was incomplete');
     end
     P.BurstBrowser.Settings.NumberOfBins_BVA = S.BurstBrowser.Settings.NumberOfBins_BVA;
+    %%% Check, if BurstBrowser.Settings.FRETpair_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'FRETpair_BVA')
+        S.BurstBrowser.Settings.FRETpair_BVA=4;
+        disp('UserValues.BurstBrowser.Settings.FRETpair was incomplete');
+    end
+    P.BurstBrowser.Settings.FRETpair_BVA = S.BurstBrowser.Settings.FRETpair_BVA;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_R1 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R1')
+        S.BurstBrowser.Settings.BVA_R1=80;
+        disp('UserValues.BurstBrowser.Settings.BVA_R1 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R1 = S.BurstBrowser.Settings.BVA_R1;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_R2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R2')
+        S.BurstBrowser.Settings.BVA_R2=40;
+        disp('UserValues.BurstBrowser.Settings.BVA_R2 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R2 = S.BurstBrowser.Settings.BVA_R2;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_R3 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R3')
+        S.BurstBrowser.Settings.BVA_R3=60;
+        disp('UserValues.BurstBrowser.Settings.BVA_R3 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R3 = S.BurstBrowser.Settings.BVA_R3;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_sigma1 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma1')
+        S.BurstBrowser.Settings.BVA_Rsigma1=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_sigma1 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma1 = S.BurstBrowser.Settings.BVA_Rsigma1;
+    
+        %%% Check, if BurstBrowser.Settings.BVA_sigma2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma2')
+        S.BurstBrowser.Settings.BVA_Rsigma2=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_sigma2 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma2 = S.BurstBrowser.Settings.BVA_Rsigma2;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_sigma3 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma3')
+        S.BurstBrowser.Settings.BVA_Rsigma3=0.1;
+        disp('UserValues.BurstBrowser.Settings.sigma3 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma3 = S.BurstBrowser.Settings.BVA_Rsigma3;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_Nstates subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Nstates')
+        S.BurstBrowser.Settings.BVA_Nstates=2;
+        disp('UserValues.BurstBrowser.Settings.Nstates was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Nstates = S.BurstBrowser.Settings.BVA_Nstates;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_KineticRatesTable2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_KineticRatesTable2')
+        S.BurstBrowser.Settings.BVA_KineticRatesTable2=[NaN,1;1,NaN];
+        disp('UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_KineticRatesTable2 = S.BurstBrowser.Settings.BVA_KineticRatesTable2;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_KineticRatesTable3 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_KineticRatesTable3')
+        S.BurstBrowser.Settings.BVA_KineticRatesTable3=[NaN,1,1;1,NaN,1;1,1,NaN];
+        disp('UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3 was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_KineticRatesTable3 = S.BurstBrowser.Settings.BVA_KineticRatesTable3;
+    
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};
         disp('UserValues.BurstBrowser.DatabaseString was incomplete');
     end
     P.BurstBrowser.DatabaseString = S.BurstBrowser.DatabaseString;
+    
+    
     %%% Check, if BurstBrowser.Database subfield exists
     if ~isfield(S.BurstBrowser, 'Database')
         S.BurstBrowser.Database={};

@@ -5829,7 +5829,9 @@ if strcmp(TauFitData.Who,'Burstwise') && obj ==  h.Calc_Burstwise_Phasor
         h.Select_Burstwise_Phasor_Reference.Visible = 'off';
     end
 end
-
+if strcmp(TauFitData.Who,'Burstwise') && obj == h.Select_Burstwise_Phasor_Reference
+    UserValues.BurstSearch.PhasorReference = obj.Value;
+end
 if obj == h.LineStyle_Menu
     ChangeLineStyle(h);
 end
@@ -5843,8 +5845,6 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
-    case h.Select_Burstwise_Phasor_Reference
-        UserValues.BurstSearch.PhasorReference = obj.Value;
 end
 LSUserValues(1);
 
@@ -5945,9 +5945,11 @@ switch obj
             % (maybe implement later to only fit par or per channel)
             
             % check if anisotropy model is selected 
-            if isempty(strfind(TauFitData.FitType,'Anisotropy'))
-                disp('Select an anisotropy model.');
-                return;
+            if TauFitData.BAMethod ~= 5
+                if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                    disp('Select an anisotropy model.');
+                    return;
+                end
             end
             
             chan = h.ChannelSelect_Popupmenu.Value;
@@ -5959,6 +5961,7 @@ switch obj
                         case 2 % RR
                             Par = 5; Per = 6;
                     end
+                    chan_names = {'GG','RR'};
                 case {3,4}
                     switch chan
                         case 1 % BB
@@ -5968,18 +5971,30 @@ switch obj
                         case 3 % RR
                             Par = 11; Per = 12;
                     end
+                    chan_names = {'BB','GG','RR'};
+                case 5
+                    switch chan
+                        case 1 %GG
+                            Par = 1;
+                        case 2 %RR
+                            Par = 3;
+                    end
+                    chan_names = {'GG','RR'};
             end
             
             % reconstruct mi pattern
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
             mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-            mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
-           
+            if TauFitData.BAMethod ~= 5
+                mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            end
             % define output
             MIPattern = cell(0);
             MIPattern{TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par)}=mi_pattern1;
-            MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
+            if TauFitData.BAMethod ~= 5
+                MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
+            end
             
             FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
             Path = TauFitData.Path;
@@ -5989,7 +6004,19 @@ switch obj
         if all(File==0)
             return
         end
-        save(fullfile(Path,File),'MIPattern');
+        %%% previously, the microtime pattern was stored as MATLAB file
+        % save(fullfile(Path,File),'MIPattern');
+        %%% Now,it is saved as a text file for easier readability
+        %%% write header
+        fid = fopen(fullfile(Path,File),'w');
+        fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+        %%% write detector - routing assigment        
+        fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
+        if TauFitData.BAMethod ~= 5
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
+        end     
+        fclose(fid);
+        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
         if strcmp(h.Result_Plot.Visible, 'on')
