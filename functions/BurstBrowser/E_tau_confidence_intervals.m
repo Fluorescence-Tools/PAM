@@ -172,14 +172,14 @@ if do_phasor
     for i = 1:numel(phi)
         %%% define rotation matrix
         rot = [cos(phi(i)),-sin(phi(i)); sin(phi(i)), cos(phi(i))];
-        %%% rotate the samples g and s values
-        gs_rot = rot*[g_static(:,i)'-0.5;s_static(:,i)'];
-        gs_rot(1,:) = gs_rot(1,:) + 0.5;
-        %mean_g_static_rot(i) = mean(gs_rot(1,:));
-        %mean_s_static_rot(i) = mean(gs_rot(2,:));
-        %%% get the standard deviation along the x direction (i.e. g)
-        std_phasor_radial(i) = std(gs_rot(1,:));
-        std_phasor_tangential(i) = std(gs_rot(2,:));
+        %%% get the covariance matrix
+        covariance_matrix = cov(g_static(:,i),s_static(:,i));
+        %%% rotate the covariance matrix: R*C*R^(-1)
+        covariance_matrix_rot = rot*covariance_matrix*rot.';
+        %%% read out the x component
+        std_phasor_radial(i) = sqrt(covariance_matrix_rot(1,1));
+        %%% project the variance along the radial direction from the
+        %%% sampling point.
         %%% define the unit vector from the mean g/s coordinates to the
         %%% circle center
         v = [0.5-mean_g_static(i);(-1)*mean_s_static(i)]; v = v./norm(v);
@@ -190,6 +190,24 @@ if do_phasor
         g_ci_upper(i) = mean_g_static(i) - v(1)*std_phasor_radial(i)*ci;
         s_ci_lower(i) = mean_s_static(i) + v(2)*std_phasor_radial(i)*ci;
         s_ci_upper(i) = mean_s_static(i) - v(2)*std_phasor_radial(i)*ci;
+        
+        old = false;
+        if old 
+            % this code rotated the data first and then estimated the
+            % variances.
+            % Instead, we now rotate the covariance matrix directly, which
+            % is more elegant.
+            
+            %%% rotate the samples g and s values
+            gs_rot = rot*[g_static(:,i)'-0.5;s_static(:,i)'];
+            gs_rot(1,:) = gs_rot(1,:) + 0.5;
+            %mean_g_static_rot(i) = mean(gs_rot(1,:));
+            %mean_s_static_rot(i) = mean(gs_rot(2,:));
+            %%% get the standard deviation along the x direction (i.e. g)
+            std_phasor_radial(i) = std(gs_rot(1,:));
+            std_phasor_tangential(i) = std(gs_rot(2,:));            
+        end
+        
     end
 end
 %% plot smoothed dynamic FRET line
@@ -308,7 +326,13 @@ if do_phasor
     add_universal_circle(ax,1);
     % conf int
     %scatter(mean_g_static,mean_s_static,80,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
-    patch([g_ci_lower,fliplr(g_ci_upper)],[s_ci_lower,fliplr(s_ci_upper)],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+    % filter NaNs
+    g_ci = [g_ci_lower,fliplr(g_ci_upper)];
+    s_ci = [s_ci_lower,fliplr(s_ci_upper)];
+    valid = isfinite(g_ci) & isfinite(s_ci);
+    g_ci = g_ci(valid);
+    s_ci = s_ci(valid);
+    patch(g_ci,s_ci,0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
     set(gca,'Color',[1,1,1]);
 
     % FRET-averaged phasor    
