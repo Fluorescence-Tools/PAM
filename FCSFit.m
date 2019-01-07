@@ -37,7 +37,13 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.FCSFit,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:7 9 13:17]))
+    if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+        delete(toolbar_items([2:7 9 13:17]));
+    else %%% 2018b and upward
+        %%% just remove the tool bar since the options are now in the axis
+        %%% (e.g. axis zoom etc)
+        delete(toolbar_items);
+    end
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
@@ -770,8 +776,8 @@ switch Type
                 Text = Text{1};
                 Data.Header = Text{1};
                 Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 1 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 2 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
@@ -1172,8 +1178,8 @@ switch mode
         Columns=cell(3*numel(FCSMeta.Model.Params)+5,1);
         Columns{1} = '<HTML><b>File</b>';
         Columns{2}='<HTML><b>Active</b>';
-        Columns{3}='<HTML><b>Counts [khz]</b>';
-        Columns{4}='<HTML><b>Brightness [khz]</b>';
+        Columns{3}='<HTML><b>Counts [kHz]</b>';
+        Columns{4}='<HTML><b>Brightness [kHz]</b>';
         for i=1:numel(FCSMeta.Model.Params)
             Columns{3*i+2}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
             Columns{3*i+3}='<HTML><b>F</b>';
@@ -1238,7 +1244,7 @@ switch mode
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-4),false];  
+        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
         h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -1292,15 +1298,58 @@ switch mode
         %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
-    case 3 %%% Individual cells callbacks 
+    case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %%% detect click of "All" row, in which case the callback
+            %%% should finish to update the values
+            %%% problem in 2018a: Updating the other values causes the cell
+            %%% selection to drop, making it impossible to set another
+            %%% value.
+            %%% The "All" row thus only updates if the user types a
+            %%% different value, causing the EditCallback to fire.
+            if ~isempty(e.Indices) && e.Indices(1) == size(h.Fit_Table.Data,1)-2
+                %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
+            else
+                if isempty(e.Indices) % sometime, indices is empty
+                    h.Fit_Table.CellEditCallback={@Update_Table,3};
+                    return;
+                end
+                %%% if a lower boundary/upperboundary field of a logical
+                %%% quantity was clicked (i.e. active/fixed/global)
+                %%% make sure to deselect the field to prevent the user
+                %%% from typing a value
+                deselect = 0;
+                if e.Indices(1) > size(h.Fit_Table.Data,1)-2 %%% clicked lb/ub field
+                    if e.Indices(2) == 2 %%% clicked the "active" column
+                        deselect = 1;
+                    elseif e.Indices(2) == size(h.Fit_Table.Data,2) % clicked chi2 field
+                        deselect = 1;
+                    elseif mod(e.Indices(2)-5,3) ~= 0 % clicked fixed or global field
+                        deselect = 1;
+                    end
+                end
+                if deselect
+                    %%% deselection of field is only possible by assigning
+                    %%% a dummy to the data and re-assigning the original
+                    %%% data afterwards
+                    temp = h.Fit_Table.Data;
+                    h.Fit_Table.Data = repmat({'dummy'},size(h.Fit_Table.Data));
+                    h.Fit_Table.Data = temp;
+                end
+                %%% re-assign callback and exit
                 h.Fit_Table.CellEditCallback={@Update_Table,3};
                 return;
             end
-            NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+            % previously, the following code was called that caused the GUI to get stuck in version 2018a and upwards
+            %if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %    h.Fit_Table.CellEditCallback={@Update_Table,3};
+            %    return;
+            %end
+            %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
         end
         if isprop(e,'NewData')
             NewData = e.NewData;
@@ -1698,8 +1747,16 @@ for i=1:size(FCSMeta.Plots,1)
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
             FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
-            FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
-            FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
+            %%% find offset parameter (should be named y0)
+            offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+            if isempty(offset_idx)
+                disp('No offset parameter found. Make sure that it is named "y0" in the model definition.');
+                FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
+                FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
+            else
+                FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;  
+                FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;
+            end
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
@@ -1714,7 +1771,11 @@ for i=1:size(FCSMeta.Plots,1)
         if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
-            FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
+            if isempty(offset_idx)
+                FCSMeta.Plots{i,2}.YData=OUT/B;
+            else
+                FCSMeta.Plots{i,2}.YData=(OUT-P(offset_idx))/B;
+            end
         end
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
@@ -2470,6 +2531,7 @@ switch obj
         if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
             h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
             h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(end-2,7:3:end) = num2cell(sum(cell2mat(data.GlobalState),1) > 0);
             h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
             Update_Plots;
         end
