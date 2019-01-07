@@ -22,6 +22,9 @@ if ~verLessThan('matlab','8.5')
     drawnow nocallbacks
 end
 %% Update Main Plot
+if h.axes_general.YDir == 'reverse'
+    set(h.axes_general,'YDir','normal');
+end
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 x_name = h.ParameterListX.String{x};

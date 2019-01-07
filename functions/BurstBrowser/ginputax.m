@@ -254,7 +254,7 @@ end
 function initialState = setupFcn(fig)
 % Store Figure Handle. 
 initialState.figureHandle = fig; 
-h.PlotDynamicFRETButton.String = 'Move cursor to E-Tau plot';
+% h.PlotDynamicFRETButton.String = 'Move cursor to E-Tau plot';
 % Suspend figure functions
 initialState.uisuspendState = uisuspend(fig);
 

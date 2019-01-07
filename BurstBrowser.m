@@ -4496,7 +4496,7 @@ end
     UpdateGUIOptions(h.PlotGridAboveDataCheckbox,[],h);
     ChangePlotType([],[],h);
     %%% Load sample data
-    %BBSampleData
+    BBSampleData
     %% set UserValues in GUI
     UpdateCorrections([],[],h);
     %%% Update ColorMap
