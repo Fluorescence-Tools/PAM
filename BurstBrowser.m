@@ -23,6 +23,28 @@ if isempty(hfig)
      s.addText( 30, 50, 'BurstBrowser', 'FontSize', 30, 'Color', [1 1 1] );
      s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
      s.addText( 385, 330, 'Loading...', 'FontSize', 20, 'Color', 'white' );
+     try %%% try to get random fact
+         data = webread('http://randomuselessfact.appspot.com/random.json?language=en');
+         text_total = data.text;
+         %%% split text every N characters
+         N = 60;
+         text_total = [text_total, repmat(' ',1,N-mod(numel(text_total),N))];
+         txt=cellstr(reshape(text_total,N,[])');
+         % avoid splitting words
+         for i = 1:numel(txt)-1
+             while ~any(strcmp(txt{i}(end),{' ',',',':','.','-'}))
+                 txt{i+1} = [txt{i}(end) txt{i+1}];
+                 txt{i}(end) = [];
+             end
+         end
+         % render text
+         start = 300-numel(txt)*20;
+         s.addText(30,start-5,'Random fact:','FontSize',18,'Color',[1,1,1]);
+         for i = 1:numel(txt)
+            s.addText(30,start+i*20,txt{i},'FontSize',16,'Color',[1,1,1]);
+         end
+         s.addText(30,335,'http://randomuselessfact.appspot.com','FontSize',12,'Color',[1,1,1]);
+     end
     %% Define main window
     h.BurstBrowser = figure(...
         'Units','normalized',...
