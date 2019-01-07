@@ -3326,7 +3326,7 @@ else %%% dynamic model
         %%% combine mixtures, weighted with PofT (probability to see a certain
         %%% combination)
         %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
-        hFit_Dyn = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Dyn = zeros(numel(PDAMeta.P{i,1}),1);
         for t1 = 1:size(PofT,1)
             for t2 = 1:size(PofT,1)
                 for k =1:numel(PDAMeta.eps_grid{i})
@@ -3337,9 +3337,9 @@ else %%% dynamic model
             end
         end
         % pure state histograms
-        hFit_Ind{1} = zeros(numel(PDAMeta.eps_grid{i}),1);
-        hFit_Ind{2} = zeros(numel(PDAMeta.eps_grid{i}),1);
-        hFit_Ind{3} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Ind{1} = zeros(numel(PDAMeta.P{i,1}),1);
+        hFit_Ind{2} = zeros(numel(PDAMeta.P{i,1}),1);
+        hFit_Ind{3} = zeros(numel(PDAMeta.P{i,1}),1);
         % only state 1
         t1 = size(PofT,1);
         t2 = 1;
@@ -5039,7 +5039,7 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                 h.FitTab.Table.ColumnWidth{11} = 70;
                 h.FitTab.Table.Position(3) = 1;
                 h.KineticRates_table.Visible = 'off';
-                h.FitTab.Table.ColumnEditable([2,4,11,13,20,22]) = deal(true);
+                h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(true);
                 if h.SettingsTab.DynamicSystem.Value == 2 %%% three-state model
                     h.FitTab.Table.ColumnName{20} = '<HTML><b>k<sub>31</sub> [ms<sup>-1</sup>]</b>';
                     h.FitTab.Table.ColumnWidth{20} = 70; 
