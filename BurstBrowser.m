@@ -62,6 +62,8 @@ if isempty(hfig)
             s.addText(30,start+i*20,txt{i},'FontSize',16,'Color',[1,1,1]);
          end
          s.addText(30,335,source,'FontSize',12,'Color',[1,1,1]);
+         % also print the fact to command line
+         disp(sprintf('%s\n',title_str,txt{:}));
      end
     %% Define main window
     h.BurstBrowser = figure(...
