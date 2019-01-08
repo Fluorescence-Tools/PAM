@@ -24,8 +24,23 @@ if isempty(hfig)
      s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
      s.addText( 385, 330, 'Loading...', 'FontSize', 20, 'Color', 'white' );
      try %%% try to get random fact
-         data = webread('http://randomuselessfact.appspot.com/random.json?language=en');
-         text_total = data.text;
+         %%% random fact or quote?
+         type = randi(2);
+         switch type
+             case 1 %%% get random fact
+                 title = 'Random fact:';
+                 data = webread('http://randomuselessfact.appspot.com/random.json?language=en');
+                 text_total = data.text;
+                 source = 'http://randomuselessfact.appspot.com';
+             case 2
+                 title = 'Random quote:';
+                 data = webread('https://opinionated-quotes-api.gigalixirapp.com/v1/quotes?rand=t&tags=short');
+                 text_total = data.quotes.quote;
+                 if isfield(data.quotes,'author')
+                     author = data.quotes.author;
+                 end
+                 source = 'http://opinionated-quotes-api.gigalixirapp.com';
+         end
          %%% split text every N characters
          N = 60;
          text_total = [text_total, repmat(' ',1,N-mod(numel(text_total),N))];
@@ -37,13 +52,16 @@ if isempty(hfig)
                  txt{i}(end) = [];
              end
          end
+         if exist('author','var')
+             txt{end+1} = author;
+         end
          % render text
          start = 300-numel(txt)*20;
-         s.addText(30,start-5,'Random fact:','FontSize',18,'Color',[1,1,1]);
+         s.addText(30,start-5,title,'FontSize',18,'Color',[1,1,1]);
          for i = 1:numel(txt)
             s.addText(30,start+i*20,txt{i},'FontSize',16,'Color',[1,1,1]);
          end
-         s.addText(30,335,'http://randomuselessfact.appspot.com','FontSize',12,'Color',[1,1,1]);
+         s.addText(30,335,source,'FontSize',12,'Color',[1,1,1]);
      end
     %% Define main window
     h.BurstBrowser = figure(...
