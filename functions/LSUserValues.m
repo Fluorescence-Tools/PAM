@@ -2228,6 +2228,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.DynamicAnalysisMethod = S.BurstBrowser.Settings.DynamicAnalysisMethod;
     
+    %%% Check, if BurstBrowser.Settings.BVAdynFRETline subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVAdynFRETline')
+        S.BurstBrowser.Settings.BVAdynFRETline=1;
+        disp('UserValues.BurstBrowser.Settings.BVAdynFRETline was incomplete');
+    end
+    P.BurstBrowser.Settings.BVAdynFRETline = S.BurstBrowser.Settings.BVAdynFRETline;
+    
     %%% Check, if BurstBrowser.Settings.DynFRETLine_Line subfield exists
     if ~isfield(S.BurstBrowser.Settings,'DynFRETLine_Line')
         S.BurstBrowser.Settings.DynFRETLine_Line=1;
