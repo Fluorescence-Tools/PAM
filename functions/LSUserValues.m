@@ -871,18 +871,18 @@ if Mode==0 %%% Loads user values
     P.MIAFit.Export_Font = S.MIAFit.Export_Font;
     
     %% Phasor
-    %%% Checks, if Phasor subfield exists
-    if ~isfield(S,'Phasor')
-        S.Phasor=[];
-        disp('UserValues.Phasor was incomplete');
-    end
-    P.Phasor = [];
+%     %%% Checks, if Phasor subfield exists
+%     if ~isfield(S,'Phasor')
+%         S.Phasor=[];
+%         disp('UserValues.Phasor was incomplete');
+%     end
+%     P.Phasor = [];
     %%% Checks, if Phasor.Reference subfield exists
     if ~isfield(S.Phasor,'Reference')
-          S.Phasor.Reference=zeros(numel(S.Detector.Det),4096);
+          S.Phasor.Reference=zeros(numel(S.PIE.Name),4096);
         disp('UserValues.Phasor.Reference was incomplete');
-    elseif size(S.Phasor.Reference,1)<numel(P.Detector.Det)
-        S.Phasor.Reference(numel(P.Detector.Det),end) = 0;
+    elseif size(S.Phasor.Reference,1)<numel(S.PIE.Name)
+        S.Phasor.Reference(numel(S.PIE.Name),end) = 0;
     end
     P.Phasor.Reference = S.Phasor.Reference;
      %%% Checks, if Phasor.Combined_Reference subfield exists

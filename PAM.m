@@ -1543,26 +1543,13 @@ h.Cor_fFCS.Filter_Axis2.YLabel.String='filter value';
 h.Cor_fFCS.Filter_Axis2.YLabel.Color=Look.Fore;
 h.Cor_fFCS.Filter_Axis2.XLim=[1 4096];
 h.Plots.fFCS.Filter_Plots2{1} = handle(plot([0 1],[0 0],'b'));
-%% Additional detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Additional_Phasor detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Aditional detector functions tab
-h.Phasor.Tab= uitab(...
+
+%% Phasor functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+h.MI.Phasor_Tab= uitab(...
     'Parent',h.Det_Tabs,...
     'Tag','Phasor_Tab',...
     'Title','Phasor');
-%%% Microtime tabs container
-h.Phasor.Tabs = uitabgroup(...
-    'Parent',h.Phasor.Tab,...
-    'Tag','Phasor_Tabs',...
-    'Units','normalized',...
-    'Position',[0 0 1 1]);
-%% Plots and navigation for phasor referencing
-%%% Phasor referencing tab
-h.MI.Phasor_Tab= uitab(...
-    'Parent',h.Phasor.Tabs,...
-    'Tag','MI_Phasor_Tab',...
-    'Title','Phasor Referencing and Calculation');
-%%% Phasor referencing panel
+% %%% Microtime tabs container
 h.MI.Phasor_Panel = uibuttongroup(...
     'Parent',h.MI.Phasor_Tab,...
     'Tag','MI_All_Panel',...
@@ -1684,10 +1671,21 @@ h.MI.Phasor_Export_Menu = uimenu(...
     'Callback',{@Update_Display,6});
 h.MI.Phasor_Axes.UIContextMenu = h.MI.Menu;
 h.MI.Phasor_Panel.UIContextMenu = h.MI.Menu;
-%% Tab for calibrating Detectors
+%% Aditional functions tab
+%%% Aditional detector functions tab
+h.Additional.Tab= uitab(...
+    'Parent',h.Det_Tabs,...
+    'Tag','Additional_Tab',...
+    'Title','Additional');
+%%% Microtime tabs container
+h.Additional.Tabs = uitabgroup(...
+    'Parent',h.Additional.Tab,...
+    'Tag','Additional_Tabs',...
+    'Units','normalized',...
+    'Position',[0 0 1 1]);
 %%% Detector calibration tab
 h.MI.Calib_Tab= uitab(...
-    'Parent',h.Det_Tabs,...
+    'Parent',h.Additional.Tabs,...
     'Tag','MI_Calib_Tab',...
     'Title','Detector Calibration');
 %%% Detector calibration panel
@@ -4378,46 +4376,60 @@ if any(mode==8)
 end
 
 %%% Phasor microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if any(mode==6) || any(mode==2) %%% 
-hold on
+    if any(mode==6) || any(mode==1) %%% 
+% hold on
 %%% Finds currently selected PIE channel
 Sel=h.PIE.List.Value(1); %%% delected PIE channels
-for i=Sel
-    if UserValues.PIE.Detector(i) ~=0
-       Det=UserValues.PIE.Detector(i);
-       Rout=UserValues.PIE.Router(i);
-       To=UserValues.PIE.To(i);
-       From=UserValues.PIE.From(i);
-       Shift=h.Phasor.Table.Data{i, 3};
+% for 
+% i=Sel;
+    if UserValues.PIE.Detector(Sel) ~=0
+       Det=UserValues.PIE.Detector(Sel);
+       [row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
+       Rout=UserValues.PIE.Router(Sel);
+       To=UserValues.PIE.To(Sel);
+       From=UserValues.PIE.From(Sel);
+       Shift=h.Phasor.Table.Data{Sel, 3};
                   
             %% Plots Reference histogram
-    Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 round(Shift)]);Ref=Ref(From:To);
+    if Sel<= size(UserValues.Phasor.Reference,1) && any(UserValues.Phasor.Reference(Sel,:))
+    Ref=circshift(UserValues.Phasor.Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
-    h.Plots.PhasorRef.YData=Ref/max(Ref);
+    h.Plots.PhasorRef.YData=Ref/max(Ref); 
+    else
+        m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New PIE channel!','modal');    
+    end
+    
     %%% Plots Phasor microtime
     h.Plots.Phasor.XData=From:To;
     Pha=PamMeta.MI_Hist{Det}(From:To);
     h.Plots.Phasor.YData=Pha/max(Pha); 
-    hold off
+%     hold off
     else
-       Det=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';
-       Pha=PamMeta.MI_Hist(Det, :); 
-       Pha1=Pha{1, :}; Pha1=Pha1*h.Phasor.Table.Data{i, 7}; %%Parallel channel
-       Pha2=Pha{2, :}; Pha2= Pha2*2; %%% perpendicular channel
+       Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined channel
+       [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
+       [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
+%        Pha=PamMeta.MI_Hist(Det, :); 
+       Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
+       Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
        Pha=Pha1+Pha2;
-       Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{i}));
-       To=max(UserValues.PIE.To(UserValues.PIE.Combined{i}));
-       From=max(UserValues.PIE.From(UserValues.PIE.Combined{i}));
-       Shift=h.Phasor.Table.Data{i, 3};
+       Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
+       To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
+       From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
+       Shift=h.Phasor.Table.Data{Sel, 3};
        %% Plots Reference histogram of Combine Channel
+%        if any(UserValues.Phasor.Combined_Reference(Sel,:))
+  if Sel<= size(UserValues.Phasor.Combined_Reference,1) && any(UserValues.Phasor.Combined_Reference(Sel,:))
     Ref=circshift(UserValues.Phasor.Combined_Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
     h.Plots.PhasorRef.YData=Ref/max(Ref);
+  else
+        m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');  
+       end
      %% Plots Phasor microtime of Combine Channel
       h.Plots.Phasor.XData=From:To;
       Pha = Pha(From:To);
       h.Plots.Phasor.YData=Pha/max(Pha);
- end
+
 end  
 obj = gcbo;
 if obj == h.MI.Phasor_Export_Menu
@@ -5088,6 +5100,7 @@ if obj == h.MI.Add
     UserValues.Detector.enabled{end+1} = 'on';
     UserValues.Detector.Shift{end+1}=[];
     UserValues.Phasor.Reference(end+1,end)=0;
+    UserValues.Phasor.Reference_Combined(end+1,end)=0;
 end
 
 if obj == h.MI.Channels_List
@@ -5581,11 +5594,11 @@ switch e.Key
             %%% If selected profile is not the current profile
             if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
                 %%% Deletes profile file and list entry
-                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat']);
                 h.Profiles.List.String(Sel)=[];
             else
                 %%% Deletes profile file and list entry
-                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat']);
                 h.Profiles.List.String(Sel)=[];
                 %%% Selects first profile as current profile
                 Profile= [h.Profiles.List.String{1} '.mat'];
@@ -5891,7 +5904,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
         delete(h.Cor.Individual_Axes{1}.Children);
     end
     %%% Creates plots for all macrotime patches
-    for i=1:numel(Valid);
+    for i=1:numel(Valid)
         line('Parent',h.Cor.Individual_Axes{1},...
             'X',[3e-7 1],...
             'Y',[0 0],...
@@ -6805,34 +6818,41 @@ end
 drawnow;
 %%% Finds currently selected PIE channel
 Sel=h.PIE.List.Value(1);
-for i=Sel
-    if UserValues.PIE.Detector(i)~=0
-        Det=UserValues.PIE.Detector(i);
-        %%% Sets reference to 0 in case of shorter MI length
-        UserValues.Phasor.Reference(Det,:)=0;
+% for i=Sel
+% i=Sel;
+    if UserValues.PIE.Detector(Sel)~=0
+        Det=UserValues.PIE.Detector(Sel);
+        [row, Det]=find(UserValues.Detector.Det==Det); %%Det is Index of selected PIE channel detector from teh Detector list
+
         %%% Assigns current MI histogram as reference
-        UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det}; %%%
-        UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
+        Ref=PamMeta.MI_Hist{Det}; %%%
+        PamMeta.Reference(Sel, 1:numel(Ref))=Ref; 
+   %%% Sets reference to 0 in case of shorter MI length, essential for PIE refernce concatenation
+        UserValues.Phasor.Reference(Sel,:)=0;
+        %%%Concatenate the refrences
+        UserValues.Phasor.Reference(Sel,1:numel(Ref))=PamMeta.Reference(Sel, 1:numel(Ref)); %%%
+        UserValues.Phasor.Reference_Time(Sel) = FileInfo.MeasurementTime;
         UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
         UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
     else
         %%Refrence for combined channel
-        Det=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';
+        Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined cahnnel
+        [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
+        [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
 % %%% Assigns current MI histogram as reference
-     Ref=PamMeta.MI_Hist(Det, :); 
-     Ref1=Ref{1, :}; Ref1=Ref1*h.Phasor.Table.Data{i, 7}; %%Parallel channel
-     Ref2=Ref{2, :}; Ref2=Ref2*2; %%% perpendicular channel
+%      Ref=PamMeta.MI_Hist(Det, :); 
+     Ref1=PamMeta.MI_Hist{Det1, :}; Ref1=Ref1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
+     Ref2=PamMeta.MI_Hist{Det2, :}; Ref2=Ref2*2; %%% perpendicular channel
      Ref=Ref1+Ref2; 
      PamMeta.Combined(Sel, 1:numel(Ref))=Ref; 
      %%% Sets reference to 0 in case of shorter MI length
-     UserValues.Phasor.Reference_Combined(Sel,:)=0;
-     
+     UserValues.Phasor.Reference_Combined(Sel,:)=0;    
      UserValues.Phasor.Combined_Reference(Sel, 1:numel(Ref))=PamMeta.Combined(Sel, 1:numel(Ref));
      UserValues.Phasor.Combined_Reference_Time(Sel) = FileInfo.MeasurementTime;
      UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
      UserValues.Phasor.Reference_TAC = FileInfo.TACRange; 
      LSUserValues(1)
-     end
+%      end
      end
 LSUserValues(1);
 
@@ -6893,16 +6913,16 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
    Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
    Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);  
        
-    Det=UserValues.PIE.Detector(i);
+    Det=UserValues.PIE.Detector(i);%%Actual Detector value required to extract the Tcspc MI and MT data
     Rout=UserValues.PIE.Router(i);
     To=UserValues.PIE.To(i);
     From=UserValues.PIE.From(i);
     
         %%%Calculate reference for single PIE channel        
-        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(Det)/Ref_MI_Bins;        
+        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(i)/Ref_MI_Bins;  %% Here i is equal to Sel in Phasor_ref and Update dispaly     
 
         %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 round(Shift)]);
+        Ref=circshift(UserValues.Phasor.Reference(i,:),[0 round(Shift)]);%%%Here i is equal to Sel in Phasor_ref and Update dispaly
         Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
         if From>1
@@ -6981,10 +7001,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
       Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
       Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);  
    
-       Sel=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';
+       Sel=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';%%Actual Dtector of the combined channels for Tcspcs MI and MT 
        Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{i}));%%%Keep one Rout value
        To=max(UserValues.PIE.To(UserValues.PIE.Combined{i}));%%%Keep on From
-       From=max(UserValues.PIE.From(UserValues.PIE.Combined{i}));%%%Keep one To
+       From=min(UserValues.PIE.From(UserValues.PIE.Combined{i}));%%%Keep either min or max To
        Background_ref = Background_ref* UserValues.Phasor.Combined_Reference_Time(i)/Ref_MI_Bins;   
        G_factor=h.Phasor.Table.Data{i, 7}; 
            
