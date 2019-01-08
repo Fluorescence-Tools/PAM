@@ -125,10 +125,14 @@ else
     % before calling WAITFORBUTTONPRESS
     drawnow
     char = 0;
-    
+     %tf = any(~cellfun('isempty',strfind(x,'xc')))
     while how_many ~= 0
-%         set(fig,'WindowButtonMotionFcn',@changepointer)
-        h.PlotDynamicFRETButton.String = ['Remaining: ',num2str(how_many)];
+        %         set(fig,'WindowButtonMotionFcn',@changepointer)
+        if h.PlotDynamicFRETButton.Value == true
+                h.PlotDynamicFRETButton.String = ['Remaining: ',num2str(how_many)];
+        elseif h.ManualAnisotropyButton.Value == true
+                h.ManualAnisotropyButton.String = 'Click on an anisotropy axis.';
+        end
         % Use no-side effect WAITFORBUTTONPRESS
         outax=[];
         waserr = 0;

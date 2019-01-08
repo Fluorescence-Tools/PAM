@@ -243,7 +243,14 @@ if obj == h.ManualAnisotropyButton
     BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =[];BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = [];
     h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
     if verLessThan('MATLAB','9.5')
-        [x,y,button] = ginput(1);
+        switch h.LifetimeTabgroup.SelectedTab.Title
+            case 'All'
+                h.lifetime_ind_popupmenu.Value = 1;
+                [x,y,button] = ginputax({h.axes_rGGvsTauGG,h.axes_rRRvsTauRR, h.axes_rBBvsTauBB},1,h);
+            case 'Individual'
+                [x,y,button] = ginputax(h.axes_lifetime_ind_2d,1,h);
+        end
+        h.ManualAnisotropyButton.String = 'Manual Perrin line';
     else % 2018b onwards
         [x,y,button] = my_ginput(1);
     end
@@ -253,12 +260,12 @@ if obj == h.ManualAnisotropyButton
         switch BurstData{file}.BAMethod
             case {1,2}
                 switch h.lifetime_ind_popupmenu.Value
-                    case 3 %%% rGG  vs tauGG
+                    case 3 %%% rGG 'Manual Perrin line' vs tauGG
                         axes(h.axes_rGGvsTauGG);
                     case 4
                         axes(h.axes_rRRvsTauRR);
                     otherwise
-                        m = msgbox('Click on a anistropy axis!');
+                        m = msgbox('Click on an anistropy axis!');
                         pause(1)
                         delete(m)
                         return;
