@@ -28,12 +28,12 @@ if isempty(hfig)
          type = randi(2);
          switch type
              case 1 %%% get random fact
-                 title = 'Random fact:';
+                 title_str = 'Random fact:';
                  data = webread('http://randomuselessfact.appspot.com/random.json?language=en');
                  text_total = data.text;
                  source = 'http://randomuselessfact.appspot.com';
              case 2
-                 title = 'Random quote:';
+                 title_str = 'Random quote:';
                  data = webread('https://opinionated-quotes-api.gigalixirapp.com/v1/quotes?rand=t&tags=short');
                  text_total = data.quotes.quote;
                  if isfield(data.quotes,'author')
@@ -57,7 +57,7 @@ if isempty(hfig)
          end
          % render text
          start = 300-numel(txt)*20;
-         s.addText(30,start-5,title,'FontSize',18,'Color',[1,1,1]);
+         s.addText(30,start-5,title_str,'FontSize',18,'Color',[1,1,1]);
          for i = 1:numel(txt)
             s.addText(30,start+i*20,txt{i},'FontSize',16,'Color',[1,1,1]);
          end
