@@ -2221,12 +2221,33 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.DynamicAnalysisMethod = S.BurstBrowser.Settings.DynamicAnalysisMethod;
     
-    %%% Check, if BurstBrowser.Settings.BVAdynFRETline subfield exists
-    if ~isfield(S.BurstBrowser.Settings,'BVAdynFRETline')
-        S.BurstBrowser.Settings.BVAdynFRETline=1;
-        disp('UserValues.BurstBrowser.Settings.BVAdynFRETline was incomplete');
+    %%% Check, if BurstBrowser.Settings.DynamicAnalysisMethod subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynamicAnalysisMethod')
+        S.BurstBrowser.Settings.DynamicAnalysisMethod=1;
+        disp('UserValues.BurstBrowser.Settings.DynamicAnalysisMethod was incomplete');
     end
-    P.BurstBrowser.Settings.BVAdynFRETline = S.BurstBrowser.Settings.BVAdynFRETline;
+    P.BurstBrowser.Settings.DynamicAnalysisMethod = S.BurstBrowser.Settings.DynamicAnalysisMethod;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLine_Line subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLine_Line')
+        S.BurstBrowser.Settings.DynFRETLine_Line=1;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLine_Line was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLine_Line = S.BurstBrowser.Settings.DynFRETLine_Line;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLineTau1 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineTau1')
+        S.BurstBrowser.Settings.DynFRETLineTau1=1;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineTau1 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineTau1 = S.BurstBrowser.Settings.DynFRETLineTau1;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLineTau2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineTau2')
+        S.BurstBrowser.Settings.DynFRETLineTau2=3;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineTau2 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineTau2 = S.BurstBrowser.Settings.DynFRETLineTau2;
     
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
@@ -2234,8 +2255,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.DatabaseString was incomplete');
     end
     P.BurstBrowser.DatabaseString = S.BurstBrowser.DatabaseString;
-    
-    
+ 
     %%% Check, if BurstBrowser.Database subfield exists
     if ~isfield(S.BurstBrowser, 'Database')
         S.BurstBrowser.Database={};
