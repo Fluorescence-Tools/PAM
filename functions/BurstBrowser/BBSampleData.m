@@ -34,6 +34,8 @@ c = linspace(1,10,length(x));
 
 scatter(h.axes_general,x,y,100,c,'filled');
 set(h.axes_general,'YDir','reverse');
+set(h.axes_general,'XLim',[-40 130]);
+%colormap(jet)
 % set(h.axes_general,'YTick',[]);
 % set(h.axes_general,'XTick',[]);
 
