@@ -4391,12 +4391,12 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
        Shift=h.Phasor.Table.Data{Sel, 3};
                   
             %% Plots Reference histogram
-    if Sel<= size(UserValues.Phasor.Reference,1) && any(UserValues.Phasor.Reference(Sel,:))
+    if Sel<= size(UserValues.Phasor.Reference,1) || any(UserValues.Phasor.Reference(Sel,:))
     Ref=circshift(UserValues.Phasor.Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
     h.Plots.PhasorRef.YData=Ref/max(Ref); 
-    else
-        m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New PIE channel!','modal');    
+%     else
+%         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New PIE channel!','modal');    
     end
     
     %%% Plots Phasor microtime
@@ -4418,12 +4418,12 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
        Shift=h.Phasor.Table.Data{Sel, 3};
        %% Plots Reference histogram of Combine Channel
 %        if any(UserValues.Phasor.Combined_Reference(Sel,:))
-  if Sel<= size(UserValues.Phasor.Combined_Reference,1) && any(UserValues.Phasor.Combined_Reference(Sel,:))
+  if Sel<= size(UserValues.Phasor.Combined_Reference,1) || any(UserValues.Phasor.Combined_Reference(Sel,:))
     Ref=circshift(UserValues.Phasor.Combined_Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
     h.Plots.PhasorRef.YData=Ref/max(Ref);
-  else
-        m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');  
+%   else
+%         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');  
        end
      %% Plots Phasor microtime of Combine Channel
       h.Plots.Phasor.XData=From:To;
