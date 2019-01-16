@@ -3907,6 +3907,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     end
 else %%% dynamic model 
     SimTime = dur/1000; % time bin in seconds
+    %SimSteps = BSD; %
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
     % ( 12 22 32 ... )
@@ -3929,11 +3930,18 @@ else %%% dynamic model
     R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
+    
+    % gillespie
+    SimTime_gillespie = SimTime*1000;
+    dynamic_rates = 1 ./ DynRates * 1000;
+    dynamic_rates(isinf(dynamic_rates)) = 0;
+    dynR_tot = sum(dynamic_rates);
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
     for k = 1:sampling
         fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
+        %fracTauT = dyn_sim_arbitrary_states_gillespie(dynamic_rates,SimTime_gillespie,numel(BSD),dynR_tot);
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
