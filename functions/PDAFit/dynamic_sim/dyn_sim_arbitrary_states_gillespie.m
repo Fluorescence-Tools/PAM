@@ -28,24 +28,22 @@ end
 initial_state_random = mnrnd(1,p_eq,number_of_timewindows);
 
 % preallocation while loop
-R_max = 3;
-
-% random numbers for state change
-rand_nums = rand(1,number_of_timewindows*R_max+1);
+R_max = 5;
 
 % random numbers for dwell times
 
-dwelltimes = 1 ./ dynamic_rates * 1000;
-dwelltimes(isinf(dwelltimes)) = 0;
-dynD_tot = sum(dwelltimes);
+
+Dwell_mean = 1 ./ sum(dynamic_rates./1000);
+% Dwell_mean(isinf(Dwell_mean)) = 0;
+% Dwell_mean = sum(Dwell_mean);
 
 switch n_states
     case 2
         % preallocation for loop
         time_in_states_gillespie = zeros(number_of_timewindows,2);
         
-        tau_rnd = [exprnd(dynD_tot(1,1),[1,number_of_timewindows*R_max+R_max]);...
-            exprnd(dynD_tot(1,2),[1,number_of_timewindows*R_max+R_max])];
+        tau_rnd = [exprnd(Dwell_mean(1,1),[1,number_of_timewindows*R_max+R_max]);...
+            exprnd(Dwell_mean(1,2),[1,number_of_timewindows*R_max+R_max])];
         
         states = [1;2];
         
@@ -82,19 +80,22 @@ switch n_states
         
     case 3
         % preallocation for loop
+        % random numbers for state change
+        rand_nums = rand(number_of_timewindows*R_max+R_max,1);
+        
         time_in_states_gillespie = zeros(number_of_timewindows,3);
         
-        tau_rnd = [exprnd(dynD_tot(1,1),[1, number_of_timewindows*R_max+R_max]);...
-            exprnd(dynD_tot(1,2),[1, number_of_timewindows*R_max+R_max]);...
-            exprnd(dynD_tot(1,3),[1, number_of_timewindows*R_max+R_max])];
+        tau_rnd = [exprnd(Dwell_mean(1,1),[1, number_of_timewindows*R_max+R_max]);...
+            exprnd(Dwell_mean(1,2),[1, number_of_timewindows*R_max+R_max]);...
+            exprnd(Dwell_mean(1,3),[1, number_of_timewindows*R_max+R_max])];
 
         state_changes = [NaN,  -1,  -2; 
                           +1, NaN,  -1;
                           +2,  +1, NaN];
                     
-        change_prob = cumsum(dwelltimes);
+        change_prob = cumsum(dynamic_rates);
         change_prob = change_prob ./ change_prob(end,:);
-        change_prob(2,2) = 0; change_prob(3,3) = 0;
+        change_prob(1,1) = 0; change_prob(2,2) = 0;
         
         for i = 1:number_of_timewindows
             nn = find(initial_state_random(i,:),1,'first'); % initial state
@@ -108,7 +109,7 @@ switch n_states
 
                 tau(R_count) = tau_rnd(nn,(i-1)*R_max+R_count);
                 
-                s = state_changes(change_prob(:,nn) > rand_nums(1,(i-1)*R_max+R_count),nn);
+                s = state_changes(change_prob(:,nn) > rand_nums((i-1)*R_max+R_count),nn);
                 
                 tt = tt + tau(R_count);
                 
@@ -120,7 +121,7 @@ switch n_states
                 end
                 nn = nn + s(1);
             end
-            time_in_states_gillespie(i,:) = [sum(tau(nn_store == 1)),sum(tau(nn_store == 2)),sum(tau(nn_store == 3))] ./ SimTime;
+            time_in_states_gillespie(i,:) = [sum(tau(nn_store == 1)),sum(tau(nn_store == 2)),sum(tau(nn_store == 3))];
         end
 end
 end
