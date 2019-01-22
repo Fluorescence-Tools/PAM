@@ -304,9 +304,9 @@ function dummy(fig)
 % do nothing, this is there to update the GINPUT WindowButtonMotionFcn. 
 %if mouse is inside the axes specified by the user, then a
 %crosshair is shown
-cdata = NaN(32,32);cdata(15:17,:)=2;cdata(:,15:17)=2;
-cdata(16,2:31)=1;cdata(2:31,16)=1;
-set(fig,'Pointer','custom','PointerShapeCData',cdata)
+% cdata = NaN(32,32);cdata(15:17,:)=2;cdata(:,15:17)=2;
+% cdata(16,2:31)=1;cdata(2:31,16)=1;
+set(fig,'Pointer','custom','Pointer','crosshair')
 % posfig = getpixelposition(fig);
 % for i=1:length(ax)
 %     posax = getpixelposition(ax(i));
