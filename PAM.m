@@ -7501,7 +7501,7 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     start = [];
     stop = [];
     count = 0;
-    for i = 1:ChunkSize
+    for i = 1:Number_of_Chunks
         start = [start; start_all{i}+count];
         stop = [stop; stop_all{i}+count];
         count = count + numel(Macrotime_all{i});
