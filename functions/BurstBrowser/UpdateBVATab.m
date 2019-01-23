@@ -75,4 +75,6 @@ elseif obj == h.Xaxis_Popupmenu
     UserValues.BurstBrowser.Settings.BVA_X_axis = h.Xaxis_Popupmenu.Value;
 elseif obj == h.FRETpair_Popupmenu
     UserValues.BurstBrowser.Settings.FRETpair = h.FRETpair_Popupmenu.Value;
+elseif obj == h.DynFRETLine_checkbox
+    UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
 end
