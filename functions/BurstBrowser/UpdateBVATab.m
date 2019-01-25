@@ -77,4 +77,6 @@ elseif obj == h.FRETpair_Popupmenu
     UserValues.BurstBrowser.Settings.FRETpair = h.FRETpair_Popupmenu.Value;
 elseif obj == h.DynFRETLine_checkbox
     UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
+elseif obj == h.ConsistencyMethod_Popupmenu
+    UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method = h.ConsistencyMethod_Popupmenu.Value;
 end
