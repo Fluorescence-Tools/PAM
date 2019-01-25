@@ -34,8 +34,6 @@ R_max = 5;
 
 
 Dwell_mean = 1 ./ sum(dynamic_rates./1000);
-% Dwell_mean(isinf(Dwell_mean)) = 0;
-% Dwell_mean = sum(Dwell_mean);
 
 switch n_states
     case 2
@@ -47,7 +45,7 @@ switch n_states
         
         states = [1;2];
         
-        for i = 1:number_of_timewindows
+        parfor i = 1:number_of_timewindows
             %nn = find(initial_state_random(i,:),1,'first'); % initial state
             nn = initial_state_random(i,:) * states;
             nn_store = zeros(1,R_max);
@@ -97,7 +95,7 @@ switch n_states
         change_prob = change_prob ./ change_prob(end,:);
         change_prob(1,1) = 0; change_prob(2,2) = 0;
         
-        for i = 1:number_of_timewindows
+        parfor i = 1:number_of_timewindows
             nn = find(initial_state_random(i,:),1,'first'); % initial state
             nn_store = zeros(1,R_max+1);
             tau = zeros(1,R_max+1);

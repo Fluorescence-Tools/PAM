@@ -1,4 +1,4 @@
-function kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
+function [sSelected,sPerBin] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
