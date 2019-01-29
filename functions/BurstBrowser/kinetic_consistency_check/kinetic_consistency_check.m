@@ -1,4 +1,4 @@
-function [sSelected,sPerBin] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
+function [E,sSelected,sPerBin] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -121,7 +121,7 @@ switch type
         sSelected = sPerBurst;
         BinEdges = linspace(0,1,UserValues.BurstBrowser.Settings.NumberOfBins_BVA+1);
         [N,~,bin] = histcounts(E,BinEdges);
-        BinCenters = BinEdges(1:end-1)+0.025;
+        %BinCenters = BinEdges(1:end-1)+0.025;
         sPerBin = zeros(numel(BinEdges)-1,1);
         for j = 1:numel(N) % 1 : number of bins
             burst_id = find(bin==j); % find indices of bursts in bin j
@@ -139,12 +139,12 @@ switch type
             end
         end 
         %%% plot
-        plot_BVA(E,sSelected,BinCenters,sPerBin)
+        %plot_BVA(E,sSelected,BinCenters,sPerBin)
         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
             E1 = 1/(1+(R_states(1,1)/R0)^6);
             E2 = 1./(1+(R_states(1,2)/R0)^6);
             hold on
-            BVA_dynamic_FRET(E1,E2,n);
+            BVA_dynamic_FRET(E1,E2,n,'HandleVisibility','off');
         end
     case 'Lifetime' % Do both E-tau and phasor               
         %% new code without state trajectory starts here

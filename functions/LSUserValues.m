@@ -2193,6 +2193,48 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.BVA_Rsigma3 = S.BurstBrowser.Settings.BVA_Rsigma3;
     
+  %%% Check, if BurstBrowser.Settings.BVA_R1_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R1_static')
+        S.BurstBrowser.Settings.BVA_R1_static=80;
+        disp('UserValues.BurstBrowser.Settings.BVA_R1_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R1_static = S.BurstBrowser.Settings.BVA_R1_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_R2_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R2_static')
+        S.BurstBrowser.Settings.BVA_R2_static=40;
+        disp('UserValues.BurstBrowser.Settings.BVA_R2_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R2_static = S.BurstBrowser.Settings.BVA_R2_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_R3_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_R3_static')
+        S.BurstBrowser.Settings.BVA_R3_static=60;
+        disp('UserValues.BurstBrowser.Settings.BVA_R3_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_R3_static = S.BurstBrowser.Settings.BVA_R3_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_sigma1_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma1_static')
+        S.BurstBrowser.Settings.BVA_Rsigma1_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_sigma1_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma1_static = S.BurstBrowser.Settings.BVA_Rsigma1_static;
+    
+        %%% Check, if BurstBrowser.Settings.BVA_sigma2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma2_static')
+        S.BurstBrowser.Settings.BVA_Rsigma2_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_sigma2_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma2_static = S.BurstBrowser.Settings.BVA_Rsigma2_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_sigma3_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_Rsigma3_static')
+        S.BurstBrowser.Settings.BVA_Rsigma3_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_sigma3_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_Rsigma3_static = S.BurstBrowser.Settings.BVA_Rsigma3_static;  
+    
     %%% Check, if BurstBrowser.Settings.BVA_Nstates subfield exists
     if ~isfield(S.BurstBrowser.Settings,'BVA_Nstates')
         S.BurstBrowser.Settings.BVA_Nstates=2;
@@ -2234,6 +2276,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.BVAdynFRETline was incomplete');
     end
     P.BurstBrowser.Settings.BVAdynFRETline = S.BurstBrowser.Settings.BVAdynFRETline;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_ModelComparison subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_ModelComparison')
+        S.BurstBrowser.Settings.BVA_ModelComparison=0;
+        disp('UserValues.BurstBrowser.Settings.BVA_ModelComparison was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_ModelComparison = S.BurstBrowser.Settings.BVA_ModelComparison;
     
     %%% Check, if BurstBrowser.Settings.DynFRETLine_Line subfield exists
     if ~isfield(S.BurstBrowser.Settings,'DynFRETLine_Line')

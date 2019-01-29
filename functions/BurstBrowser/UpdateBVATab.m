@@ -27,6 +27,18 @@ elseif obj == h.Rsigma2_edit
     UserValues.BurstBrowser.Settings.BVA_Rsigma2 = str2double(h.Rsigma2_edit.String);
 elseif obj == h.Rsigma3_edit
     UserValues.BurstBrowser.Settings.BVA_Rsigma3 = str2double(h.Rsigma3_edit.String);
+elseif obj == h.Rstate1st_edit
+    UserValues.BurstBrowser.Settings.BVA_R1_static = str2double(h.Rstate1st_edit.String);
+elseif obj == h.Rstate2st_edit
+    UserValues.BurstBrowser.Settings.BVA_R2_static = str2double(h.Rstate2st_edit.String);
+elseif obj == h.Rstate3st_edit
+    UserValues.BurstBrowser.Settings.BVA_R3_static = str2double(h.Rstate3st_edit.String);
+elseif obj == h.Rsigma1st_edit
+    UserValues.BurstBrowser.Settings.BVA_Rsigma1_static = str2double(h.Rsigma1st_edit.String);
+elseif obj == h.Rsigma2st_edit
+    UserValues.BurstBrowser.Settings.BVA_Rsigma2_static = str2double(h.Rsigma2st_edit.String);
+elseif obj == h.Rsigma3st_edit
+    UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
 elseif obj == h.BVA_Nstates_Popupmenu
     UserValues.BurstBrowser.Settings.BVA_Nstates = h.BVA_Nstates_Popupmenu.Value+1; 
     switch UserValues.BurstBrowser.Settings.BVA_Nstates
@@ -38,6 +50,11 @@ elseif obj == h.BVA_Nstates_Popupmenu
             h.Rstate3_edit.Visible = 'off';
             h.Rsigma3_text.Visible = 'off';
             h.Rsigma3_edit.Visible = 'off';
+            h.state3st_text.Visible = 'off';
+            h.Rstate3st_text.Visible = 'off';
+            h.Rstate3st_edit.Visible = 'off';
+            h.Rsigma3st_text.Visible = 'off';
+            h.Rsigma3st_edit.Visible = 'off';
         case 3
             h.KineticRates_table2.Visible = 'off';
             h.KineticRates_table3.Visible = 'on';
@@ -46,6 +63,11 @@ elseif obj == h.BVA_Nstates_Popupmenu
             h.Rstate3_edit.Visible = 'on';
             h.Rsigma3_text.Visible = 'on';
             h.Rsigma3_edit.Visible = 'on';
+            h.state3st_text.Visible = 'on';
+            h.Rstate3st_text.Visible = 'on';
+            h.Rstate3st_edit.Visible = 'on';
+            h.Rsigma3st_text.Visible = 'on';
+            h.Rsigma3st_edit.Visible = 'on';
     end
 elseif obj == h.DynamicAnalysisMethod_Popupmenu
         UserValues.BurstBrowser.Settings.DynamicAnalysisMethod = h.DynamicAnalysisMethod_Popupmenu.Value;
@@ -75,6 +97,8 @@ elseif obj == h.Xaxis_Popupmenu
     UserValues.BurstBrowser.Settings.BVA_X_axis = h.Xaxis_Popupmenu.Value;
 elseif obj == h.FRETpair_Popupmenu
     UserValues.BurstBrowser.Settings.FRETpair = h.FRETpair_Popupmenu.Value;
+elseif obj == h.ModelComparison_checkbox
+    UserValues.BurstBrowser.Settings.BVA_ModelComparison = h.ModelComparison_checkbox.Value;
 elseif obj == h.DynFRETLine_checkbox
     UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
 elseif obj == h.ConsistencyMethod_Popupmenu

@@ -3933,15 +3933,12 @@ else %%% dynamic model
     
     % gillespie
     SimTime_gillespie = SimTime*1000;
-    dynamic_rates = 1 ./ DynRates * 1000;
-    dynamic_rates(isinf(dynamic_rates)) = 0;
-    dynR_tot = sum(dynamic_rates);
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
     for k = 1:sampling
-        fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
-        %fracTauT = dyn_sim_arbitrary_states_gillespie(dynamic_rates,SimTime_gillespie,numel(BSD),dynR_tot);
+        %fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
+        fracTauT = dyn_sim_arbitrary_states_gillespie(DynRates,SimTime_gillespie,numel(BSD));
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
@@ -5343,25 +5340,46 @@ switch mode
             return
         end
         hb = guidata(findobj('Tag','BurstBrowser'));
-        for i = 1:numel(PDAData.FileName)
-            if active(i)
-                UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
-                UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
-                UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
-                hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
-                hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
-                hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
-                hb.Rstate1_edit.String = num2str(params(i,2));
-                hb.Rsigma1_edit.String = num2str(params(i,3));
-                hb.Rstate2_edit.String = num2str(params(i,5));
-                hb.Rsigma2_edit.String = num2str(params(i,6));
-                hb.Rstate3_edit.String = num2str(params(i,8));
-                hb.Rsigma3_edit.String = num2str(params(i,9));
-                break
-            end
+        
+        switch UserValues.PDA.Dynamic
+            case 0 % static
+                for i = 1:numel(PDAData.FileName)
+                    if active(i)
+                        UserValues.BurstBrowser.Settings.BVA_R1_st = params(i,2);
+                        UserValues.BurstBrowser.Settings.BVA_R2_st = params(i,5);
+                        UserValues.BurstBrowser.Settings.BVA_R3_st = params(i,8);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma1_st = params(i,3);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma2_st = params(i,6);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma3_st = params(i,9);
+                        hb.Rstate1_st_edit.String = num2str(params(i,2));
+                        hb.Rsigma1_st_edit.String = num2str(params(i,3));
+                        hb.Rstate2_st_edit.String = num2str(params(i,5));
+                        hb.Rsigma2_st_edit.String = num2str(params(i,6));
+                        hb.Rstate3_st_edit.String = num2str(params(i,8));
+                        hb.Rsigma3_st_edit.String = num2str(params(i,9));
+                        break
+                    end
+                end
+            case 1 % dynamic
+                for i = 1:numel(PDAData.FileName)
+                    if active(i)
+                        UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
+                        UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
+                        UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
+                        hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
+                        hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
+                        hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
+                        hb.Rstate1_edit.String = num2str(params(i,2));
+                        hb.Rsigma1_edit.String = num2str(params(i,3));
+                        hb.Rstate2_edit.String = num2str(params(i,5));
+                        hb.Rsigma2_edit.String = num2str(params(i,6));
+                        hb.Rstate3_edit.String = num2str(params(i,8));
+                        hb.Rsigma3_edit.String = num2str(params(i,9));
+                        break
+                    end
+                end
         end
-        %UserValues.BurstBrowser.Settings.KineticRates_table2 = 
 end
