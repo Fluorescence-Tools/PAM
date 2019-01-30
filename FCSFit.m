@@ -1747,8 +1747,16 @@ for i=1:size(FCSMeta.Plots,1)
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
             FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
-            FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
-            FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
+            %%% find offset parameter (should be named y0)
+            offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+            if isempty(offset_idx)
+                disp('No offset parameter found. Make sure that it is named "y0" in the model definition.');
+                FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
+                FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
+            else
+                FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;  
+                FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;
+            end
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
@@ -1763,7 +1771,11 @@ for i=1:size(FCSMeta.Plots,1)
         if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
-            FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
+            if isempty(offset_idx)
+                FCSMeta.Plots{i,2}.YData=OUT/B;
+            else
+                FCSMeta.Plots{i,2}.YData=(OUT-P(offset_idx))/B;
+            end
         end
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
@@ -2519,6 +2531,7 @@ switch obj
         if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
             h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
             h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(end-2,7:3:end) = num2cell(sum(cell2mat(data.GlobalState),1) > 0);
             h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
             Update_Plots;
         end
