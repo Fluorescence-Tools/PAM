@@ -193,11 +193,12 @@ switch mode
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        if filesize > 2E9
-            filesize = 2E9;
-            msgbox('Maximum filesize reached. Only 2 GB are loaded.', 'Warning','warn');
+        if filesize > 1.5E9
+            filesize = 1.5E9;
+            msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
             T3Record = zeros(filesize/4,1);
-            for i = 1:4
+            fileChunks = ceil(filesize/NoE);
+            for i = 1:filechunks
                 T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
             end
         else
@@ -284,11 +285,12 @@ switch mode
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        if filesize > 2E9
-            filesize = 2E9;
-            msgbox('Maximum filesize reached. Only 2 GB are loaded.', 'Warning','warn');
+        if filesize > 1.5E9
+            filesize = 1.5E9;
+            msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
             T3Record = zeros(filesize/4,1);
-            for i = 1:4
+            fileChunks = ceil(filesize/NoE);
+            for i = 1:fileChunks
                 T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
             end
         else
@@ -298,7 +300,7 @@ switch mode
                 T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
             end
             T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
-        end
+         end
         
         %%% Read out Sync
         SyncRate = 1E10/T3Record(1);T3Record(1) = [];
