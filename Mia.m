@@ -773,6 +773,18 @@ h.Mia_Image.Settings.Image_Mean_CR = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.52, 0.96 0.1],...
     'String','Mean Countrate [kHz]:');
+%% text string to indicate the Pearson
+h.Mia_Image.Settings.Image_Pearsons = uicontrol(...
+    'Parent', h.Mia_Image.Settings.Image_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.42, 0.96 0.1],...
+    'String','Pearsons correlation: ',...
+    'ToolTipString', 'Pearsons correlation coefficient for the corrected images within the AROI');
 %% Mia ROI setting tab
 %%% Tab and panel for Mia ROI settings UIs
 h.Mia_Image.Settings.ROI_Tab= uitab(...
@@ -1766,18 +1778,6 @@ h.Mia_Image.Calculations.Save_Name = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.36, 0.7 0.06],...
     'String','Use automatic filename');
-%% text string to indicate the Pearson
-h.Mia_Image.Calculations.Pearsons = uicontrol(...
-    'Parent', h.Mia_Image.Calculations.Cor_Panel,...
-    'Style','text',...
-    'Units','normalized',...
-    'FontSize',12,...
-    'HorizontalAlignment','left',...
-    'BackgroundColor', Look.Back,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.24, 0.76 0.06],...
-    'String','Pearsons correlation: ',...
-    'ToolTipString', 'Pearsons correlation coefficient of the average frame (0) within the (arbitrary ROI)');
 %% Perform N&B calculation tab
 %%% Tab and panel for perform correlation UIs
 h.Mia_Image.Calculations.NB_Tab= uitab(...
@@ -3743,7 +3743,7 @@ if any(mode==1)
             switch h.Mia_Image.Settings.Channel_Second(i).Value
                 case 1 %%% Uses ROI of original image
                     if Frame>0
-                        Image=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame);
+                        Image =MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame);
                     elseif Frame==0
                         Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
                         Image = mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames),3);
@@ -3799,7 +3799,29 @@ if any(mode==1)
             h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
         end
         drawnow
-    end   
+        PearsonIm{i} = Image;
+    end
+    % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
+    if size(MIAData.Data,1)>=1
+        Image = PearsonIm{1};
+        Image2 = PearsonIm{2};
+        if iscell(MIAData.AR)
+            AROI = MIAData.AR{1,2}; %for now top right AROI
+        else
+            AROI = true(size(Image));
+        end
+        mean_1 = mean2(Image(AROI));  % the mean intensity of image1 in the ROI
+        std_1 = std2(Image(AROI));
+        mean_2 = mean2(Image2(AROI)) ;
+        std_2 = std2(Image2(AROI));
+        n = sum(sum(AROI)); %number of included pixels
+        ImageP = Image.*Image2;
+        ImageP = ImageP(AROI);
+        Pearson = (sum(sum(ImageP)) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+        %Pearson = 1;
+        h.Mia_Image.Settings.Image_Pearsons.String = ['Pearsons correlation: ',...
+            num2str(Pearson)];
+    end
 end
 
 %% Plots ICS data
@@ -4795,23 +4817,6 @@ for i=1:2
         MIAData.Data{i,2}=MIAData.Data{i,2}-str2double(h.Mia_Image.Settings.Background(i).String);
         
     end
-end
-
-if size(MIAData.Data,1)>=1
-    % Calculate a Pearson's correlation coefficient of the mean image within the AROI
-    % the mean corrected image
-    im_1  = double(mean(MIAData.Data{1,2}, 3));
-    im_2 = double(mean(MIAData.Data{2,2}, 3));
-    AROI = MIAData.AR{1,2}; %for now top right ROI
-    mean_1 = mean2(im_1(AROI));  % the mean intensity of image1 in the ROI
-    std_1 = std2(im_1(AROI));
-    mean_2 = mean2(im_2(AROI)) ;
-    std_2 = std2(im_2(AROI));
-    n = sum(sum(AROI)); %number of included pixels
-    
-    Pearson = (sum(sum(im_1.*im_2)) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
-    %Pearson = 1;
-    h.Mia_Image.Calculations.Pearsons.String = ['Pearsons correlation: ' num2str(Pearson)];
 end
 
 Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
