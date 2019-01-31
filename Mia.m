@@ -3802,7 +3802,7 @@ if any(mode==1)
         PearsonIm{i} = Image;
     end
     % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
-    if size(MIAData.Data,1)>=1
+    if size(MIAData.Data,1)>=2
         Image = PearsonIm{1};
         Image2 = PearsonIm{2};
         if iscell(MIAData.AR)
