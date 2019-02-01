@@ -5351,12 +5351,12 @@ switch mode
                         UserValues.BurstBrowser.Settings.BVA_Rsigma1_st = params(i,3);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma2_st = params(i,6);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma3_st = params(i,9);
-                        hb.Rstate1_st_edit.String = num2str(params(i,2));
-                        hb.Rsigma1_st_edit.String = num2str(params(i,3));
-                        hb.Rstate2_st_edit.String = num2str(params(i,5));
-                        hb.Rsigma2_st_edit.String = num2str(params(i,6));
-                        hb.Rstate3_st_edit.String = num2str(params(i,8));
-                        hb.Rsigma3_st_edit.String = num2str(params(i,9));
+                        hb.Rstate1st_edit.String = num2str(params(i,2));
+                        hb.Rsigma1st_edit.String = num2str(params(i,3));
+                        hb.Rstate2st_edit.String = num2str(params(i,5));
+                        hb.Rsigma2st_edit.String = num2str(params(i,6));
+                        hb.Rstate3st_edit.String = num2str(params(i,8));
+                        hb.Rsigma3st_edit.String = num2str(params(i,9));
                         break
                     end
                 end

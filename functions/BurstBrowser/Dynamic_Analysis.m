@@ -95,6 +95,8 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         sSelected = sPerBurst.*BurstData{file}.Selected;
         sSelected(sSelected == 0) = NaN;
+        E = E.*BurstData{file}.Selected;
+        E(E == 0) = NaN;
         % STD per Bin
         BinEdges = linspace(0,1,UserValues.BurstBrowser.Settings.NumberOfBins_BVA+1);
         [N,~,bin] = histcounts(E,BinEdges);
