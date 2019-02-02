@@ -6968,6 +6968,7 @@ switch mode
                 if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
                     mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
                 end
+                
                 %%% Generates filename
                 if i<3
                     FileName = MIAData.FileName{i}{1}(1:end-4);
@@ -6976,18 +6977,22 @@ switch mode
                     FileName = MIAData.FileName{1}{1}(1:end-4);
                     Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
                 end
-                
-                k=0;
-                %%% Checks, if file already exists
-                if  exist(Current_FileName,'file')
-                    k=1;
-                    %%% Adds 1 to filename
-                    Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                    %%% Increases counter, until no file is fount
-                    while exist(Current_FileName,'file')
-                        k=k+1;
-                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                if h.Mia_Image.Calculations.Save_Name.Value
+                    k=0;
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                        %%% Increases counter, until no file is fount
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        end
                     end
+                else
+                    [FileName,PathName] = uiputfile(Current_FileName, 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+                    Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',FileName);
                 end
                 Header = 'TICS correlation file'; %#ok<NASGU>
                 Counts = MIAData.TICS.Counts;
