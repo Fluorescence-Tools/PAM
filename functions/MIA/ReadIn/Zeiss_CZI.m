@@ -103,9 +103,9 @@ switch mode
         MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
-        MIAData.TICS_MS = [];
         MIAData.TICS = [];
-        MIAData.TICS_Int = [];
+        MIAData.TICS.Int = [];
+        MIAData.TICS.MS = [];
         MIAData.STICS = [];
         MIAData.STICS_SEM = [];
         MIAData.RLICS = [];
