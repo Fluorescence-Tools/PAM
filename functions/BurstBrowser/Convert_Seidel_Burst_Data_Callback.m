@@ -96,6 +96,11 @@ ParameterNames = [params_bi4_bur,params_bg4];
 Data = [data_bi4_bur,data_bg4];
 if exist('params_br4','var')
     ParameterNames = [ParameterNames, params_br4];
+    if size(data_br4,1) < size(Data,1)
+        data_br4(end+1:size(Data,1),:) = 0;
+    elseif size(data_br4,1) > size(Data,1)
+         data_br4 = data_br4(1:size(Data,1),:);
+    end
     Data = [Data,data_br4];
 end
 
