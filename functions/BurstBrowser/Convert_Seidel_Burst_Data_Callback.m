@@ -5,7 +5,15 @@ PathName = uigetdir(UserValues.File.BurstBrowserPath,'Select folder');
 
 %%% load the data from subfolder:
 % 'bg4','bi4_bur','br4','info'
+Progress(0,h.Progress_Axes,h.Progress_Text,'Converting data...');
 
+% check if conversion was already done
+folder  = strsplit(PathName,filesep); folder = folder{end};
+if exist([PathName filesep folder '.bur'],'file') == 2
+    disp('File was already converted.')
+    Progress(1,h.Progress_Axes,h.Progress_Text);
+    return;
+end
 % get files in bg4 folder
 bg4_files = dir([PathName filesep 'bg4']);
 params_bg4 = [];
@@ -23,7 +31,7 @@ for i = 1:numel(bg4_files)
         data(sum(data,2)==0,:) = [];
         data_bg4{end+1} = data;
     end
-    disp(sprintf('Loading file %i of %i (%.1f)',i,numel(bg4_files),(100*i/numel(bg4_files))));
+    Progress(i/numel(bg4_files),h.Progress_Axes,h.Progress_Text,'Converting bg4 files... (Step 1 of 3)');
 end
 data_bg4 = vertcat(data_bg4{:});
 
@@ -49,7 +57,7 @@ for i = 1:numel(bi4_bur_files)
         data(sum(data,2)==0,:) = [];
         data_bi4_bur{end+1} = data;
     end
-    disp(sprintf('Loading file %i of %i (%.1f)',i,numel(bi4_bur_files),(100*i/numel(bi4_bur_files))));
+    Progress(i/numel(bi4_bur_files),h.Progress_Axes,h.Progress_Text,'Converting bi4_bur files... (Step 2 of 3)');   
 end
 data_bi4_bur = vertcat(data_bi4_bur{:});
 
@@ -71,7 +79,7 @@ if exist([PathName filesep 'br4'],'dir')
             data(sum(data,2)==0,:) = [];
             data_br4{end+1} = data;
         end
-        disp(sprintf('Loading file %i of %i (%.1f)',i,numel(br4_files),(100*i/numel(br4_files))));
+        Progress(i/numel(br4_files),h.Progress_Axes,h.Progress_Text,'Converting br4 files... (Step 3 of 3)');
     end
     data_br4 = vertcat(data_br4{:});
 end
@@ -104,6 +112,7 @@ if exist('params_br4','var')
     Data = [Data,data_br4];
 end
 
+Progress(1,h.Progress_Axes,h.Progress_Text,'Saving converted data...');
 % rename parameters
 ParameterNames{strcmp(ParameterNames,'Duration (ms)')} = 'Duration [ms]';
 ParameterNames{strcmp(ParameterNames,'Mean Macro Time (ms)')} = 'Mean Macrotime [ms]';
@@ -192,7 +201,8 @@ burst_data.FileInfo.ParisInfo = info;
 %%% save as *.bur file
 BurstData = burst_data;
 save([PathName filesep burst_data.FileName '.bur'],'BurstData');
-
+UserValues.File.BurstBrowserPath=PathName;
+Progress(1,h.Progress_Axes,h.Progress_Text);
 
 function data = import_bi4_bur(filename, startRow, endRow)
 %IMPORTFILE Import numeric data from a text file as a matrix.
