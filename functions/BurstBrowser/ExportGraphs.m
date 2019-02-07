@@ -13,6 +13,29 @@ if ispc
     fontsize = fontsize/1.3;
 end
 
+% just export data, no plot
+if any(obj==[h.Export1DX_Data_Menu,h.Export1DY_Data_Menu,h.Export2D_Data_Menu])
+    switch obj
+        case {h.Export1DX_Data_Menu, h.Export1DY_Data_Menu}
+            switch obj
+                case h.Export1DX_Data_Menu
+                    ax = h.axes_1d_x;
+                case h.Export1DY_Data_Menu
+                    ax = h.axes_1d_y;
+            end
+            Data = [get(ax.Children(end-1),'XData')', get(ax.Children(end-1),'YData')'];
+        case h.Export2D_Data_Menu
+            ax = h.axes_general;
+            Data = zeros(numel(ax.Children(end).XData)+1);
+            Data(2:end,1) = ax.Children(end).YData;
+            Data(1,2:end) = ax.Children(end).XData;
+            Data(2:end,2:end) = ax.Children(end).CData;
+    end
+    %%% copy Data to clipboard
+    Mat2clip(Data);
+    return;
+end
+
 size_pixels = 500;
 switch obj
     case h.Export1DX_Menu
