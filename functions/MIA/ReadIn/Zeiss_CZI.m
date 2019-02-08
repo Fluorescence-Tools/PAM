@@ -229,8 +229,13 @@ switch mode
                     C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
                     N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
                 end
+            elseif isempty(Sep)  %%% This is a transmisson-only image
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = 1;
+                    N_C = 1;
             else
-                msgbox('Inavalid data type')
+                msgbox('Invalid data type')
                 return;
             end
             
