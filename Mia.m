@@ -7455,8 +7455,22 @@ end
 function Import_ROI(~,~)
 global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
-% put UI to arbitrary ROI
+% put UI to arbitrary ROI and set to values that will not apply it
 h.Mia_Image.Settings.ROI_FramesUse.Value = 3;
+h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String = 1000;
+h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String = 0.001;
+h.Mia_Image.Settings.ROI_AR_Int_Max(1).String = 10000;
+h.Mia_Image.Settings.ROI_AR_Int_Max(2).String = 10000;
+h.Mia_Image.Settings.ROI_AR_Int_Min(1).String = 0;
+h.Mia_Image.Settings.ROI_AR_Int_Min(2).String = 0;
+h.Mia_Image.Settings.ROI_AR_Same.Value = 1;
+h.Mia_Image.Settings.ROI_AR_Sub1.String = 5;
+h.Mia_Image.Settings.ROI_AR_Sub2.String = 10;
+h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String = 1000;
+h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String = 0.001;
+h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value = 0;
+h.Mia_Image.Settings.ROI_AR_median.Value = 0;
+
 MIA_Various([],[],3);
 
 [FileName,Path] = uigetfile('*.mat', 'Load ROI', UserValues.File.MIAPath);
@@ -7522,7 +7536,6 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Sub2.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'off';
-                    h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_median.Visible = 'off';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
@@ -7549,7 +7562,6 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Sub2.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'on';
-                    h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_median.Visible = 'on';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
