@@ -3945,14 +3945,20 @@ if any(mode==1)
             %%% Also sets AlphaData to right size
             h.Plots.Image(i,2).AlphaData = ~isnan(Image);
             if Frame>0 %%% For one frame, use manual selection and arbitrary region
-                if ~isempty(MIAData.AR)
+                if ~isempty(MIAData.AR) 
                     h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,1}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                elseif ~all(all(MIAData.MS{1}))
+                    % AROI was imported without further ado
+                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
                 else
                     h.Plots.Image(i,2).AlphaData = 1;
                 end
             else %%% For all frames, only use manual selection
                 if ~isempty(MIAData.AR)
                     h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,2}(:,:) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                elseif ~all(all(MIAData.MS{1}))
+                    % AROI was imported without further ado
+                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
                 else
                     h.Plots.Image(i,2).AlphaData = 1;
                 end
@@ -7449,25 +7455,38 @@ end
 function Import_ROI(~,~)
 global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
+% put UI to arbitrary ROI
+h.Mia_Image.Settings.ROI_FramesUse.Value = 3;
+MIA_Various([],[],3);
+
 [FileName,Path] = uigetfile('*.mat', 'Load ROI', UserValues.File.MIAPath);
 if ~(isequal(FileName,0) || isequal(Path,0))
     info = load(strcat(Path,FileName));
-    %Set ROI size and position
-    h.Mia_Image.Settings.ROI_SizeX.String = num2str(info.ROI(1,1));
-    h.Mia_Image.Settings.ROI_SizeY.String = num2str(info.ROI(1,2));
-    h.Mia_Image.Settings.ROI_PosX.String = num2str(info.ROI(1,3));
-    h.Mia_Image.Settings.ROI_PosY.String = num2str(info.ROI(1,4));
-    %Update ROI
+    if isfield(info, 'ROI')
+        %Set ROI size and position to the one exported from N&B
+        h.Mia_Image.Settings.ROI_SizeX.String = num2str(info.ROI(1,1));
+        h.Mia_Image.Settings.ROI_SizeY.String = num2str(info.ROI(1,2));
+        h.Mia_Image.Settings.ROI_PosX.String = num2str(info.ROI(1,3));
+        h.Mia_Image.Settings.ROI_PosY.String = num2str(info.ROI(1,4));
+    end
+    %Update ROI position
     Mia_ROI([],[],1)
+    if ~isfield(info, 'Mask')
+        a = struct2cell(info);
+        info.Mask = a{1};
+        info.ch = 1;
+    end
     %Merge loaded ROI with existing arbitrary region
     if prod(size(MIAData.MS{1}) == size(info.Mask))&&(info.ch==1)
         MIAData.MS{1} = MIAData.MS{1} & info.Mask;
+        MIAData.MS{2} = MIAData.MS{1};
     end
-    if prod(size(MIAData.MS{2}) == size(info.Mask))&&(info.ch==3)
+    if prod(size(MIAData.MS{2}) == size(info.Mask))&&(info.ch==3)     
         MIAData.MS{2} = MIAData.MS{2} & info.Mask;
     end
     %Update images
     Mia_Correct([],[],0);
+    % set the ROI popupmenu to Arbitrary
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
