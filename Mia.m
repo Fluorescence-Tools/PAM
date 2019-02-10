@@ -3961,8 +3961,10 @@ if any(mode==1)
             h.Mia_Image.Axes(i,2).XLim=[0 size(Image,2)]+0.5;
             h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
         end
+        if exist('Image','var')
+            PearsonIm{i} = Image;
+        end
         drawnow
-        PearsonIm{i} = Image;
     end
     % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
     if numel(channel)==2
