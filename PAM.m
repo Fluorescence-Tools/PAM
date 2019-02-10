@@ -1578,7 +1578,9 @@ h.Phasor.Table = uitable(...
     'MI as refrence for PIE channel is required for phasor calculation: \n'...
     'BG is image Background; \n'...
     'Ref_BG is Background_ref; \n'...
-    'AP is afterpulsing']),...
+    'AP is afterpulsing;\n'...
+    'G_factor for Parallel, i.e., PIE chanel 1;\n'...
+    'Per_coeff is for Perpendicular, i.e., PIE chanel 2']),...
     'UIContextMenu',h.MI.Menu,...
     'CellEditCallback',@Update_Phaosr_Table);
 
@@ -3788,7 +3790,7 @@ end
 %%% Updates Pam plots  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Display(~,~,mode)
-global UserValues PamMeta FileInfo
+global UserValues PamMeta FileInfo TcspcData
 h = guidata(findobj('Tag','Pam'));
 
 %%% Determines which parts are updated
@@ -4409,9 +4411,19 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
        [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
        [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
 %        Pha=PamMeta.MI_Hist(Det, :); 
-       Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
-       Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
-       Pha=Pha1+Pha2;
+% % %        Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
+% % %        Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
+% % %        Pha=Pha1+Pha2;
+     Pha1=TcspcData.MI{Det1, :}; %%Parallel channel
+     Pha2=TcspcData.MI{Det2, :}; %%% perpendicular channel
+     numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Pha1));% determine how many elements is of G_factor percent
+     indices = randperm(length(Pha1),numelements); % get the randomly-selected indices
+     Pha_par=Pha1(indices);%%%Par according of G_factor
+     Pha_per=repelem(Pha2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+     Pha_comb=[Pha_par; Pha_per]; 
+     %%%Creating combined MI histogram like MI_hist per detector
+     Pha=histc(Pha_comb,1:FileInfo.MI_Bins);
+     
        Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
        To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
        From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
@@ -4724,6 +4736,9 @@ switch e.Key
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
+        %%Update the Phasor.refernce with PIE_List
+        UserValues.Phasor.Reference(end+1, :)=0;
+        UserValues.Phasor.Combined_Reference(end+1, :)=0;
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
@@ -5001,7 +5016,7 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         for i=Combined
             %%% update name
             UserValues.PIE.Name{i}='Comb.: ';
-            for j=UserValues.PIE.Combined{i};
+            for j=UserValues.PIE.Combined{i}
                 UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
             end
             UserValues.PIE.Name{i}(end)=[];
@@ -5695,9 +5710,9 @@ h.Cor.Divider_Menu.Label=['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divide
 %%% Updates Detector calibration and Phasor channel lists
 h.Phasor.Table.CellEditCallback=[];  
 h.Phasor.Table.RowName=[];
-coulumnames={'PIE channel','Ref_LT (ns)', 'Shift (TCSPC)', 'BG (KHz)', 'Ref_BG (KHz)', 'AP (%)', 'G-factor', 'Select'};
+coulumnames={'PIE channel','Ref_LT (ns)', 'Shift (TCSPC)', 'BG (KHz)', 'Ref_BG (KHz)', 'AP (%)', 'G-factor', 'Per_Coeff', 'Select'};
 h.Phasor.Table.ColumnName = coulumnames;
-h.Phasor.Table.ColumnEditable=[false, true, true, true, true, true, true, true];
+h.Phasor.Table.ColumnEditable=[false, true, true, true, true, true, true, true, true];
 Phasor.Table_Data = [UserValues.PIE.Name.'];
 PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
 Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT); 
@@ -5706,13 +5721,14 @@ Background=(repelem(0, numel(UserValues.PIE.Name))).'; Background=num2cell(Backg
 Background_ref=(repelem(0, numel(UserValues.PIE.Name))).'; Background_ref=num2cell(Background_ref);
 Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing); 
 Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor); 
-Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor PIE_checkbox];
+Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff); 
+Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
 Phasor.Table_Format = cell(1,size(Phasor.Table_Data,2));
 h.Phasor.Table.Data = Phasor.Table_Data;
 h.Phasor.Table.CellEditCallback={@Update_Phasor_Table};
 
 %%% Updates Detector calibration 
-List=UserValues.Detector.Name;
+List=UserValues.PIE.Name;
 h.MI.Calib_Det.String=List;
 h.MI.Calib_Det.Value=1;
 
@@ -5785,16 +5801,16 @@ LSUserValues(1);
 function Update_Phasor_Table(obj, e)
 global UserValues
 h=guidata(findobj('Tag','Pam'));
-% %%% called to reset the table to all zeros
+% % %%% called to reset the table
 if obj == h.Phasor.Reset_Menu
-    h.Phasor.Table.Data{:, 8} = false(h.Phasor.Table.Data{:, 8});
+    h.Phasor.Table.Data{:, 9} = false(h.Phasor.Table.Data{:, 9});
     return;
 end
 
 if obj == h.Phasor.Table
     %%% Activate/deactivate column %%Need to get new data for cell phasor
     %%% table
-    if e.Indices(2) == 8 && e.Indices(1) < size(h.Phasor.Table.Data,1) %%7th column of phasor table
+    if e.Indices(2) == 9 && e.Indices(1) < size(h.Phasor.Table.Data,1) %%9th column of phasor table
         h.Phasor.Table.Data{e.Indices(1),end}=e.NewData;
     end
 end
@@ -6799,7 +6815,7 @@ end
 %%% Function to assign histogram as Phasor reference %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_UseRef(~,~)
-global UserValues PamMeta FileInfo
+global UserValues PamMeta FileInfo TcspcData
 h=guidata(findobj('Tag','Pam'));
 %%%Lines can be shorten here
 List=cell(numel(UserValues.PIE.Name),1);
@@ -6807,7 +6823,7 @@ for i=1:numel(List)
     Hex_color=dec2hex(round(UserValues.PIE.Color(i,:)*255))';
     List{i}=['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.PIE.Name{i} '</Font></html>'];
 end
-%%% Updates PIE_List string
+%% Updates PIE_List string
 h.PIE.List.String=List;
 %%% Removes nonexistent selected channels
 h.PIE.List.Value(h.PIE.List.Value>numel(UserValues.PIE.Name))=[];
@@ -6818,12 +6834,9 @@ end
 drawnow;
 %%% Finds currently selected PIE channel
 Sel=h.PIE.List.Value(1);
-% for i=Sel
-% i=Sel;
     if UserValues.PIE.Detector(Sel)~=0
         Det=UserValues.PIE.Detector(Sel);
         [row, Det]=find(UserValues.Detector.Det==Det); %%Det is Index of selected PIE channel detector from teh Detector list
-
         %%% Assigns current MI histogram as reference
         Ref=PamMeta.MI_Hist{Det}; %%%
         PamMeta.Reference(Sel, 1:numel(Ref))=Ref; 
@@ -6840,10 +6853,15 @@ Sel=h.PIE.List.Value(1);
         [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
         [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
 % %%% Assigns current MI histogram as reference
-%      Ref=PamMeta.MI_Hist(Det, :); 
-     Ref1=PamMeta.MI_Hist{Det1, :}; Ref1=Ref1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
-     Ref2=PamMeta.MI_Hist{Det2, :}; Ref2=Ref2*2; %%% perpendicular channel
-     Ref=Ref1+Ref2; 
+     Ref1=TcspcData.MI{Det1, :}; %%Parallel channel
+     Ref2=TcspcData.MI{Det2, :}; %%% perpendicular channel
+     numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Ref1));% determine how many elements is to taken into account of G_factor percent
+     indices = randperm(length(Ref1),numelements); % get the randomly-selected indices
+     Ref_par=Ref1(indices);%%%Par according of G_factor
+     Ref_per=repelem(Ref2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+     Ref_comb=[Ref_par; Ref_per]; 
+     %%%Creating combined MI histogram like MI_hist per detector
+     Ref=histc(Ref_comb,1:FileInfo.MI_Bins);
      PamMeta.Combined(Sel, 1:numel(Ref))=Ref; 
      %%% Sets reference to 0 in case of shorter MI length
      UserValues.Phasor.Reference_Combined(Sel,:)=0;    
@@ -6853,7 +6871,7 @@ Sel=h.PIE.List.Value(1);
      UserValues.Phasor.Reference_TAC = FileInfo.TACRange; 
      LSUserValues(1)
 %      end
-     end
+    end
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6903,7 +6921,6 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
         LSUserValues(1);
   
-
          if UserValues.PIE.Detector(i)~=0
              
     %%Filename of single channel
@@ -6992,8 +7009,6 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         
          else
         %%%For combined channel file name
-       
-       %%Filename of single channel
       FileName = FileInfo.FileName{1}(1:end-4);
       Ref_LT_n=num2str(Ref_LT, 2);
       PIE_Name=h.Phasor.Table.Data{i, 1}; 
@@ -7036,17 +7051,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PerMT=TcspcData.MT{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To)*FileInfo.ClockPeriod;%%Perpendicular
         ParMI=TcspcData.MI{Det1,Rout}(TcspcData.MI{Det1,Rout}>=From & TcspcData.MI{Det1,Rout}<=To);%%Parallel MI
         PerMI=TcspcData.MI{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To);%%Perpendicular MI 
-         %%%calculate microtimes
-        Rando = rand(size(ParMT));
-        ParMT = ParMT(Rando > G_factor);%%%Photons of Prallel chanell with G_factor contribution
-        ParMI = ParMI(Rando > G_factor);
-        TotalMT = [ParMT; PerMT; PerMT]; 
-        TotalMI = [ParMI; PerMI; PerMI]; 
-        [PIE_MT, ind] = sort(TotalMT);
-        PIE_MI = TotalMI(ind);
-        
+      
+%%%calculate combined MT 
+     numelements_MT = round(h.Phasor.Table.Data{i, 7}*length(ParMT));% determine how many elements is to be considered according to G_factor 
+     indices_MT = randperm(length(ParMT),numelements_MT); % get the randomly-selected indices
+     ParMT=ParMT(indices_MT);%%%Par according of G_factor
+     PerMT=repelem(PerMT, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+     Comb_MT=[ParMT; PerMT];
+     [PIE_MT, ind] = sort(Comb_MT);
+           
+%%% Creates image and generates photon to pixel index
+        Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
         if h.MI.Phasor_FramePopup.Value == 1
-            [Intensity, Bin] = CalculateImage(PIE_MT, 4);
+            [Intensity, Bin] = CalculateImage(PIE_MT, 4);     
         else
             [Intensity, Bin] = CalculateImage(PIE_MT, 2);
         end
@@ -7054,12 +7071,22 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
 
         %%% Removes invalid photons (usually laser retraction)
+     %%%calculate combined MI
+        numelements_MI = round(h.Phasor.Table.Data{i, 7}*length(ParMI));% determine how many elements is of G_factor percent
+        indices_MI = randperm(length(ParMI),numelements_MI); % get the randomly-selected indices
+        ParMI=ParMI(indices_MI);%%%Par according of G_factor
+        PerMI=repelem(PerMI, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+        Comb_MI=[ParMI; PerMI];
+        PIE_MI = Comb_MI(ind); %%%ind of sorted PIE_MT
+        
+   
         PIE_MI=PIE_MI(Bin~=0);
         Bin=Bin(Bin~=0);
         Pixel= cumsum(Intensity(:));
 
         Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
         Intensity=flip(permute(Intensity,[2 1 3]),1);
+        
         
         G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
