@@ -18,7 +18,7 @@ end
 
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
-    Close_TauFit
+    CloseWindow(h.TauFit);
 end
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
