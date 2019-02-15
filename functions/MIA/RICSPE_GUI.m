@@ -607,7 +607,7 @@ guidata(h.Sim, h);
 %% Callbacks
 
 
-function PixelSize_Callback(hObject, eventdata)
+function PixelSize_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.PixelSize.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -630,7 +630,7 @@ handles.AverageN.String = str2double(handles.NParticles.String) * omega / V;
 handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10^(-1) * omega);
 guidata(hObject,handles);
 
-function Concentration_Callback(hObject, eventdata)
+function Concentration_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.Concentration.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -651,7 +651,7 @@ handles.AverageN.String = str2double(handles.Concentration.String) * 6.022 * 10^
 handles.NParticles.String = round( str2double(handles.AverageN.String) * V / omega);
 guidata(hObject,handles);
 
-function AverageN_Callback(hObject, eventdata)
+function AverageN_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.AverageN.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -672,7 +672,7 @@ handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10
 handles.NParticles.String = round( str2double(handles.AverageN.String) * V / omega);
 guidata(hObject,handles);
 
-function NParticles_Callback(hObject, eventdata)
+function NParticles_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.NParticles.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -693,7 +693,7 @@ handles.AverageN.String = str2double(handles.NParticles.String) * omega / V;
 handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10^(-1) * omega);
 guidata(hObject,handles);
 
-function NX_Callback(hObject, eventdata)
+function NX_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.NX.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -717,7 +717,7 @@ handles.AverageN.String = str2double(handles.NParticles.String) * omega / V;
 handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10^(-1) * omega);
 guidata(hObject,handles);
 
-function NY_Callback(hObject, eventdata)
+function NY_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.NY.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -742,17 +742,17 @@ handles.AverageN.String = str2double(handles.NParticles.String) * omega / V;
 handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10^(-1) * omega);
 guidata(hObject,handles);
 
-function D_Callback(hObject, eventdata)
+function D_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.D.String = get(hObject,'string');
 guidata(hObject,handles);
 
-function LateralFocus_Callback(hObject, eventdata)
+function LateralFocus_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.wr.String = get(hObject,'string');
 guidata(hObject,handles);
 
-function AxialFocus_Callback(hObject, eventdata)
+function AxialFocus_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.wz.String = get(hObject,'string');
 PixelSize = str2double(handles.PixelSize.String) * 10^(-3);
@@ -776,12 +776,12 @@ handles.Concentration.String = str2double(handles.AverageN.String) / (6.022 * 10
 
 guidata(hObject,handles);
 
-function Brightness_Callback(hObject, eventdata)
+function Brightness_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.Brightness.String = get(hObject,'string');
 guidata(hObject,handles);
 
-function NImages_Callback(hObject, eventdata)
+function NImages_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.NImages.String = get(hObject,'string');
 
@@ -843,7 +843,7 @@ end
 
 guidata(hObject,handles);
 
-function SimTime_Callback(hObject, eventdata)
+function SimTime_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.SimTime.String = get(hObject,'string');
 
@@ -905,7 +905,7 @@ end
 
 guidata(hObject,handles);
 
-function NRep_Callback(hObject, eventdata)
+function NRep_Callback(hObject, ~)
 handles = guidata(hObject);
 handles.NRep.String = get(hObject,'string');
 
@@ -968,7 +968,7 @@ end
 
 guidata(hObject,handles);
 
-function AddRow_Callback(hObject, eventdata, handles)
+function AddRow_Callback(hObject, ~, handles)
 handles = guidata(hObject);
 data = get(handles.table, 'data');
 data(end+1,:) = 0;
@@ -989,7 +989,7 @@ selectedCol = eventdata.Indices(2);
 handles.ScanSpeed_listbox.Data{selectedRow,selectedCol} = data(selectedRow,selectedCol);
 guidata(hObject,handles);
 
-function ScanSpeed_listbox_Callback(hObject, eventdata)
+function ScanSpeed_listbox_Callback(hObject, ~)
 handles = guidata(hObject);
 data = get(handles.table, 'data');
 axes(handles.ax1)
@@ -1018,7 +1018,7 @@ ylabel('P(D|D_0) (s\mum^{-2})','Color','White')
 % handles.ScanSpeed_listbox.Data{selectedRow,selectedCol}
 guidata(hObject,handles);
 
-function Save_Callback(hObject, eventdata)
+function Save_Callback(hObject, ~)
 
 handles = guidata(hObject);
 
@@ -1058,22 +1058,29 @@ end
 
 uisave('data')
 
-function Load_Callback(hObject, eventdata)
+function Load_Callback(hObject, ~)
 
 handles = guidata(hObject);
-uiopen('load');
+% uiopen('load');
+[fileToLoad,pathToFile] = uigetfile('*.mat');
 
-set(handles.table,'data', cat(2, data.PixelTime, data.LineTime) );
-set(handles.SimTime,'string', data.SimTime);
-set(handles.PixelSize,'string', data.PixelSize);
-set(handles.NX,'string', data.NX);
-set(handles.NY,'string', data.NY);
-set(handles.NImages,'string', data.NImages);
-set(handles.Brightness,'string', data.Brightness);
-set(handles.NRep,'string', data.NRep);
-set(handles.D,'string', data.D);
-set(handles.wr,'string', data.wr);
-set(handles.wz,'string', data.wz);
+if fileToLoad == 0
+    return
+else
+    load(fullfile(pathToFile,fileToLoad))
+    set(handles.table,'data', cat(2, data.PixelTime, data.LineTime) );
+    set(handles.SimTime,'string', data.SimTime);
+    set(handles.PixelSize,'string', data.PixelSize);
+    set(handles.NX,'string', data.NX);
+    set(handles.NY,'string', data.NY);
+    set(handles.NImages,'string', data.NImages);
+    set(handles.Brightness,'string', data.Brightness);
+    set(handles.NRep,'string', data.NRep);
+    set(handles.D,'string', data.D);
+    set(handles.wr,'string', data.wr);
+    set(handles.wz,'string', data.wz);
+end
+
 handles.ScanSpeed_listbox.Data = data.ScanSpeed_listbox.Data;
 
 for ind = 1 : size(data.ScanSpeed_listbox.Data,1)
@@ -1249,7 +1256,7 @@ yticks(1:1:numel(linetime_plot))
 yticklabels(cellstr(string(round(linetime_plot,1))))
 ylabel('Line time (ms)','Color','White')
 title('MSRE','Color','white')
-disp(MSRE_map)
+
 
 showACF(handles)
 
