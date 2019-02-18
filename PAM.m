@@ -4414,6 +4414,11 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
 % % %        Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
 % % %        Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
 % % %        Pha=Pha1+Pha2;
+       Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
+       To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
+       From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
+       Shift=h.Phasor.Table.Data{Sel, 3};
+if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
      Pha1=TcspcData.MI{Det1, :}; %%Parallel channel
      Pha2=TcspcData.MI{Det2, :}; %%% perpendicular channel
      numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Pha1));% determine how many elements is of G_factor percent
@@ -4423,11 +4428,12 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
      Pha_comb=[Pha_par; Pha_per]; 
      %%%Creating combined MI histogram like MI_hist per detector
      Pha=histc(Pha_comb,1:FileInfo.MI_Bins);
-     
-       Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
-       To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
-       From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
-       Shift=h.Phasor.Table.Data{Sel, 3};
+        %% Plots Phasor microtime of Combine Channel
+      h.Plots.Phasor.XData=From:To;
+      Pha = Pha(From:To);
+      h.Plots.Phasor.YData=Pha/max(Pha);
+end
+
        %% Plots Reference histogram of Combine Channel
 %        if any(UserValues.Phasor.Combined_Reference(Sel,:))
   if Sel<= size(UserValues.Phasor.Combined_Reference,1) || any(UserValues.Phasor.Combined_Reference(Sel,:))
@@ -4436,11 +4442,13 @@ Sel=h.PIE.List.Value(1); %%% delected PIE channels
     h.Plots.PhasorRef.YData=Ref/max(Ref);
 %   else
 %         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');  
-       end
-     %% Plots Phasor microtime of Combine Channel
-      h.Plots.Phasor.XData=From:To;
-      Pha = Pha(From:To);
-      h.Plots.Phasor.YData=Pha/max(Pha);
+  end
+%   if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
+%      %% Plots Phasor microtime of Combine Channel
+%       h.Plots.Phasor.XData=From:To;
+%       Pha = Pha(From:To);
+%       h.Plots.Phasor.YData=Pha/max(Pha);
+%   end
 
 end  
 obj = gcbo;
