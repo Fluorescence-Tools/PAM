@@ -16,6 +16,10 @@ if exist([PathName filesep folder '.bur'],'file') == 2
 end
 % get files in bg4 folder
 bg4_files = dir([PathName filesep 'bg4']);
+if isempty(bg4_files)
+    % try tg4, i.e. time-window burst analysis
+    bg4_files = dir([PathName filesep 'tg4']);
+end
 params_bg4 = [];
 data_bg4 = cell(0);
 for i = 1:numel(bg4_files)
@@ -26,17 +30,21 @@ for i = 1:numel(bg4_files)
             params_bg4(cellfun(@isempty,params_bg4)) = [];
             fclose(fid);
         end
-        data = dlmread([bg4_files(i).folder filesep bg4_files(i).name],'\t',1,0);
+        data = dlmread([bg4_files(i).folder filesep bg4_files(i).name],'\t',2,0);
         data_bg4{end+1} = data;
     end
     Progress(i/numel(bg4_files),h.Progress_Axes,h.Progress_Text,'Converting bg4 files... (Step 1 of 3)');
 end
-data_bg4 = vertcat(data_bg4{:});
+%data_bg4 = vertcat(data_bg4{:});
 % for some reasone, every second data point is empty
-data_bg4(sum(data_bg4,2)==0,:) = [];
+%data_bg4(sum(data_bg4,2)==0,:) = [];
 
 % get files in bi4_bur folder
 bi4_bur_files = dir([PathName filesep 'bi4_bur']);
+if isempty(bi4_bur_files)
+    % try tg4, i.e. time-window burst analysis
+    bi4_bur_files = dir([PathName filesep 'ti4_bur']);
+end
 params_bi4_bur = [];
 data_bi4_bur = cell(0);
 for i = 1:numel(bi4_bur_files)
@@ -68,13 +76,17 @@ for i = 1:numel(bi4_bur_files)
     end
     Progress(i/numel(bi4_bur_files),h.Progress_Axes,h.Progress_Text,'Converting bi4_bur files... (Step 2 of 3)');   
 end
-data_bi4_bur = vertcat(data_bi4_bur{:});
-% for some reasone, every second data point is empty
-data_bi4_bur(sum(data_bi4_bur,2)==0,:) = [];
+%data_bi4_bur = vertcat(data_bi4_bur{:});
+% for some reason, every second data point is empty
+%data_bi4_bur(sum(data_bi4_bur,2)==0,:) = [];
 
 % get files in br4 folder
-if exist([PathName filesep 'br4'],'dir')
+if exist([PathName filesep 'br4'],'dir') || exist([PathName filesep 'tr4'],'dir')
     br4_files = dir([PathName filesep 'br4']);
+    if isempty(br4_files)
+        % try tg4, i.e. time-window burst analysis
+        br4_files = dir([PathName filesep 'tr4']);
+    end
     params_br4 = [];
     data_br4 = cell(0);
     for i = 1:numel(br4_files)
@@ -85,14 +97,14 @@ if exist([PathName filesep 'br4'],'dir')
                 params_br4(cellfun(@isempty,params_br4)) = [];
                 fclose(fid);
             end
-            data = dlmread([br4_files(i).folder filesep br4_files(i).name],'\t',1,0);
+            data = dlmread([br4_files(i).folder filesep br4_files(i).name],'\t',2,0);
             data_br4{end+1} = data;
         end
         Progress(i/numel(br4_files),h.Progress_Axes,h.Progress_Text,'Converting br4 files... (Step 3 of 3)');
     end
-    data_br4 = vertcat(data_br4{:});
+    %data_br4 = vertcat(data_br4{:});
     % for some reasone, every second data point is empty
-    data_br4(sum(data_br4,2)==0,:) = [];
+    %data_br4(sum(data_br4,2)==0,:) = [];
 end
 
 % read info
@@ -101,7 +113,7 @@ info = {};
 indic = 1;
 while 1
      tline = fgetl(fid);
-     if ~ischar(tline), 
+     if ~ischar(tline)
          break
      end
      info{indic}=tline; 
@@ -112,22 +124,12 @@ info = info';
 
 % combine data
 ParameterNames = [params_bi4_bur,params_bg4];
-if size(data_bg4,1) < size(data_bi4_bur,1)
-    data_bg4(end+1:size(data_bi4_bur,1),:) = 0;
-elseif size(data_bg4,1) > size(data_bi4_bur,1)
-     data_bg4 = data_br4(1:size(data_bi4_bur,1),:);
-end
-Data = [data_bi4_bur,data_bg4];
+Data = [vertcat(data_bi4_bur{:}),vertcat(data_bg4{:})];
 if exist('params_br4','var')
     ParameterNames = [ParameterNames, params_br4];
-    if size(data_br4,1) < size(Data,1)
-        data_br4(end+1:size(Data,1),:) = 0;
-    elseif size(data_br4,1) > size(Data,1)
-         data_br4 = data_br4(1:size(Data,1),:);
-    end
-    Data = [Data,data_br4];
+    Data = [Data,vertcat(data_br4{:})];
 end
-
+Data(sum(Data,2)==0,:) = [];
 Progress(1,h.Progress_Axes,h.Progress_Text,'Saving converted data...');
 % rename parameters
 ParameterNames{strcmp(ParameterNames,'Duration (ms)')} = 'Duration [ms]';
@@ -146,16 +148,14 @@ ParameterNames{strcmp(ParameterNames,'Nr-s-all')} = 'Number of Photons (DA perp)
 
 if sum(strcmp(ParameterNames,'FRET Efficiency')) == 0
     ParameterNames{end+1} = 'FRET Efficiency';
-    Data(:,end+1) = (Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')))./...
-        (Data(:,strcmp(ParameterNames,'Number of Photons (DD par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DD perp)')) +...
-         Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')));
+    Data(:,end+1) = Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))./...
+        (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)')));
 end
 
 if sum(strcmp(ParameterNames,'Proximity Ratio')) == 0
     ParameterNames{end+1} = 'Proximity Ratio';
-    Data(:,end+1) = (Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')))./...
-        (Data(:,strcmp(ParameterNames,'Number of Photons (DD par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DD perp)')) +...
-         Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')));
+    Data(:,end+1) = Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))./...
+        (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)')));
 end
 
 % add missing acceptor information
@@ -216,7 +216,7 @@ burst_data.FileInfo.ParisInfo = info;
 
 %%% save as *.bur file
 BurstData = burst_data;
-save([PathName filesep burst_data.FileName '.bur'],'BurstData');
+save([PathName filesep burst_data.FileName '.bur'],'BurstData','-v7.3');
 UserValues.File.BurstBrowserPath=PathName;
 Progress(1,h.Progress_Axes,h.Progress_Text);
 LSUserValues(1);
