@@ -184,13 +184,15 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         sPerBin_sim(sPerBin_sim == 0) = NaN;
         % contour patches
         ax = gca;
-        plot_BVA(ax,E,sSelected,UserValues.BurstBrowser.Display.ColorLine1)
         plot_BVA(ax,E_sim,sSelected_sim,UserValues.BurstBrowser.Display.ColorLine2)
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
             [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,...
                 rate_matrix_static,R_states_static,sigmaR_states_static);
             Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
             plot_BVA(ax,E_static,sSelected_static,UserValues.BurstBrowser.Display.ColorLine3)
+            %patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
+
+            plot_BVA(ax,E,sSelected,UserValues.BurstBrowser.Display.ColorLine1)
             patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
             %%% confidence intervals
 %             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
@@ -221,6 +223,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
         plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+        legend('Experimental Data','Simulation','Location','northeast');
         end
     case 2
         %%% Prepares a plot of FRET efficiency vs. donor fluorescence lifetime,
