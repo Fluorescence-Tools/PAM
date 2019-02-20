@@ -11361,9 +11361,9 @@ switch obj
             %%% contribute to the correlation function)
             %%% solution: perform calculations only on "valid" bins
             valid = (PamMeta.fFCS.Decay_Hist{u} ~= 0);
-            for i = active
-                valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
-            end
+            %for i = active
+            %    valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
+            %end
             Decay = PamMeta.fFCS.Decay_Hist{u}(valid);
             diag_Decay = zeros(numel(Decay));
             for i = 1:numel(Decay)
