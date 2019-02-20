@@ -5947,6 +5947,8 @@ switch obj
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
                 MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
+                
+                PIEchannel = PIEchannel1;
             end
             FileName = FileInfo.FileName{1};
             [~, FileName, ~] = fileparts(FileName);
@@ -5954,6 +5956,24 @@ switch obj
                 FileName = [FileName '_fit'];
             end
             Path = FileInfo.Path;
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel));
+            if exist('PIEchannel2','var')
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
             
@@ -6026,25 +6046,25 @@ switch obj
             if obj == h.Menu.Export_MIPattern_Fit
                 FileName = [FileName '_fit'];
             end
-        end
-        % save  
-        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
-        if all(File==0)
-            return
-        end
-        %%% previously, the microtime pattern was stored as MATLAB file
-        % save(fullfile(Path,File),'MIPattern');
-        %%% Now,it is saved as a text file for easier readability
-        %%% write header
-        fid = fopen(fullfile(Path,File),'w');
-        fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
-        %%% write detector - routing assigment        
-        fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
-        if TauFitData.BAMethod ~= 5
-            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
-        end     
-        fclose(fid);
-        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
+            if TauFitData.BAMethod ~= 5
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+        end        
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
         if strcmp(h.Result_Plot.Visible, 'on')
