@@ -76,7 +76,11 @@ h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
 h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
     'Callback',@Export,...
     'Separator','on');
-h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted microtime pattern',...
+h.Menu.Export_for_fFCS = uimenu(h.Menu.Export_Menu,'Label','Export for fFCS...',...
+    'Callback',[]);
+h.Menu.Export_MIPattern_Fit = uimenu(h.Menu.Export_for_fFCS,'Label','... fitted microtime pattern',...
+    'Callback',@Export);
+h.Menu.Export_MIPattern_Data = uimenu(h.Menu.Export_for_fFCS,'Label','... raw microtime pattern',...
     'Callback',@Export);
 h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
     'Callback',@Export,'Separator','on');
@@ -2517,7 +2521,7 @@ else
         return;
     end
 end
-if gcbo == h.Menu.Export_MIPattern
+if gcbo == h.Menu.Export_MIPattern_Fit
     save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
 else
     save_fix = true;
@@ -5873,7 +5877,7 @@ function Export(obj,~)
 global UserValues TauFitData FileInfo BurstData
 h = guidata(findobj('Tag','TauFit'));
 switch obj
-    case h.Menu.Export_MIPattern
+    case {h.Menu.Export_MIPattern_Fit, h.Menu.Export_MIPattern_Data}
         %%% export the fitted microtime pattern for use in fFCS filter
         %%% generation
         
@@ -5984,10 +5988,19 @@ switch obj
             
             % reconstruct mi pattern
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
-            mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            if TauFitData.BAMethod ~= 5
-                mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-                mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            switch obj
+                case h.Menu.Export_MIPattern_Fit
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+                    end
+                case h.Menu.Export_MIPattern_Data
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
+                    end
             end
             % define output
             MIPattern = cell(0);
@@ -5996,8 +6009,11 @@ switch obj
                 MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             end
             
-            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
+            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);            
             Path = TauFitData.Path;
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
         end
         % save  
         [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
