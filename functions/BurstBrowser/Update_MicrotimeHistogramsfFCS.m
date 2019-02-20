@@ -284,7 +284,7 @@ switch BurstData{file}.BAMethod
     case {1,2} %%% 2ColorMFD
         if use_FRET
             ParChans = [1,3]; %% GG1 and GR1
-            PerpChans = [2,4]; %% GG2 and GR2
+            PerpChans = [2,4]; %% GR2 and GR2
         else
             ParChans = [1]; %% GG1
             PerpChans = [2]; %% GG2
@@ -297,28 +297,53 @@ switch BurstData{file}.BAMethod
             ParChans = [1 7]; %% BB1, BG1, BR1, GG1, GR1
             PerpChans = [2 8]; %% BB2, BG2, BR2, GG2, GR2
         end
+    case {5,6} %%% 2ColorNoMFD
+        ParChans = [1,2]; %% GG, GR
+        PerpChans = []; %% none
+end
+%%% is the setup equipped with polarization=
+isMFD = BurstData{file}.BAMethod < 5;
+if isMFD
+    h.axes_fFCS_DecayPerp.Visible = 'on';
+    set(h.axes_fFCS_DecayPerp.Children,'Visible','on');
+    h.axes_fFCS_DecayPar.Position(3) = 0.42;
+    h.fFCS_SubTabPerpFilter.Parent = 'on';
+     h.fFCS_SubTabPerp.Parent = h.MainTabfFCSPanel;
+     h.fFCS_SubTabPar.Position(3) = 0.5;
+else
+    h.axes_fFCS_DecayPerp.Visible = 'off';
+    set(h.axes_fFCS_DecayPerp.Children,'Visible','off');
+    h.axes_fFCS_DecayPar.Position(3) = 0.9;
+    h.fFCS_SubTabPerp.Parent = h.Hide_Stuff;
+    h.fFCS_SubTabPar.Position(3) = 1;
 end
 %%% Construct Stacked Microtime Channels
 %%% ___| MT1 |___| MT2 + max(MT1) |___
 MI_par{1} = [];MI_par{2} = [];
-MI_perp{1} = [];MI_perp{2} = [];
+if isMFD
+    MI_perp{1} = [];MI_perp{2} = [];
+end
 %%% read out the limits of the PIE channels
 limit_low_par = [0, BurstData{file}.PIE.From(ParChans)];
 limit_high_par = [0, BurstData{file}.PIE.To(ParChans)];
 dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
-limit_low_perp = [0,BurstData{file}.PIE.From(PerpChans)];
-limit_high_perp = [0, BurstData{file}.PIE.To(PerpChans)];
-dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
+if isMFD
+    limit_low_perp = [0,BurstData{file}.PIE.From(PerpChans)];
+    limit_high_perp = [0, BurstData{file}.PIE.To(PerpChans)];
+    dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
+end
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
         MI_par{i} = vertcat(MI_par{i},...
             MI_species{i}(CH_species{i} == ParChans(j)) -...
             limit_low_par(j+1) + 1 +...
             dif_par(j));
-        MI_perp{i} = vertcat(MI_perp{i},...
-            MI_species{i}(CH_species{i} == PerpChans(j)) -...
-            limit_low_perp(j+1) + 1 +...
-            dif_perp(j));
+        if isMFD
+            MI_perp{i} = vertcat(MI_perp{i},...
+                MI_species{i}(CH_species{i} == PerpChans(j)) -...
+                limit_low_perp(j+1) + 1 +...
+                dif_perp(j));
+        end
         %         MI_par{i} = vertcat(MI_par{i},...
         %             MI_species{i}(CH_species{i} == ParChans(j)) -...
         %             limit_low_par(j+1) + 1 +...
@@ -340,10 +365,12 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% add donor only species
             MI_donly(CH_donly == ParChans(j)) -...
             limit_low_par(j+1) + 1 +...
             dif_par(j));
-        MI_donly_perp = vertcat(MI_donly_perp,...
-            MI_donly(CH_donly == PerpChans(j)) -...
-            limit_low_perp(j+1) + 1 +...
-            dif_perp(j));
+        if isMFD
+            MI_donly_perp = vertcat(MI_donly_perp,...
+                MI_donly(CH_donly == PerpChans(j)) -...
+                limit_low_perp(j+1) + 1 +...
+                dif_perp(j));
+        end
     end
 end
 MI_total_par = [];
@@ -361,24 +388,27 @@ for i = 1:numel(ParChans)
     %         limit_high_par(i)-limit_low_par(i));
     MT_total_par = vertcat(MT_total_par,...
         MT_total(CH_total == ParChans(i)));
-    MI_total_perp = vertcat(MI_total_perp,...
-        MI_total(CH_total == PerpChans(i)) -...
-        limit_low_perp(i+1) + 1 +...
-        dif_perp(i));
-    %     MI_total_perp = vertcat(MI_total_perp,...
-    %         MI_total(CH_total == PerpChans(i)) -...
-    %         limit_low_perp(i+1) + 1 +...
-    %         limit_high_perp(i)-limit_low_perp(i));
-    MT_total_perp = vertcat(MT_total_perp,...
-        MT_total(CH_total == PerpChans(i)));
+    if isMFD
+        MI_total_perp = vertcat(MI_total_perp,...
+            MI_total(CH_total == PerpChans(i)) -...
+            limit_low_perp(i+1) + 1 +...
+            dif_perp(i));
+        %     MI_total_perp = vertcat(MI_total_perp,...
+        %         MI_total(CH_total == PerpChans(i)) -...
+        %         limit_low_perp(i+1) + 1 +...
+        %         limit_high_perp(i)-limit_low_perp(i));
+        MT_total_perp = vertcat(MT_total_perp,...
+            MT_total(CH_total == PerpChans(i)));
+    end
 end
 
 %%% sort photons
 [MT_total_par,idx] = sort(MT_total_par);
 MI_total_par = MI_total_par(idx);
-[MT_total_perp,idx] = sort(MT_total_perp);
-MI_total_perp = MI_total_perp(idx);
-
+if isMFD
+    [MT_total_perp,idx] = sort(MT_total_perp);
+    MI_total_perp = MI_total_perp(idx);
+end
 %%% Burstwise treatment if using time window or burst photons only
 if any(UserValues.BurstBrowser.Settings.fFCS_Mode == [1,2])
     BurstMeta.fFCS.Photons.MI_total_par = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
@@ -393,25 +423,31 @@ if any(UserValues.BurstBrowser.Settings.fFCS_Mode == [1,2])
                 dif_par(i));
             BurstMeta.fFCS.Photons.MT_total_par{k} = vertcat(BurstMeta.fFCS.Photons.MT_total_par{k},...
                 BurstMeta.fFCS.Photons.MT_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == ParChans(i)));
-            BurstMeta.fFCS.Photons.MI_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MI_total_perp{k},...
-                BurstMeta.fFCS.Photons.MI_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)) -...
-                limit_low_perp(i+1) + 1 +...
-                dif_perp(i));
-            BurstMeta.fFCS.Photons.MT_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MT_total_perp{k},...
-                BurstMeta.fFCS.Photons.MT_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)));
+            if isMFD
+                BurstMeta.fFCS.Photons.MI_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MI_total_perp{k},...
+                    BurstMeta.fFCS.Photons.MI_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)) -...
+                    limit_low_perp(i+1) + 1 +...
+                    dif_perp(i));
+                BurstMeta.fFCS.Photons.MT_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MT_total_perp{k},...
+                    BurstMeta.fFCS.Photons.MT_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)));
+            end
         end
         
         %%% sort photons
         [BurstMeta.fFCS.Photons.MT_total_par{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_par{k});
         BurstMeta.fFCS.Photons.MI_total_par{k} = BurstMeta.fFCS.Photons.MI_total_par{k}(idx);
-        [BurstMeta.fFCS.Photons.MT_total_perp{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_perp{k});
-        BurstMeta.fFCS.Photons.MI_total_perp{k} = BurstMeta.fFCS.Photons.MI_total_perp{k}(idx);
+        if isMFD
+            [BurstMeta.fFCS.Photons.MT_total_perp{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_perp{k});
+            BurstMeta.fFCS.Photons.MI_total_perp{k} = BurstMeta.fFCS.Photons.MI_total_perp{k}(idx);
+        end
     end
 elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) % use sorted photon stream
     BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
     BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
-    BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
-    BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+    if isMFD
+        BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
+        BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+    end
 end
 %%% Downsampling if checked
 %%% New binwidth in picoseconds
@@ -426,7 +462,9 @@ if downsample
     MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
     for i = 1:2
         MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
-        MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
+        if isMFD
+            MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
+        end
     end
     switch UserValues.BurstBrowser.Settings.fFCS_Mode
         case {3,4}
@@ -435,6 +473,8 @@ if downsample
         case {1,2}
             BurstMeta.fFCS.Photons.MI_total_par = cellfun(@(x) ceil(double(x)/new_bin_width),BurstMeta.fFCS.Photons.MI_total_par,'UniformOutput',false);
             BurstMeta.fFCS.Photons.MI_total_perp = cellfun(@(x) ceil(double(x)/new_bin_width),BurstMeta.fFCS.Photons.MI_total_perp,'UniformOutput',false);     
+        case {5,6}
+            BurstMeta.fFCS.Photons.MI_total_par = cellfun(@(x) ceil(double(x)/new_bin_width),BurstMeta.fFCS.Photons.MI_total_par,'UniformOutput',false);
     end
 end
 
@@ -445,11 +485,14 @@ BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par);
 BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp);
 for i = 1:2
     BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par);
-    BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
+    if isMFD
+        BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
+    end
 end
 BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par);
-BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
-
+if isMFD
+    BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
+end
 %%% restrict species microtime histograms to valid region if synthetic species is selected
 valid_par = true(numel(BurstMeta.fFCS.TAC_par),1);
 valid_perp = true(numel(BurstMeta.fFCS.TAC_perp),1);
@@ -496,13 +539,14 @@ BurstMeta.Plots.fFCS.Microtime_Species1_par.YData = BurstMeta.fFCS.hist_MIpar_Sp
 BurstMeta.Plots.fFCS.Microtime_Species2_par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Microtime_Species2_par.YData = BurstMeta.fFCS.hist_MIpar_Species{2}./sum(BurstMeta.fFCS.hist_MIpar_Species{2});
 
-BurstMeta.Plots.fFCS.Microtime_Total_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Total_perp.YData = BurstMeta.fFCS.hist_MItotal_perp./sum(BurstMeta.fFCS.hist_MItotal_perp);
-BurstMeta.Plots.fFCS.Microtime_Species1_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{1}./sum(BurstMeta.fFCS.hist_MIperp_Species{1});
-BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2}./sum(BurstMeta.fFCS.hist_MIperp_Species{2});
-
+if isMFD
+    BurstMeta.Plots.fFCS.Microtime_Total_perp.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.Microtime_Total_perp.YData = BurstMeta.fFCS.hist_MItotal_perp./sum(BurstMeta.fFCS.hist_MItotal_perp);
+    BurstMeta.Plots.fFCS.Microtime_Species1_perp.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{1}./sum(BurstMeta.fFCS.hist_MIperp_Species{1});
+    BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2}./sum(BurstMeta.fFCS.hist_MIperp_Species{2});
+end
 %%% Add IRF Pattern if existent
 if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF
     BurstMeta.Plots.fFCS.IRF_par.Visible = 'on';
@@ -512,32 +556,43 @@ if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings
     hScat_perp = [];
     for i = 1:numel(ParChans)
         hScat_par = [hScat_par, BurstData{file}.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
-        hScat_perp = [hScat_perp, BurstData{file}.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
+        if isMFD
+            hScat_perp = [hScat_perp, BurstData{file}.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
+        end
     end
     
     if UserValues.BurstBrowser.Settings.Downsample_fFCS
         %%% Downsampling if checked
         hScat_par = downsamplebin(hScat_par,new_bin_width);hScat_par = hScat_par';
-        hScat_perp = downsamplebin(hScat_perp,new_bin_width);hScat_perp = hScat_perp';
+        if isMFD
+            hScat_perp = downsamplebin(hScat_perp,new_bin_width);hScat_perp = hScat_perp';
+        end
     end
     
     %%% normaize with respect to the total decay histogram
     hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par./sum(BurstMeta.fFCS.hist_MItotal_par));
-    hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp./sum(BurstMeta.fFCS.hist_MItotal_perp));
-    
+    if isMFD
+        hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp./sum(BurstMeta.fFCS.hist_MItotal_perp));
+    end
     %%% restrict scatter microtime histograms to valid region if synthetic species is selected
     if synthetic_species1 || synthetic_species2
         hScat_par(~valid_par) = 0;
-        hScat_perp(~valid_perp) = 0;
+        if isMFD
+            hScat_perp(~valid_perp) = 0;
+        end
     end
     %%% store in BurstMeta
     BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
-    BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
+    if isMFD
+        BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
+    end
     %%% Update Plots
     BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
     BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;
-    BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
-    BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
+    if isMFD
+        BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
+    end
 elseif ~isfield(BurstData{file},'ScatterPattern') || ~UserValues.BurstBrowser.Settings.fFCS_UseIRF
     %%% Hide IRF plots
     BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
@@ -546,31 +601,40 @@ end
 %%% Add Donly pattern if checked
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 4
     BurstMeta.Plots.fFCS.Microtime_DOnly_par.Visible = 'on';
-    BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'on';
-    
+    if isMFD
+        BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'on';
+    end
     if UserValues.BurstBrowser.Settings.Downsample_fFCS
         MI_donly_par = ceil(double(MI_donly_par)/new_bin_width);
-        MI_donly_perp = ceil(double(MI_donly_perp)/new_bin_width);
+        if isMFD
+            MI_donly_perp = ceil(double(MI_donly_perp)/new_bin_width);
+        end
         %%% Downsampling if checked
         %hDOnly_par = downsamplebin(hDOnly_par,new_bin_width);hDOnly_par = hDOnly_par';
         %hDOnly_perp = downsamplebin(hDOnly_perp,new_bin_width);hDOnly_perp = hDOnly_perp';
     end
     
     hDOnly_par = histc(MI_donly_par,BurstMeta.fFCS.TAC_par);
-    hDOnly_perp = histc(MI_donly_perp,BurstMeta.fFCS.TAC_perp);
-    
+    if isMFD
+        hDOnly_perp = histc(MI_donly_perp,BurstMeta.fFCS.TAC_perp);
+    end
     %%% normaize with respect to the total decay histogram
     hDOnly_par = hDOnly_par./sum(hDOnly_par);
-    hDOnly_perp = hDOnly_perp./sum(hDOnly_perp);
-    
+    if isMFD
+        hDOnly_perp = hDOnly_perp./sum(hDOnly_perp);
+    end
     %%% store in BurstMeta
     BurstMeta.fFCS.hDOnly_par = hDOnly_par(1:numel(BurstMeta.fFCS.TAC_par));
-    BurstMeta.fFCS.hDOnly_perp = hDOnly_perp(1:numel(BurstMeta.fFCS.TAC_perp));
+    if isMFD
+        BurstMeta.fFCS.hDOnly_perp = hDOnly_perp(1:numel(BurstMeta.fFCS.TAC_perp));
+    end
     %%% Update Plots
     BurstMeta.Plots.fFCS.Microtime_DOnly_par.XData = BurstMeta.fFCS.TAC_par;
     BurstMeta.Plots.fFCS.Microtime_DOnly_par.YData = BurstMeta.fFCS.hDOnly_par;
-    BurstMeta.Plots.fFCS.Microtime_DOnly_perp.XData = BurstMeta.fFCS.TAC_perp;
-    BurstMeta.Plots.fFCS.Microtime_DOnly_perp.YData = BurstMeta.fFCS.hDOnly_perp;
+    if isMFD
+        BurstMeta.Plots.fFCS.Microtime_DOnly_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.Microtime_DOnly_perp.YData = BurstMeta.fFCS.hDOnly_perp;
+    end
 else
     BurstMeta.Plots.fFCS.Microtime_DOnly_par.Visible = 'off';
     BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'off';
