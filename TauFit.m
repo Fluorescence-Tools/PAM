@@ -5910,8 +5910,12 @@ switch obj
 
                 % reconstruct mi pattern
                 mi_pattern = zeros(FileInfo.MI_Bins,1);
-                mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
@@ -5930,10 +5934,15 @@ switch obj
 
                 % reconstruct mi patterns
                 mi_pattern1 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
                 mi_pattern2 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
@@ -5941,6 +5950,9 @@ switch obj
             end
             FileName = FileInfo.FileName{1};
             [~, FileName, ~] = fileparts(FileName);
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
             Path = FileInfo.Path;
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
