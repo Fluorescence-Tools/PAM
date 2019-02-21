@@ -10,6 +10,15 @@ else
     h = guidata(findobj('Tag','BurstBrowser'));
     obj = 'FileHistory';
 end
+% clear text from general axis
+c = h.axes_general.Children;
+del = false(size(c));
+for i = 1:numel(c)
+    if strcmp(c(i).Type,'text');
+        del(i) = true;
+    end
+end
+delete(c(del));
 
 if obj ~= h.Append_File
     if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose

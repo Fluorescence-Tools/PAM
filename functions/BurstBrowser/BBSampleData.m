@@ -39,7 +39,18 @@ set(h.axes_general,'XLim',[-40 130]);
 % set(h.axes_general,'YTick',[]);
 % set(h.axes_general,'XTick',[]);
 
+% add text
+% generate text
+xrange = h.axes_general.XLim + [1,-1]*diff(h.axes_general.XLim)/5;
+yrange = h.axes_general.YLim + [1,-1]*diff(h.axes_general.YLim)/5;
+txt = {'Wow','Such data','Much science','Many statistics','Very FRET','So dynamic'};
+xval = xrange(1) + diff(xrange)*rand(numel(txt),1);
+yval = yrange(1) + diff(yrange)*rand(numel(txt),1);
+t = text(h.axes_general,xval,yval,txt,'FontSize',48);
 
+for i = 1:numel(t)
+    t(i).Rotation = normrnd(0,15);
+end
 %% Lorentz Attractor
 
 % sigma = 10;
