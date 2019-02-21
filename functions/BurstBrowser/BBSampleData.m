@@ -41,8 +41,8 @@ set(h.axes_general,'XLim',[-40 130]);
 
 % add text
 % generate text
-xrange = h.axes_general.XLim + [1,-1]*diff(h.axes_general.XLim)/5;
-yrange = h.axes_general.YLim + [1,-1]*diff(h.axes_general.YLim)/5;
+xrange = h.axes_general.XLim + [0.1,-1]*diff(h.axes_general.XLim)/5;
+yrange = h.axes_general.YLim + [0.1,-0.25]*diff(h.axes_general.YLim)/5;
 txt = {'Wow','Such data','Much science','Many statistics','Very FRET','So dynamic'};
 xval = xrange(1) + diff(xrange)*rand(numel(txt),1);
 yval = yrange(1) + diff(yrange)*rand(numel(txt),1);
