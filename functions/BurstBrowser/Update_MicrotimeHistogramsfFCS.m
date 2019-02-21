@@ -18,7 +18,7 @@ if isfield(BurstMeta,'fFCS') && isfield(BurstMeta.fFCS,'syntheticpatterns')
     if isempty(synthetic_species1); synthetic_species1 = false;end;
     synthetic_species2 = find(strcmp(h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
     if isempty(synthetic_species2); synthetic_species2 = false;end;
-    synthetic_species3 = find(strcmp(h.fFCS_Species2_popupmenu.String{h.fFCS_Species3_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
+    synthetic_species3 = find(strcmp(h.fFCS_Species3_popupmenu.String{h.fFCS_Species3_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
     if isempty(synthetic_species3); synthetic_species3 = false;end;
     use_FRET = false;
     downsample = false;

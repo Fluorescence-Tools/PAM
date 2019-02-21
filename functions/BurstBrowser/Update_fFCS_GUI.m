@@ -38,7 +38,7 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
             h.fFCS_Species3_popupmenu.Enable = 'on';
             h.fFCS_Species3_popupmenu.Value = 4;
         else
-            h.fFCS_Species3_popupmenu.Enable = 'off';
+            h.fFCS_Species3_popupmenu.Enable = 'on';
             h.fFCS_Species3_popupmenu.Value = 1;
         end
         h.Plot_Microtimes_button.Enable = 'on';
