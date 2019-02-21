@@ -18,11 +18,14 @@ if isfield(BurstMeta,'fFCS') && isfield(BurstMeta.fFCS,'syntheticpatterns')
     if isempty(synthetic_species1); synthetic_species1 = false;end;
     synthetic_species2 = find(strcmp(h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
     if isempty(synthetic_species2); synthetic_species2 = false;end;
+    synthetic_species3 = find(strcmp(h.fFCS_Species2_popupmenu.String{h.fFCS_Species3_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
+    if isempty(synthetic_species3); synthetic_species3 = false;end;
     use_FRET = false;
     downsample = false;
 else
     synthetic_species1 = false;
     synthetic_species2 = false;
+    synthetic_species3 = false;
     use_FRET = UserValues.BurstBrowser.Settings.fFCS_UseFRET;
     downsample = UserValues.BurstBrowser.Settings.Downsample_fFCS;
 end
@@ -37,7 +40,16 @@ if ~synthetic_species2
     species2 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species2_popupmenu.Value + 1];
     valid_species2 = UpdateCuts(species2,file);
 end
-
+% check for third species
+if strcmp(h.fFCS_Species3_popupmenu.Enable,'on') && ~(h.fFCS_Species3_popupmenu.Value == 1) % 1 is disabled ('-')
+    if ~synthetic_species3
+        species3 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species3_popupmenu.Value];
+        valid_species3 = UpdateCuts(species3,file);
+    end
+    use_species3 = true;
+else
+    use_species3 = false;
+end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 if isempty(BurstTCSPCData{file})
     Load_Photons();
@@ -240,9 +252,24 @@ else
             for i = 1:numel(MIPatternPer)
                 MI_species{1} = [MI_species{1}; i*ones(MIPatternPer(i),1)];
             end
-        case {3,4,5}
-            disp('Only implemented for 2color MFD');
+        case {3,4}
+            disp('Only implemented for 2color measurements.');
             return;
+        case {5,6} % 2color noMFD
+            %%% assert that pattern has information for donor channel par
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species1}.MIPattern;
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                disp('Loaded pattern does not contain the required information.');
+                return;
+            end
+            MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+            %%% create dummy variable representing the synthetic decay pattern as photon stamps
+            MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+            MI_species{1} = [];
+            CH_species{1} = [1*ones(sum(MIPatternPar),1)];
+            for i = 1:numel(MIPatternPar)
+                MI_species{1} = [MI_species{1}; i*ones(MIPatternPar(i),1)];
+            end         
     end
 end
 if ~synthetic_species2
@@ -274,9 +301,75 @@ else
             for i = 1:numel(MIPatternPer)
                 MI_species{2} = [MI_species{2}; i*ones(MIPatternPer(i),1)];
             end
-        case {3,4,5}
-            disp('Only implemented for 2color MFD');
+        case {3,4}
+            disp('Only implemented for 2color measurements.');
             return;
+        case {5,6} % 2color noMFD
+            %%% assert that pattern has information for donor channel par
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species2}.MIPattern;
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                disp('Loaded pattern does not contain the required information.');
+                return;
+            end
+            MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+            %%% create dummy variable representing the synthetic decay pattern as photon stamps
+            MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+            MI_species{2} = [];
+            CH_species{2} = [1*ones(sum(MIPatternPar),1)];
+            for i = 1:numel(MIPatternPar)
+                MI_species{2} = [MI_species{2}; i*ones(MIPatternPar(i),1)];
+            end     
+    end
+end
+if use_species3
+    if ~synthetic_species3
+        MI_species{3} = BurstTCSPCData{file}.Microtime(valid_species3);MI_species{3} = vertcat(MI_species{3}{:});
+        CH_species{3} = BurstTCSPCData{file}.Channel(valid_species3);CH_species{3} = vertcat(CH_species{3}{:});
+    else
+        switch BurstData{file}.BAMethod
+            case {1,2} %%% 2ColorMFD
+                %%% assert that pattern has information for donor channel par
+                MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species3}.MIPattern;
+                if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                    disp('Loaded pattern does not contain the required information for parallel channel.');
+                    return;
+                end
+                if isempty(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}(BurstData{file}.PIE.From(2):BurstData{file}.PIE.To(2))) == 0)
+                    disp('Loaded pattern does not contain the required information for perpendicual channel.');
+                    return;
+                end
+                MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+                MIPatternPer = MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)};
+                %%% create dummy variable representing the synthetic decay pattern as photon stamps
+                MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+                MIPatternPer = round(1E5*MIPatternPer./sum(MIPatternPer)); %%% 1E5 photons
+                MI_species{3} = [];
+                CH_species{3} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPer),1)];
+                for i = 1:numel(MIPatternPar)
+                    MI_species{3} = [MI_species{3}; i*ones(MIPatternPar(i),1)];
+                end
+                for i = 1:numel(MIPatternPer)
+                    MI_species{3} = [MI_species{3}; i*ones(MIPatternPer(i),1)];
+                end
+            case {3,4}
+                disp('Only implemented for 2color measurements.');
+                return;
+            case {5,6} % 2color noMFD
+                %%% assert that pattern has information for donor channel par
+                MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species3}.MIPattern;
+                if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                    disp('Loaded pattern does not contain the required information.');
+                    return;
+                end
+                MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+                %%% create dummy variable representing the synthetic decay pattern as photon stamps
+                MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+                MI_species{3} = [];
+                CH_species{3} = [1*ones(sum(MIPatternPar),1)];
+                for i = 1:numel(MIPatternPar)
+                    MI_species{3} = [MI_species{3}; i*ones(MIPatternPar(i),1)];
+                end   
+        end
     end
 end
 
@@ -298,7 +391,11 @@ switch BurstData{file}.BAMethod
             PerpChans = [2 8]; %% BB2, BG2, BR2, GG2, GR2
         end
     case {5,6} %%% 2ColorNoMFD
-        ParChans = [1,2]; %% GG, GR
+        if use_FRET
+            ParChans = [1,2]; %% GG, GR
+        else
+            ParChans = [1]; %% GG
+        end
         PerpChans = []; %% none
 end
 %%% is the setup equipped with polarization=
@@ -308,8 +405,8 @@ if isMFD
     set(h.axes_fFCS_DecayPerp.Children,'Visible','on');
     h.axes_fFCS_DecayPar.Position(3) = 0.42;
     h.fFCS_SubTabPerpFilter.Parent = 'on';
-     h.fFCS_SubTabPerp.Parent = h.MainTabfFCSPanel;
-     h.fFCS_SubTabPar.Position(3) = 0.5;
+    h.fFCS_SubTabPerp.Parent = h.MainTabfFCSPanel;
+    h.fFCS_SubTabPar.Position(3) = 0.5;
 else
     h.axes_fFCS_DecayPerp.Visible = 'off';
     set(h.axes_fFCS_DecayPerp.Children,'Visible','off');
@@ -320,8 +417,14 @@ end
 %%% Construct Stacked Microtime Channels
 %%% ___| MT1 |___| MT2 + max(MT1) |___
 MI_par{1} = [];MI_par{2} = [];
+if use_species3
+    MI_par{3} = [];
+end
 if isMFD
     MI_perp{1} = [];MI_perp{2} = [];
+    if use_species3
+        MI_perp{3} = [];
+    end
 end
 %%% read out the limits of the PIE channels
 limit_low_par = [0, BurstData{file}.PIE.From(ParChans)];
@@ -332,7 +435,8 @@ if isMFD
     limit_high_perp = [0, BurstData{file}.PIE.To(PerpChans)];
     dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
 end
-for i = 1:2 %%% loop over species
+
+for i = 1:(2+use_species3) %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
         MI_par{i} = vertcat(MI_par{i},...
             MI_species{i}(CH_species{i} == ParChans(j)) -...
@@ -460,7 +564,7 @@ if downsample
     new_bin_width = floor(UserValues.BurstBrowser.Settings.Downsample_fFCS_Time/(1000*TACChannelWidth));
     MI_total_par = ceil(double(MI_total_par)/new_bin_width);
     MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
-    for i = 1:2
+    for i = 1:(2+use_species3)
         MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
         if isMFD
             MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
@@ -483,7 +587,9 @@ maxTAC_par = max(MI_total_par);
 maxTAC_perp = max(MI_total_perp);
 BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par);
 BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp);
-for i = 1:2
+BurstMeta.fFCS.hist_MIpar_Species = [];
+if isMFD;BurstMeta.fFCS.hist_MIperp_Species = [];end;
+for i = 1:(2+use_species3)
     BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par);
     if isMFD
         BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
@@ -546,6 +652,19 @@ if isMFD
     BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{1}./sum(BurstMeta.fFCS.hist_MIperp_Species{1});
     BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
     BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2}./sum(BurstMeta.fFCS.hist_MIperp_Species{2});
+end
+if use_species3
+    BurstMeta.Plots.fFCS.Microtime_Species3_par.Visible = 'on';
+    BurstMeta.Plots.fFCS.Microtime_Species3_par.XData = BurstMeta.fFCS.TAC_par;
+    BurstMeta.Plots.fFCS.Microtime_Species3_par.YData = BurstMeta.fFCS.hist_MIpar_Species{3}./sum(BurstMeta.fFCS.hist_MIpar_Species{3});
+    if isMFD
+        BurstMeta.Plots.fFCS.Microtime_Species3_perp.Visible = 'on';
+        BurstMeta.Plots.fFCS.Microtime_Species3_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.Microtime_Species3_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{3}./sum(BurstMeta.fFCS.hist_MIperp_Species{3});
+    end
+else
+    BurstMeta.Plots.fFCS.Microtime_Species3_par.Visible = 'off';
+    BurstMeta.Plots.fFCS.Microtime_Species3_perp.Visible = 'off';
 end
 %%% Add IRF Pattern if existent
 if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF

@@ -8,6 +8,9 @@ if isempty(obj)
 else
     h = guidata(obj);
 end
+file = BurstMeta.SelectedFile;
+isMFD = BurstData{file}.BAMethod < 5;
+use_species3 = numel(BurstMeta.fFCS.hist_MIpar_Species) > 2;
 %%% clear previous result
 BurstMeta.fFCS.Result = struct;
 BurstMeta.fFCS.Result.FileName = [];
@@ -23,8 +26,10 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
 Name = {h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value},...
         h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value}};
-file = BurstMeta.SelectedFile;
-CorrMat = true(2);
+if use_species3
+    Name = [Name, {h.fFCS_Species3_popupmenu.String{h.fFCS_Species3_popupmenu.Value}}];
+end
+CorrMat = true(numel(Name));
 NumChans = size(CorrMat,1);
 %%% Read out photons and filters from BurstMeta
 %MT_par = BurstMeta.fFCS.Photons.MT_total_par;
@@ -33,17 +38,34 @@ NumChans = size(CorrMat,1);
 %MI_perp = BurstMeta.fFCS.Photons.MI_total_perp;
 filters_par{1} = BurstMeta.fFCS.filters_par(1,:)';
 filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
-filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
-filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
-
+if use_species3
+    filters_par{3} = BurstMeta.fFCS.filters_par(3,:)';
+end
+if isMFD
+    filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
+    filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
+    if use_species3
+        filters_perp{3} = BurstMeta.fFCS.filters_perp(3,:)';
+    end
+else
+    filters_perp = filters_par;
+end
 count = 0;
 for i=1:NumChans
     for j=1:NumChans
         if CorrMat(i,j)
             MT1 = BurstMeta.fFCS.Photons.MT_total_par;
-            MT2 = BurstMeta.fFCS.Photons.MT_total_perp;
+            if isMFD
+                MT2 = BurstMeta.fFCS.Photons.MT_total_perp;
+            else
+                MT2 = MT1;
+            end
             MIpar = BurstMeta.fFCS.Photons.MI_total_par;
-            MIperp = BurstMeta.fFCS.Photons.MI_total_perp;
+            if isMFD
+                MIperp = BurstMeta.fFCS.Photons.MI_total_perp;
+            else
+                MIperp = MIpar;
+            end
             if any(UserValues.BurstBrowser.Settings.fFCS_Mode == [1,2])
                 inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
                 MT1(inval) = []; MT2(inval) = [];
@@ -122,7 +144,7 @@ for i=1:NumChans
             %save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
             
             count = count +1;
-            Progress(count/4,h.Progress_Axes,h.Progress_Text,'Correlating...');
+            Progress(count/(NumChans^2),h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
     end
 end
@@ -136,13 +158,44 @@ switch UserValues.BurstBrowser.Settings.fFCS_Mode
     otherwise
         max_time = BurstMeta.fFCS.Result.Cor_Times{end}/2;
 end
-BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
-BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1}(1:max_time);
-BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2}(1:max_time);
-BurstMeta.Plots.fFCS.result_1x2.YData = BurstMeta.fFCS.Result.Cor_Average{2}(1:max_time);
-BurstMeta.Plots.fFCS.result_2x1.XData = BurstMeta.fFCS.Result.Cor_Times{3}(1:max_time);
-BurstMeta.Plots.fFCS.result_2x1.YData = BurstMeta.fFCS.Result.Cor_Average{3}(1:max_time);
-BurstMeta.Plots.fFCS.result_2x2.XData = BurstMeta.fFCS.Result.Cor_Times{4}(1:max_time);
-BurstMeta.Plots.fFCS.result_2x2.YData = BurstMeta.fFCS.Result.Cor_Average{4}(1:max_time);
+if ~use_species3
+    BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x2.YData = BurstMeta.fFCS.Result.Cor_Average{2}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x1.XData = BurstMeta.fFCS.Result.Cor_Times{3}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x1.YData = BurstMeta.fFCS.Result.Cor_Average{3}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x2.XData = BurstMeta.fFCS.Result.Cor_Times{4}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x2.YData = BurstMeta.fFCS.Result.Cor_Average{4}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x3.Visible = 'off';
+    BurstMeta.Plots.fFCS.result_1x3.Visible = 'off';
+    BurstMeta.Plots.fFCS.result_3x1.Visible = 'off';
+    BurstMeta.Plots.fFCS.result_2x3.Visible = 'off';
+    BurstMeta.Plots.fFCS.result_3x2.Visible = 'off';
+else % species3, other assignment of correlation functions
+    BurstMeta.Plots.fFCS.result_3x3.Visible = 'on';
+    BurstMeta.Plots.fFCS.result_1x3.Visible = 'on';
+    BurstMeta.Plots.fFCS.result_3x1.Visible = 'on';
+    BurstMeta.Plots.fFCS.result_2x3.Visible = 'on';
+    BurstMeta.Plots.fFCS.result_3x2.Visible = 'on';
+    BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x2.YData = BurstMeta.fFCS.Result.Cor_Average{2}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x3.XData = BurstMeta.fFCS.Result.Cor_Times{3}(1:max_time);
+    BurstMeta.Plots.fFCS.result_1x3.YData = BurstMeta.fFCS.Result.Cor_Average{3}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x1.XData = BurstMeta.fFCS.Result.Cor_Times{4}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x1.YData = BurstMeta.fFCS.Result.Cor_Average{4}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x2.XData = BurstMeta.fFCS.Result.Cor_Times{5}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x2.YData = BurstMeta.fFCS.Result.Cor_Average{5}(1:max_time);    
+    BurstMeta.Plots.fFCS.result_2x3.XData = BurstMeta.fFCS.Result.Cor_Times{6}(1:max_time);
+    BurstMeta.Plots.fFCS.result_2x3.YData = BurstMeta.fFCS.Result.Cor_Average{6}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x1.XData = BurstMeta.fFCS.Result.Cor_Times{7}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x1.YData = BurstMeta.fFCS.Result.Cor_Average{7}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x2.XData = BurstMeta.fFCS.Result.Cor_Times{8}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x2.YData = BurstMeta.fFCS.Result.Cor_Average{8}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x3.XData = BurstMeta.fFCS.Result.Cor_Times{9}(1:max_time);
+    BurstMeta.Plots.fFCS.result_3x3.YData = BurstMeta.fFCS.Result.Cor_Average{9}(1:max_time);
+end
 axis(h.axes_fFCS_Result,'tight');
 h.fFCS_axes_tab.SelectedTab = h.fFCS_axes_result_tab;
