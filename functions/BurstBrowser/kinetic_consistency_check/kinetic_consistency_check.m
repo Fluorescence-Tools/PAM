@@ -140,12 +140,6 @@ switch type
         end 
         %%% plot
         %plot_BVA(E,sSelected,BinCenters,sPerBin)
-        if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
-            E1 = 1/(1+(R_states(1,1)/R0)^6);
-            E2 = 1./(1+(R_states(1,2)/R0)^6);
-            hold on
-            BVA_dynamic_FRET(E1,E2,n,'HandleVisibility','off');
-        end
     case 'Lifetime' % Do both E-tau and phasor               
         %% new code without state trajectory starts here
         %%% for lifetime, we only need to know the fraction of time spent

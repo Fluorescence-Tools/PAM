@@ -217,10 +217,26 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
             legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
         else 
-        plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-        plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            xE = 0:0.001:1;
+            plot(xE,sqrt(xE.*(1-xE)./n),'-k','LineWidth',1);
+            if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
+                R0 = BurstData{file}.Corrections.FoersterRadius;
+                gamma = BurstData{file}.Corrections.Gamma_GR;
+                ct = BurstData{file}.Corrections.CrossTalk_GR;
+                de = BurstData{file}.Corrections.DirectExcitation_GR;
+                E = 1./(1+(R_states./R0).^6); 
+                 % convert to proximity ratio (see SI of ALEX paper) 
+                E = (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)); % no background correction here, though!
+                BVA_dynamic_FRET(E(1),E(2),n);
+                if numel(R_states) > 2
+                    BVA_dynamic_FRET(E(1),E(3),n);
+                    BVA_dynamic_FRET(E(2),E(3),n);
+                end
+            end
         end
     case 2
         %%% Prepares a plot of FRET efficiency vs. donor fluorescence lifetime,
