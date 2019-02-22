@@ -144,7 +144,7 @@ switch type
             E1 = 1/(1+(R_states(1,1)/R0)^6);
             E2 = 1./(1+(R_states(1,2)/R0)^6);
             hold on
-            BVA_dynamic_FRET(E1,E2,n,'HandleVisibility','off');
+            BVA_dynamic_FRET(E1,E2,n);
         end
     case 'Lifetime' % Do both E-tau and phasor               
         %% new code without state trajectory starts here
@@ -230,8 +230,11 @@ switch type
                 mean_tau(i) = sum(N_phot(bin==i).*tau_average(bin==i))./sum(N_phot(bin==i));
             end
         end
-        plot_E_tau(E_cor,tau_average);
-        scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+        E = E_cor;
+        sSelected = tau_average;
+        sPerBin = mean_tau;
+%         plot_E_tau(E_cor,tau_average);
+%         scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
 %         if isfield(BurstData{file},'Phasor')
 %             PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
 %             omega = 1/PIE_channel_width; % in ns^(-1)
@@ -244,7 +247,7 @@ switch type
 %             figure(f2)
 %             plot_Phasor(g,s);
 %         end
-        
+%         
         %% old - the following can be replaced by the new code
         old = false;
         if old
