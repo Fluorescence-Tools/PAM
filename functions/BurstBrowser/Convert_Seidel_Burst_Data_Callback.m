@@ -5,9 +5,21 @@ PathName = uigetdir(UserValues.File.BurstBrowserPath,'Select folder');
 
 %%% load the data from subfolder:
 % 'bg4','bi4_bur','br4','info'
+Progress(0,h.Progress_Axes,h.Progress_Text,'Converting data...');
 
+% check if conversion was already done
+folder  = strsplit(PathName,filesep); folder = folder{end};
+if exist([PathName filesep folder '.bur'],'file') == 2
+    disp('File was already converted.')
+    Progress(1,h.Progress_Axes,h.Progress_Text);
+    return;
+end
 % get files in bg4 folder
 bg4_files = dir([PathName filesep 'bg4']);
+if isempty(bg4_files)
+    % try tg4, i.e. time-window burst analysis
+    bg4_files = dir([PathName filesep 'tg4']);
+end
 params_bg4 = [];
 data_bg4 = cell(0);
 for i = 1:numel(bg4_files)
@@ -18,20 +30,23 @@ for i = 1:numel(bg4_files)
             params_bg4(cellfun(@isempty,params_bg4)) = [];
             fclose(fid);
         end
-        data = dlmread([bg4_files(i).folder filesep bg4_files(i).name],'\t',1,0);
-        % for some reasone, every second data point is empty
-        data(sum(data,2)==0,:) = [];
+        data = dlmread([bg4_files(i).folder filesep bg4_files(i).name],'\t',2,0);
         data_bg4{end+1} = data;
     end
-    disp(sprintf('Loading file %i of %i (%.1f)',i,numel(bg4_files),(100*i/numel(bg4_files))));
+    Progress(i/numel(bg4_files),h.Progress_Axes,h.Progress_Text,'Converting bg4 files... (Step 1 of 3)');
 end
-data_bg4 = vertcat(data_bg4{:});
+%data_bg4 = vertcat(data_bg4{:});
+% for some reasone, every second data point is empty
+%data_bg4(sum(data_bg4,2)==0,:) = [];
 
 % get files in bi4_bur folder
 bi4_bur_files = dir([PathName filesep 'bi4_bur']);
+if isempty(bi4_bur_files)
+    % try tg4, i.e. time-window burst analysis
+    bi4_bur_files = dir([PathName filesep 'ti4_bur']);
+end
 params_bi4_bur = [];
 data_bi4_bur = cell(0);
-formatSpec = [repmat('%f',[1,6]),'%s%s',repmat('%f',[1,8]) '[^\n\r]'];
 for i = 1:numel(bi4_bur_files)
     if ~bi4_bur_files(i).isdir
         if isempty(params_bi4_bur) %%% read names
@@ -41,21 +56,37 @@ for i = 1:numel(bi4_bur_files)
             params_bi4_bur(7:8) = [];% remove the first-file-last-file parameters
             fclose(fid);
         end
-        data = import_bi4_bur([bi4_bur_files(i).folder filesep bi4_bur_files(i).name]);
+        fid = fopen([bi4_bur_files(i).folder filesep bi4_bur_files(i).name],'r');
+        fgetl(fid); % get one line to skip header
+        data = textscan(fid,[repmat('%s\t',[1, numel(params_bi4_bur)+1]),'%s%[^\n\r]']);
+        fclose(fid);
+        % combine cell arrays
+        data = horzcat(data{:});
+        % remove head
+        data(1,:) = [];
+        % remove last row
+        data(:,end) = [];
         % remove the first-file-last-file columns
-        data(:,7:8) = []; data = cell2mat(data);
-        %%% separate file name
-        % for some reasone, every second data point is empty
-        data(sum(data,2)==0,:) = [];
+        data(:,7:8) = [];
+        % convert to matrix
+        data = cellfun(@(x) str2double(x),data);
+        % for some reason, every second data point is empty
+        %data(sum(data,2)==0,:) = [];
         data_bi4_bur{end+1} = data;
     end
-    disp(sprintf('Loading file %i of %i (%.1f)',i,numel(bi4_bur_files),(100*i/numel(bi4_bur_files))));
+    Progress(i/numel(bi4_bur_files),h.Progress_Axes,h.Progress_Text,'Converting bi4_bur files... (Step 2 of 3)');   
 end
-data_bi4_bur = vertcat(data_bi4_bur{:});
+%data_bi4_bur = vertcat(data_bi4_bur{:});
+% for some reason, every second data point is empty
+%data_bi4_bur(sum(data_bi4_bur,2)==0,:) = [];
 
 % get files in br4 folder
-if exist([PathName filesep 'br4'],'dir')
+if exist([PathName filesep 'br4'],'dir') || exist([PathName filesep 'tr4'],'dir')
     br4_files = dir([PathName filesep 'br4']);
+    if isempty(br4_files)
+        % try tg4, i.e. time-window burst analysis
+        br4_files = dir([PathName filesep 'tr4']);
+    end
     params_br4 = [];
     data_br4 = cell(0);
     for i = 1:numel(br4_files)
@@ -66,14 +97,14 @@ if exist([PathName filesep 'br4'],'dir')
                 params_br4(cellfun(@isempty,params_br4)) = [];
                 fclose(fid);
             end
-            data = dlmread([br4_files(i).folder filesep br4_files(i).name],'\t',1,0);
-            % for some reasone, every second data point is empty
-            data(sum(data,2)==0,:) = [];
+            data = dlmread([br4_files(i).folder filesep br4_files(i).name],'\t',2,0);
             data_br4{end+1} = data;
         end
-        disp(sprintf('Loading file %i of %i (%.1f)',i,numel(br4_files),(100*i/numel(br4_files))));
+        Progress(i/numel(br4_files),h.Progress_Axes,h.Progress_Text,'Converting br4 files... (Step 3 of 3)');
     end
-    data_br4 = vertcat(data_br4{:});
+    %data_br4 = vertcat(data_br4{:});
+    % for some reasone, every second data point is empty
+    %data_br4(sum(data_br4,2)==0,:) = [];
 end
 
 % read info
@@ -82,7 +113,7 @@ info = {};
 indic = 1;
 while 1
      tline = fgetl(fid);
-     if ~ischar(tline), 
+     if ~ischar(tline)
          break
      end
      info{indic}=tline; 
@@ -93,12 +124,13 @@ info = info';
 
 % combine data
 ParameterNames = [params_bi4_bur,params_bg4];
-Data = [data_bi4_bur,data_bg4];
+Data = [vertcat(data_bi4_bur{:}),vertcat(data_bg4{:})];
 if exist('params_br4','var')
     ParameterNames = [ParameterNames, params_br4];
-    Data = [Data,data_br4];
+    Data = [Data,vertcat(data_br4{:})];
 end
-
+Data(sum(Data,2)==0,:) = [];
+Progress(1,h.Progress_Axes,h.Progress_Text,'Saving converted data...');
 % rename parameters
 ParameterNames{strcmp(ParameterNames,'Duration (ms)')} = 'Duration [ms]';
 ParameterNames{strcmp(ParameterNames,'Mean Macro Time (ms)')} = 'Mean Macrotime [ms]';
@@ -116,16 +148,14 @@ ParameterNames{strcmp(ParameterNames,'Nr-s-all')} = 'Number of Photons (DA perp)
 
 if sum(strcmp(ParameterNames,'FRET Efficiency')) == 0
     ParameterNames{end+1} = 'FRET Efficiency';
-    Data(:,end+1) = (Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')))./...
-        (Data(:,strcmp(ParameterNames,'Number of Photons (DD par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DD perp)')) +...
-         Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')));
+    Data(:,end+1) = Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))./...
+        (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)')));
 end
 
 if sum(strcmp(ParameterNames,'Proximity Ratio')) == 0
     ParameterNames{end+1} = 'Proximity Ratio';
-    Data(:,end+1) = (Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')))./...
-        (Data(:,strcmp(ParameterNames,'Number of Photons (DD par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DD perp)')) +...
-         Data(:,strcmp(ParameterNames,'Number of Photons (DA par)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA perp)')));
+    Data(:,end+1) = Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))./...
+        (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)')));
 end
 
 % add missing acceptor information
@@ -186,94 +216,7 @@ burst_data.FileInfo.ParisInfo = info;
 
 %%% save as *.bur file
 BurstData = burst_data;
-save([PathName filesep burst_data.FileName '.bur'],'BurstData');
-
-
-function data = import_bi4_bur(filename, startRow, endRow)
-%IMPORTFILE Import numeric data from a text file as a matrix.
-%   data = IMPORTFILE(FILENAME) Reads data from text file FILENAME for the
-%   default selection.
-%
-%   data = IMPORTFILE(FILENAME, STARTROW, ENDROW) Reads data from rows
-%   STARTROW through ENDROW of text file FILENAME.
-%
-% Example:
-%   data = importfile('m997_0.bur', 2, 71);
-%
-%    See also TEXTSCAN.
-
-% Auto-generated by MATLAB on 2019/02/01 14:32:49
-
-%% Initialize variables.
-delimiter = '\t';
-if nargin<=2
-    startRow = 2;
-    endRow = inf;
-end
-
-%% Read columns of data as text:
-% For more information, see the TEXTSCAN documentation.
-formatSpec = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%[^\n\r]';
-
-%% Open the text file.
-fileID = fopen(filename,'r');
-
-%% Read columns of data according to the format.
-% This call is based on the structure of the file used to generate this
-% code. If an error occurs for a different file, try regenerating the code
-% from the Import Tool.
-dataArray = textscan(fileID, formatSpec, endRow(1)-startRow(1)+1, 'Delimiter', delimiter, 'HeaderLines', startRow(1)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
-for block=2:length(startRow)
-    frewind(fileID);
-    dataArrayBlock = textscan(fileID, formatSpec, endRow(block)-startRow(block)+1, 'Delimiter', delimiter, 'HeaderLines', startRow(block)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
-    for col=1:length(dataArray)
-        dataArray{col} = [dataArray{col};dataArrayBlock{col}];
-    end
-end
-
-%% Close the text file.
-fclose(fileID);
-
-%% Convert the contents of columns containing numeric text to numbers.
-% Replace non-numeric text with NaN.
-raw = repmat({''},length(dataArray{1}),length(dataArray)-1);
-for col=1:length(dataArray)-1
-    raw(1:length(dataArray{col}),col) = dataArray{col};
-end
-numericData = NaN(size(dataArray{1},1),size(dataArray,2));
-
-for col=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
-    % Converts text in the input cell array to numbers. Replaced non-numeric
-    % text with NaN.
-    rawData = dataArray{col};
-    for row=1:size(rawData, 1);
-        % Create a regular expression to detect and remove non-numeric prefixes and
-        % suffixes.
-        regexstr = '(?<prefix>.*?)(?<numbers>([-]*(\d+[\,]*)+[\.]{0,1}\d*[eEdD]{0,1}[-+]*\d*[i]{0,1})|([-]*(\d+[\,]*)*[\.]{1,1}\d+[eEdD]{0,1}[-+]*\d*[i]{0,1}))(?<suffix>.*)';
-        try
-            result = regexp(rawData{row}, regexstr, 'names');
-            numbers = result.numbers;
-            
-            % Detected commas in non-thousand locations.
-            invalidThousandsSeparator = false;
-            if any(numbers==',');
-                thousandsRegExp = '^\d+?(\,\d{3})*\.{0,1}\d*$';
-                if isempty(regexp(numbers, thousandsRegExp, 'once'));
-                    numbers = NaN;
-                    invalidThousandsSeparator = true;
-                end
-            end
-            % Convert numeric text to numbers.
-            if ~invalidThousandsSeparator;
-                numbers = textscan(strrep(numbers, ',', ''), '%f');
-                numericData(row, col) = numbers{1};
-                raw{row, col} = numbers{1};
-            end
-        catch me
-        end
-    end
-end
-
-
-%% Create output variable
-data = raw;
+save([PathName filesep burst_data.FileName '.bur'],'BurstData','-v7.3');
+UserValues.File.BurstBrowserPath=PathName;
+Progress(1,h.Progress_Axes,h.Progress_Text);
+LSUserValues(1);

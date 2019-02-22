@@ -11361,9 +11361,9 @@ switch obj
             %%% contribute to the correlation function)
             %%% solution: perform calculations only on "valid" bins
             valid = (PamMeta.fFCS.Decay_Hist{u} ~= 0);
-            for i = active
-                valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
-            end
+            %for i = active
+            %    valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
+            %end
             Decay = PamMeta.fFCS.Decay_Hist{u}(valid);
             diag_Decay = zeros(numel(Decay));
             for i = 1:numel(Decay)
@@ -11374,8 +11374,12 @@ switch obj
                 MI_species = [MI_species, PamMeta.fFCS.MI_Hist{u}{i}(valid)./sum(PamMeta.fFCS.MI_Hist{u}{i}(valid))]; % re-normalize here since not all bins are used!
             end
             filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+            % compute the reconstruction of the decay pattern based on species (used for evaluation of filter quality)
+            reconstruction_temp = sum((MI_species'*diag_Decay*MI_species)^(-1)*MI_species',1);
+            reconstruction{u} = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),1);
+            reconstruction{u}(valid) = reconstruction_temp;
             %%% rescale filters back to total microtime range (no cut with valid)
-            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));
+            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));            
             for i = 1:numel(active)
                 filters(valid,i) = filters_temp(:,i);
             end
@@ -11426,6 +11430,33 @@ switch obj
         end
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)
+        %%% plot reconstruction against data for quality evaluation
+        f = figure('Color',[1,1,1]);f.Position(1) = 100;
+        subplot(4,1,2:4);hold on;
+        plot(PamMeta.fFCS.Decay_Hist{1},'LineWidth',2); plot(reconstruction{1},'LineWidth',2);        
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'YScale','lin','Box','on');
+        ylabel('Counts');
+        xlabel('TCSPC channel');
+        axis('tight');
+        xlim([1,numel(plotrange)]);
+        subplot(4,1,1);
+        plot((PamMeta.fFCS.Decay_Hist{1}-reconstruction{1})./sqrt(PamMeta.fFCS.Decay_Hist{1}),'LineWidth',2);
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'Box','on');
+        xlim([1,numel(plotrange)]);
+        ylabel('w-res');
+        if h.Cor_fFCS.CrossCorr_Checkbox.Value == 1 %%% add second plot
+            f = figure('Color',[1,1,1]);f.Position(1) = 300;
+            subplot(4,1,2:4);hold on;
+            plot(reconstruction{2}); plot(PamMeta.fFCS.Decay_Hist{2});
+            set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'YScale','lin','Box','on');
+            xlim([1,numel(plotrange)]);
+            
+            subplot(4,1,1);
+            plot((PamMeta.fFCS.Decay_Hist{2}-reconstruction{2})./sqrt(PamMeta.fFCS.Decay_Hist{2}));
+            set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'Box','on');
+            xlim([1,numel(plotrange)]);
+            ylabel('w-res');
+        end
     case h.Cor_fFCS.Do_fFCS_Button
         %%% do actual correlation with stored filters
         if isempty(PamMeta.fFCS.filters)
