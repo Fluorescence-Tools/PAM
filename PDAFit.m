@@ -2186,7 +2186,9 @@ end
 if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
-    PDAMeta = rmfield(PDAMeta,'P');
+    if isfield(PDAMeta,'P')
+        PDAMeta = rmfield(PDAMeta,'P');
+    end
     for i  = find(PDAMeta.Active)'
         if strcmp(PDAData.Type{i},'Burst')
             %%% find valid bins (chosen by thresholds min/max and stoichiometry)
