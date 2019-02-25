@@ -263,7 +263,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         end
         
         %% plot smoothed dynamic FRET line
-        [H,x,y] = histcounts2(E,tauD,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
+        [H,x,y] = histcounts2(tauD,E,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
         H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
         figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
         ax = gca;
@@ -293,7 +293,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         rate_matrix(isnan(rate_matrix)) = 0;
 %         kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
         [Esim,tauD_sim,mean_tauD_sim] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
-        [H,x,y] = histcounts2(Esim,tauD_sim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
+        [H,x,y] = histcounts2(tauD_sim,Esim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
         H = H./max(H(:));
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2);
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
@@ -325,9 +325,9 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         % plot patch to phase contour plot out
         patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
         %%% add static FRET line
-        plot(bin_centers',mean_tauD,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+        plot(mean_tauD,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-        plot(bin_centers',mean_tauD_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+        plot(mean_tauD_sim,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
             'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
         legend('Experimental Data','Simulation','Location','northeast');
         end
