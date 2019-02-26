@@ -1,4 +1,4 @@
-function [E,sSelected,sPerBin] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
+function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -146,8 +146,13 @@ switch type
             hold on
             BVA_dynamic_FRET(E1,E2,n);
         end
-    case 'Lifetime' % Do both E-tau and phasor               
-        %% new code without state trajectory starts here
+    case 'Lifetime' % Do both E-tau and phasor
+        if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 3
+            do_phasor = true;
+        else
+            do_phasor = false;
+        end
+        %%% new code without state trajectory starts here
         %%% for lifetime, we only need to know the fraction of time spent
         %%% in each state
         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
@@ -192,6 +197,7 @@ switch type
         %%% center distance R_burst(states)
         %%% linker width
         R_randomized = cell(numel(N_phot),1);
+        E_randomized = cell(1,numel(N_phot));
         for i = 1:numel(N_phot)
             for s = 1:n_states
                 R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
@@ -224,15 +230,37 @@ switch type
         [~,~,bin] = histcounts(E_cor,bin_edges);
         mean_tau = NaN(1,numel(bin_edges)-1);
         N_phot = N_phot';
-        for i = 1:numel(bin_edges)-1
+        if do_phasor
+            PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
+            omega = 1/PIE_channel_width; % in ns^(-1)
+            g = cell2mat(cellfun(@(x) sum(cos(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+            s = cell2mat(cellfun(@(x) sum(sin(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+            mean_g = NaN(1,numel(bin_edges)-1);
+            mean_s = NaN(1,numel(bin_edges)-1);
+        end
+        for i = 1:numel(bin_edges)-1 
             %%% compute bin-wise intensity-averaged lifetime for donor
             if sum(bin == i) > threshold
-                mean_tau(i) = sum(N_phot(bin==i).*tau_average(bin==i))./sum(N_phot(bin==i));
+                if do_phasor % calculate average phasor
+                    g_bin = g(bin==i);
+                    s_bin = s(bin==i);
+                    valid = ~isnan(g_bin) & ~isnan(s_bin);
+                    N_phot_D_bin = N_phot(bin==i);
+                    mean_g(i) = sum(N_phot_D_bin(valid).*g_bin(valid))./sum(N_phot_D_bin(valid));
+                    mean_s(i) = sum(N_phot_D_bin(valid).*s_bin(valid))./sum(N_phot_D_bin(valid));
+                else
+                    mean_tau(i) = sum(N_phot(bin==i).*tau_average(bin==i))./sum(N_phot(bin==i));
+                end
             end
         end
         E = E_cor;
-        sSelected = tau_average;
-        sPerBin = mean_tau;
+        if do_phasor
+            sSelected = mean_g;
+            sPerBin = mean_s;
+        else
+            sSelected = tau_average;
+            sPerBin = mean_tau;
+        end
 %         plot_E_tau(E_cor,tau_average);
 %         scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
 %         if isfield(BurstData{file},'Phasor')
@@ -247,7 +275,7 @@ switch type
 %             figure(f2)
 %             plot_Phasor(g,s);
 %         end
-%         
+        
         %% old - the following can be replaced by the new code
         old = false;
         if old

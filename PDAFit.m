@@ -3009,7 +3009,7 @@ else
                 proposal = ci/10; 
                 %%% Sample
                 nsamples = 1E3; spacing = 10;
-                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
+                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,f);
                 v = numel(residual)-numel(fitpar); % number of degrees of freedom
                 perc = tinv(1-alpha/2,v);
                 ci_mc = perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
@@ -3255,8 +3255,7 @@ else %%% dynamic model
             k2 = fitpar(3*2-2);
             PofT = calc_dynamic_distribution(dT,N,k1,k2);
         case 'montecarlo'
-            SimTime = dT*1E-3; % time bin in seconds
-            DynRates = 1000 * [0, fitpar(3*2-2),fitpar(3*3-2); ...
+            DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
                         fitpar(3*1-2), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0];
             % rates in Hz
@@ -3265,10 +3264,17 @@ else %%% dynamic model
             % ( 12 22 32 ... )
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
-            %%% set frequency to 100 times of the fastest timescale
-            Freq = 100*max(DynRates(:)); %1E6; % Hz
             n_states = size(DynRates,1);
-            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E5);%sum(PDAMeta.valid{i}));
+            change_prob = cumsum(DynRates);
+            change_prob = change_prob ./ change_prob(end,:);
+            dwell_mean = 1 ./ sum(DynRates);  
+            for j = 1:n_states
+            DynRates(j,j) = -sum(DynRates(:,j));
+            end
+            DynRates(end+1,:) = ones(1,n_states);
+            b = zeros(n_states,1); b(end+1) = 1;
+            p_eq = DynRates\b;
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob);
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
@@ -3443,7 +3449,7 @@ else
     w_res(1) = 0;
     w_res(end) = 0;
 end
-        
+
 PDAMeta.w_res{i} = w_res;
 PDAMeta.hFit{i} = hFit;
 PDAMeta.chi2(i) = chi2;
@@ -3459,7 +3465,6 @@ if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
-
 if PDAMeta.FitInProgress == 2 %%% return the residuals instead of chi2
     chi2 = w_res;
 elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
@@ -3915,7 +3920,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         hFit = hFit + A(j).*H_res_dummy(:,j);
     end
 else %%% dynamic model 
-    SimTime = dur/1000; % time bin in seconds
+%     SimTime = dur/1000; % time bin in seconds
     %SimSteps = BSD; %
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
@@ -3933,25 +3938,39 @@ else %%% dynamic model
                         fitpar(1,1), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0]; % rates in Hz
     end
-    %%% set frequency to 100 times of the fastest timescale
-    Freq = 100*max(DynRates(:)); %1E6; % Hz
+    %%% obtain equlibrium distribution by solving K*p_eq = 0 and sum(p_eq) = 1
     n_states = size(DynRates,1);
     R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
-    
-    % gillespie
-    SimTime_gillespie = SimTime*1000;
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
+    dwell_mean = 1 ./ sum(DynRates./1000);
+    for i = 1:n_states
+            DynRates(i,i) = -sum(DynRates(:,i));
+    end
+    DynRates(end+1,:) = ones(1,n_states);
+    b = zeros(n_states,1); b(end+1) = 1;
+    p_eq = DynRates\b;
+    % ensure that p is a row vector
+    if iscolumn(p_eq)
+        p_eq = p_eq';
+    end
+    if n_states > 2
+        change_prob = cumsum(DynRates);
+        change_prob = change_prob ./ change_prob(end,:);
+    end 
     for k = 1:sampling
-        %fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
-        fracTauT = dyn_sim_arbitrary_states_gillespie(DynRates,SimTime_gillespie,numel(BSD));
-        % dwell times
+        if n_states == 2
+            fracTauT = Gillespie_2states(dur,dwell_mean,numel(BSD), p_eq);
+        else
+            fracTauT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(BSD),p_eq,change_prob);
+        end
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
         BSD_bg = BSD-BG_gg-BG_gr;
+     
         %%% brightness correction to transform fracTauT into number of
         %%% photons, i.e. fractional intensity fracInt1
         %%% read out brightnesses of species
@@ -3963,18 +3982,20 @@ else %%% dynamic model
         totalQ = sum(repmat(Q,[numel(BSD),1]).*fracTauT,2);
         for i = 1:n_states
             fracInt(:,i) = Q(i)*fracTauT(:,i)./totalQ;
-        end        
+        end
+         tic;
         f_i = mnrnd(BSD_bg,fracInt);        
         a_i = zeros(numel(BSD),n_states);
-        for i = 1:n_states  
+        for i = 1:n_states
             r = normrnd(R(i),sigmaR(i),size(BSD));
             FRET = 1./(1+(r./R0).^6);
             eps = 1-(1+cr+(((de/(1-de)) + FRET) * gamma)./(1-FRET)).^(-1);
             a_i(:,i) = binornd(f_i(:,i),eps);
         end
+        toc;
         PRH{k} = (sum(a_i,2) + BG_gr)./BSD;
     end
-    hFit = histcounts(vertcat(PRH{:}),linspace(0,1,Nobins+1))./sampling; 
+    hFit = histcounts(vertcat(PRH{:}),linspace(0,1,Nobins+1))./sampling;
     hFit = hFit';
 end
 
