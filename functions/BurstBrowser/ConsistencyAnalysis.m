@@ -272,13 +272,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         %% Simulation for PDA comparison
         Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
 %         kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
-<<<<<<< HEAD
         [Esim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
-        [H,x,y] = histcounts2(Esim,tauD_sim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
-=======
-        [Esim,tauD_sim,mean_tauD_sim] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
         [H,x,y] = histcounts2(tauD_sim,Esim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
->>>>>>> c56071078756f24c07acf47eabcde3a7712a7dd5
         H = H./max(H(:));
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2);
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
@@ -307,7 +302,6 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
             legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
         else
-<<<<<<< HEAD
             % plot patch to phase contour plot out
             patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
             %%% add static FRET line
@@ -316,16 +310,6 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             plot(bin_centers',mean_tauD_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
             legend('Experimental Data','Simulation','Location','northeast');
-=======
-        % plot patch to phase contour plot out
-        patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
-        %%% add static FRET line
-        plot(mean_tauD,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-        plot(mean_tauD_sim,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-        legend('Experimental Data','Simulation','Location','northeast');
->>>>>>> c56071078756f24c07acf47eabcde3a7712a7dd5
         end
         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color','k','HandleVisibility','off');
         plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2,'HandleVisibility','off');
