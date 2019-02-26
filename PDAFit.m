@@ -3290,7 +3290,13 @@ else %%% dynamic model
     end
     %%% calculate mixtures with brightness correction (always active!)
     if n_states == 2
-        Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        if ~verLessThan('matlab','8.4') && ispc
+            % the old mex function, compiled in 2014b, does not work on
+            % Windows for Matlab versions 2018a or newers
+            Peps = mixPE_c_2018a(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        else
+            Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        end
         Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
         %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
         Peps(:,end) = PE{1};
