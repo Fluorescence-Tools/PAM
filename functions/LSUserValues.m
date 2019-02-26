@@ -1120,6 +1120,10 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy}};
         disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');
     end
+    if numel(S.BurstSearch.PIEChannelSelection) < 6
+        dummy = S.PIE.Name{1};
+        S.BurstSearch.PIEChannelSelection{end+1} = {dummy;dummy;dummy};
+    end
     P.BurstSearch.PIEChannelSelection = S.BurstSearch.PIEChannelSelection;
     %%% Checks, if BurstSearch.SearchParameters exists
     %%% (This field contains the Search Parameters for every Burst Search

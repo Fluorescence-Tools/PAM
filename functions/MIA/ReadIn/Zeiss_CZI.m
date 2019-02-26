@@ -103,9 +103,9 @@ switch mode
         MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
-        MIAData.TICS_MS = [];
         MIAData.TICS = [];
-        MIAData.TICS_Int = [];
+        MIAData.TICS.Int = [];
+        MIAData.TICS.MS = [];
         MIAData.STICS = [];
         MIAData.STICS_SEM = [];
         MIAData.RLICS = [];
@@ -229,8 +229,13 @@ switch mode
                     C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
                     N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
                 end
+            elseif isempty(Sep)  %%% This is a transmisson-only image
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = 1;
+                    N_C = 1;
             else
-                msgbox('Inavalid data type')
+                msgbox('Invalid data type')
                 return;
             end
             

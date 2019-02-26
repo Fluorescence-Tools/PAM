@@ -32,6 +32,9 @@ Skip = fread(fid, 8, 'uint32'); % Skip 8 4-byte integers
 SyncRate = Header.Settings(4);
 Resolution = 1;% Resolution in picoseconds!
 %%% read out the detection channel from the Header
+while strcmp(Header.Header(end),' ')
+    Header.Header=Header.Header(1:end-1);
+end
 channel = str2double(Header.Header(end));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
