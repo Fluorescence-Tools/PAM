@@ -8,6 +8,28 @@ if isempty(BurstData)
     return
 end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating...');
+switch UserValues.BurstBrowser.Settings.BVA_Nstates
+            case 2
+                rate_matrix = 1000*cell2mat(h.KineticRates_table2.Data); %%% rates in Hz
+                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String)];
+                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String)];
+                
+                rate_matrix_static = [ 0,    0.1;
+                                       0.1,    0]; %%% rates in Hz
+                R_states_static = [str2double(h.Rstate1st_edit.String),str2double(h.Rstate2st_edit.String)];
+                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String)];
+            case 3
+                rate_matrix = 1000*cell2mat(h.KineticRates_table3.Data); %%% rates in Hz
+                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String),str2double(h.Rstate3_edit.String)];
+                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String),str2double(h.Rsigma3_edit.String)];
+                
+                rate_matrix_static = [ 0,    0.1, 0.1;
+                                       0.1,    0, 0.1;
+                                       0.1, 0.1,    0]; %%% rates in Hz
+                R_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
+                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
+end
+rate_matrix(isnan(rate_matrix)) = 0;
 switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
     case 1
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
@@ -152,30 +174,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             end
         end
         %% Simulate BVA plot based on PDA model
-        switch UserValues.BurstBrowser.Settings.BVA_Nstates
-            case 2
-                rate_matrix = 1000*cell2mat(h.KineticRates_table2.Data); %%% rates in Hz
-                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String)];
-                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String)];
-                
-                rate_matrix_static = [ 0,    0.1;
-                                       0.1,    0]; %%% rates in Hz
-                R_states_static = [str2double(h.Rstate1st_edit.String),str2double(h.Rstate2st_edit.String)];
-                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String)];
-            case 3
-                rate_matrix = 1000*cell2mat(h.KineticRates_table3.Data); %%% rates in Hz
-                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String),str2double(h.Rstate3_edit.String)];
-                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String),str2double(h.Rsigma3_edit.String)];
-                
-                rate_matrix_static = [ 0,    0.1, 0.1;
-                                       0.1,    0, 0.1;
-                                       0.1, 0.1,    0]; %%% rates in Hz
-                R_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
-                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
-        end
-        rate_matrix(isnan(rate_matrix)) = 0;
         Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
-        [E_sim,sSelected_sim,sPerBin_sim] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
+        [E_sim,sSelected_sim,sPerBin_sim,~] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
         figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
         hold on;
         %X_expectedSD = linspace(0,1,1000);
@@ -191,7 +191,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine1)
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
             Progress(0.7,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,...
+            [E_static,sSelected_static,sPerBin_static,~] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,...
                 rate_matrix_static,R_states_static,sigmaR_states_static);
             Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
             [H,x,y] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
@@ -271,40 +271,20 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine1);
         %% Simulation for PDA comparison
         Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
-        switch UserValues.BurstBrowser.Settings.BVA_Nstates
-            case 2
-                rate_matrix = 1000*cell2mat(h.KineticRates_table2.Data(1:2,1:2)); %%% rates in Hz %1000*[0,0.01;0.01,0];%
-                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String)];
-                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String)];
-                rate_matrix_static = [ 0,    0.1;
-                                       0.1,    0]; %%% rates in Hz
-                R_states_static = [str2double(h.Rstate1st_edit.String),str2double(h.Rstate2st_edit.String)];
-                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String)];
-            case 3
-                rate_matrix = 1000*cell2mat(h.KineticRates_table3.Data); %%% rates in Hz
-                R_states = [str2double(h.Rstate1_edit.String),str2double(h.Rstate2_edit.String),str2double(h.Rstate3_edit.String)];
-                sigmaR_states = [str2double(h.Rsigma1_edit.String),str2double(h.Rsigma2_edit.String),str2double(h.Rsigma3_edit.String)];
-                rate_matrix_static = [ 0,    0.1, 0.1;
-                                       0.1,    0, 0.1;
-                                       0.1, 0.1,    0]; %%% rates in Hz
-                R_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
-                sigmaR_states_static = [str2double(h.Rsigma1st_edit.String),str2double(h.Rsigma2st_edit.String),str2double(h.Rsigma3st_edit.String)];
-        end
-        rate_matrix(isnan(rate_matrix)) = 0;
 %         kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
-        [Esim,tauD_sim,mean_tauD_sim] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
+        [Esim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
         [H,x,y] = histcounts2(Esim,tauD_sim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
         H = H./max(H(:));
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2);
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
             Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,tauD_static,mean_tauD_static] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,...
+            [E_static,tauD_static,mean_tauD_static,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,...
                 rate_matrix_static,R_states_static,sigmaR_states_static);
             Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
             [H,x,y] = histcounts2(E_static,tauD_static,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
             H = H./max(H(:));
             plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine3);
-            patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
+            patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
             mean_tauD_static(mean_tauD_static == 0) = NaN;
             %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
             plot(bin_centers',mean_tauD,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
@@ -322,14 +302,14 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
             legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
         else
-        % plot patch to phase contour plot out
-        patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
-        %%% add static FRET line
-        plot(bin_centers',mean_tauD,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-        plot(bin_centers',mean_tauD_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-        legend('Experimental Data','Simulation','Location','northeast');
+            % plot patch to phase contour plot out
+            patch(ax,[0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+            %%% add static FRET line
+            plot(bin_centers',mean_tauD,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(bin_centers',mean_tauD_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            legend('Experimental Data','Simulation','Location','northeast');
         end
         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color','k','HandleVisibility','off');
         plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2,'HandleVisibility','off');
@@ -404,9 +384,116 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             ylabel('var(\tau_{D,A})');
             set(gca,'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
         end
-    case 3 %% Phasor
-        figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-        msgbox('Phasor not implemented yet', 'Error','error');
+    case 3 
+        %% Phasor
+        if ~isfield(BurstData{file},'Phasor')
+            msgbox('Phasor not available', 'Error','error');
+            return
+        end
+        E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+        selected = BurstData{file}.Selected;
+        g_phasor = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Phasor: gD'));
+        s_phasor = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Phasor: sD'));
+        N_phot_D = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+        N_phot_D = N_phot_D(selected);
+        E = E(selected);
+        min_max = max(g_phasor)-min(g_phasor);
+        xlim = [max([-0.1,min(g_phasor)-0.1*min_max]),min([1.1,max(g_phasor)+0.1*min_max])];
+        min_max = max(s_phasor)-min(s_phasor);
+        ylim = [max([0,min(s_phasor)-0.1*min_max]),min([0.75,max(s_phasor)+0.1*min_max])];
+        [H,x,y] = histcounts2(s_phasor,g_phasor,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',ylim,'YBinLimits',xlim);
+        H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
+        f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+        ax = gca;
+%         ax.XLim = [-0.1,1.1];
+%         ax.YLim = [0,0.75];
+        xlabel('g');
+        ylabel('s');
+        set(ax,'Color',[1,1,1],'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+        
+        plot_ContourPatches(ax,H',y,x,UserValues.BurstBrowser.Display.ColorLine1);
+        ax.XLim = xlim;
+        ax.YLim = ylim;
+        %% average lifetime in FRET efficiency bins
+        threshold = UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
+        bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
+        bin_edges = linspace(0,1,bin_number); % bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+        [~,~,bin] = histcounts(E,bin_edges);
+        mean_g = NaN(1,numel(bin_edges)-1);
+        mean_s = NaN(1,numel(bin_edges)-1);
+        for i = 1:numel(bin_edges)-1
+        %%% compute bin-wise intensity-averaged lifetime for donor
+            if sum(bin == i) > threshold
+                g_bin = g_phasor(bin==i);
+                s_bin = s_phasor(bin==i);
+                valid = ~isnan(g_bin) & ~isnan(s_bin);
+                N_phot_D_bin = N_phot_D(bin==i);
+                mean_g(i) = sum(N_phot_D_bin(valid).*g_bin(valid))./sum(N_phot_D_bin(valid));
+                mean_s(i) = sum(N_phot_D_bin(valid).*s_bin(valid))./sum(N_phot_D_bin(valid));
+            end
+        end
+        [~,mean_g_dyn,mean_s_dyn,mi] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
+        PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
+        omega = 1/PIE_channel_width; % in ns^(-1)
+        g = cell2mat(cellfun(@(x) sum(cos(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+        s = cell2mat(cellfun(@(x) sum(sin(2*pi*omega.*x))./numel(x),mi,'UniformOutput',false));
+        %%% project values
+        neg=find(g<0 & s<0);
+        g(neg)=-g(neg);
+        s(neg)=-s(neg);
+        [H,x,y] = histcounts2(g,s,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,0.75]);
+        H = H./max(H(:));
+        plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2)
+        if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
+            Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
+            [~,mean_g_static,mean_s_static,mi_static] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix_static,R_states_static,sigmaR_states_static);
+            PIE_channel_width = BurstData{file}.TACRange*1E9*BurstData{file}.Phasor.PhasorRange(1)/BurstData{file}.FileInfo.MI_Bins;
+            omega = 1/PIE_channel_width; % in ns^(-1)
+            g = cell2mat(cellfun(@(x) sum(cos(2*pi*omega.*x))./numel(x),mi_static,'UniformOutput',false));
+            s = cell2mat(cellfun(@(x) sum(sin(2*pi*omega.*x))./numel(x),mi_static,'UniformOutput',false));
+            %%% project values
+            neg=find(g<0 & s<0);
+            g(neg)=-g(neg);
+            s(neg)=-s(neg);
+            [H,x,y] = histcounts2(g,s,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,0.75]);
+            H = H./max(H(:));
+            plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine3)
+            patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+            plot(mean_g,mean_s,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            plot(mean_g_static,mean_s_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+            %% Calculate sum squared residuals
+            w_res_dyn = (mean_s-mean_s_dyn);
+            w_res_dyn(isnan(w_res_dyn)) = 0;
+            SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+            w_res_stat = (mean_s-mean_s_static);
+            w_res_stat(isnan(w_res_stat)) = 0;
+            SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
+            
+            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
+        else
+            patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+            plot(mean_g,mean_s,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            legend('Experimental Data','Simulation','Location','northeast');
+        end
+         
+        %%% add a second axis for the colorbar of the FRET efficiency
+        ax_cbar = axes('Parent',f,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
+            'Visible','off');
+        colormap(ax_cbar,autumn);
+        cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',16);
+        cbar.Position = [421   446   109    18];
+        cbar.Label.String = 'E';
+%         g_circle = linspace(0,1,1000);
+%         s_circle = sqrt(0.25-(g_circle-0.5).^2);
+%         plot(ax,g_circle,s_circle,'-','LineWidth',2,'Color',[0,0,0],'Handlevisibility','off');
+        add_universal_circle(ax,1);
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 end
