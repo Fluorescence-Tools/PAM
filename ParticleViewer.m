@@ -639,24 +639,22 @@ h.Particle_Display_Image.CData = Image;
 delete(findobj(h.Particle_Display.Children, 'type', 'text'));
 delete(findobj(h.Particle_Display.Children, 'type', 'line'));
 
-if h.Particle_ShowLabel.Value
-    XOffset = str2double(h.Particle_LabelXOffset.String);
-    YOffset = str2double(h.Particle_LabelYOffset.String);
-    ParticleList = unique(Particle(Particle > 0));
-    for i = 1: numel(ParticleList)
-        p = ParticleList(i);
-        coord = ParticleViewer.Regions(p).Centroid(ParticleViewer.Regions(p).Frame == Frame, :);
-        if size(ParticleViewer.Regions(p).Centroid, 1) >= str2double(h.Particle_LabelMin.String)
-           if ParticleViewer.Highlight(p)
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'yellow');
-               line(h.Particle_Display, ParticleViewer.Regions(p).Centroid(:, 1), ParticleViewer.Regions(p).Centroid(:,2), 'Color','yellow');
-           else
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'red');
-           end
-        end
 
-    end
+XOffset = str2double(h.Particle_LabelXOffset.String);
+YOffset = str2double(h.Particle_LabelYOffset.String);
+ParticleList = unique(Particle(Particle > 0));
+
+for i = 1: numel(ParticleList)
+    p = ParticleList(i);
+    coord = ParticleViewer.Regions(p).Centroid(ParticleViewer.Regions(p).Frame == Frame, :);
+   if ParticleViewer.Highlight(p)
+       text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'yellow');
+       line(h.Particle_Display, ParticleViewer.Regions(p).Centroid(:, 1), ParticleViewer.Regions(p).Centroid(:,2), 'Color','yellow');
+   elseif h.Particle_ShowLabel.Value && (size(ParticleViewer.Regions(p).Centroid, 1) >= str2double(h.Particle_LabelMin.String))
+       text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'red');
+   end
 end
+
 
 end
 
