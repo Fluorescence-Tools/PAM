@@ -66,7 +66,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int time_windows = (int)mxGetScalar(prhs[3]);
     double *p_eq = mxGetPr(prhs[4]);
     double *k_dyn = mxGetPr(prhs[5]);
-    const mwSize NP[]={(unsigned long)time_windows*n_states,1};
+    const mwSize NP[]={time_windows*n_states,1};
     double *time_in_states = (double*) mxCalloc(n_states*time_windows, sizeof(double));
     Simulate_States(SimTime, n_states, dwell_mean, time_windows, time_in_states, p_eq, k_dyn);
     plhs[0] = mxCreateNumericMatrix(time_windows,n_states,mxDOUBLE_CLASS,mxREAL);
