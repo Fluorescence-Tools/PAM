@@ -189,7 +189,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             case 'Hex'
                 hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
-        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.2,'edgecolor','none','HandleVisibility','off');
+        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.4,'edgecolor','none','HandleVisibility','off');
         if sampling ~=0
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
@@ -206,7 +206,8 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
-        scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
+        plot(BinCenters,sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
         
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}

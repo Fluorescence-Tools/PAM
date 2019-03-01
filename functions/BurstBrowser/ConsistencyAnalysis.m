@@ -175,7 +175,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         end
         %% Simulate BVA plot based on PDA model
         Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
-        [E_sim,sSelected_sim,sPerBin_sim,~] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
+        [E_sim,sSelected_sim,sPerBin_sim] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,rate_matrix,R_states,sigmaR_states);
         figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
         hold on;
         %X_expectedSD = linspace(0,1,1000);
@@ -188,10 +188,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); 
         plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine1)
         [H,x,y] = histcounts2(E_sim,sSelected_sim,UserValues.BurstBrowser.Display.NumberOfBinsX);
-        plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine1)
+        plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2)
         if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
             Progress(0.7,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,sSelected_static,sPerBin_static,~] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,...
+            [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_Nstates,...
                 rate_matrix_static,R_states_static,sigmaR_states_static);
             Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
             [H,x,y] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
@@ -311,8 +311,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
             legend('Experimental Data','Simulation','Location','northeast');
         end
-        plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color','k','HandleVisibility','off');
-        plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2,'HandleVisibility','off');
+%         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color','k','HandleVisibility','off');
+%         plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2,'HandleVisibility','off');
         set(gca,'Color',[1,1,1]);
 
         ax.XLim = [0,1.2];
