@@ -6022,16 +6022,18 @@ switch obj
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
             switch obj
                 case h.Menu.Export_MIPattern_Fit
-                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+TauFitData.Ignore{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,(TauFitData.Ignore{chan}+1):end);
                     if TauFitData.BAMethod ~= 5
                         mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+                        mi_pattern2(TauFitData.PIE.From(Per) + ((TauFitData.StartPar{chan}+TauFitData.Ignore{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,(TauFitData.Ignore{chan}+1):end);
+                        mi_pattern2 = shift_by_fraction(mi_pattern2,TauFitData.ShiftPer{chan});
                     end
                 case h.Menu.Export_MIPattern_Data
                     mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
                     if TauFitData.BAMethod ~= 5
                         mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
+                        mi_pattern2(TauFitData.PIE.From(Per)+ ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
+                        mi_pattern2 = shift_by_fraction(mi_pattern2,TauFitData.ShiftPer{chan});
                     end
             end
             % define output
