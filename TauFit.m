@@ -5937,11 +5937,13 @@ switch obj
                 mi_pattern2 = zeros(FileInfo.MI_Bins,1);
                 switch obj
                     case h.Menu.Export_MIPattern_Fit
-                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
-                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+TauFitData.Ignore{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,(TauFitData.Ignore{TauFitData.chan}+1):end);
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) + ((TauFitData.StartPar{TauFitData.chan}+TauFitData.Ignore{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,(TauFitData.Ignore{TauFitData.chan}+1):end);
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, TauFitData.ShiftPer{TauFitData.chan});
                     case h.Menu.Export_MIPattern_Data
                         mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
-                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, TauFitData.ShiftPer{TauFitData.chan});
                 end
                 % define output
                 MIPattern = cell(0);
