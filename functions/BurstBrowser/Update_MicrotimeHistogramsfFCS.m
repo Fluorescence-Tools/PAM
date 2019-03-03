@@ -230,7 +230,7 @@ else
     switch BurstData{file}.BAMethod
         case {1,2} %%% 2ColorMFD
             %%% assert that pattern has information for donor channel par
-            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species1}.MIPattern;
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species1(1)}.MIPattern;
             if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
                 disp('Loaded pattern does not contain the required information for parallel channel.');
                 return;
@@ -279,7 +279,7 @@ else
     switch BurstData{file}.BAMethod
         case {1,2} %%% 2ColorMFD
             %%% assert that pattern has information for donor channel par
-            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species2}.MIPattern;
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species2(1)}.MIPattern;
             if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
                 disp('Loaded pattern does not contain the required information for parallel channel.');
                 return;
@@ -300,7 +300,7 @@ else
             end
             for i = 1:numel(MIPatternPer)
                 MI_species{2} = [MI_species{2}; i*ones(MIPatternPer(i),1)];
-            end
+            end            
         case {3,4}
             disp('Only implemented for 2color measurements.');
             return;
@@ -318,7 +318,7 @@ else
             CH_species{2} = [1*ones(sum(MIPatternPar),1)];
             for i = 1:numel(MIPatternPar)
                 MI_species{2} = [MI_species{2}; i*ones(MIPatternPar(i),1)];
-            end     
+            end
     end
 end
 if use_species3
@@ -329,7 +329,7 @@ if use_species3
         switch BurstData{file}.BAMethod
             case {1,2} %%% 2ColorMFD
                 %%% assert that pattern has information for donor channel par
-                MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species3}.MIPattern;
+                MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species3(1)}.MIPattern;
                 if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
                     disp('Loaded pattern does not contain the required information for parallel channel.');
                     return;

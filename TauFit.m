@@ -5916,10 +5916,6 @@ switch obj
                     case h.Menu.Export_MIPattern_Data
                         mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
                 end
-                % define output
-                MIPattern = cell(0);
-                MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
-
             else % two different channels selected
                 % check if anisotropy model is selected 
                 if isempty(strfind(TauFitData.FitType,'Anisotropy'))
@@ -5939,17 +5935,13 @@ switch obj
                     case h.Menu.Export_MIPattern_Fit
                         mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+TauFitData.Ignore{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,(TauFitData.Ignore{TauFitData.chan}+1):end);
                         mi_pattern2(UserValues.PIE.From(PIEchannel2) + ((TauFitData.StartPar{TauFitData.chan}+TauFitData.Ignore{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,(TauFitData.Ignore{TauFitData.chan}+1):end);
-                        mi_pattern2 = shift_by_fraction(mi_pattern2, TauFitData.ShiftPer{TauFitData.chan});
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, -TauFitData.ShiftPer{TauFitData.chan});
                     case h.Menu.Export_MIPattern_Data
                         mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
                         mi_pattern2(UserValues.PIE.From(PIEchannel2) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
-                        mi_pattern2 = shift_by_fraction(mi_pattern2, TauFitData.ShiftPer{TauFitData.chan});
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, -TauFitData.ShiftPer{TauFitData.chan});
                 end
-                % define output
-                MIPattern = cell(0);
-                MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
-                MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
-                
+                mi_pattern = [mi_pattern1,mi_pattern2];
                 PIEchannel = PIEchannel1;
             end
             FileName = FileInfo.FileName{1};
@@ -5975,7 +5967,7 @@ switch obj
                 fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2));
             end     
             fclose(fid);
-            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+            dlmwrite(fullfile(Path,File),mi_pattern,'-append','delimiter',',');
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
             
@@ -6021,30 +6013,26 @@ switch obj
             end
             
             % reconstruct mi pattern
-            mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
+            mi_pattern = zeros(TauFitData.FileInfo.MI_Bins,1);
             switch obj
                 case h.Menu.Export_MIPattern_Fit
-                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+TauFitData.Ignore{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,(TauFitData.Ignore{chan}+1):end);
+                    mi_pattern(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+TauFitData.Ignore{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,(TauFitData.Ignore{chan}+1):end);
                     if TauFitData.BAMethod ~= 5
                         mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
                         mi_pattern2(TauFitData.PIE.From(Per) + ((TauFitData.StartPar{chan}+TauFitData.Ignore{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,(TauFitData.Ignore{chan}+1):end);
-                        mi_pattern2 = shift_by_fraction(mi_pattern2,TauFitData.ShiftPer{chan});
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, -TauFitData.ShiftPer{chan});
+                        mi_pattern = [mi_pattern, mi_pattern2];
                     end
                 case h.Menu.Export_MIPattern_Data
-                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
+                    mi_pattern(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
                     if TauFitData.BAMethod ~= 5
                         mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
                         mi_pattern2(TauFitData.PIE.From(Per)+ ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
-                        mi_pattern2 = shift_by_fraction(mi_pattern2,TauFitData.ShiftPer{chan});
+                        mi_pattern2 = shift_by_fraction(mi_pattern2, -TauFitData.ShiftPer{chan});
+                        mi_pattern = [mi_pattern, mi_pattern2];
                     end
-            end
-            % define output
-            MIPattern = cell(0);
-            MIPattern{TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par)}=mi_pattern1;
-            if TauFitData.BAMethod ~= 5
-                MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
-            end
-            
+            end    
+
             FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);            
             Path = TauFitData.Path;
             if obj == h.Menu.Export_MIPattern_Fit
@@ -6067,7 +6055,7 @@ switch obj
                 fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
             end     
             fclose(fid);
-            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+            dlmwrite(fullfile(Path,File),mi_pattern,'-append','delimiter',',');
         end        
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
