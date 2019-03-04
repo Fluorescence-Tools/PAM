@@ -2238,7 +2238,7 @@ h.MT.Image_Export = uicontrol(...
     'Style','popupmenu',...
     'Units','normalized',...
     'FontSize',12,...
-    'String',{'Both';'Intensity';'Mean arrival time'},...
+    'String',{'Both';'Intensity';'Mean arrival time'; 'TauP'; 'TauM'},...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Value',2,...
@@ -10777,6 +10777,26 @@ switch e.Key
                 assignin('base',[matlab.lang.makeValidName(Name) '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
+            end
+                  %%% Exports TauP image                 
+            if h.MT.Image_Export.Value == 4
+                assignin('base',[matlab.lang.makeValidName(Name) '_TauP'],PamMeta.TauP_PIE{i});
+                figure('Name',[UserValues.PIE.Name{i} '_TauP']);
+                 phas = medfilt2(PamMeta.TauP_PIE{Sel});
+            %%% Autoscales between min-max of pixels with at least 10% intensity;
+                Min=0.1*max(max(PamMeta.Phasor_Int_PIE{Sel}))-1; %%% -1 is for 0 intensity images
+                CLim=[min(min(phas(PamMeta.Phasor_Int_PIE{Sel}>Min))), max(max(phas(PamMeta.Phasor_Int_PIE{Sel}>Min)))+1];
+                imagesc(phas, CLim);
+            end
+                         %%% Exports TauM image                 
+            if h.MT.Image_Export.Value == 5
+                assignin('base',[matlab.lang.makeValidName(Name) '_TauM'],PamMeta.TauP_PIE{i});
+                figure('Name',[UserValues.PIE.Name{i} '_TauM']);
+                 phas = medfilt2(PamMeta.TauM_PIE{Sel});
+            %%% Autoscales between min-max of pixels with at least 10% intensity;
+                Min=0.1*max(max(PamMeta.Phasor_Int_PIE{Sel}))-1; %%% -1 is for 0 intensity images
+                CLim=[min(min(phas(PamMeta.Phasor_Int_PIE{Sel}>Min))), max(max(phas(PamMeta.Phasor_Int_PIE{Sel}>Min)))+1];
+                imagesc(phas, CLim);
             end
         end
         %%% gives focus back to Pam
