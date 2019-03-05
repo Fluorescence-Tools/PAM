@@ -3851,6 +3851,7 @@ if PDAData.timebin(file) == 0 %burstwise data was loaded
     dur = PDAData.Data{file}.Duration(PDAMeta.valid{file})*1E3;
 end
 cr = PDAMeta.crosstalk(file);
+ct = PDAMeta.crosstalk(file);
 R0 = PDAMeta.R0(file);
 de = PDAMeta.directexc(file);
 gamma = PDAMeta.gamma(file);
@@ -3920,7 +3921,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         hFit = hFit + A(j).*H_res_dummy(:,j);
     end
 else %%% dynamic model 
-%     SimTime = dur/1000; % time bin in seconds
+    % time bin in seconds
     %SimSteps = BSD; %
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
@@ -3942,9 +3943,9 @@ else %%% dynamic model
     n_states = size(DynRates,1);
     R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
-    PRH = cell(sampling,5);
-    if size(BSD,2) > size(BSD,1)
-        BSD = BSD';
+    if n_states == 3
+        change_prob = cumsum(DynRates);
+        change_prob = change_prob ./ change_prob(end,:);
     end
     dwell_mean = 1 ./ sum(DynRates./1000);
     for i = 1:n_states
@@ -3953,49 +3954,12 @@ else %%% dynamic model
     DynRates(end+1,:) = ones(1,n_states);
     b = zeros(n_states,1); b(end+1) = 1;
     p_eq = DynRates\b;
-    % ensure that p is a row vector
-    if iscolumn(p_eq)
-        p_eq = p_eq';
+    if n_states == 3
+        PRH = MonteCarlo_3states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling,change_prob);
+    else
+        PRH = MonteCarlo_2states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling);
     end
-    if n_states > 2
-        change_prob = cumsum(DynRates);
-        change_prob = change_prob ./ change_prob(end,:);
-    end 
-    for k = 1:sampling
-        if n_states == 2
-            fracTauT = Gillespie_2states(dur,dwell_mean,numel(BSD), p_eq);
-        else
-            fracTauT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(BSD),p_eq,change_prob);
-        end
-        BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
-        BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
-        BSD_bg = BSD-BG_gg-BG_gr;
-     
-        %%% brightness correction to transform fracTauT into number of
-        %%% photons, i.e. fractional intensity fracInt1
-        %%% read out brightnesses of species
-        Q = ones(1,n_states);
-        for c = 1:n_states
-            Q(c) = calc_relative_brightness(fitpar(c,2),file);
-        end
-        fracInt = zeros(size(fracTauT));
-        totalQ = sum(repmat(Q,[numel(BSD),1]).*fracTauT,2);
-        for i = 1:n_states
-            fracInt(:,i) = Q(i)*fracTauT(:,i)./totalQ;
-        end
-         tic;
-        f_i = mnrnd(BSD_bg,fracInt);        
-        a_i = zeros(numel(BSD),n_states);
-        for i = 1:n_states
-            r = normrnd(R(i),sigmaR(i),size(BSD));
-            FRET = 1./(1+(r./R0).^6);
-            eps = 1-(1+cr+(((de/(1-de)) + FRET) * gamma)./(1-FRET)).^(-1);
-            a_i(:,i) = binornd(f_i(:,i),eps);
-        end
-        toc;
-        PRH{k} = (sum(a_i,2) + BG_gr)./BSD;
-    end
-    hFit = histcounts(vertcat(PRH{:}),linspace(0,1,Nobins+1))./sampling;
+    hFit = histcounts(PRH,linspace(0,1,Nobins+1))./sampling;
     hFit = hFit';
 end
 
