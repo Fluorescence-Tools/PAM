@@ -4378,79 +4378,106 @@ if any(mode==8)
 end
 
 %%% Phasor microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if any(mode==6) || any(mode==1) %%% 
-% hold on
-%%% Finds currently selected PIE channel
-Sel=h.PIE.List.Value(1); %%% delected PIE channels
-% for 
-% i=Sel;
+if any(mode==6) || any(mode==1) %%%
+    % hold on
+    %%% Finds currently selected PIE channel
+    Sel=h.PIE.List.Value(1); %%% delected PIE channels
+    % for
+    % i=Sel;
     if UserValues.PIE.Detector(Sel) ~=0
-       Det=UserValues.PIE.Detector(Sel);
-       [row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
-       Rout=UserValues.PIE.Router(Sel);
-       To=UserValues.PIE.To(Sel);
-       From=UserValues.PIE.From(Sel);
-       Shift=h.Phasor.Table.Data{Sel, 3};
-                  
-            %% Plots Reference histogram
-    if Sel<= size(UserValues.Phasor.Reference,1) || any(UserValues.Phasor.Reference(Sel,:))
-    Ref=circshift(UserValues.Phasor.Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
-    h.Plots.PhasorRef.XData=From:To;
-    h.Plots.PhasorRef.YData=Ref/max(Ref); 
-%     else
-%         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New PIE channel!','modal');    
-    end
-    
-    %%% Plots Phasor microtime
-    h.Plots.Phasor.XData=From:To;
-    Pha=PamMeta.MI_Hist{Det}(From:To);
-    h.Plots.Phasor.YData=Pha/max(Pha); 
-%     hold off
+        Det=UserValues.PIE.Detector(Sel);
+        %[row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
+        Rout=UserValues.PIE.Router(Sel);
+        To=UserValues.PIE.To(Sel);
+        From=UserValues.PIE.From(Sel);
+        Shift=h.Phasor.Table.Data{Sel, 3};
+        
+        %% Plots Reference histogram
+        if Sel<= size(UserValues.Phasor.Reference,1) || any(UserValues.Phasor.Reference(Sel,:))
+            Ref=circshift(UserValues.Phasor.Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
+            h.Plots.PhasorRef.XData=From:To;
+            h.Plots.PhasorRef.YData=Ref/max(Ref);
+            %     else
+            %         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New PIE channel!','modal');
+        end
+        
+        %%% Plots Phasor microtime
+        h.Plots.Phasor.XData=From:To;
+        Pha=PamMeta.MI_Hist{Det,Rout}(From:To);
+        h.Plots.Phasor.YData=Pha/max(Pha);
+        %     hold off
     else
-       Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined channel
-       [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
-       [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
-%        Pha=PamMeta.MI_Hist(Det, :); 
-% % %        Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
-% % %        Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
-% % %        Pha=Pha1+Pha2;
-       Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
-       To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
-       From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
-       Shift=h.Phasor.Table.Data{Sel, 3};
-if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
-     Pha1=TcspcData.MI{Det1, :}; %%Parallel channel
-     Pha2=TcspcData.MI{Det2, :}; %%% perpendicular channel
-     numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Pha1));% determine how many elements is of G_factor percent
-     indices = randperm(length(Pha1),numelements); % get the randomly-selected indices
-     Pha_par=Pha1(indices);%%%Par according of G_factor
-     Pha_per=repelem(Pha2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
-     Pha_comb=[Pha_par; Pha_per]; 
-     %%%Creating combined MI histogram like MI_hist per detector
-     Pha=histc(Pha_comb,1:FileInfo.MI_Bins);
-        %% Plots Phasor microtime of Combine Channel
-      h.Plots.Phasor.XData=From:To;
-      Pha = Pha(From:To);
-      h.Plots.Phasor.YData=Pha/max(Pha);
-end
-
-       %% Plots Reference histogram of Combine Channel
-%        if any(UserValues.Phasor.Combined_Reference(Sel,:))
-  if Sel<= size(UserValues.Phasor.Combined_Reference,1) || any(UserValues.Phasor.Combined_Reference(Sel,:))
-    Ref=circshift(UserValues.Phasor.Combined_Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
-    h.Plots.PhasorRef.XData=From:To;
-    h.Plots.PhasorRef.YData=Ref/max(Ref);
-%   else
-%         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');  
-  end
-%   if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
-%      %% Plots Phasor microtime of Combine Channel
-%       h.Plots.Phasor.XData=From:To;
-%       Pha = Pha(From:To);
-%       h.Plots.Phasor.YData=Pha/max(Pha);
-%   end
-
-end  
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% Usage of combined PIE channels for Phasor is currently only 
+        %%% implemented for parallel and perpendicular polarizations.
+        %%% Specify the parallel channel as the first PIE channel, 
+        %%% and the perpendicular channel as the second.
+        %%% If the combined PIE channel contains more that two
+        %%% PIE channels, any channels after the second are ignored.
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined channel
+        %[row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
+        %[row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from the Detector list
+        %        Pha=PamMeta.MI_Hist(Det, :);
+        % % %        Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
+        % % %        Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
+        % % %        Pha=Pha1+Pha2;
+        Rout=UserValues.PIE.Router(UserValues.PIE.Combined{Sel});        
+        %Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
+        To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
+        From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
+        Shift=h.Phasor.Table.Data{Sel, 3};
+        if any(TcspcData.MI{Det(1), Rout(1)}) && any(TcspcData.MI{Det(2), Rout(2)})
+            Pha1=TcspcData.MI{Det(1),Rout(1)}; %% MI data of parallel PIE channel
+            Pha2=TcspcData.MI{Det(2),Rout(2)}; %% MI data of perpendicular PIE channel
+            numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Pha1));% determine how many elements is of G_factor percent
+            indices = randperm(length(Pha1),numelements); % get the randomly-selected indices
+            Pha_par=Pha1(indices);%%%Par according of G_factor
+            Pha_per=repelem(Pha2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+            Pha_comb=[Pha_par; Pha_per];
+            %%% Creating combined MI histogram like MI_hist per detector
+            Pha=histc(Pha_comb,1:FileInfo.MI_Bins);
+            %%% Plots Phasor microtime of Combine Channel
+            h.Plots.Phasor.XData=From:To;
+            Pha = Pha(From:To);
+            h.Plots.Phasor.YData=Pha/max(Pha);
+        end
+       
+        % old code
+        %         if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
+        %             Pha1=TcspcData.MI{Det1, :}; %%Parallel channel
+        %             Pha2=TcspcData.MI{Det2, :}; %%% perpendicular channel
+        %             numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Pha1));% determine how many elements is of G_factor percent
+        %             indices = randperm(length(Pha1),numelements); % get the randomly-selected indices
+        %             Pha_par=Pha1(indices);%%%Par according of G_factor
+        %             Pha_per=repelem(Pha2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+        %             Pha_comb=[Pha_par; Pha_per];
+        %             %%%Creating combined MI histogram like MI_hist per detector
+        %             Pha=histc(Pha_comb,1:FileInfo.MI_Bins);
+        %             %% Plots Phasor microtime of Combine Channel
+        %             h.Plots.Phasor.XData=From:To;
+        %             Pha = Pha(From:To);
+        %             h.Plots.Phasor.YData=Pha/max(Pha);
+        %         end
+        
+        %% Plots Reference histogram of Combine Channel
+        %        if any(UserValues.Phasor.Combined_Reference(Sel,:))
+        if Sel<= size(UserValues.Phasor.Combined_Reference,1) || any(UserValues.Phasor.Combined_Reference(Sel,:))
+            Ref=circshift(UserValues.Phasor.Combined_Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
+            h.Plots.PhasorRef.XData=From:To;
+            h.Plots.PhasorRef.YData=Ref/max(Ref);
+            %   else
+            %         m = warndlg('For Phasor Calculation Restart PAM and Add Reference.','New Combined PIE channel!','modal');
+        end
+        %   if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
+        %      %% Plots Phasor microtime of Combine Channel
+        %       h.Plots.Phasor.XData=From:To;
+        %       Pha = Pha(From:To);
+        %       h.Plots.Phasor.YData=Pha/max(Pha);
+        %   end
+        
+    end
 obj = gcbo;
 if obj == h.MI.Phasor_Export_Menu
         hfig = figure('Visible','on',...
@@ -4744,7 +4771,7 @@ switch e.Key
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
-        %%Update the Phasor.refernce with PIE_List
+        %%Update the Phasor.reference with PIE_List
         UserValues.Phasor.Reference(end+1, :)=0;
         UserValues.Phasor.Combined_Reference(end+1, :)=0;
         %%% Updates Pam meta data; input 3 should be empty to improve speed
@@ -4945,6 +4972,8 @@ switch e.Key
             end
             UserValues.PIE.Name{end}(end)=[];
             UserValues.PIE.Duty_Cycle(end+1)=0;
+            %%Update the Phasor.reference with PIE_List
+            UserValues.Phasor.Combined_Reference(end+1, :)=0;
             %%% Reset Correlation Table Data Matrix
             cor_sel = UserValues.Settings.Pam.Cor_Selection;
             cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
