@@ -302,8 +302,8 @@ else
             UserValues.BurstBrowser.Display.ColorLine6];
     colors = repmat(colors,[10,1]); % replicate in case there are more than 6 species selected
     for i = numel(H):-1:1
-        %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-        [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none'); 
+        level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        [C,contour_plot] = contour(xbins,ybins,H{i},'LevelList',level_list,'LineColor','none'); 
         switch UserValues.BurstBrowser.Display.ContourFill
             case 0
                 alpha = 0;
