@@ -7786,7 +7786,6 @@ end
 Countrate = Number_of_Photons./Duration;
 
 Progress(0.95,h.Progress.Axes, h.Progress.Text, 'Saving...');
-
 %% Save BurstSearch Results
 %%% The result is saved in a simple data array with dimensions
 %%% (NumberOfBurst x NumberOfParamters), DataArray. The column names are saved in a
@@ -7974,6 +7973,10 @@ end
 %%% Append other important parameters/values to BurstData structure
 BurstData.TACRange = FileInfo.TACRange;
 BurstData.BAMethod = BAMethod;
+if BurstData.BAMethod == 6
+    %%% Set DCBS-noMFD to APBS-noMFD
+    BurstData.BAMethod = 5;
+end
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
@@ -9864,7 +9867,7 @@ switch BAMethod
         T_GR = Trace(Chan_Trace == 3 | Chan_Trace == 4);
         T_RR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
         T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4);
-    case 5 %noMFD
+    case {5,6} %noMFD
         T_GG = Trace(Chan_Trace == 1);
         T_GR = Trace(Chan_Trace == 2);
         T_RR = Trace(Chan_Trace == 3);
