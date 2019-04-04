@@ -8,7 +8,6 @@ if nargin == 2
         h = guidata(obj);
     end
 end
-
 if obj == h.KineticRates_table2 || obj == h.KineticRates_table3
     h.KineticRates_table3.Data(1,1) = {NaN};h.KineticRates_table2.Data(1,1) = {NaN};
     h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
@@ -92,7 +91,7 @@ elseif obj == h.BurstsPerBin_edit
 elseif obj == h.ConfidenceInterval_edit
     UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA = str2double(h.ConfidenceInterval_edit.String);
 elseif obj == h.PhotonsPerWindow_edit
-    UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = str2double(h.PhotonsPerWindow_edit);
+    UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = str2double(h.PhotonsPerWindow_edit.String);
 elseif obj == h.Xaxis_Popupmenu
     UserValues.BurstBrowser.Settings.BVA_X_axis = h.Xaxis_Popupmenu.Value;
 elseif obj == h.FRETpair_Popupmenu
