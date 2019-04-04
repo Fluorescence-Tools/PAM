@@ -150,6 +150,11 @@ for i=1:numel(FileName)
         
         transform = true;
         if transform
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Converting File ' num2str(i) ' of ' num2str(numel(FileName))]);
+            % ask the user for the excitation period.
+            % Assuming only the last scan is red.
+            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'4'}));
+            lines = FileInfo.Pixels*period;
             % transform the raw MT data to split up into duty cycle periods.
             % Currently, for each line the setup performs 3 scans with green
             % excitation and one scan with red excitation.
@@ -159,18 +164,18 @@ for i=1:numel(FileName)
                 if ~isempty(TcspcData.MT{j,1})
                     [Image,Bin] = CalculateImage(TcspcData.MT{j,1}*FileInfo.ClockPeriod, 4);
                     Bin = double(Bin);
-                    Frame = floor(Bin/(250*1000))+1;
+                    Frame = floor(Bin/(250*lines))+1;
                     valid = Bin ~= 0;       
-                    Line = mod(ceil(Bin/250),1000);Line(Line == 0) = 1000;
+                    Line = mod(ceil(Bin/250),lines);Line(Line == 0) = lines;
                     %Line = floor(mod(Bin,250*1000)/250)+1;
-                    Cycle = mod(Line-1,4);
+                    Cycle = mod(Line-1,period);
                     for f = 1:size(lstart,1)
                         validd = valid & Frame == f;
                         % MT = MT - linestart_of_line + linestart_of_cycle;
                         TcspcData.MT{j,1}(validd) = TcspcData.MT{j,1}(validd) - lstart(f,Line(validd))' + lstart(f,Line(validd)-Cycle(validd))';
                     end
-                    red = (Cycle == 3);
-                    green = (Cycle < 3);                    
+                    red = (Cycle == (period-1));
+                    green = (Cycle < period);                    
                     TcspcData.MT{j,2} = TcspcData.MT{j,1}(red);
                     TcspcData.MI{j,2} = TcspcData.MI{j,1}(red);
                     TcspcData.MT{j,1} = TcspcData.MT{j,1}(green);
@@ -182,8 +187,8 @@ for i=1:numel(FileName)
                     TcspcData.MI{j,2} = TcspcData.MI{j,2}(idx);
                 end
             end
-            FileInfo.LineTimes = FileInfo.LineTimes(:,1:4:end);
-            FileInfo.LineStops = FileInfo.LineStops(:,1:4:end);
+            FileInfo.LineTimes = FileInfo.LineTimes(:,1:period:end);
+            FileInfo.LineStops = FileInfo.LineStops(:,1:period:end);
             FileInfo.Lines = 250;
             FileInfo.Pixels = 250;
         end
