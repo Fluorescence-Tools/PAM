@@ -244,6 +244,10 @@ switch TTResultFormat_TTTRRecType
             % Select the custom Leuven_PTU read-in routine and custom datatype!
             Header.LineStartMarker = 2; %linestarts and -stops are both in here!
             Header.FrameStartMarker = 1; %framestarts and -stops are both in here!
+        elseif strcmp(CreatorSW_Name,'Imspector')
+            Header.LineStartMarker = 1;
+            Header.LineStopMarker = 2;
+            Header.FrameStartMarker = 3;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
