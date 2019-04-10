@@ -7335,7 +7335,7 @@ SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
 Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
-ChunkSize = FileInfo.MeasurementTime/Number_of_Chunks;
+ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
 %%% Preallocation
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
