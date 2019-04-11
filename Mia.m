@@ -4371,8 +4371,11 @@ if any(mode==4)
             h.Plots.PCH(1,1).YData = MIAData.PCH{1};
             Max = max(MIAData.Data{1,2}(:));
             h.Plots.PCH(1,2).XData = 0:Max;
-            
-            h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
+            if ~isempty(MIAData.AR)
+                h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
+            else
+                h.Plots.PCH(1,2).YData = 0*h.Plots.PCH(1,2).XData;
+            end
             if h.Mia_Image.PCH_Axes.YLabel.UserData == 0
                 h.Mia_Image.PCH_Axes.YScale = 'Lin';
             else
@@ -4509,14 +4512,18 @@ if any(mode==4)
         if h.Mia_Image.DoPCH.Value
             
             if numel(MIAData.PCH,1)<2
-                MIAData.PCH{2} = histc(MIAData.Data{2,1}(:), 0:max(MIAData.Data{2,1}(:)));
+                MIAData.PCH{2} = histc(double(MIAData.Data{2,1}(:)), 0:max(double(MIAData.Data{2,1}(:))));
             end
             h.Plots.PCH(2,1).XData = 0:(numel(MIAData.PCH{2})-1);
             h.Plots.PCH(2,1).YData = MIAData.PCH{2};
             h.Plots.PCH(2,1).Visible = 'on';
             Max = max(MIAData.Data{2,2}(:));
-            h.Plots.PCH(2,2).XData = 0:Max;
-            h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1},3))), 0:Max);
+             h.Plots.PCH(2,2).XData = 0:Max;
+            if ~isempty(MIAData.AR)
+                h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1},3))), 0:Max);
+            else
+                h.Plots.PCH(2,2).YData = 0*h.Plots.PCH(2,2).XData;
+            end
             h.Plots.PCH(2,2).Visible = 'on';
         else
            h.Plots.PCH(2,1).XData = [0 1];
