@@ -4365,7 +4365,7 @@ if any(mode==4)
         if h.Mia_Image.DoPCH.Value
             
             if isempty(MIAData.PCH)
-                MIAData.PCH{1} = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
+                MIAData.PCH{1} = histc(double(MIAData.Data{1,1}(:)), 0:double(max(MIAData.Data{1,1}(:))));
             end
             h.Plots.PCH(1,1).XData = 0:(numel(MIAData.PCH{1})-1);
             h.Plots.PCH(1,1).YData = MIAData.PCH{1};
