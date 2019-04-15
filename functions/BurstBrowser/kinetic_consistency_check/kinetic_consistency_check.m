@@ -2,16 +2,11 @@ function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
-
 %%% recolor channel photons based on kinetic scheme
 R0 = BurstData{file}.Corrections.FoersterRadius;
-
-
 gamma = BurstData{file}.Corrections.Gamma_GR;
 ct = BurstData{file}.Corrections.CrossTalk_GR;
 de = BurstData{file}.Corrections.DirectExcitation_GR;
-
-
 switch type
     case 'BVA'
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
@@ -203,7 +198,7 @@ switch type
                 R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
             end
             E_randomized{i} = 1./(1+(R_randomized{i}./R0).^6);
-        end
+        end 
         % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
         E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
         %%% roll photons based on randomized proximity ratio to only have donor photons
@@ -374,7 +369,174 @@ switch type
             % to the FRET evaluation, i.e. discarding of photons based on FRET efficiency)
             tau_average_old = cellfun(@mean,mi)./tauD0;
         end
+    case 'FRET_2CDE'
+        selected = BurstData{file}.Selected;
+        E = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+        PR = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+        FRET_2CDE = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'FRET 2CDE Filter'));
+        N_phot_D = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+        N_phot_A = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+        E_D = BurstData{file}.NirFilter.E_D(selected)';
+        E_A = BurstData{file}.NirFilter.E_A(selected)';
+        photons_mt = BurstTCSPCData{file}.Macrotime(selected);
+        photons_ch = BurstTCSPCData{file}.Channel(selected);
+        R0 = BurstData{file}.Corrections.FoersterRadius;
+        gamma = BurstData{file}.Corrections.Gamma_GR;
+        ct = BurstData{file}.Corrections.CrossTalk_GR;
+        de = BurstData{file}.Corrections.DirectExcitation_GR;
+%         N_phot_D = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+%         N_phot_A = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+        
+%         switch BurstData{file}.BAMethod
+%             case {1,2}
+%                 % channel : 1,2 Donor Par Perp
+%                 %           3,4 FRET Par Perp
+%                 %           5,6 ALEX Par Parp
+%                 mt = cellfun(@(x,y) x(y < 5),photons_mt,photons_ch,'UniformOutput',false);                            
+%             case 5
+%                 % channel : 1 Donor
+%                 %           2 FRET
+%                 %           3 ALEX
+%                 mt = cellfun(@(x,y) x(y < 3),photons_mt,photons_ch,'UniformOutput',false);
+%         end
+        %%% simulate kinetics
+        %%% for BVA, we need to consider the actual photons, so simulate a
+        %%% full trajectory
+        freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
+        %%% get duration
+        % convert macrotime to seconds and subtract first time point
+%         mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);
+%         dur = cell2mat(cellfun(@(x) x(end),mt_sec,'UniformOutput',false)); %duration    
+        dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray)))/1000; % duration in seconds
+        FracT = zeros(numel(dur),n_states);
+        states = cell(numel(dur),1);
+        for i = 1:numel(dur) %%% loop over bursts
+            %%% evaluate kinetic scheme
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            %%% convert states to fraction of time spent in each state
+            for s = 1:n_states
+                FracT(i,s) = sum(states{i} == s)./numel(states{i});
+            end
+        end
+%         mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
+        %%% correct fractions for brightness differences of the different states
+        for i = 1:n_states
+            Q(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
+        end
+        FracInt = zeros(size(FracT));
+        %%% calculate total brightness weighted by time spent, i.e.
+        %%% Q1*T1+Q2*T2+Q3*T3...
+        totalQ = sum(repmat(Q,[size(FracT,1),1]).*FracT,2);
+        %%% weigh fraction by brightness
+        for i = 1:n_states
+            FracInt(:,i) = Q(i)*FracT(:,i)./totalQ;
+        end 
+        %%% get number of photons per burst after donor excitation
+        N_phot = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Number of Photons (DX)',BurstData{file}.NameArray)));
+        %%% roll photons per state
+        f_i = mnrnd(N_phot,FracInt);
+        %%% generate channel and microtime variable based on kinetic scheme
+        %%% assign channel based on states
+        %%% with conformational broadening
+        % roll efficiencies of each state for every burst       
+        R_burst = normrnd(repmat(R_states,[numel(N_phot),1]),repmat(sigmaR_states,[numel(N_phot),1])); % center distance for every burst --> use for linker width inclusion    
+        %%% for the microtime of the donor, roll linker width at every evaluation
+        lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
+        %%% for every photon of every state, assign efficiency based on:
+        %%% center distance R_burst(states)
+        %%% linker width
+        R_randomized = cell(numel(N_phot),1);
+        E_randomized = cell(1,numel(N_phot));
+        for i = 1:numel(N_phot)
+            for s = 1:n_states
+                R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
+            end
+            E_randomized{i} = 1./(1+(R_randomized{i}./R0).^6);
+        end 
+        % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
+        E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
+        %%% roll photons based on randomized proximity ratio to only have donor photons
+        channel = cellfun(@(x) 1+2*binornd(1,x),E_randomized_PR,'UniformOutput',false);
+%         DX_photons = cellfun(@(x) x<5,photons_ch,'UniformOutput',false);
+        % compute resampled average FRET efficiencies
+        E = cell2mat(cellfun(@(x) sum(x == 3)/numel(x),channel,'UniformOutput',false));
+        
+        % convert back to accurate FRET efficiencies
+        E = (1-(1+ct+de)*(1-E))./(1-(1+ct-gamma).*(1-E));
+        
+        FRET_2CDE_sim = zeros(numel(channel),1);
+        E_D_sim = zeros(numel(channel),1);
+        E_A_sim = zeros(numel(channel),1);
+        NirFilter_calculation = PAM('KDE');
+        switch BurstData{file}.BAMethod
+            case {1,2}
+                for i = 1:numel(channel)
+                    DX_photons = photons_ch{i} < 5;
+                    chan_sim = 1+2*binornd(1,E_randomized_PR{i});
+                    photons_ch{i}(DX_photons) = chan_sim;
+                    [FRET_2CDE_sim(i),~,E_D_sim(i),E_A_sim(i)] = NirFilter_calculation(photons_mt{i}',photons_ch{i}',BurstData{file}.nir_filter_parameter*1E-6/BurstData{file}.ClockPeriod,BurstData{file}.BAMethod);
+                end
+            case 5
+                for i = 1:numel(channel)
+                    DX_photons = photons_ch{i} < 3;
+                    chan_sim = 1+binornd(1,E_randomized_PR{i});
+                    photons_ch{i}(DX_photons) = chan_sim;
+                    [FRET_2CDE_sim(i),~,E_D_sim(i),E_A_sim(i)] = NirFilter_calculation(photons_mt{i}',photons_ch{i}',BurstData{file}.nir_filter_parameter*1E-6/BurstData{file}.ClockPeriod,BurstData{file}.BAMethod);
+                end
+        end
+        bin_edges = linspace(0,1,UserValues.BurstBrowser.Settings.NumberOfBins_BVA+1);
+        [~,~,bin] = histcounts(E,bin_edges);
+%         bin_centers = bin_edges(1:end-1)+min(diff(bin_edges))/2;
+%         bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
+%         bin_edges = linspace(0,1,bin_number);
+%         [~,~,bin] = histcounts(E,bin_edges);
+        FRET_2CDE_simbin = NaN(1,numel(bin_edges)-1);
+%         number_of_bursts = numel(bin);
+        bursts_done = 0;
+        mean_FRET_2CDE_naive = NaN(1,numel(bin_edges)-1);
+        for i = 1:numel(bin_edges)-1
+            if sum(bin == i) > UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA
+%                  E_bin = E(bin == i);
+%                  mt_bin = photons_mt(bin == i);
+%                  ch_bin = photons_ch(bin == i);
+%                  N_phot_D_bin = N_phot_D(bin == i);
+%                  N_phot_A_bin = N_phot_A(bin == i);
+%                  E_D_simbin = E_D_sim(bin == i);
+%                  E_A_simbin = E_A_sim(bin == i);
+%                  for j = 1:numel(E_bin)
+%                      % read out number of photons after donor excitation Dx
+%                      switch BurstData{file}.BAMethod
+%                          case {1,2}
+%                              DX_photons = ch_bin{j} < 5;
+%                              % randomize colors
+%                              chan_randomized = 1+2*binornd(1,E_randomized_PR{i}); % 1 = donor, 3 = acceptor (ignore polarization by making everything parrallel)
+%                              ch_bin{j}(DX_photons) = chan_randomized;
+%                          case {5}
+%                              DX_photons = ch_bin{j} < 3;
+%                              % randomize colors
+%                              chan_randomized = 1+binornd(1,E_randomized_PR{i}); % 1 = donor, 2 = acceptor
+%                              ch_bin{j}(DX_photons) = chan_randomized;
+%                      end
+%                      %% recalculate FRET_2CDE
+%                      [~,~,E_D_simbin(i),E_A_simbin(i)] = NirFilter_calculation(mt_bin{i}',ch_bin{i}',BurstData{file}.nir_filter_parameter*1E-6/BurstData{file}.ClockPeriod,BurstData{file}.BAMethod);
+%                  end
+%                  %% average FRET-2CDE
+%                  valid =  ~isnan(E_D_simbin) & ~isnan(E_A_simbin);
+%                  FRET_2CDE_simbin(i) = 110 - 100*(sum(N_phot_D_bin(valid).*E_D_simbin(valid))./sum(N_phot_D_bin(valid)) +...
+%                  sum(N_phot_A_bin(valid).*E_A_simbin(valid))./sum(N_phot_A_bin(valid)));     
+%              
+%               FRET_2CDE_simbin(i) = 110 - 100*(sum(N_phot_D_bin.*E_D_simbin)./sum(N_phot_D_bin) +...
+%                  sum(N_phot_A_bin.*E_A_simbin)./sum(N_phot_A_bin));
+             
+                mean_FRET_2CDE_naive(i) = nanmean(FRET_2CDE_sim(bin == i));
+            end
+            bursts_done = bursts_done + sum(bin==i);
+        end
+        sSelected = FRET_2CDE_sim;
+        sPerBin = mean_FRET_2CDE_naive;
+%         sPerBin = FRET_2CDE_simbin;
 end
+
 
 %%% Calculate the relative brightness based on FRET value
 function Qr = calc_relative_brightness(R,gamma,ct,de,R0)
