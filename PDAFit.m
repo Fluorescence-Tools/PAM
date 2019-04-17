@@ -2119,6 +2119,9 @@ PDAMeta.UpdateInterval = 1;
 %%% Set the fit iteration (function evaluation) counter to 0
 PDAMeta.Fit_Iter_Counter = 0;
 Update_Plots(obj,[],3); % reset plots
+%%% do lifetime pda
+PDAMeta.lifetime_PDA = true;
+
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');
@@ -2251,7 +2254,7 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
         PDAMeta.NBG{i} = NBG;
         PDAMeta.NBR{i} = NBR;
         
-        if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
+        if any(strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},{'Histogram Library','MLE'}))
             if calc
                 %%% prepare epsilon grid
                 Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
@@ -2461,10 +2464,42 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
             PDAMeta.P(i,:) = P;
             PDAMeta.P_donly{i} = P_donly;
             PDAMeta.PreparationDone(i) = 1;
+        %elseif strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
+            %% Calculate grid of probabilites for MLE PDA
+            eps_min = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((0+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-0))).^(-1);
+            PDAMeta.eps_grid{i} = linspace(eps_min,1,NobinsE+1);
+            %%% Calculate the vector of likelihood values on the epsilon grid
+            PDAMeta.P_grid{i} = eval_prob_2c_bg(PDAData.Data{i}.NG(PDAMeta.valid{i}),PDAData.Data{i}.NF(PDAMeta.valid{i}),...
+                PDAMeta.NBG{i},PDAMeta.NBR{i},...
+                PDAMeta.PBG{i}',PDAMeta.PBR{i}',...
+                PDAMeta.eps_grid{i}');   
+            PDAMeta.P_grid{i} = log(PDAMeta.P_grid{i});
+            %% preparations related to lifetime-PDA
+            if PDAMeta.lifetime_PDA
+                % in principle, the following information is required:
+                % first and second moments of IRF                
+                IRF = PDAData.Data{i}.IRF_G;
+                IRF = IRF./sum(IRF);
+                % consider only the PIE channel range
+                range(1) = min(vertcat(PDAData.Data{i}.MI_G{:}));
+                range(2) = max(vertcat(PDAData.Data{i}.MI_G{:}));
+                range = double(range);
+                IRF = IRF(range(1):range(2)); IRF = IRF./sum(IRF);
+                PDAMeta.IRF_moments{i}(1) = sum((1:numel(IRF)).*IRF);
+                PDAMeta.IRF_moments{i}(2) = sum((1:numel(IRF)).^2.*IRF);
+                PDAMeta.IRF{i} = IRF;
+                %%% also, for simplicity we combine the parallel and
+                %%% perpendicular decays and average the microtime
+                PDAMeta.TauG{i} = double(cellfun(@mean,PDAData.Data{i}.MI_G));
+                PDAMeta.TauG{i} = PDAMeta.TauG{i} - range(1) + 1;
+        end
+            
         end
         counter = counter + 1;
     end
 end
+
+
 %% Store fit parameters globally
 PDAMeta.Fixed = cell2mat(h.FitTab.Table.Data(1:end-3,3:3:end-1));
 PDAMeta.Global = cell2mat(h.FitTab.Table.Data(end-2,4:3:end-1));
@@ -2623,19 +2658,22 @@ if ~do_global
                 Progress((fit_counter-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
                 Progress((fit_counter-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-                    case {'MLE','MonteCarlo'}
+                    case {'MonteCarlo'} % removed 'MLE' for now since MC is broken
                         %%% For Updating the Result Plot, use MC sampling
                         PDAMonteCarloFit_Single(fitpar,h);
-                    case 'Histogram Library'
+                    case {'Histogram Library','MLE'}
                         PDAHistogramFit_Single(fitpar,h);
                 end
             case h.Menu.StartFit
                 %% evaluate once to make plots available
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-                    case {'MLE','MonteCarlo'}
+                    case {'MonteCarlo'} % removed 'MLE' for now since MC is broken
                         %%% For Updating the Result Plot, use MC sampling
                         PDAMonteCarloFit_Single(fitpar,h);
                     case 'Histogram Library'
+                        PDAMeta.FitInProgress = 1;
+                        PDAHistogramFit_Single(fitpar,h);
+                    case 'MLE'
                         PDAMeta.FitInProgress = 1;
                         PDAHistogramFit_Single(fitpar,h);
                 end
@@ -2722,7 +2760,7 @@ if ~do_global
                 %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
             case 'MLE'
                 %%% For Updating the Result Plot, use MC sampling
-                PDAMeta.chi2(i) = PDAMonteCarloFit_Single(fitpar,h);
+                PDAMeta.chi2(i) = PDAHistogramFit_Single(fitpar,h);
                 %%% Update Plots
                 h.FitTab.Bar.YData = PDAMeta.hFit;
                 h.Res_Bar.YData = PDAMeta.w_res;
@@ -3681,50 +3719,183 @@ NF = PDAData.Data{file}.NF(PDAMeta.valid{file});
 
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
-L = cell(5,1); %%% Likelihood per Gauss
-for j = PDAMeta.Comp{file}
-    %%% define Gaussian distribution of distances
-    xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
-    PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
-    PR = PR'./sum(PR);
-    %%% Calculate E values for R grid
-    E = 1./(1+(xR./R0).^6);
-    epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+
+if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+    L = cell(5,1); %%% Likelihood per Gauss
+    for j = PDAMeta.Comp{file}
+        %%% define Gaussian distribution of distances
+        xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
+        PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
+        PR = PR'./sum(PR);
+        %%% Calculate E values for R grid
+        E = 1./(1+(xR./R0).^6);
+        epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+
+        %%% Calculate the vector of likelihood values
+        P = eval_prob_2c_bg(NG,NF,...
+            PDAMeta.NBG{file},PDAMeta.NBR{file},...
+            PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
+            epsGR');
+        P = log(P) + repmat(log(PR'),numel(NG),1);
+        Lmax = max(P,[],2);
+        P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
+
+        if h.SettingsTab.Use_Brightness_Corr.Value
+            %%% Add Brightness Correction Probabilty here
+            P = P + log(PN_scaled{j}(NG + NF));
+        end
+        %%% Treat case when all burst produced zero probability
+        P(isnan(P)) = -Inf;
+        L{j} = P;
+    end
+
+    %%% normalize amplitudes
+    fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+    PA = fitpar(PDAMeta.Comp{file},1);
+
+
+    L = horzcat(L{:});
+    L = L + repmat(log(PA'),numel(NG),1);
+    Lmax = max(L,[],2);
+    L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
+    %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+    %%% Reset these values to -Inf
+    L(isnan(L)) = -Inf;
+    logL = sum(L);
+    %%% since the algorithm minimizes, it is important to minimize the negative
+    %%% log likelihood, i.e. maximize the likelihood
+    logL = -logL;
+else
+    %%% dynamic model
+    %%% calculate PofT
+    dT = PDAData.timebin(file)*1E3; % time bin in milliseconds
+    switch h.SettingsTab.DynamicSystem.Value
+        case 1
+            %%% two-state system
+            % solve analytically
+            dyn_sim = 'analytic';
+        case 2
+            %%% three-state system
+            % use monte carlo to evaluate kinetics
+            dyn_sim = 'montecarlo';
+    end
+    switch dyn_sim
+        case 'analytic'
+            n_states = 2;
+            N = 100;
+            k1 = fitpar(1,1);
+            k2 = fitpar(2,1);
+            PofT = calc_dynamic_distribution(dT,N,k1,k2);
+        case 'montecarlo'
+            DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
+                        fitpar(3*1-2), 0,rates_state3(1);... 
+                        rates_state3(2),rates_state3(3),0];
+            % rates in Hz
+            % The DynRates matrix has the form:
+            % ( 11 21 31 ... )
+            % ( 12 22 32 ... )
+            % ( 13 23 33 ... )
+            % ( .. .. .. ... )
+            n_states = size(DynRates,1);
+            change_prob = cumsum(DynRates);
+            change_prob = change_prob ./ change_prob(end,:);
+            dwell_mean = 1 ./ sum(DynRates);  
+            for j = 1:n_states
+            DynRates(j,j) = -sum(DynRates(:,j));
+            end
+            DynRates(end+1,:) = ones(1,n_states);
+            b = zeros(n_states,1); b(end+1) = 1;
+            p_eq = DynRates\b;
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob);
+            % PofT describes the joint probability to see T1 and T2
+            n_bins_T = 20;
+            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+            PofT = PofT./sum(PofT(:));
+    end
+    %%% generate P(eps) distribution for both components
+    PE = cell(n_states,1);
+    for c = 1:n_states
+        PE{c} = Generate_P_of_eps(fitpar(c,2), fitpar(c,3), file);
+    end
+    %%% read out brightnesses of species
+    Q = ones(n_states,1);
+    for c = 1:n_states
+        Q(c) = calc_relative_brightness(fitpar(c,2),file);
+    end
+    %%% calculate mixtures with brightness correction (always active!)
+    if ~verLessThan('matlab','8.4') && ispc
+        % the old mex function, compiled in 2014b, does not work on
+        % Windows for Matlab versions 2018a or newers
+        Peps = mixPE_c_2018a(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
+    else
+        Peps = mixPE_c(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
+    end
+    Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),numel(PofT));
+    %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
+    Peps(:,end) = PE{1};
+    Peps(:,1) = PE{2};
+
+    %%% normalize
+    Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+    Peps(isnan(Peps)) = 0;
+     
+    %%% intensity-based likelihood
+    L = zeros(numel(NG),numel(PofT)); % log likelihood
+    intensity = false;
+    if intensity
+        log_P_grid = PDAMeta.P_grid{file};
+        log_Peps = log(Peps)';
+        for i = 1:numel(PofT)
+            P =  log_P_grid + repmat(log_Peps(i,:),numel(NG),1);
+            Lmax = max(P,[],2);
+            P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
+            L(:,i) = P;
+        end
+    end
+    %%% lifetime-based likelihood
+    if PDAMeta.lifetime_PDA
+        % get the lifetimes of the species in TAC units
+        TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+        tau0 = 4./TACbin;
+        tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
+        tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
+        % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
+        % (corresponding to number of donor photons)
+        T1 = linspace(0,1,numel(PofT));
+        F1 = T1.*tau1./(T1.*tau1+(1-T1).*tau2);
+        % calculate the moments, accounting for IRF
+        dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
+        dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
+        % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
+        % calculate parameters of the gamma distribution
+        % E[X^2] of exponential is 2*tau
+        dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
+        dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
+        % calculate mean and variance
+        mean_t = F1.*dt1_1+(1-F1).*dt1_2;        
+        var_t = repmat((F1.*dt2_1+(1-F1).*dt2_2-mean_t.^2),numel(NG),1)./repmat(NG,1,numel(F1)); % variance scales with number of photons
+        % calculate parameters of gamma dist
+        alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
+        beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
+        tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),1,numel(PofT)); % donor average delay time
+        L = L + log(gampdf(tauG,alpha,beta_inv));        
+    end
     
-    %%% Calculate the vector of likelihood values
-    P = eval_prob_2c_bg(NG,NF,...
-        PDAMeta.NBG{file},PDAMeta.NBR{file},...
-        PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
-        epsGR');
-    P = log(P) + repmat(log(PR'),numel(NG),1);
-    Lmax = max(P,[],2);
-    P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
-    
+    L = L + repmat(log(PofT),numel(NG),1);
+    Lmax = max(L,[],2);
+    L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
     if h.SettingsTab.Use_Brightness_Corr.Value
         %%% Add Brightness Correction Probabilty here
-        P = P + log(PN_scaled{j}(NG + NF));
+        L = L + log(PN_scaled{j}(NG + NF));
     end
     %%% Treat case when all burst produced zero probability
-    P(isnan(P)) = -Inf;
-    L{j} = P;
+    L(isnan(L)) = -Inf;
+    L(NG == 0) = 0; % zero donor photons produce -Inf, reset to zero;
+    logL = sum(L);
+    %%% since the algorithm minimizes, it is important to minimize the negative
+    %%% log likelihood, i.e. maximize the likelihood
+    logL = -logL;
 end
-
-%%% normalize amplitudes
-fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
-PA = fitpar(PDAMeta.Comp{file},1);
-
-
-L = horzcat(L{:});
-L = L + repmat(log(PA'),numel(NG),1);
-Lmax = max(L,[],2);
-L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
-%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
-%%% Reset these values to -Inf
-L(isnan(L)) = -Inf;
-logL = sum(L);
-%%% since the algorithm minimizes, it is important to minimize the negative
-%%% log likelihood, i.e. maximize the likelihood
-logL = -logL;
 
 % model for MLE fitting (global)
 function [mean_logL] = PDAMLEFit_Global(fitpar,h)
