@@ -3676,6 +3676,11 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
     fitpar_dummy(~PDAMeta.Fixed(file,:)) = fitpar;
     fitpar = fitpar_dummy;
 end
+%%% if dynamic model, rates for third state are appended to fitpar array
+if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+    rates_state3 = fitpar(end-2:end);
+    fitpar(end-2:end) = [];
+end
 %%% if sigma is fixed at fraction of, read value here before reshape
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
@@ -3812,8 +3817,8 @@ else
             k2 = fitpar(2,1);
             PofT = calc_dynamic_distribution(dT,N,k1,k2);
         case 'montecarlo'
-            DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
-                        fitpar(3*1-2), 0,rates_state3(1);... 
+            DynRates = [0, fitpar(2,1),fitpar(3,1); ...
+                        fitpar(1,1), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0];
             % rates in Hz
             % The DynRates matrix has the form:
@@ -3847,69 +3852,141 @@ else
     for c = 1:n_states
         Q(c) = calc_relative_brightness(fitpar(c,2),file);
     end
-    %%% calculate mixtures with brightness correction (always active!)
-    if ~verLessThan('matlab','8.4') && ispc
-        % the old mex function, compiled in 2014b, does not work on
-        % Windows for Matlab versions 2018a or newers
-        Peps = mixPE_c_2018a(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
-    else
-        Peps = mixPE_c(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
-    end
-    Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),numel(PofT));
-    %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
-    Peps(:,end) = PE{1};
-    Peps(:,1) = PE{2};
-
-    %%% normalize
-    Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
-    Peps(isnan(Peps)) = 0;
-     
-    %%% intensity-based likelihood
-    L = zeros(numel(NG),numel(PofT)); % log likelihood
-    intensity = true;
-    if intensity
-        log_P_grid = PDAMeta.P_grid{file};
-        log_Peps = log(Peps)';
-        for i = 1:numel(PofT)
-            P =  log_P_grid + repmat(log_Peps(i,:),numel(NG),1);
-            Lmax = max(P,[],2);
-            P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
-            L(:,i) = P;
+    if n_states == 2
+        %%% calculate mixtures with brightness correction (always active!)
+        if ~verLessThan('matlab','8.4') && ispc
+            % the old mex function, compiled in 2014b, does not work on
+            % Windows for Matlab versions 2018a or newers
+            Peps = mixPE_c_2018a(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
+        else
+            Peps = mixPE_c(PDAMeta.eps_grid{file},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{file}),Q(1),Q(2));
         end
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),numel(PofT));
+        %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
+        Peps(:,end) = PE{1};
+        Peps(:,1) = PE{2};
+
+        %%% normalize
+        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+        Peps(isnan(Peps)) = 0;
+
+        %%% intensity-based likelihood
+        L = zeros(numel(NG),numel(PofT)); % log likelihood
+        intensity = true;
+        if intensity
+            log_P_grid = PDAMeta.P_grid{file};
+            log_Peps = log(Peps)';
+            for i = 1:numel(PofT)
+                P =  log_P_grid + repmat(log_Peps(i,:),numel(NG),1);
+                Lmax = max(P,[],2);
+                P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
+                L(:,i) = P;
+            end
+        end
+        %%% lifetime-based likelihood
+        if PDAMeta.lifetime_PDA
+            % get the lifetimes of the species in TAC units
+            TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+            tau0 = 4./TACbin;
+            tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
+            tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
+            % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
+            % (corresponding to number of donor photons)
+            T1 = linspace(0,1,numel(PofT));
+            F1 = T1.*tau1./(T1.*tau1+(1-T1).*tau2);
+            % calculate the moments, accounting for IRF
+            dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
+            dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
+            % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
+            % calculate parameters of the gamma distribution
+            % E[X^2] of exponential is 2*tau
+            dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
+            dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
+            % calculate mean and variance
+            mean_t = F1.*dt1_1+(1-F1).*dt1_2;        
+            var_t = repmat((F1.*dt2_1+(1-F1).*dt2_2-mean_t.^2),numel(NG),1)./repmat(NG,1,numel(F1)); % variance scales with number of photons
+            % calculate parameters of gamma dist
+            alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
+            beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
+            tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),1,numel(PofT)); % donor average delay time
+            L = L + log(gampdf(tauG,alpha,beta_inv));        
+        end
+
+        L = L + repmat(log(PofT),numel(NG),1);
+        Lmax = max(L,[],2);
+        L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
+    elseif n_states == 3
+        Peps = mixPE_3states_c(PDAMeta.eps_grid{file},PE{1},PE{2},PE{3},size(PofT,1),numel(PDAMeta.eps_grid{file}),Q(1),Q(2),Q(3));
+        %%% as defined in the C code:
+        %%% dimensions of Peps are eps,T2,T1
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),size(PofT,1),size(PofT,1));
+        % that means: Peps(E,t2,t1) is the probability to see E when the
+        % molecule was T1 = t1 in state 1, T2 = t2 in state 2 and T3 =
+        % T-T1-T1 in state 3.
+
+        %%% normalize Peps
+        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+        Peps(isnan(Peps)) = 0;
+        %%% combine mixtures, weighted with PofT (probability to see a certain
+        %%% combination)
+        
+        %%% intensity-based likelihood
+        L = zeros(numel(NG),size(PofT,2),size(PofT,1)); % log likelihood
+        intensity = true;
+        if intensity
+            log_P_grid = PDAMeta.P_grid{file};
+            log_Peps = log(Peps);
+            for t1 = 1:size(PofT,1)
+                for t2 = 1:(size(PofT,2)-t1+1)
+                    P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
+                    Lmax = max(P,[],2);
+                    P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
+                    L(:,t2,t1) = P;
+                end
+            end
+        end
+        %%% lifetime-based likelihood
+        if PDAMeta.lifetime_PDA
+            % get the lifetimes of the species in TAC units
+            TACbin = PDAData.Data{file}.TACbin; %in ns, i.e. 8 ps
+            tau0 = 4./TACbin;
+            tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
+            tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
+            tau3 = tau0*(1+(R0./fitpar(3,2)).^6).^(-1);
+            % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
+            % (corresponding to number of donor photons)
+            [T2,T1] = meshgrid(linspace(0,1,size(PofT,1)),linspace(0,1,size(PofT,2)));
+            F1 = T1.*tau1./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
+            F2 = T2.*tau2./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
+            % calculate the moments, accounting for IRF
+            dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
+            dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
+            dt1_3 = tau3 + PDAMeta.IRF_moments{file}(1);
+            % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
+            % calculate parameters of the gamma distribution
+            % E[X^2] of exponential is 2*tau
+            dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
+            dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
+            dt2_3 = 2*tau3.^2+PDAMeta.IRF_moments{file}(2)+2*tau3*PDAMeta.IRF_moments{file}(1);
+            % calculate mean and variance
+            mean_t = F1.*dt1_1+F2.*dt1_2+(1-F1-F2).*dt1_3;
+            v = (F1.*dt2_1+F2.*dt2_2+(1-F1-F2).*dt2_3-mean_t.^2);
+            mean_t = reshape(mean_t,[1,size(mean_t,1),size(mean_t,2)]);
+            v = reshape(v,[1,size(v,1),size(v,2)]);
+            var_t = repmat(v,numel(NG),1,1)./repmat(NG,[1,size(F1,1),size(F1,2)]); % variance scales with number of photons
+            % calculate parameters of gamma dist
+            alpha = repmat(mean_t,numel(NG),1,1).^2./var_t;
+            beta_inv = (repmat(mean_t,numel(NG),1,1)./var_t).^(-1);
+            tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),[1,size(F1,1),size(F1,2)]); % donor average delay time
+            L = L + log(gampdf(tauG,alpha,beta_inv));        
+        end
+        L = reshape(L,size(L,1),size(L,2)*size(L,3));
+        PofT = PofT(:)';
+        L = L + repmat(log(PofT),numel(NG),1,1);
+        L(isnan(L)) = -Inf; %%% NaNs produced for "impossible" combinations of T1 and T2 (i.e. T1+T2 > 1)
+        Lmax = max(L,[],2);
+        L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
     end
-    %%% lifetime-based likelihood
-    if PDAMeta.lifetime_PDA
-        % get the lifetimes of the species in TAC units
-        TACbin = 80/(2*4096); %in ns, i.e. 8 ps
-        tau0 = 4./TACbin;
-        tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
-        tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
-        % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
-        % (corresponding to number of donor photons)
-        T1 = linspace(0,1,numel(PofT));
-        F1 = T1.*tau1./(T1.*tau1+(1-T1).*tau2);
-        % calculate the moments, accounting for IRF
-        dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
-        dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
-        % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
-        % calculate parameters of the gamma distribution
-        % E[X^2] of exponential is 2*tau
-        dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
-        dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
-        % calculate mean and variance
-        mean_t = F1.*dt1_1+(1-F1).*dt1_2;        
-        var_t = repmat((F1.*dt2_1+(1-F1).*dt2_2-mean_t.^2),numel(NG),1)./repmat(NG,1,numel(F1)); % variance scales with number of photons
-        % calculate parameters of gamma dist
-        alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
-        beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
-        tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),1,numel(PofT)); % donor average delay time
-        L = L + log(gampdf(tauG,alpha,beta_inv));        
-    end
-    
-    L = L + repmat(log(PofT),numel(NG),1);
-    Lmax = max(L,[],2);
-    L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
-    
     %%% Add static models
     if numel(PDAMeta.Comp{file}) > n_states
         %%% normalize Amplitudes
@@ -3936,6 +4013,28 @@ else
                 PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
                 epsGR');
             P = log(P);
+             %%% lifetime-based likelihood
+            PDAMeta.lifetime_PDA = true;
+            if PDAMeta.lifetime_PDA
+                % get the lifetimes of the species in TAC units
+                TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+                tau0 = 4./TACbin;
+                tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
+                % calculate the moments, accounting for IRF
+                dt1 = tau + PDAMeta.IRF_moments{file}(1);
+                % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
+                % calculate parameters of the gamma distribution
+                % E[X^2] of exponential is 2*tau
+                dt2 = 2*tau.^2+PDAMeta.IRF_moments{file}(2)+2*tau*PDAMeta.IRF_moments{file}(1);
+                % calculate mean and variance
+                mean_t = dt1;        
+                var_t = repmat((dt2-mean_t.^2),numel(NG),1)./NG; % variance scales with number of photons
+                % calculate parameters of gamma dist
+                alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
+                beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
+                tauG = PDAMeta.TauG{file}(PDAMeta.valid{file}); % donor average delay time
+                P = P + log(gampdf(tauG,alpha,beta_inv));        
+            end
             P = P + repmat(log(PR'),numel(NG),1);
             Lmax = max(P,[],2);
             P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));

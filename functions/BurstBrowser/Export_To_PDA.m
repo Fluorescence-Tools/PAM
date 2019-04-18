@@ -118,6 +118,7 @@ for i = 1:numel(files)
                     PDA.IRF_GP = BurstData{file}.IRF{1};
                     PDA.IRF_GS = BurstData{file}.IRF{2};
                     PDA.IRF_G = PDA.IRF_GP + PDA.IRF_GS;
+                    PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
                 end
                 save(newfilename, 'PDA', 'timebin')
             case 5 %noMFD
@@ -144,6 +145,7 @@ for i = 1:numel(files)
                 if export_lifetime
                     PDA.MI_G = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
                     PDA.IRF_G = BurstData{file}.IRF{1};
+                    PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
                 end
                 save(newfilename, 'PDA', 'timebin')
             case {3,4}
