@@ -344,7 +344,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        nsync = int16(bitand(T3Record,65535));
+        nsync = uint32(bitand(T3Record,65535));
         
         Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
