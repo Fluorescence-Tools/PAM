@@ -3736,10 +3736,34 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
             PDAMeta.NBG{file},PDAMeta.NBR{file},...
             PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
             epsGR');
-        P = log(P) + repmat(log(PR'),numel(NG),1);
+        P = log(P);
+        %%% lifetime-based likelihood
+        PDAMeta.lifetime_PDA = true;
+        if PDAMeta.lifetime_PDA
+            % get the lifetimes of the species in TAC units
+            TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+            tau0 = 4./TACbin;
+            tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
+            % calculate the moments, accounting for IRF
+            dt1 = tau + PDAMeta.IRF_moments{file}(1);
+            % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
+            % calculate parameters of the gamma distribution
+            % E[X^2] of exponential is 2*tau
+            dt2 = 2*tau.^2+PDAMeta.IRF_moments{file}(2)+2*tau*PDAMeta.IRF_moments{file}(1);
+            % calculate mean and variance
+            mean_t = dt1;        
+            var_t = repmat((dt2-mean_t.^2),numel(NG),1)./NG; % variance scales with number of photons
+            % calculate parameters of gamma dist
+            alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
+            beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
+            tauG = PDAMeta.TauG{file}(PDAMeta.valid{file}); % donor average delay time
+            P = P + log(gampdf(tauG,alpha,beta_inv));        
+        end
+        
+        P = P + repmat(log(PR'),numel(NG),1);
         Lmax = max(P,[],2);
         P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
-
+    
         if h.SettingsTab.Use_Brightness_Corr.Value
             %%% Add Brightness Correction Probabilty here
             P = P + log(PN_scaled{j}(NG + NF));
@@ -3748,7 +3772,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         P(isnan(P)) = -Inf;
         L{j} = P;
     end
-
+    
     %%% normalize amplitudes
     fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
     PA = fitpar(PDAMeta.Comp{file},1);
@@ -3761,6 +3785,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
     %%% Reset these values to -Inf
     L(isnan(L)) = -Inf;
+    L(NG == 0) = 0; % zero donor photons produce -Inf, reset to zero;
     logL = sum(L);
     %%% since the algorithm minimizes, it is important to minimize the negative
     %%% log likelihood, i.e. maximize the likelihood
@@ -3841,7 +3866,7 @@ else
      
     %%% intensity-based likelihood
     L = zeros(numel(NG),numel(PofT)); % log likelihood
-    intensity = false;
+    intensity = true;
     if intensity
         log_P_grid = PDAMeta.P_grid{file};
         log_Peps = log(Peps)';
@@ -3884,6 +3909,49 @@ else
     L = L + repmat(log(PofT),numel(NG),1);
     Lmax = max(L,[],2);
     L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
+    
+    %%% Add static models
+    if numel(PDAMeta.Comp{file}) > n_states
+        %%% normalize Amplitudes
+        % amplitudes of the static components are normalized to the total area 
+        % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
+        % the k12 and k21 parameters are left untouched here so they will 
+        % appear in the table. The area fractions are calculated in Update_Plots
+        norm = (sum(fitpar(PDAMeta.Comp{file}(n_states+1:end),1))+1);
+        fitpar(PDAMeta.Comp{file}(n_states+1:end),1) = fitpar(PDAMeta.Comp{file}(n_states+1:end),1)./norm;
+        
+        L_static = cell(numel(PDAMeta.Comp{file}) - n_states);
+        for c = PDAMeta.Comp{file}(n_states+1:end)
+            %%% define Gaussian distribution of distances
+            xR = (fitpar(c,2)-n_sigma*fitpar(c,3)):(2*n_sigma*fitpar(c,3)/steps):(fitpar(c,2)+n_sigma*fitpar(c,3));
+            PR = normpdf(xR,fitpar(c,2),fitpar(c,3));
+            PR = PR'./sum(PR);
+            %%% Calculate E values for R grid
+            E = 1./(1+(xR./R0).^6);
+            epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+
+            %%% Calculate the vector of likelihood values
+            P = eval_prob_2c_bg(NG,NF,...
+                PDAMeta.NBG{file},PDAMeta.NBR{file},...
+                PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
+                epsGR');
+            P = log(P);
+            P = P + repmat(log(PR'),numel(NG),1);
+            Lmax = max(P,[],2);
+            P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
+            %%% Treat case when all burst produced zero probability
+            P(isnan(P)) = -Inf;
+            L_static{c-n_states} = P;
+        end
+        %%% normalize amplitudes
+        fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+        PA = [1,fitpar(PDAMeta.Comp{file}(n_states+1:end),1)]./norm;
+        L = [L horzcat(L_static{:})];
+        L = L + repmat(log(PA),numel(NG),1);
+        Lmax = max(L,[],2);
+        L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
+    end
+    
     if h.SettingsTab.Use_Brightness_Corr.Value
         %%% Add Brightness Correction Probabilty here
         L = L + log(PN_scaled{j}(NG + NF));
