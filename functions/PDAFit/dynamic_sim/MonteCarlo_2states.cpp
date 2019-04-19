@@ -6,7 +6,6 @@
 #include <cmath>
 #include <random>
 #include <fstream>
-#include <vector>
 #include <algorithm>
 #include "time.h"
 #include "matrix.h"
@@ -17,7 +16,7 @@
 
 using namespace std;
 // using namespace tr1;
-void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, const double R0, const double cr, const double de, const double ct, const double gamma, const int time_windows, const double SimTime, double *BSD, double *dwell_mean, double *p_eq, const char sampling, double *PRH)
+void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, const double R0, const double cr, const double de, const double ct, const double gamma, const int time_windows, const double SimTime, double *BSD, double *dwell_mean, double *p_eq, const int sampling, double *PRH)
 {
     /// Counting variable definition
     int i;
@@ -26,15 +25,15 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
     bool state;
     double t;
     double tau;
-    vector<double> r(2);
-    vector<double> FRET(2);
-    vector<double> eps(2);
+    double r[2];
+    double FRET[2];
+    double eps[2];
     int BG_gr;
-    int BSD_bg;
+    double BSD_bg;
     double E;
-    vector<double> Q(2);
-    vector<int> f_i(2);
-    vector<double> fracTauT(2);
+    double Q[2];
+    int f_i[2];
+    double fracTauT[2] = {0,0};
     random_device rd{};
     mt19937 mt{rd()}; // initialize mersenne twister engine
     uniform_real_distribution<double> equal_dist(0.0,1.0);
@@ -50,6 +49,7 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
     for (n=0;n<sampling;++n){
         for (i=0;i<time_windows;++i){
             state = roll(mt);
+            t = 0;
             while (t<SimTime){
                 tau = -log(equal_dist(mt)) * dwell_mean[state];
                 t += tau;
@@ -59,12 +59,14 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
                 fracTauT[state] += tau;
                 state = !state;
             }
-            t = 0;
             BG_gr = BG_gr_rnd(mt);
             BSD_bg = BSD[i] - BG_gg_rnd(mt) - BG_gr;
+            if (BSD_bg<0){
+                BSD_bg = 0;
+            }
             binomial_distribution<int> Intrnd(BSD_bg,Q[0]*fracTauT[0]/(Q[0]*fracTauT[0]+Q[1]*fracTauT[1]));
             f_i[0] = Intrnd(mt);
-            f_i[1] = BSD_bg - f_i[0];
+            f_i[1] = (int)BSD_bg - f_i[0];
             r[0] = rollR0(mt);
             r[1] = rollR1(mt);
             for (s=0;s<2;++s){
@@ -99,7 +101,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *BSD = mxGetPr(prhs[11]);
     double *dwell_mean = mxGetPr(prhs[12]);
     double *p_eq = mxGetPr(prhs[13]);
-    const char sampling = mxGetScalar(prhs[14]);
+    const int sampling = mxGetScalar(prhs[14]);
     const mwSize NP[]={(mwSize)time_windows*2*sampling,1};
     double *PRH = (double*) mxCalloc(sampling*time_windows, sizeof(double));
     Simulate_States(mBG_gg, mBG_gr, R, sigmaR, R0, cr, de, ct, gamma, time_windows, SimTime, BSD, dwell_mean, p_eq, sampling, PRH);
