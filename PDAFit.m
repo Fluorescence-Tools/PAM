@@ -3359,7 +3359,7 @@ else %%% dynamic model
             DynRates(end+1,:) = ones(1,n_states);
             b = zeros(n_states,1); b(end+1) = 1;
             p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob);
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob)./dT;
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
@@ -3883,7 +3883,7 @@ else
             DynRates(end+1,:) = ones(1,n_states);
             b = zeros(n_states,1); b(end+1) = 1;
             p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob);
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob)./dT;
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
