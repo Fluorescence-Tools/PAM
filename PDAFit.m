@@ -2481,10 +2481,7 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 IRF = PDAData.Data{i}.IRF_G;
                 IRF = IRF./sum(IRF);
                 % consider only the PIE channel range
-                range(1) = min(vertcat(PDAData.Data{i}.MI_G{:}));
-                range(2) = max(vertcat(PDAData.Data{i}.MI_G{:}));
-                range = double(range);
-                range(2) = 1900; %%% TODO: Add PIE channel range to PDA file from BurstBrowser
+                range = [PDAData.Data{i}.PIE.From(1), PDAData.Data{i}.PIE.To(1)];
                 IRF = IRF(range(1):range(2)); IRF = IRF./sum(IRF);
                 PDAMeta.IRF_moments{i}(1) = sum((1:numel(IRF)).*IRF);
                 PDAMeta.IRF_moments{i}(2) = sum((1:numel(IRF)).^2.*IRF);
