@@ -111,7 +111,7 @@ for i = 1:numel(files)
                     PDA.BrightnessReference.N = NGP + NGS;
                 end
                 
-                if export_lifetime
+                if h.PDA_ExportLifetime.Value
                     PDA.MI_GP = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
                     PDA.MI_GS = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
                     PDA.MI_G = cellfun(@(x,y) [x;y],PDA.MI_GP,PDA.MI_GS,'UniformOutput',false);
@@ -143,7 +143,7 @@ for i = 1:numel(files)
                     NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
                     PDA.BrightnessReference.N = NG;
                 end
-                if export_lifetime
+                if h.PDA_ExportLifetime.Value
                     PDA.MI_G = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
                     PDA.IRF_G = BurstData{file}.IRF{1};
                     PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
