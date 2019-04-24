@@ -2959,10 +2959,10 @@ else
             Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
             Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-                case {'MLE','MonteCarlo'}
+                case {'MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMonteCarloFit_Global(fitpar);
-                case 'Histogram Library'
+                case {'Histogram Library','MLE'}
                     PDAHistogramFit_Global(fitpar,h);
             end
         case h.Menu.StartFit
@@ -2998,7 +2998,7 @@ else
                 case 'MLE'
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMeta.FitInProgress = 1;
-                    PDAMonteCarloFit_Global(fitpar);
+                    PDAHistogramFit_Global(fitpar,h);
                     PDAMeta.FitInProgress = 0;
                     if isfield(PDAMeta,'Last_logL')
                         PDAMeta = rmfield(PDAMeta,'Last_logL');
