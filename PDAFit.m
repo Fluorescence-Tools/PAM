@@ -2484,6 +2484,7 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 range(1) = min(vertcat(PDAData.Data{i}.MI_G{:}));
                 range(2) = max(vertcat(PDAData.Data{i}.MI_G{:}));
                 range = double(range);
+                range(2) = 1900; %%% TODO: Add PIE channel range to PDA file from BurstBrowser
                 IRF = IRF(range(1):range(2)); IRF = IRF./sum(IRF);
                 PDAMeta.IRF_moments{i}(1) = sum((1:numel(IRF)).*IRF);
                 PDAMeta.IRF_moments{i}(2) = sum((1:numel(IRF)).^2.*IRF);
@@ -2492,8 +2493,7 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 %%% perpendicular decays and average the microtime
                 PDAMeta.TauG{i} = double(cellfun(@mean,PDAData.Data{i}.MI_G));
                 PDAMeta.TauG{i} = PDAMeta.TauG{i} - range(1) + 1;
-        end
-            
+            end
         end
         counter = counter + 1;
     end
@@ -3886,7 +3886,7 @@ else
         %%% lifetime-based likelihood
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
-            TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+            TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
             tau0 = 4./TACbin;
             tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
             tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
@@ -3919,7 +3919,7 @@ else
         Peps = mixPE_3states_c(PDAMeta.eps_grid{file},PE{1},PE{2},PE{3},size(PofT,1),numel(PDAMeta.eps_grid{file}),Q(1),Q(2),Q(3));
         %%% as defined in the C code:
         %%% dimensions of Peps are eps,T2,T1
-        Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),size(PofT,1),size(PofT,1));
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{file}),size(PofT,1),size(PofT,2));
         % that means: Peps(E,t2,t1) is the probability to see E when the
         % molecule was T1 = t1 in state 1, T2 = t2 in state 2 and T3 =
         % T-T1-T1 in state 3.
@@ -3931,7 +3931,7 @@ else
         %%% combination)
         
         %%% intensity-based likelihood
-        L = zeros(numel(NG),size(PofT,2),size(PofT,1)); % log likelihood
+        L = NaN(numel(NG),size(PofT,1),size(PofT,2)); % log likelihood
         intensity = true;
         if intensity
             log_P_grid = PDAMeta.P_grid{file};
@@ -3941,11 +3941,12 @@ else
                     P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
                     Lmax = max(P,[],2);
                     P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
-                    L(:,t2,t1) = P;
+                    L(:,t1,t2) = P;
                 end
             end
         end
         %%% lifetime-based likelihood
+        PDAMeta.lifetime_PDA = true;
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin; %in ns, i.e. 8 ps
@@ -3956,6 +3957,10 @@ else
             % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
             % (corresponding to number of donor photons)
             [T2,T1] = meshgrid(linspace(0,1,size(PofT,1)),linspace(0,1,size(PofT,2)));
+            % remove invalid time combinations
+            invalid = T1+T2 > 1;
+            T1(invalid) = NaN;
+            T2(invalid) = NaN;
             F1 = T1.*tau1./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
             F2 = T2.*tau2./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
             % calculate the moments, accounting for IRF
@@ -3980,10 +3985,11 @@ else
             tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),[1,size(F1,1),size(F1,2)]); % donor average delay time
             L = L + log(gampdf(tauG,alpha,beta_inv));        
         end
-        L = reshape(L,size(L,1),size(L,2)*size(L,3));
-        PofT = PofT(:)';
-        L = L + repmat(log(PofT),numel(NG),1,1);
+        %L = reshape(L,size(L,1),size(L,2)*size(L,3));
+        %PofT = PofT(:)';
+        L = L + repmat(reshape(log(PofT),1,size(PofT,1),size(PofT,2)),numel(NG),1,1);
         L(isnan(L)) = -Inf; %%% NaNs produced for "impossible" combinations of T1 and T2 (i.e. T1+T2 > 1)
+        L = reshape(L,size(L,1),size(L,2)*size(L,3));
         Lmax = max(L,[],2);
         L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PofT))),2));
     end
@@ -4017,9 +4023,9 @@ else
             PDAMeta.lifetime_PDA = true;
             if PDAMeta.lifetime_PDA
                 % get the lifetimes of the species in TAC units
-                TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+                TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
                 tau0 = 4./TACbin;
-                tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
+                tau = tau0*(1+(R0./fitpar(c,2)).^6).^(-1);            
                 % calculate the moments, accounting for IRF
                 dt1 = tau + PDAMeta.IRF_moments{file}(1);
                 % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
