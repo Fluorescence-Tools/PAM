@@ -855,7 +855,7 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor', [1 1 1],...
         'ForegroundColor', [0 0 0],...
         'Units','normalized',...
-        'String',{'Simplex','Gradient-based (lsqnonlin)','Gradient-based (fmincon)','Patternsearch','Gradient-based (global)','Simulated Annealing'},...
+        'String',{'Simplex','Gradient-based (lsqnonlin)','Gradient-based (fmincon)','Patternsearch','Gradient-based (global)','Simulated Annealing','Genetic Algorithm','Particle Swarm','Surrogate Optimization'},...
         'Value',1,...
         'FontSize',12,...
         'Position',[0.5 0.525 0.1 0.2],...
@@ -2750,6 +2750,15 @@ if ~do_global
                     case 'Simulated Annealing'
                         opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                         fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
+                    case 'Genetic Algorithm'
+                        opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                        fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                    case 'Particle Swarm'
+                        opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                        fitpar = particleswarm(fitfun,numel(fitpar),LB,UB,opts);
+                    case 'Surrogate Optimization'
+                        opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
+                        fitpar = surrogateopt(fitfun,LB,UB,opts);
                 end
             case {h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC}
                 alpha = 0.05; %95% confidence interval
@@ -2988,6 +2997,15 @@ else
                 case 'Simulated Annealing'
                     opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                     fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
+                case 'Genetic Algorithm'
+                    opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                    fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                case 'Particle Swarm'
+                    opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                    fitpar = particleswarm(fitfun,numel(fitpar),LB,UB,opts);
+                case 'Surrogate Optimization'
+                    opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
+                    fitpar = surrogateopt(fitfun,LB,UB,opts);
             end
 
             %Calculate chi^2
