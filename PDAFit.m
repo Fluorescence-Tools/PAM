@@ -2948,9 +2948,8 @@ else
             fitfun = @(x) PDAHistogramFit_Global(x,h);
         case 'MLE'
             fitfun = @(x) PDAMLEFit_Global(x,h);
-        otherwise
-            msgbox('Use Histogram Library, others dont work yet for global')
-            return
+        case 'MonteCarlo'
+            fitfun = @(x) PDAMonteCarloFit_Global(x,h);
     end
     %% Check if View_Curve was pressed
     switch obj
@@ -3004,7 +3003,7 @@ else
                         PDAMeta = rmfield(PDAMeta,'Last_logL');
                     end
                 case 'MonteCarlo'
-                    %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+%                     PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar,h);
                 otherwise
                     PDAMeta.chi2 = 0;
             end
@@ -4395,12 +4394,21 @@ for c = PDAMeta.Comp{file}
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
 end
 PDAMeta.hFit_onlyDyn{file} = zeros(size(hFit));
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+if sum(PDAMeta.Global) == 0
+    set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+end
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
-if h.SettingsTab.LiveUpdate.Value
+if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
+
+% set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+% set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+% 
+% if h.SettingsTab.LiveUpdate.Value
+%     Update_Plots([],[],5)
+% end
 tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
 
 if PDAMeta.FitInProgress == 2 %%% return the residuals instead of chi2
@@ -4421,9 +4429,9 @@ end
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % Model for Monte Carle based fitting (global) 
-function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
+function [mean_chi2] = PDAMonteCarloFit_Global(fitpar,h)
 global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
+% h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% iterate the counter
 PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
@@ -4459,12 +4467,18 @@ for i=find(PDAMeta.Active)'
     P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
 
     %%% create individual histograms
-    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
+    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P,h);
 end
 mean_chi2 = mean(PDAMeta.chi2);
 Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
 Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+if h.SettingsTab.LiveUpdate.Value
+    for i = find(PDAMeta.Active)'
+        PDAMeta.file = i;
+        Update_Plots([],[],5);
+    end
+end
 
 % Function to export the figures, figure data, and table data
 function Export_Figure(~,~)

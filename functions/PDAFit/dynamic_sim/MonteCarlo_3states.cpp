@@ -6,7 +6,6 @@
 #include <cmath>
 #include <random>
 #include <fstream>
-#include <vector>
 #include <algorithm>
 #include "time.h"
 #include "matrix.h"
@@ -28,18 +27,17 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
     double t;
     double tau;
     double prob;
-    vector<double> r(3);
-    vector<double> FRET(3);
-    vector<double> eps(3);
+    double r[3];
+    double FRET[3];
+    double eps[3];
     int BG_gr;
-    int BSD_bg;
+    double BSD_bg;
     double E;
     double totalQ;
-    vector<double> Q(3);
-    vector<int> f_i(3);
-    vector<double> fracInt(3);
-    vector<double> fracTauT(3);
-    char state_changes[] = {1,1,2,-1,0,1,-2,-1};
+    double Q[3];
+    int f_i[3] = {0,0,0};
+    double fracTauT[3] = {0,0,0};
+    char state_changes[8] = {1,1,2,-1,0,1,-2,-1};
     random_device rd{};
     mt19937 mt{rd()}; // initialize mersenne twister engine
     uniform_real_distribution<double> equal_dist(0.0,1.0);
@@ -57,6 +55,7 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
     for (n=0;n<sampling;++n){
         for (i=0;i<time_windows;++i){
             state = init(mt);
+            t = 0;
             while (t<SimTime){
                 tau = -log(equal_dist(mt)) * dwell_mean[state];
                 t += tau;
@@ -72,9 +71,11 @@ void Simulate_States(double mBG_gg, double mBG_gr, double *R, double *sigmaR, co
                     }
                 }
             }
-            t = 0;
             BG_gr = BG_gr_rnd(mt);
             BSD_bg = BSD[i] - BG_gg_rnd(mt) - BG_gr;
+            if (BSD_bg<0){
+                BSD_bg = 0;
+            }
             totalQ = Q[0]*fracTauT[0]+Q[1]*fracTauT[1]+Q[2]*fracTauT[2];
             discrete_distribution<int> distribution {Q[0]*fracTauT[0]/totalQ,
                 Q[1]*fracTauT[1]/totalQ,

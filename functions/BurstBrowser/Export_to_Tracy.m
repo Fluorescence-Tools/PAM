@@ -1,7 +1,7 @@
-function export_to_tracy(binning)
+function Export_to_Tracy(~,~,binning)
 global BurstTCSPCData BurstData BurstMeta
 file = BurstMeta.SelectedFile;
-if nargin < 1
+if nargin < 3
     binning = 1; % 1ms binning
 end
 selected = BurstData{file}.Selected;
