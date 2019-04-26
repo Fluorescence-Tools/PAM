@@ -5366,9 +5366,9 @@ switch TauFitData.BAMethod
                     
                     if do_phasor
                         if ~use_bg % no background correction
-                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan));
                         else
-                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1),fraction_bg,PhasorScat{chan});
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan),fraction_bg,PhasorScat{chan});
                         end
                         phasor{j} = ph;
                     end
