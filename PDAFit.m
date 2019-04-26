@@ -2751,7 +2751,7 @@ if ~do_global
                         opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                         fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
                     case 'Genetic Algorithm'
-                        opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                        opts = optimoptions('ga','PlotFcn',@gaplotbestf,'Display','iter');
                         fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
                     case 'Particle Swarm'
                         opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
@@ -2998,7 +2998,7 @@ else
                     opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
                     fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
                 case 'Genetic Algorithm'
-                    opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                    opts = optimoptions('ga','PlotFcn',@gaplotbestf,'Display','iter');
                     fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
                 case 'Particle Swarm'
                     opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
@@ -3376,7 +3376,7 @@ else %%% dynamic model
             DynRates(end+1,:) = ones(1,n_states);
             b = zeros(n_states,1); b(end+1) = 1;
             p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E6,p_eq,change_prob)./dT;
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
@@ -3900,7 +3900,7 @@ else
             DynRates(end+1,:) = ones(1,n_states);
             b = zeros(n_states,1); b(end+1) = 1;
             p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E6,p_eq,change_prob)./dT;
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
@@ -4166,11 +4166,7 @@ for i=find(PDAMeta.Active)'
     P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
     fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
-    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
-    
-    %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
-    
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));  
     %%% calculate individual likelihoods
     PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P,h);   
 end
