@@ -271,6 +271,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
         ax = gca;
         ax.FontSize=20;ax.LineWidth=1.0;ax.Color =[1 1 1];
+        ax.YLim = [-0.1 1.1];
         xlabel('\tau_{D,A}/\tau_{D,0}');
         ylabel('FRET Efficiency');
         set(gca,'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
@@ -290,7 +291,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             [H,x,y] = histcounts2(tauD_static,E_static,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
             H = H./max(H(:));
             plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine3);
-            patch(ax,[0,1.1,1.1,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+            patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
             mean_tauD_static(mean_tauD_static == 0) = NaN;
             %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
             plot(bin_centers',mean_tauD,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
@@ -476,14 +477,6 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
             legend('Experimental Data','Simulation','Location','northeast');
         end
-         
-        %%% add a second axis for the colorbar of the FRET efficiency
-        ax_cbar = axes('Parent',f,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
-            'Visible','off');
-        colormap(ax_cbar,autumn);
-        cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',16);
-        cbar.Position = [421   446   109    18];
-        cbar.Label.String = 'E';
 %         g_circle = linspace(0,1,1000);
 %         s_circle = sqrt(0.25-(g_circle-0.5).^2);
 %         plot(ax,g_circle,s_circle,'-','LineWidth',2,'Color',[0,0,0],'Handlevisibility','off');
