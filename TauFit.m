@@ -5189,7 +5189,7 @@ switch TauFitData.BAMethod
                 %%% for phasor, read reference for the respective channels
                 if do_phasor
                     if use_irf_as_phasor_reference
-                        PhasorRef{chan} = IRF{chan};
+                        PhasorRef{chan} = IRF{chan};                        
                         PhasorReferenceLifetime(chan) = 0;
                         %%% update the values in BurstData
                         BurstData.Phasor.PhasorReference{chan} = PhasorRef{chan};
@@ -5202,6 +5202,7 @@ switch TauFitData.BAMethod
                         PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
                         PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
                     end
+                    PhasorScat{chan} = SCATTER{chan};
                     %%% store the length of the microtime range used for
                     %%% fitting (needed to obtain the frequency omegae at a
                     %%% later stage)
@@ -5337,7 +5338,10 @@ switch TauFitData.BAMethod
             
             %% Fitting...
             %%% Prepare the fit inputs
-            lt = zeros(numel(MI),2);            
+            lt = zeros(numel(MI),2);
+            if do_phasor
+                ph = zeros(numel(MI),10);
+            end
             for chan = 1:2
                 if UserValues.TauFit.IncludeChannel(chan)
                     %%% Calculate Background fraction
@@ -5360,6 +5364,14 @@ switch TauFitData.BAMethod
                     %%% set lifetime to NaN if no signal was present
                     lt(fraction_bg == 1,chan) = NaN;
                     
+                    if do_phasor
+                        if ~use_bg % no background correction
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan));
+                        else
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan),fraction_bg,PhasorScat{chan});
+                        end
+                        phasor{j} = ph;
+                    end
                     %parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
                     %    
                     %    if fraction_bg(i) == 1
@@ -5380,16 +5392,7 @@ switch TauFitData.BAMethod
                 end
             end
             lifetime{j} = lt;
-            if do_phasor; 
-                ph = zeros(numel(MI),10);
-                if UserValues.TauFit.IncludeChannel(1)
-                    ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
-                end
-                if UserValues.TauFit.IncludeChannel(2)
-                    ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
-                end
-                phasor{j} = ph;
-            end
+            
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
@@ -5708,7 +5711,7 @@ handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Burstwise Phasor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
+function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT,fraction_bg,Scat)
 %%% Calculates the burstwise phasor components g and s,
 %%% as well as the lifetimes from phase (TauP) and modulation (TauM)
 %%% The average lifetime TauMean = (TauP+TauM)/2 is also returned.
@@ -5718,7 +5721,18 @@ function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
 %%%              Can be the IRF (Ref_LT = 0) or a reference sample such as
 %%%              donor only.
 %%%        Ref_LT - Lifetime of the reference sample in nanoseconds
+%%%        fraction_bg - The background intensity fraction estimated from
+%%%                      the background count rate and the measured 
+%%%                      signal.
+%%%        Scat - the backgorund microtime pattern (i.e. buffer
+%%%               measurement)
 global TauFitData
+
+if nargin == 3 % no bg correction
+    correct_background = false;
+else
+    correct_background = true;
+end
 
 MI_Bins = size(Mic,2); % Total number of MI bins of file
 From=1; % First MI bin to used
@@ -5765,6 +5779,16 @@ s = sum(Mic.*repmat(S,size(Mic,1),1),2)./sum(Mic,2);
 neg=find(g<0 & s<0);
 g(neg)=-g(neg);
 s(neg)=-s(neg);
+
+%%% correct background
+if correct_background
+    %%% calculate the phasor of the background microtime pattern
+    g_background = sum(Scat.*G)./sum(Scat);
+    s_background = sum(Scat.*S)./sum(Scat);
+    %%% correct g and s for background
+    g = (g - fraction_bg.*g_background)./(1-fraction_bg);
+    s = (s - fraction_bg.*s_background)./(1-fraction_bg);
+end
 
 %%% calculate lifetime values
 Fi=atan(s./g); Fi(isnan(Fi))=0;
