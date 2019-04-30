@@ -3085,9 +3085,19 @@ else
             %%% get error bars from jacobian
             PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
             fitopts = optimoptions('lsqnonlin','MaxIter',1);
+            if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
+                %%% switch fit function to Histogram Library temporarily to
+                %%% obtain estimate of confidence intervals for MCMC
+                %%% sampling
+                fitfun = @(x) PDAHistogramFit_Global(x,h);
+            end
             [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
             ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
             ci = (ci(:,2)-ci(:,1))/2; ci = ci';
+            if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
+                %%% switch fit function back
+                fitfun = @(x) PDAMLEFit_Global(x,h);
+            end
             if obj ==  h.Menu.EstimateErrorMCMC %%% additionally, refine by doing mcmc sampling
                 PDAMeta.FitInProgress = 3; %%% indicate to get loglikelihood instead chi2
                 % get parameter names in correct order
@@ -3095,6 +3105,9 @@ else
                 param_names = cellfun(@(x) x(11:end-4),param_names,'UniformOutput',false);
                 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1   
                     param_names = [param_names repmat({'sigmaF'},size(param_names,1),1)];
+                end
+                if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                    param_names = [param_names repmat({'k32','k13','k23'},size(param_names,1),1)];
                 end
                 names = param_names(1,PDAMeta.Global); 
                 if UserValues.PDA.HalfGlobal
@@ -3111,7 +3124,7 @@ else
                 proposal = ci/10; 
                 %%% Sample
                 nsamples = 1E3; spacing = 10;
-                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,f);
+                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
                 v = numel(residual)-numel(fitpar); % number of degrees of freedom
                 perc = tinv(1-alpha/2,v);
                 ci_mc = perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
@@ -3176,11 +3189,19 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         names = {'A1';'R1';'sigma1';'A2';'R2';'sigma2';'A3';'R3';'sigma3';...
             'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
     else
-        names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'A3';'R3';'sigma3';...
-            'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+        if h.SettingsTab.DynamicSystem.Value == 1
+            names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'A3';'R3';'sigma3';...
+                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+        elseif  h.SettingsTab.DynamicSystem.Value == 2
+            names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'k31';'R3';'sigma3';...
+                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+        end
     end
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         names{end+1} = 'sigma at fraction  of R';
+    end
+    if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+        names{end+1} = 'k32'; names{end+1} = 'k13'; names{end+1} = 'k23';
     end
     filenames = [];
     ConfInt_Jac = cell(sum(PDAMeta.Active),1);
@@ -3579,6 +3600,7 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = sum(log_term-hFit);
     end
     chi2 = loglikelihood;
+    PDAMeta.chi2(i) = chi2;
 end
 %Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
@@ -3614,7 +3636,8 @@ P=zeros(numel(Global),1);
 %%% Assigns global parameters
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
-    
+PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
+
 for j=1:sum(PDAMeta.Active)
     Active = find(PDAMeta.Active)';
     i = Active(j);
@@ -3645,7 +3668,7 @@ if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of 
     end 
     %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-    mean_chi2 = sum(loglikelihood);
+    mean_chi2 = sum(PDAMeta.chi2);
 end
 
 if h.SettingsTab.LiveUpdate.Value
@@ -4159,7 +4182,7 @@ P=zeros(numel(Global),1);
 %%% Assigns global parameters
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
-
+PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     %%% Sets non-fixed parameters

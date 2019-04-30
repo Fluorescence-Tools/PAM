@@ -151,7 +151,7 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     if isempty(parent_figure)
         %%% create a figure
         parent_figure = figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8],'Color',UserValues.Look.Back);
-        whitebg(parent_figure, UserValues.Look.Axes);
+        whitebg(parent_figure, UserValues.Look.Back);
     else
         handles = guidata(parent_figure);
         delete(parent_figure.Children);
