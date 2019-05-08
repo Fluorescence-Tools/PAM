@@ -280,8 +280,8 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        if filesize > 1.5E9
-            filesize = 1.5E9;
+        if filesize > 2E9
+            filesize = 2E9;
             msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
             T3Record = zeros(filesize/4,1);
             fileChunks = ceil(filesize/NoE);
@@ -323,7 +323,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection = zeros(1,length(nsync));
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
