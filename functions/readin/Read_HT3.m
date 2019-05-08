@@ -1,4 +1,4 @@
-function [MT, MI,SyncRate,Resolution,PLF] = Read_HT3(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,mode)
+function [MT, MI,SyncRate,Resolution,PLF] = Read_HT3(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,mode,Chunkwise)
 % Read-in routine for *.ht3 files recorded with HydraHarp400
 %
 % Args:
@@ -9,6 +9,8 @@ function [MT, MI,SyncRate,Resolution,PLF] = Read_HT3(FileName,NoE,ProgressAxes,P
 %   * FileNumber: Number of the file to be loaded
 %   * Numfiles: Total number of files to be read
 %   * mode: Filetype: mode=1 for *.ht3 files recorded with PicoQuant software, mode=2 for *.ht3 files recorded with Fabsurf software
+%   * Chunkwise: Chunkwise data read-in with maximium file size (so far
+%                hard coded but to be implemented into GUI)
 %
 % Returns:
 %   * MT: Cell array of macrotimes in the file for every detector
@@ -193,21 +195,25 @@ switch mode
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        if filesize > 2E9
-            filesize = 2E9;
-            msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
-            T3Record = zeros(filesize/4,1);
-            fileChunks = ceil(filesize/NoE);
-            for i = 1:fileChunks
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
             end
         else
-            T3Record = zeros(filesize/4,1);
-            fileChunks = ceil(filesize/NoE);
-            for i = 1:fileChunks-1
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
-            end
-            T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
+            T3Record = fread(fid, Inf, 'ubit32');
         end
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
@@ -284,24 +290,26 @@ switch mode
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        if filesize > 2E9
-            filesize = 2E9;
-            msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
-            T3Record = zeros(filesize/4,1);
-            fileChunks = ceil(filesize/NoE);
-            for i = 1:fileChunks
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
             end
         else
-            T3Record = zeros(filesize/4,1);
-            fileChunks = ceil(filesize/NoE);
-            for i = 1:fileChunks-1
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
-            end
-            T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
-         end
-        
+            T3Record = fread(fid, Inf, 'ubit32');
+        end
         %%% Read out Sync
         SyncRate = 1E10/T3Record(1);T3Record(1) = [];
         nRecords = numel(T3Record);
