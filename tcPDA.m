@@ -929,8 +929,8 @@ if isempty(h)
         'FontSize',10,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'Enable','off',...
-        'Visible','off',...
+        'Enable','on',...
+        'Visible','on',...
         'Callback',[]);
     
    %%% 1d pda data tab
@@ -2855,7 +2855,7 @@ P_res(isnan(P_res)) = -Inf;
 P_result = sum(P_res);
 %%% since the algorithm minimizes, it is important to minimize the negative
 %%% log likelihood, i.e. maximize the likelihood
-P_result = -P_result;
+P_result = (-1)*double(P_result);
 
 if tcPDAstruct.use_stochasticlabeling
     %%% reset N_gauss to number of populations
@@ -3470,7 +3470,7 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
         if tcPDAstruct.use_stochasticlabeling
             for i = 1:2:size(tcPDAstruct.plots.H_res_3d_individual,1)
                 temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',2*tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',(1/tcPDAstruct.fraction_stochasticlabeling)*tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
             end
         else
             for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
