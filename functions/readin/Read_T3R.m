@@ -82,7 +82,7 @@ if ~FabSurf %%% recorded with PQ software, header is in file
         Header.Board(i).SYNCLevel = fread(FileID, 1, 'int32=>int32');
         Header.Board(i).CurveOffset = fread(FileID, 1, 'int32=>int32');
         Header.Board(i).Resolution = fread(FileID, 1, 'float32=>float32');
-        Resolution = Header.Board(i).Resolution*1000; % in ps
+        Resolution = double(Header.Board(i).Resolution*1000); % in ps
     end
     % From here, the format is different from *.thd files
     Header.TTTRGlobclock = fread(FileID, 1, 'int32=>int32');

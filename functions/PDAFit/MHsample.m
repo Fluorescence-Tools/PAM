@@ -48,6 +48,7 @@ rng('shuffle')
 samples = zeros(nsamples,size(initial_parameters,1));
 samples(1,:) = initial_parameters;
 prob = zeros(nsamples,1);
+acceptance = 0;
 
 %%% evaluate the prior and the posterior at the initial position
 Posterior_old = probfun(initial_parameters);
