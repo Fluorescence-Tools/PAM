@@ -8169,12 +8169,15 @@ xlabel('time [s]');
 ylabel('normalized A/D');
 hold off
 
-figure
-hold on
-AoverDim = (AIm./DIm)./normFactor;
-imagesc(AoverDim);
-colorbar
-
+f = figure;
+im=axes(f);
+AoverDim = medfilt2(AIm./DIm./normFactor,[5,5]);
+imagesc(im, flipud(AoverDim));
+axis equal
+im.XLim= [0,size(AoverDim,2)];
+im.YLim= [0,size(AoverDim,1)];
+colormap(im, jet);
+colorbar(im)
 
 
 
