@@ -2863,9 +2863,8 @@ else
             fitfun = @(x) PDAHistogramFit_Global(x,h);
         case 'MLE'
             fitfun = @(x) PDAMLEFit_Global(x,h);
-        otherwise
-            msgbox('Use Histogram Library, others dont work yet for global')
-            return
+        case 'MonteCarlo'
+            fitfun = @(x) PDAMonteCarloFit_Global(x,h);
     end
     %% Check if View_Curve was pressed
     switch obj
@@ -2876,7 +2875,7 @@ else
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
-                    PDAMonteCarloFit_Global(fitpar);
+                    PDAMonteCarloFit_Global(fitpar,h);
                 case 'Histogram Library'
                     PDAHistogramFit_Global(fitpar,h);
             end
@@ -2919,7 +2918,7 @@ else
                         PDAMeta = rmfield(PDAMeta,'Last_logL');
                     end
                 case 'MonteCarlo'
-                    %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+%                     PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar,h);
                 otherwise
                     PDAMeta.chi2 = 0;
             end
@@ -3009,7 +3008,7 @@ else
                 proposal = ci/10; 
                 %%% Sample
                 nsamples = 1E3; spacing = 10;
-                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
+                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,f);
                 v = numel(residual)-numel(fitpar); % number of degrees of freedom
                 perc = tinv(1-alpha/2,v);
                 ci_mc = perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
@@ -3255,8 +3254,7 @@ else %%% dynamic model
             k2 = fitpar(3*2-2);
             PofT = calc_dynamic_distribution(dT,N,k1,k2);
         case 'montecarlo'
-            SimTime = dT*1E-3; % time bin in seconds
-            DynRates = 1000 * [0, fitpar(3*2-2),fitpar(3*3-2); ...
+            DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
                         fitpar(3*1-2), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0];
             % rates in Hz
@@ -3265,10 +3263,17 @@ else %%% dynamic model
             % ( 12 22 32 ... )
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
-            %%% set frequency to 100 times of the fastest timescale
-            Freq = 100*max(DynRates(:)); %1E6; % Hz
             n_states = size(DynRates,1);
-            FracT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,1E5);%sum(PDAMeta.valid{i}));
+            change_prob = cumsum(DynRates);
+            change_prob = change_prob ./ change_prob(end,:);
+            dwell_mean = 1 ./ sum(DynRates);  
+            for j = 1:n_states
+            DynRates(j,j) = -sum(DynRates(:,j));
+            end
+            DynRates(end+1,:) = ones(1,n_states);
+            b = zeros(n_states,1); b(end+1) = 1;
+            p_eq = DynRates\b;
+            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,0.5E5,p_eq,change_prob);
             % PofT describes the joint probability to see T1 and T2
             n_bins_T = 20;
             PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
@@ -3443,7 +3448,7 @@ else
     w_res(1) = 0;
     w_res(end) = 0;
 end
-        
+
 PDAMeta.w_res{i} = w_res;
 PDAMeta.hFit{i} = hFit;
 PDAMeta.chi2(i) = chi2;
@@ -3459,7 +3464,6 @@ if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
-
 if PDAMeta.FitInProgress == 2 %%% return the residuals instead of chi2
     chi2 = w_res;
 elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
@@ -3846,6 +3850,7 @@ if PDAData.timebin(file) == 0 %burstwise data was loaded
     dur = PDAData.Data{file}.Duration(PDAMeta.valid{file})*1E3;
 end
 cr = PDAMeta.crosstalk(file);
+ct = PDAMeta.crosstalk(file);
 R0 = PDAMeta.R0(file);
 de = PDAMeta.directexc(file);
 gamma = PDAMeta.gamma(file);
@@ -3915,7 +3920,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         hFit = hFit + A(j).*H_res_dummy(:,j);
     end
 else %%% dynamic model 
-    SimTime = dur/1000; % time bin in seconds
+    % time bin in seconds
     %SimSteps = BSD; %
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
@@ -3933,48 +3938,27 @@ else %%% dynamic model
                         fitpar(1,1), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0]; % rates in Hz
     end
-    %%% set frequency to 100 times of the fastest timescale
-    Freq = 100*max(DynRates(:)); %1E6; % Hz
+    %%% obtain equlibrium distribution by solving K*p_eq = 0 and sum(p_eq) = 1
     n_states = size(DynRates,1);
     R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
-    PRH = cell(sampling,5);
-    
-    % gillespie
-    SimTime_gillespie = SimTime*1000;
-    if size(BSD,2) > size(BSD,1)
-        BSD = BSD';
+    if n_states == 3
+        change_prob = cumsum(DynRates);
+        change_prob = change_prob ./ change_prob(end,:);
     end
-    for k = 1:sampling
-        %fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
-        fracTauT = dyn_sim_arbitrary_states_gillespie(DynRates,SimTime_gillespie,numel(BSD));
-        % dwell times
-        BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
-        BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
-        BSD_bg = BSD-BG_gg-BG_gr;
-        %%% brightness correction to transform fracTauT into number of
-        %%% photons, i.e. fractional intensity fracInt1
-        %%% read out brightnesses of species
-        Q = ones(1,n_states);
-        for c = 1:n_states
-            Q(c) = calc_relative_brightness(fitpar(c,2),file);
-        end
-        fracInt = zeros(size(fracTauT));
-        totalQ = sum(repmat(Q,[numel(BSD),1]).*fracTauT,2);
-        for i = 1:n_states
-            fracInt(:,i) = Q(i)*fracTauT(:,i)./totalQ;
-        end        
-        f_i = mnrnd(BSD_bg,fracInt);        
-        a_i = zeros(numel(BSD),n_states);
-        for i = 1:n_states  
-            r = normrnd(R(i),sigmaR(i),size(BSD));
-            FRET = 1./(1+(r./R0).^6);
-            eps = 1-(1+cr+(((de/(1-de)) + FRET) * gamma)./(1-FRET)).^(-1);
-            a_i(:,i) = binornd(f_i(:,i),eps);
-        end
-        PRH{k} = (sum(a_i,2) + BG_gr)./BSD;
+    dwell_mean = 1 ./ sum(DynRates./1000);
+    for i = 1:n_states
+            DynRates(i,i) = -sum(DynRates(:,i));
     end
-    hFit = histcounts(vertcat(PRH{:}),linspace(0,1,Nobins+1))./sampling; 
+    DynRates(end+1,:) = ones(1,n_states);
+    b = zeros(n_states,1); b(end+1) = 1;
+    p_eq = DynRates\b;
+    if n_states == 3
+        PRH = MonteCarlo_3states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling,change_prob);
+    else
+        PRH = MonteCarlo_2states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling);
+    end
+    hFit = histcounts(PRH,linspace(0,1,Nobins+1))./sampling;
     hFit = hFit';
 end
 
@@ -4019,12 +4003,21 @@ for c = PDAMeta.Comp{file}
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
 end
 PDAMeta.hFit_onlyDyn{file} = zeros(size(hFit));
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+if sum(PDAMeta.Global) == 0
+    set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+end
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
-if h.SettingsTab.LiveUpdate.Value
+if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
+
+% set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+% set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+% 
+% if h.SettingsTab.LiveUpdate.Value
+%     Update_Plots([],[],5)
+% end
 tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
 
 if PDAMeta.FitInProgress == 2 %%% return the residuals instead of chi2
@@ -4045,9 +4038,9 @@ end
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % Model for Monte Carle based fitting (global) 
-function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
+function [mean_chi2] = PDAMonteCarloFit_Global(fitpar,h)
 global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
+% h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% iterate the counter
 PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
@@ -4083,12 +4076,18 @@ for i=find(PDAMeta.Active)'
     P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
 
     %%% create individual histograms
-    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
+    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P,h);
 end
 mean_chi2 = mean(PDAMeta.chi2);
 Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
 Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+if h.SettingsTab.LiveUpdate.Value
+    for i = find(PDAMeta.Active)'
+        PDAMeta.file = i;
+        Update_Plots([],[],5);
+    end
+end
 
 % Function to export the figures, figure data, and table data
 function Export_Figure(~,~)

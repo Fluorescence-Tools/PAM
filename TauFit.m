@@ -18,7 +18,7 @@ end
 
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
-    Close_TauFit
+    CloseWindow(h.TauFit);
 end
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
@@ -76,7 +76,11 @@ h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
 h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
     'Callback',@Export,...
     'Separator','on');
-h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted microtime pattern',...
+h.Menu.Export_for_fFCS = uimenu(h.Menu.Export_Menu,'Label','Export for fFCS...',...
+    'Callback',[]);
+h.Menu.Export_MIPattern_Fit = uimenu(h.Menu.Export_for_fFCS,'Label','... fitted microtime pattern',...
+    'Callback',@Export);
+h.Menu.Export_MIPattern_Data = uimenu(h.Menu.Export_for_fFCS,'Label','... raw microtime pattern',...
     'Callback',@Export);
 h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
     'Callback',@Export,'Separator','on');
@@ -2517,7 +2521,7 @@ else
         return;
     end
 end
-if gcbo == h.Menu.Export_MIPattern
+if gcbo == h.Menu.Export_MIPattern_Fit
     save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
 else
     save_fix = true;
@@ -5185,7 +5189,7 @@ switch TauFitData.BAMethod
                 %%% for phasor, read reference for the respective channels
                 if do_phasor
                     if use_irf_as_phasor_reference
-                        PhasorRef{chan} = IRF{chan};
+                        PhasorRef{chan} = IRF{chan};                        
                         PhasorReferenceLifetime(chan) = 0;
                         %%% update the values in BurstData
                         BurstData.Phasor.PhasorReference{chan} = PhasorRef{chan};
@@ -5198,6 +5202,7 @@ switch TauFitData.BAMethod
                         PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
                         PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
                     end
+                    PhasorScat{chan} = SCATTER{chan};
                     %%% store the length of the microtime range used for
                     %%% fitting (needed to obtain the frequency omegae at a
                     %%% later stage)
@@ -5333,7 +5338,10 @@ switch TauFitData.BAMethod
             
             %% Fitting...
             %%% Prepare the fit inputs
-            lt = zeros(numel(MI),2);            
+            lt = zeros(numel(MI),2);
+            if do_phasor
+                ph = zeros(numel(MI),10);
+            end
             for chan = 1:2
                 if UserValues.TauFit.IncludeChannel(chan)
                     %%% Calculate Background fraction
@@ -5356,6 +5364,14 @@ switch TauFitData.BAMethod
                     %%% set lifetime to NaN if no signal was present
                     lt(fraction_bg == 1,chan) = NaN;
                     
+                    if do_phasor
+                        if ~use_bg % no background correction
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan));
+                        else
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan),fraction_bg,PhasorScat{chan});
+                        end
+                        phasor{j} = ph;
+                    end
                     %parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
                     %    
                     %    if fraction_bg(i) == 1
@@ -5376,16 +5392,7 @@ switch TauFitData.BAMethod
                 end
             end
             lifetime{j} = lt;
-            if do_phasor; 
-                ph = zeros(numel(MI),10);
-                if UserValues.TauFit.IncludeChannel(1)
-                    ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
-                end
-                if UserValues.TauFit.IncludeChannel(2)
-                    ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
-                end
-                phasor{j} = ph;
-            end
+            
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
@@ -5704,7 +5711,7 @@ handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Burstwise Phasor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
+function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT,fraction_bg,Scat)
 %%% Calculates the burstwise phasor components g and s,
 %%% as well as the lifetimes from phase (TauP) and modulation (TauM)
 %%% The average lifetime TauMean = (TauP+TauM)/2 is also returned.
@@ -5714,7 +5721,18 @@ function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
 %%%              Can be the IRF (Ref_LT = 0) or a reference sample such as
 %%%              donor only.
 %%%        Ref_LT - Lifetime of the reference sample in nanoseconds
+%%%        fraction_bg - The background intensity fraction estimated from
+%%%                      the background count rate and the measured 
+%%%                      signal.
+%%%        Scat - the backgorund microtime pattern (i.e. buffer
+%%%               measurement)
 global TauFitData
+
+if nargin == 3 % no bg correction
+    correct_background = false;
+else
+    correct_background = true;
+end
 
 MI_Bins = size(Mic,2); % Total number of MI bins of file
 From=1; % First MI bin to used
@@ -5761,6 +5779,16 @@ s = sum(Mic.*repmat(S,size(Mic,1),1),2)./sum(Mic,2);
 neg=find(g<0 & s<0);
 g(neg)=-g(neg);
 s(neg)=-s(neg);
+
+%%% correct background
+if correct_background
+    %%% calculate the phasor of the background microtime pattern
+    g_background = sum(Scat.*G)./sum(Scat);
+    s_background = sum(Scat.*S)./sum(Scat);
+    %%% correct g and s for background
+    g = (g - fraction_bg.*g_background)./(1-fraction_bg);
+    s = (s - fraction_bg.*s_background)./(1-fraction_bg);
+end
 
 %%% calculate lifetime values
 Fi=atan(s./g); Fi(isnan(Fi))=0;
@@ -6002,7 +6030,7 @@ function Export(obj,~)
 global UserValues TauFitData FileInfo BurstData
 h = guidata(findobj('Tag','TauFit'));
 switch obj
-    case h.Menu.Export_MIPattern
+    case {h.Menu.Export_MIPattern_Fit, h.Menu.Export_MIPattern_Data}
         %%% export the fitted microtime pattern for use in fFCS filter
         %%% generation
         
@@ -6035,8 +6063,12 @@ switch obj
 
                 % reconstruct mi pattern
                 mi_pattern = zeros(FileInfo.MI_Bins,1);
-                mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
@@ -6055,18 +6087,46 @@ switch obj
 
                 % reconstruct mi patterns
                 mi_pattern1 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
                 mi_pattern2 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
                 MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
+                
+                PIEchannel = PIEchannel1;
             end
             FileName = FileInfo.FileName{1};
             [~, FileName, ~] = fileparts(FileName);
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
             Path = FileInfo.Path;
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel));
+            if exist('PIEchannel2','var')
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
             
@@ -6113,10 +6173,19 @@ switch obj
             
             % reconstruct mi pattern
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
-            mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            if TauFitData.BAMethod ~= 5
-                mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-                mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            switch obj
+                case h.Menu.Export_MIPattern_Fit
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+                    end
+                case h.Menu.Export_MIPattern_Data
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
+                    end
             end
             % define output
             MIPattern = cell(0);
@@ -6125,27 +6194,30 @@ switch obj
                 MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             end
             
-            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
+            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);            
             Path = TauFitData.Path;
-        end
-        % save  
-        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
-        if all(File==0)
-            return
-        end
-        %%% previously, the microtime pattern was stored as MATLAB file
-        % save(fullfile(Path,File),'MIPattern');
-        %%% Now,it is saved as a text file for easier readability
-        %%% write header
-        fid = fopen(fullfile(Path,File),'w');
-        fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
-        %%% write detector - routing assigment        
-        fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
-        if TauFitData.BAMethod ~= 5
-            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
-        end     
-        fclose(fid);
-        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
+            if TauFitData.BAMethod ~= 5
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+        end        
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
         if strcmp(h.Result_Plot.Visible, 'on')

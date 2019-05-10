@@ -125,6 +125,9 @@ if BAMethod == 3
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'off';
+    %% Change BVA Tab
+    h.FRETpair_text.Visible = 'on';
+    h.FRETpair_Popupmenu.Visible = 'on';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
     if (numel(UserValues.BurstBrowser.CutDatabase) > 1) && ~isempty(UserValues.BurstBrowser.CutDatabase{2})
@@ -204,6 +207,9 @@ elseif BAMethod == 2
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'on';
+    %% Change BVA Tab
+    h.FRETpair_text.Visible = 'off';
+    h.FRETpair_Popupmenu.Visible = 'off';
     %% lifetime ind
     h.lifetime_ind_popupmenu.String = {'<html>E vs &tau;<sub>D(A)</sub></html>','<html>E vs &tau;<sub>A</sub></html>','<html>r<sub>D</sub> vs &tau;<sub>D(A)</sub></html>','<html>r<sub>A</sub> vs &tau;<sub>A</sub></html>'};
     %% Change CutDatabase

@@ -10,7 +10,7 @@ if nargin == 2
         h = guidata(obj);
     end
 end
-if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popupmenu])
+if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popupmenu, h.fFCS_Species3_popupmenu])
     %%% Update the lists
     file = BurstMeta.SelectedFile;
     species = BurstData{file}.SelectedSpecies;
@@ -28,10 +28,18 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
         h.fFCS_Species1_popupmenu.String = species_names;
         h.fFCS_Species1_popupmenu.Value = 1;
         h.fFCS_Species2_popupmenu.String = species_names;
+        h.fFCS_Species3_popupmenu.String = [{'-'},species_names];
         if num_species > 2
             h.fFCS_Species2_popupmenu.Value = 2;
         else
             h.fFCS_Species2_popupmenu.Value = 1;
+        end
+        if num_species > 3
+            h.fFCS_Species3_popupmenu.Enable = 'on';
+            h.fFCS_Species3_popupmenu.Value = 4;
+        else
+            h.fFCS_Species3_popupmenu.Enable = 'on';
+            h.fFCS_Species3_popupmenu.Value = 1;
         end
         h.Plot_Microtimes_button.Enable = 'on';
     else %%% Set to empty
@@ -39,6 +47,8 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
         h.fFCS_Species1_popupmenu.Value = 1;
         h.fFCS_Species2_popupmenu.String = 'Load synthetic pattern...';
         h.fFCS_Species2_popupmenu.Value = 1;
+        h.fFCS_Species3_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species3_popupmenu.Value = 1;
         h.Plot_Microtimes_button.Enable = 'off';
         h.Calc_fFCS_Filter_button.Enable = 'off';
         h.Do_fFCS_button.Enable = 'off';

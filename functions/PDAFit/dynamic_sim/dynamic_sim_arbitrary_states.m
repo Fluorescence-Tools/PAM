@@ -78,6 +78,7 @@ if size(p_eq,1) > size(p_eq,2)
 end
 % roll initial state based on equlibrium distribution
 initial_state_random = mnrnd(1,p_eq,number_of_timewindows);
+initial_state = zeros(number_of_timewindows,1);
 for i = 1:number_of_timewindows
     initial_state(i) = find(initial_state_random(i,:),1,'first')-1;
 end

@@ -293,10 +293,17 @@ else
     %%% hide image plot
     BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
     % overlay contour plots
-    colors = lines(numel(H));    
-    for i = 1:numel(H)
-        %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-        [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none'); 
+    %colors = lines(numel(H));
+    colors = [UserValues.BurstBrowser.Display.ColorLine1;...
+            UserValues.BurstBrowser.Display.ColorLine2;...
+            UserValues.BurstBrowser.Display.ColorLine3;...
+            UserValues.BurstBrowser.Display.ColorLine4;...
+            UserValues.BurstBrowser.Display.ColorLine5;...
+            UserValues.BurstBrowser.Display.ColorLine6];
+    colors = repmat(colors,[10,1]); % replicate in case there are more than 6 species selected
+    for i = numel(H):-1:1
+        level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        [C,contour_plot] = contour(xbins,ybins,H{i},'LevelList',level_list,'LineColor','none'); 
         switch UserValues.BurstBrowser.Display.ContourFill
             case 0
                 alpha = 0;
