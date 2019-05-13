@@ -8,7 +8,7 @@ LSUserValues(0);
 
 value_dummy = [1,50,2,50,2,50,2,0,0,0]';
 fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
-LB_dummy = [0,0,0,0,0,0,0,-100,-100,-100]';%[0,0,0,0,0,0,0,-Inf,-Inf,-Inf]';
+LB_dummy = [0,1,1,1,1,1,1,-100,-100,-100]';%[0,0,0,0,0,0,0,-Inf,-Inf,-Inf]';
 UB_dummy = [1,150,10,150,10,150,10,100,100,100]';%[Inf,150,10,150,10,150,10,Inf,Inf,Inf]';
 
 
@@ -1744,15 +1744,18 @@ switch (selected_tab)
                 case 'Surrogate Optimization'
                     opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
                     fitpar = surrogateopt(@(x) determine_chi2_mc_dist_3d_cor(x),LB,UB,opts);
+                    fitpar = fitpar';
                 case 'Genetic Algorithm'
                     opts = optimoptions('ga','PlotFcn',@gaplotbestf);
                     fitpar = ga(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                    fitpar = fitpar';
                 case 'Simulated Annealing'
-                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300,'PlotFcn','saplotbestf');
                     fitpar = simulannealbnd(@(x) determine_chi2_mc_dist_3d_cor(x),fitpar,LB,UB,opts);
                 case 'Particle Swarm'
-                    opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                    opts = optimoptions('particleswarm','HybridFcn',[],'Display','iter','PlotFcn','pswplotbestf');
                     fitpar = particleswarm(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),LB,UB,opts);
+                    fitpar = fitpar';
             end
          else
             tcPDAstruct.grid = 0;
@@ -1832,15 +1835,18 @@ switch (selected_tab)
                 case 'Surrogate Optimization'
                     opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
                     fitpar = surrogateopt(fitfun,LB,UB,opts);
+                    fitpar = fitpar';
                 case 'Genetic Algorithm'
                     opts = optimoptions('ga','PlotFcn',@gaplotbestf);
                     fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                    fitpar = fitpar';
                 case 'Simulated Annealing'
-                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300,'PlotFcn','saplotbestf');
                     fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
                 case 'Particle Swarm'
-                    opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                    opts = optimoptions('particleswarm','HybridFcn',[],'Display','iter','PlotFcn','pswplotbestf');
                     fitpar = particleswarm(fitfun,numel(fitpar),LB,UB,opts);
+                    fitpar = fitpar';
             end
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
             
