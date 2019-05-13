@@ -2579,7 +2579,8 @@ for j=1:N_gauss
     COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
         simga_Rbg_Rbr(j),sigma_Rbr(j).^2,simga_Rbr_Rgr(j);...
         simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
-    while any(eig(COV)< 0)
+    [~,err] = cholcov(COV,0);
+    while err ~= 0 % any(eig(COV)< 0)
         [COV] = fix_covariance_matrix(COV);
     end
     if tcPDAstruct.BrightnessCorrection
@@ -2815,7 +2816,8 @@ for j=1:N_gauss
     COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
           simga_Rbg_Rbr(j),sigma_Rbr(j).^2,simga_Rbr_Rgr(j);...
           simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
-    while any(eig(COV)< 0)
+    [~,err] = cholcov(COV,0);
+    while err ~= 0 %any(eig(COV)< 0)
        [COV] = fix_covariance_matrix(COV);
     end
     
@@ -3546,7 +3548,8 @@ for i = 1:N_gauss
     COV =[sigma_Rbg(i).^2, sigma_Rbg_Rbr(i) ,sigma_Rbg_Rgr(i);...
               sigma_Rbg_Rbr(i),sigma_Rbr(i).^2,sigma_Rbr_Rgr(i);...
               sigma_Rbg_Rgr(i),sigma_Rbr_Rgr(i),sigma_Rgr(i).^2];
-    while any(eig(COV)< 0)
+    [~,err] = cholcov(COV,0);
+    while err ~= 0 % any(eig(COV)< 0)
        [COV] = fix_covariance_matrix(COV);
     end
 
