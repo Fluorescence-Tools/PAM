@@ -676,7 +676,7 @@ if isempty(h)
     handles.FitMethod_popupmenu = uicontrol('Style','popupmenu',...
         'Units','normalized',...
         'Position',[0.25,0.96,0.3,0.03],...
-        'String',{'Simplex','Pattern Search','Gradient-based','Gradient-based (global)'},...
+        'String',{'Simplex','Pattern Search','Gradient-based','Gradient-based (global)','Surrogate Optimization','Genetic Algorithm','Simulated Annealing','Particle Swarm'},...
         'Tag','FitMethod_popupmenu',...
         'Parent',handles.tab_fit_table,...
         'FontSize',10,...
@@ -1739,6 +1739,18 @@ switch (selected_tab)
                 case 'Gradient-based'
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','PlotFcns',plotfun);%@optimplotfval_tcPDA);
                     fitpar = fmincon(@(x) determine_chi2_mc_dist_3d_cor(x), fitpar,[],[],A,b,LB,UB,[],fitopts);
+                case 'Surrogate Optimization'
+                    opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
+                    fitpar = surrogateopt(@(x) determine_chi2_mc_dist_3d_cor(x),LB,UB,opts);
+                case 'Genetic Algorithm'
+                    opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                    fitpar = ga(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                case 'Simulated Annealing'
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
+                    fitpar = simulannealbnd(@(x) determine_chi2_mc_dist_3d_cor(x),fitpar,LB,UB,opts);
+                case 'Particle Swarm'
+                    opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                    fitpar = particleswarm(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),LB,UB,opts);
             end
          else
             tcPDAstruct.grid = 0;
@@ -1815,6 +1827,18 @@ switch (selected_tab)
                     problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'lb',LB,'ub',UB,'Aeq',A,'beq',b,'options',opts);
                     gs = GlobalSearch;
                     fitpar = run(gs,problem);
+                case 'Surrogate Optimization'
+                    opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
+                    fitpar = surrogateopt(fitfun,LB,UB,opts);
+                case 'Genetic Algorithm'
+                    opts = optimoptions('ga','PlotFcn',@gaplotbestf);
+                    fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                case 'Simulated Annealing'
+                    opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300);
+                    fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
+                case 'Particle Swarm'
+                    opts = optimoptions('particleswarm','HybridFcn','patternsearch','Display','iter');
+                    fitpar = particleswarm(fitfun,numel(fitpar),LB,UB,opts);
             end
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
             
