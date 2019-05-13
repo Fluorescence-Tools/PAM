@@ -2581,7 +2581,9 @@ for j=1:N_gauss
         simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
     [~,err] = cholcov(COV,0);
     while err ~= 0 % any(eig(COV)< 0)
-        [COV] = fix_covariance_matrix(COV);
+        %COV = nearestSPD(COV);
+       [COV] = fix_covariance_matrix(COV);
+       [~,err] = cholcov(COV,0);
     end
     if tcPDAstruct.BrightnessCorrection
         BSD_BX = BSDBX_scaled{j};
@@ -2818,7 +2820,9 @@ for j=1:N_gauss
           simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
     [~,err] = cholcov(COV,0);
     while err ~= 0 %any(eig(COV)< 0)
+        %COV = nearestSPD(COV);
        [COV] = fix_covariance_matrix(COV);
+       [~,err] = cholcov(COV,0);
     end
     
     param.MU = MU;
@@ -3550,7 +3554,9 @@ for i = 1:N_gauss
               sigma_Rbg_Rgr(i),sigma_Rbr_Rgr(i),sigma_Rgr(i).^2];
     [~,err] = cholcov(COV,0);
     while err ~= 0 % any(eig(COV)< 0)
+        %COV = nearestSPD(COV);
        [COV] = fix_covariance_matrix(COV);
+       [~,err] = cholcov(COV,0);
     end
 
     %COV = sqrt(COV);
