@@ -8,8 +8,8 @@ LSUserValues(0);
 
 value_dummy = [1,50,2,50,2,50,2,0,0,0]';
 fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
-LB_dummy = [0,0,0,0,0,0,0,-Inf,-Inf,-Inf]';
-UB_dummy = [Inf,150,10,150,10,150,10,Inf,Inf,Inf]';
+LB_dummy = [0,0,0,0,0,0,0,-100,-100,-100]';%[0,0,0,0,0,0,0,-Inf,-Inf,-Inf]';
+UB_dummy = [1,150,10,150,10,150,10,100,100,100]';%[Inf,150,10,150,10,150,10,Inf,Inf,Inf]';
 
 
 for i = 1:10
