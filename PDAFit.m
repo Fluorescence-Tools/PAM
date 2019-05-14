@@ -3515,7 +3515,7 @@ else %%% dynamic model
         
         for c = PDAMeta.Comp{i}(n_states+1:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-            P_eps = (fitpar(3*c-2)./norm).*Pe;
+            P_eps = fitpar(3*c-2).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
             for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
                 hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
@@ -4088,7 +4088,7 @@ else
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
         norm = (sum(fitpar(PDAMeta.Comp{file}(n_states+1:end),1))+1);
-        fitpar(PDAMeta.Comp{file}(n_states+1:end),1) = fitpar(PDAMeta.Comp{file}(n_states+1:end),1)./norm;
+        %fitpar(PDAMeta.Comp{file}(n_states+1:end),1) = fitpar(PDAMeta.Comp{file}(n_states+1:end),1)./norm;
         
         L_static = cell(numel(PDAMeta.Comp{file}) - n_states);
         for c = PDAMeta.Comp{file}(n_states+1:end)
@@ -4136,8 +4136,8 @@ else
             L_static{c-n_states} = P;
         end
         %%% normalize amplitudes
-        fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
-        PA = [1,fitpar(PDAMeta.Comp{file}(n_states+1:end),1)]./norm;
+        %fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+        PA = [1,fitpar(PDAMeta.Comp{file}(n_states+1:end),1)']./norm;
         L = [L horzcat(L_static{:})];
         L = L + repmat(log(PA),numel(NG),1);
         Lmax = max(L,[],2);
