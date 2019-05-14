@@ -2055,10 +2055,23 @@ function UpdateFitTable(handles)
 global tcPDAstruct
 %Read the old data from table
 data = get(handles.fit_table,'Data');
-%Update fitparameter values only
+
+% get the amplitudes of the species and normalize
+Amp = zeros(tcPDAstruct.n_gauss,1);
 for i = 1:tcPDAstruct.n_gauss
-    data(((i-1)*11+1):(11*i-1),2) = mat2cell(tcPDAstruct.fitdata.param{i},ones(10,1),1);
+    Amp(i) = tcPDAstruct.fitdata.param{i}(1);
 end
+Amp = Amp./sum(Amp);
+for i = 1:tcPDAstruct.n_gauss
+     tcPDAstruct.fitdata.param{i}(1) = Amp(i);
+end
+% order species by amplitude
+[~,idx] = sort(Amp,'descend');
+%Update fitparameter values only
+for i = 1:tcPDAstruct.n_gauss    
+    data(((i-1)*11+1):(11*i-1),2) = num2cell(tcPDAstruct.fitdata.param{idx(i)});
+end
+
 set(handles.fit_table,'Data',data);
 
 if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
