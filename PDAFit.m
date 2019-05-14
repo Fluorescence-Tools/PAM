@@ -2529,10 +2529,16 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 % in principle, the following information is required:
                 % first and second moments of IRF                
                 IRF = PDAData.Data{i}.IRF_G;
-                IRF = IRF./sum(IRF);
+                %%% subtract background from IRF
+                IRF = IRF - mean(IRF(end-floor(numel(IRF)/10):end));
+                IRF(IRF<0) = 0;         
                 % consider only the PIE channel range
                 range = [PDAData.Data{i}.PIE.From(1), PDAData.Data{i}.PIE.To(1)];
-                IRF = IRF(range(1):range(2)); IRF = IRF./sum(IRF);
+                IRF = IRF(range(1):range(2));
+                % consider only part where IRF > 0.01 of max
+                IRF = IRF./max(IRF);
+                IRF(IRF < 0.01) = 0;
+                IRF = IRF./sum(IRF);
                 PDAMeta.IRF_moments{i}(1) = sum((1:numel(IRF)).*IRF);
                 PDAMeta.IRF_moments{i}(2) = sum((1:numel(IRF)).^2.*IRF);
                 PDAMeta.IRF{i} = IRF;
@@ -3830,10 +3836,10 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
             epsGR');
         P = log(P);
         %%% lifetime-based likelihood
-        PDAMeta.lifetime_PDA = true;
+        %PDAMeta.lifetime_PDA = true;
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
-            TACbin = 80/(2*4096); %in ns, i.e. 8 ps
+            TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
             tau0 = 4./TACbin;
             tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
             % calculate the moments, accounting for IRF
@@ -3876,7 +3882,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
     %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
     %%% Reset these values to -Inf
-    L(isnan(L)) = -Inf;
+    L(isnan(L)) = 0; %-Inf;
     L(NG == 0) = 0; % zero donor photons produce -Inf, reset to zero;
     logL = sum(L);
     %%% since the algorithm minimizes, it is important to minimize the negative
@@ -4149,7 +4155,7 @@ else
         L = L + log(PN_scaled{j}(NG + NF));
     end
     %%% Treat case when all burst produced zero probability
-    L(isnan(L)) = -Inf;
+    L(isnan(L)) = 0;
     L(NG == 0) = 0; % zero donor photons produce -Inf, reset to zero;
     logL = sum(L);
     %%% since the algorithm minimizes, it is important to minimize the negative
