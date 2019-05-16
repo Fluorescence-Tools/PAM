@@ -1468,13 +1468,13 @@ switch mode
             if strcmp(PDAData.Type{i},'Burst')
                 %%% find valid bins (chosen by thresholds min/max and stoichiometry)
                 StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
-                valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... %min photon number
-                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... %max photon number
-                    ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                    ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+                valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) >= str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... %min photon number
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) <= str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... %max photon number
+                    ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                    ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
             else
                 valid = true(size(PDAData.Data{i}.NF));
-                valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String); % max photons
+                valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) <= str2double(h.SettingsTab.NumberOfPhotMax_Edit.String); % max photons
             end
             %%% Calculate proximity ratio histogram
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
@@ -2248,8 +2248,8 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
             StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
             PDAMeta.valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
                 ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... % max photon number
-                ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+                ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
         else
             %PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
             PDAMeta.valid{i} = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
@@ -3818,6 +3818,9 @@ NF = PDAData.Data{file}.NF(PDAMeta.valid{file});
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
 
+anisotropy_correction = true; % correct anisotropy?
+r0 = 0.38;
+rho = 3.2;
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     L = cell(5,1); %%% Likelihood per Gauss
     for j = PDAMeta.Comp{file}
@@ -3830,24 +3833,29 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
 
         %%% Calculate the vector of likelihood values
-        P = eval_prob_2c_bg(NG,NF,...
-            PDAMeta.NBG{file},PDAMeta.NBR{file},...
-            PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
-            epsGR');
-        P = log(P);
+        intensity = true;
+        if intensity
+            P = eval_prob_2c_bg(NG,NF,...
+                PDAMeta.NBG{file},PDAMeta.NBR{file},...
+                PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
+                epsGR');
+            P = log(P);
+        else
+            P = zeros(size(NG));
+        end
         %%% lifetime-based likelihood
         %PDAMeta.lifetime_PDA = true;
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
-            tau0 = 4./TACbin;
+            tau0 = 4/TACbin;
             tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
-            % calculate the moments, accounting for IRF
-            dt1 = tau + PDAMeta.IRF_moments{file}(1);
-            % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
-            % calculate parameters of the gamma distribution
-            % E[X^2] of exponential is 2*tau
-            dt2 = 2*tau.^2+PDAMeta.IRF_moments{file}(2)+2*tau*PDAMeta.IRF_moments{file}(1);
+            if anisotropy_correction
+                % correct for anisotropy
+                tau = lifetime_correction_anisotropy(tau,r0,rho/TACbin); % r0 and rho in TACbins
+            end
+            % correct for trunctation of exponential distribution
+            [dt1,dt2] = lifetime_correction_truncation(tau,file);           
             % calculate mean and variance
             mean_t = dt1;        
             var_t = repmat((dt2-mean_t.^2),numel(NG),1)./NG; % variance scales with number of photons
@@ -3982,19 +3990,27 @@ else
             TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
             tau0 = 4./TACbin;
             tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
-            tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
+            tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1); 
             % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
             % (corresponding to number of donor photons)
             T1 = linspace(0,1,numel(PofT));
             F1 = T1.*tau1./(T1.*tau1+(1-T1).*tau2);
+            if anisotropy_correction
+                % correct for anisotropy
+                tau1 = lifetime_correction_anisotropy(tau1,r0,rho/TACbin); % r0 and rho in TACbins
+                tau2 = lifetime_correction_anisotropy(tau2,r0,rho/TACbin); % r0 and rho in TACbins
+            end
+            % correct for trunctation of exponential distribution
+            [dt1_1,dt2_1] = lifetime_correction_truncation(tau1,file);  
+            [dt1_2,dt2_2] = lifetime_correction_truncation(tau2,file);
             % calculate the moments, accounting for IRF
-            dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
-            dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
+            %dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
+            %dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
             % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
             % calculate parameters of the gamma distribution
             % E[X^2] of exponential is 2*tau
-            dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
-            dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
+            %dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
+            %dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
             % calculate mean and variance
             mean_t = F1.*dt1_1+(1-F1).*dt1_2;        
             var_t = repmat((F1.*dt2_1+(1-F1).*dt2_2-mean_t.^2),numel(NG),1)./repmat(NG,1,numel(F1)); % variance scales with number of photons
@@ -4046,7 +4062,7 @@ else
             tau0 = 4./TACbin;
             tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
             tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
-            tau3 = tau0*(1+(R0./fitpar(3,2)).^6).^(-1);
+            tau3 = tau0*(1+(R0./fitpar(3,2)).^6).^(-1);            
             % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
             % (corresponding to number of donor photons)
             [T2,T1] = meshgrid(linspace(0,1,size(PofT,1)),linspace(0,1,size(PofT,2)));
@@ -4056,16 +4072,26 @@ else
             T2(invalid) = NaN;
             F1 = T1.*tau1./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
             F2 = T2.*tau2./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
+            if anisotropy_correction
+                % correct for anisotropy
+                tau1 = lifetime_correction_anisotropy(tau1,r0,rho/TACbin); % r0 and rho in TACbins
+                tau2 = lifetime_correction_anisotropy(tau2,r0,rho/TACbin); % r0 and rho in TACbins
+                tau3 = lifetime_correction_anisotropy(tau3,r0,rho/TACbin); % r0 and rho in TACbins
+            end
+            % correct for trunctation of exponential distribution
+            [dt1_1,dt2_1] = lifetime_correction_truncation(tau1,file);  
+            [dt1_2,dt2_2] = lifetime_correction_truncation(tau2,file);
+            [dt1_3,dt2_3] = lifetime_correction_truncation(tau3,file);
             % calculate the moments, accounting for IRF
-            dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
-            dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
-            dt1_3 = tau3 + PDAMeta.IRF_moments{file}(1);
+            %dt1_1 = tau1 + PDAMeta.IRF_moments{file}(1);
+            %dt1_2 = tau2 + PDAMeta.IRF_moments{file}(1);
+            %dt1_3 = tau3 + PDAMeta.IRF_moments{file}(1);
             % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
             % calculate parameters of the gamma distribution
             % E[X^2] of exponential is 2*tau
-            dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
-            dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
-            dt2_3 = 2*tau3.^2+PDAMeta.IRF_moments{file}(2)+2*tau3*PDAMeta.IRF_moments{file}(1);
+            %dt2_1 = 2*tau1.^2+PDAMeta.IRF_moments{file}(2)+2*tau1*PDAMeta.IRF_moments{file}(1);
+            %dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
+            %dt2_3 = 2*tau3.^2+PDAMeta.IRF_moments{file}(2)+2*tau3*PDAMeta.IRF_moments{file}(1);
             % calculate mean and variance
             mean_t = F1.*dt1_1+F2.*dt1_2+(1-F1-F2).*dt1_3;
             v = (F1.*dt2_1+F2.*dt2_2+(1-F1-F2).*dt2_3-mean_t.^2);
@@ -4118,13 +4144,19 @@ else
                 % get the lifetimes of the species in TAC units
                 TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
                 tau0 = 4./TACbin;
-                tau = tau0*(1+(R0./fitpar(c,2)).^6).^(-1);            
+                tau = tau0*(1+(R0./fitpar(c,2)).^6).^(-1);
+                if anisotropy_correction
+                    % correct for anisotropy
+                    tau = lifetime_correction_anisotropy(tau,r0,rho/TACbin); % r0 and rho in TACbins
+                end
+                % correct for trunctation of exponential distribution
+                [dt1,dt2] = lifetime_correction_truncation(tau,file);
                 % calculate the moments, accounting for IRF
-                dt1 = tau + PDAMeta.IRF_moments{file}(1);
+                %dt1 = tau + PDAMeta.IRF_moments{file}(1);
                 % second moment is E[(X+Y)^2] = E[X^2]+E[Y^2]+2*E[X]*E[Y];
                 % calculate parameters of the gamma distribution
                 % E[X^2] of exponential is 2*tau
-                dt2 = 2*tau.^2+PDAMeta.IRF_moments{file}(2)+2*tau*PDAMeta.IRF_moments{file}(1);
+                %dt2 = 2*tau.^2+PDAMeta.IRF_moments{file}(2)+2*tau*PDAMeta.IRF_moments{file}(1);
                 % calculate mean and variance
                 mean_t = dt1;        
                 var_t = repmat((dt2-mean_t.^2),numel(NG),1)./NG; % variance scales with number of photons
