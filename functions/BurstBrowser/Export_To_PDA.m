@@ -113,7 +113,7 @@ for i = 1:numel(files)
                 
                 if h.PDA_ExportLifetime.Value
                     PDA.MI_GP = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
-                    PDA.MI_GS = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
+                    PDA.MI_GS = cellfun(@(x,y) y(x==2),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
                     PDA.MI_G = cellfun(@(x,y) [x;y],PDA.MI_GP,PDA.MI_GS,'UniformOutput',false);
                     PDA.IRF_GP = BurstData{file}.IRF{1};
                     PDA.IRF_GS = BurstData{file}.IRF{2};
