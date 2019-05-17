@@ -2736,7 +2736,7 @@ if ~do_global
                 
                 switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                     case 'Simplex'
-                        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
+                        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfval);
                         fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
                     case 'Gradient-based (lsqnonlin)'
                         PDAMeta.FitInProgress = 2; % indicate that we want a vector of residuals, instead of chi2, and that we only pass non-fixed parameters
@@ -2983,7 +2983,7 @@ else
             %% Do Fit
             switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                 case 'Simplex'
-                    fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
+                    fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfval);
                     fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
                 case 'Gradient-based (lsqnonlin)'
                     PDAMeta.FitInProgress = 2; % indicate that we want a vector of residuals, instead of chi2, and that we only pass non-fixed parameters
