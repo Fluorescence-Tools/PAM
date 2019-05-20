@@ -210,7 +210,7 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
 end
 % clear patches
 if numel(h.axes_EvsTauRR.Children) > 8
-    delete(h.axes_EvsTauRR.Children(1:end-8));
+    delete(h.axes_EvsTauRR.Children(1:end-3));
 end
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
     BurstMeta.Plots.EvsTauRR(2).Visible = 'off';
