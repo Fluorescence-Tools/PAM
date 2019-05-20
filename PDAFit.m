@@ -2030,7 +2030,7 @@ switch mode
                     'Visible', 'on',...
                     'YData', ydatafitind);
                 %%% donor only plot (plot #7)
-                if PDAMeta.FitParams(i,16) > 0 %%% donor only existent
+                if PDAMeta.FitParams(i,19) > 0 %%% donor only existent
                     if h.SettingsTab.OuterBins_Fix.Value
                         % do not display or take into account during fitting, the
                         % outer bins of the histogram.
