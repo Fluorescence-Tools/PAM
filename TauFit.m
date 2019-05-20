@@ -871,7 +871,7 @@ if strcmp(method,'ensemble')
     end
     %%% Popup Menu for Fit Method Selection
     h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-    'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
     'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
     %%% Button for loading the selected PIE Channels
@@ -1050,7 +1050,7 @@ if exist('bh','var')
             'FontSize',10);
         %%% Popup Menu for Fit Method Selection
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-            'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
@@ -3304,6 +3304,105 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{6};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+            case 'Two Distributions plus Donor only'
+                %%% Parameter:
+                %%% Center R1
+                %%% sigmaR1
+                %%% Center R2
+                %%% sigmaR2
+                %%% Fraction 1
+                %%% Fraction D only
+                %%% Scatter
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime
+                
+                %%% Convert Lifetimes
+                x0(10) = x0(10)/TauFitData.TACChannelWidth;
+                lb(10) = lb(10)/TauFitData.TACChannelWidth;
+                ub(10) = ub(10)/TauFitData.TACChannelWidth;
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
+                end
+                
+                FitFun = fitfun_2dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(26) = fix(3);
+                UserValues.TauFit.FitFix{chan}(27) = fix(4);
+                UserValues.TauFit.FitFix{chan}(5) = fix(5);
+                UserValues.TauFit.FitFix{chan}(23) = fix(6);
+                UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(13) = fix(9);
+                UserValues.TauFit.FitFix{chan}(14) = fix(10);
+                UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                end
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(26) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(27) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
+                UserValues.TauFit.IRFShift{chan} = FitResult{11};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -5869,11 +5968,12 @@ Parameters{4} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Tau4 [ns]','Fraction 1','F
 Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{8} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{10} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{9} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -5902,6 +6002,8 @@ sigR = UserValues.TauFit.FitParams{chan}(22);
 FD0 = UserValues.TauFit.FitParams{chan}(23);
 rinf2 = UserValues.TauFit.FitParams{chan}(24);
 beta = UserValues.TauFit.FitParams{chan}(25);
+R2 = UserValues.TauFit.FitParams{chan}(26);
+sigR2 = UserValues.TauFit.FitParams{chan}(27);
 
 tau1f = UserValues.TauFit.FitFix{chan}(1);
 tau2f = UserValues.TauFit.FitFix{chan}(2);
@@ -5928,6 +6030,8 @@ sigRf = UserValues.TauFit.FitFix{chan}(22);
 FD0f = UserValues.TauFit.FitFix{chan}(23);
 rinf2f = UserValues.TauFit.FitFix{chan}(24);
 betaf = UserValues.TauFit.FitFix{chan}(25);
+R2f = UserValues.TauFit.FitFix{chan}(26);
+sigR2f = UserValues.TauFit.FitFix{chan}(27);
 
 StartPar = cell(7,1);
 StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
@@ -5937,15 +6041,16 @@ StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau
 StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
 StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
 StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
-StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
+StartPar{9} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{11} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 startpar = StartPar{model};
 names = Parameters{model};
