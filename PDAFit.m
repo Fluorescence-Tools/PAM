@@ -1845,7 +1845,7 @@ switch mode
                     'YData', ydatafitind./sum(ydatafit));
             end
             %%% donor only plot (plot #7)
-            if PDAMeta.FitParams(i,16) > 0 %%% donor only existent
+            if PDAMeta.FitParams(i,19) > 0 %%% donor only existent
                 if h.SettingsTab.OuterBins_Fix.Value
                     % do not display or take into account during fitting, the
                     % outer bins of the histogram.
@@ -2577,7 +2577,7 @@ Comp = cell(numel(PDAData.FileName));
 for i = find(PDAMeta.Active)'
     comp = [];
     % the used gaussian fit components
-    for c = 1:5
+    for c = 1:6
         if PDAMeta.Fixed(i,3*c-2)==false || PDAMeta.FitParams(i,3*c-2)~=0
             % Amp ~= fixed || Amp ~= 0
             comp = [comp c];
@@ -3335,7 +3335,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
 end
 
 %%% create individual histograms
-hFit_Ind = cell(5,1);
+hFit_Ind = cell(6,1);
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% do not normalize Amplitudes; user can do this himself if he wants
     % fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
@@ -3795,7 +3795,7 @@ gamma = PDAMeta.gamma(file);
 if h.SettingsTab.Use_Brightness_Corr.Value
         %%% If brightness correction is to be performed, determine the relative
         %%% brightness based on current distance and correction factors
-        PN_scaled = cell(5,1);
+        PN_scaled = cell(6,1);
         for c = PDAMeta.Comp{file}
             Qr = calc_relative_brightness(fitpar(c,2),file);
             %%% Rescale the PN;
@@ -3822,7 +3822,7 @@ anisotropy_correction = true; % correct anisotropy?
 r0 = 0.38;
 rho = 3.2;
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-    L = cell(5,1); %%% Likelihood per Gauss
+    L = cell(6,1); %%% Likelihood per Gauss
     for j = PDAMeta.Comp{file}
         %%% define Gaussian distribution of distances
         xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
@@ -4326,7 +4326,7 @@ sampling =str2double(h.SettingsTab.OverSampling_Edit.String);
 if h.SettingsTab.Use_Brightness_Corr.Value
         %%% If brightness correction is to be performed, determine the relative
         %%% brightness based on current distance and correction factors
-        BSD_scaled = cell(5,1);
+        BSD_scaled = cell(6,1);
         for c = PDAMeta.Comp{file}
             Qr = calc_relative_brightness(fitpar(c,2),file);
             %%% Rescale the PN;
@@ -4453,7 +4453,7 @@ else
     w_res(1) = 0;
     w_res(end) = 0;
 end
-hFit_Ind = cell(5,1);
+hFit_Ind = cell(6,1);
 for j = PDAMeta.Comp{file}
     if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
@@ -4819,9 +4819,9 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.FitTab.Table.CellEditCallback=[];
         %%% Column namges & widths
-        Columns=cell(50,1);
+        Columns=cell(69,1);
         Columns{1}='Active';
-        for i=1:5
+        for i=1:6
             Columns{9*i-7}=['<HTML><b> A<sub>' num2str(i) '</sub></b>'];
             Columns{9*i-6}='F';
             Columns{9*i-5}='G';
@@ -4832,9 +4832,9 @@ switch mode
             Columns{9*i}='F';
             Columns{9*i+1}='G';
         end
-        Columns{47} = '<HTML><b>D<sub>only</sub></b>';
-        Columns{48} = 'F';
-        Columns{49} = 'G';
+        Columns{56} = '<HTML><b>D<sub>only</sub></b>';
+        Columns{57} = 'F';
+        Columns{58} = 'G';
         Columns{end}='<html><b>&chi;<sup>2</sup><sub>red.</sub></b></html>';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(2:3:end-3)=40;
@@ -4863,7 +4863,7 @@ switch mode
         % put in data if it exists
         %Data(1:end-3,9:3:end)=deal(num2cell(PDAData.FitTable)');
         % fill in the all row
-        tmp = [1; 50; 5; 1; 50; 5; 0; 50; 5; 0; 50; 5; 0; 50; 5; 0];
+        tmp = [1; 50; 5; 1; 50; 5; 0; 50; 5; 0; 50; 5; 0; 50; 5; 0; 50; 5; 0];
         Data(end-2,2:3:end-3)=deal(num2cell(tmp)');
         % fill in boundaries
         Data(end-1,2:3:end)=deal({0});
@@ -4918,9 +4918,17 @@ switch mode
                 dummy(50) = PDAData.FitTable{i}(end);
                 PDAData.FitTable{i} = dummy;
             end
+            if (numel(PDAData.FitTable{i}) ~= 59) %%% before addition of sixth species
+                dummy = cell(59,1);
+                dummy(1:46) = PDAData.FitTable{i}(1:46);
+                dummy(47:55) = {'0',true,false,'50',true,false,'5',true,false};
+                dummy(56:58) = PDAData.FitTable{i}(47:49);
+                dummy(59) = PDAData.FitTable{i}(end);
+                PDAData.FitTable{i} = dummy;
+            end
             Data(i,:) = PDAData.FitTable{i};
         end
-        for i = 1:15 % all fittable parameters
+        for i = 1:18 % all fittable parameters
             if all(cell2mat(Data(1:end-3,3*i+1)))
                 % this parameter is global for all files
                 % so make the ALL row also global
