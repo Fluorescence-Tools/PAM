@@ -2236,7 +2236,7 @@ end
     
 %%% Read fit settings and store in UserValues
 %% Prepare Fit Inputs
-if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
+if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
     if isfield(PDAMeta,'P')
@@ -3298,7 +3298,7 @@ if ~PDAMeta.FitInProgress
 end
 
 
-if (PDAMeta.FitInProgress == 2) && sum(PDAMeta.Global) == 0 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+if (PDAMeta.FitInProgress == 2) && ((sum(PDAMeta.Global) == 0) || (sum(PDAMeta.Active) == 1)) %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(i,:);
