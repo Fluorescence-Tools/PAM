@@ -121,6 +121,7 @@ UpdateCutTable(h);
 UpdateCuts();
 Update_fFCS_GUI([],[],h);
 Update_ParameterList([],[],h);
+UpdateBVATab([],[],h);
 
 %%% Update Plots
 %%% To speed up, find out which tab is visible and only update the respective tab
