@@ -139,9 +139,9 @@ else
         case h.Rsigma3st_edit
             UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static;
-        case h.BVA_Nstates_Popupmenu
-            UserValues.BurstBrowser.Settings.BVA_Nstates = h.BVA_Nstates_Popupmenu.Value+1; 
-            switch UserValues.BurstBrowser.Settings.BVA_Nstates
+        case h.DynamicStates_Popupmenu
+            UserValues.BurstBrowser.Settings.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_DynamicStates
                 case 2
                     h.KineticRates_table3.Visible = 'off';
                     h.KineticRates_table2.Visible = 'on';
@@ -150,11 +150,6 @@ else
                     h.Rstate3_edit.Visible = 'off';
                     h.Rsigma3_text.Visible = 'off';
                     h.Rsigma3_edit.Visible = 'off';
-                    h.state3st_text.Visible = 'off';
-                    h.Rstate3st_text.Visible = 'off';
-                    h.Rstate3st_edit.Visible = 'off';
-                    h.Rsigma3st_text.Visible = 'off';
-                    h.Rsigma3st_edit.Visible = 'off';
                 case 3
                     h.KineticRates_table2.Visible = 'off';
                     h.KineticRates_table3.Visible = 'on';
@@ -163,6 +158,17 @@ else
                     h.Rstate3_edit.Visible = 'on';
                     h.Rsigma3_text.Visible = 'on';
                     h.Rsigma3_edit.Visible = 'on';
+            end
+        case h.StaticStates_Popupmenu
+            UserValues.BurstBrowser.Settings.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_StaticStates
+                case 2
+                    h.state3st_text.Visible = 'off';
+                    h.Rstate3st_text.Visible = 'off';
+                    h.Rstate3st_edit.Visible = 'off';
+                    h.Rsigma3st_text.Visible = 'off';
+                    h.Rsigma3st_edit.Visible = 'off';
+                case 3
                     h.state3st_text.Visible = 'on';
                     h.Rstate3st_text.Visible = 'on';
                     h.Rstate3st_edit.Visible = 'on';

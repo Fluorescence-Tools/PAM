@@ -2239,12 +2239,19 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.BVA_Rsigma3_static = S.BurstBrowser.Settings.BVA_Rsigma3_static;  
     
-    %%% Check, if BurstBrowser.Settings.BVA_Nstates subfield exists
-    if ~isfield(S.BurstBrowser.Settings,'BVA_Nstates')
-        S.BurstBrowser.Settings.BVA_Nstates=2;
-        disp('UserValues.BurstBrowser.Settings.Nstates was incomplete');
+    %%% Check, if BurstBrowser.Settings.BVA_DynamicStates subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_DynamicStates')
+        S.BurstBrowser.Settings.BVA_DynamicStates=2;
+        disp('UserValues.BurstBrowser.Settings.BVA_DynamicStates was incomplete');
     end
-    P.BurstBrowser.Settings.BVA_Nstates = S.BurstBrowser.Settings.BVA_Nstates;
+    P.BurstBrowser.Settings.BVA_DynamicStates = S.BurstBrowser.Settings.BVA_DynamicStates;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_StaticStates subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_StaticStates')
+        S.BurstBrowser.Settings.BVA_StaticStates=2;
+        disp('UserValues.BurstBrowser.Settings.BVA_StaticStates was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_StaticStates = S.BurstBrowser.Settings.BVA_StaticStates;
     
     %%% Check, if BurstBrowser.Settings.BVA_KineticRatesTable2 subfield exists
     if ~isfield(S.BurstBrowser.Settings,'BVA_KineticRatesTable2')
