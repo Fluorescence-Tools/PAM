@@ -83,7 +83,7 @@ for i=1:numel(FileName)
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-    [MT, MI, SyncRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),5E8,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2,h.MT.Use_Chunkwise_Read_In.Value);
+    [MT, MI, SyncRate,Resolution,PLF] = Read_HT3_prot(fullfile(Path,FileName{i}),5E7,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2,h.MT.Use_Chunkwise_Read_In.Value);
     
     if ~isMFD %%% imagetime corresponds to measurement time
         ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);

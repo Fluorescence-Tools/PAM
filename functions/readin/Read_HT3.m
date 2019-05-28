@@ -288,50 +288,79 @@ switch mode
         %%% Rest containst Photon Information
         Resolution = 16;
         T3WRAPAROUND=1024;
-        
-        Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         if Chunkwise
-            if filesize > 2E9
-                filesize = 2E9;
-                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
-                T3Record = zeros(filesize/4,1);
+            if filesize > 1E9
+                filesize = 1E9;
+                warn = msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+%                 T3Record = zeros(filesize/4,1);
+                nsync = zeros(filesize/4-1,1);
+                dtime = zeros(filesize/4-1,1);
+                channel = zeros(filesize/4-1,1);
+                special = zeros(filesize/4-1,1);
                 fileChunks = ceil(filesize/NoE);
                 for i = 1:fileChunks
-                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                    Progress(i/fileChunks*(0.5/NumFiles),ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+                    T3Record = fread(fid, NoE/4, 'ubit32');
+                    nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                    dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                    %   the dtime unit depends on "Resolution" that can be obtained from header
+                    channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                    special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    clear T3Record     % all 32 bits:
                 end
+                delete(warn);
             else
-                T3Record = zeros(filesize/4,1);
+                nsync = zeros(filesize/4-1,1);
+                dtime = zeros(filesize/4-1,1);
+                channel = zeros(filesize/4-1,1);
+                special = zeros(filesize/4-1,1);
                 fileChunks = ceil(filesize/NoE);
                 for i = 1:fileChunks-1
-                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                    Progress(i/fileChunks*(0.5/NumFiles),ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+                    T3Record = fread(fid, NoE/4, 'ubit32');
+                    nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                    dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                    %   the dtime unit depends on "Resolution" that can be obtained from header
+                    channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                    special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
                 end
-                T3Record(end-mod(filesize/4,NoE/4)+1:end) = fread(fid, NoE/4, 'ubit32');
+                T3Record = fread(fid, NoE/4, 'ubit32');
+                Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+                nsync(end-mod(filesize/4-1,NoE/4)+1:end)= int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                dtime(end-mod(filesize/4-1,NoE/4)+1:end) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                %   the dtime unit depends on "Resolution" that can be obtained from header
+                channel(end-mod(filesize/4-1,NoE/4)+1:end) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                special(end-mod(filesize/4-1,NoE/4)+1:end) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                clear T3Record
             end
         else
+            Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+            
             T3Record = fread(fid, Inf, 'ubit32');
+            % end
+            % nRecords = numel(T3Record);
+            
+            Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+            
+            nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+            
+            Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+            
+            dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+            %   the dtime unit depends on "Resolution" that can be obtained from header
+            
+            Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+            
+            channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+            
+            Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+            
+            special = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+            
+            clear T3Record
         end
-        %%% Read out Sync
-        SyncRate = 1E10/T3Record(1);T3Record(1) = [];
-        nRecords = numel(T3Record);
-        
-        Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits:
-        
-        Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
-        %   the dtime unit depends on "Resolution" that can be obtained from header
-        
-        Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
-        
-        Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        special = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
-        
-        clear T3Record
+        toc
+        nRecords = length(nsync);
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
