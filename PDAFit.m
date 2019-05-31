@@ -2660,12 +2660,15 @@ if ~do_global
             rates = [rates(2,3),rates(3,1),rates(3,2)];
             fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
             fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-            LB_rates = zeros(1,3); UB_rates = Inf(1,3);
+            LB_rates = zeros(1,3); UB_rates = 25*ones(1,3); % fastest rate to consider
             LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
             fitpar = [fitpar, rates];
             fixed = [fixed,fixed_rates];
             LB = [LB,LB_rates];
-            UB = [UB,UB_rates];            
+            UB = [UB,UB_rates];
+            % also set the upper boundaries for the rates from the main
+            % table to fastest allowed rate constant
+            UB([1,4,7]) = 25;
         end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
@@ -2746,7 +2749,7 @@ if ~do_global
                         fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
                         fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                     case 'Patternsearch'
-                        opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
+                        opts = optimoptions('patternsearch','Cache','off','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel',true,'UseCompletePoll',true,'UseVectorized',false);
                         fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
                     case 'Gradient-based (global)'
                         opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter');%,'PlotFcns',@optimplotfvalPDA);
@@ -4045,15 +4048,37 @@ else
         if intensity
             log_P_grid = PDAMeta.P_grid{file};
             log_Peps = log(Peps);
-            for t1 = 1:size(PofT,1)
-                for t2 = 1:(size(PofT,2)-t1+1)
-                    P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
-                    Lmax = max(P,[],2);
-                    P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
-                    L(:,t1,t2) = P;
+            parallel = false;
+            if ~parallel
+                for t1 = 1:size(PofT,1)
+                    for t2 = 1:(size(PofT,2)-t1+1)
+                        P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
+                        Lmax = max(P,[],2);
+                        P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
+                        L(:,t1,t2) = P;
+                    end
+                end
+            else
+                parfor t1 = 1:size(PofT,1)
+                    L_dummy = NaN(numel(NG),size(PofT,2));
+                    for t2 = 1:(size(PofT,2)-t1+1)
+                        P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
+                        Lmax = max(P,[],2);
+                        P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
+                        L_dummy(:,t2) = P;
+                    end
+                    L(:,t1,:) = L_dummy;
                 end
             end
         end
+        %%% C function (also slow, additionally the indexing is not correct yet)
+        %L = calculate_likelihood_3states(log_P_grid,log_Peps,size(PofT,1),size(PofT,2),numel(NG),size(log_Peps,1));
+        %L = reshape(L,[numel(NG),size(PofT,1),size(PofT,2)]);
+        %%% matrix implementation (even slower than loop)
+        % L = repmat(log_P_grid,[1,1,20,20]) + repmat(shiftdim(permute(log_Peps,[1,3,2]),-1),numel(NG),1);
+        % Lmax = max(L,[],2);
+        % L = Lmax + log(sum(exp(L-repmat(Lmax,[1,size(L,2),1,1])),2));
+        % L = squeeze(L);        
         %%% lifetime-based likelihood
         PDAMeta.lifetime_PDA = true;
         if PDAMeta.lifetime_PDA
@@ -4193,6 +4218,12 @@ else
     %%% since the algorithm minimizes, it is important to minimize the negative
     %%% log likelihood, i.e. maximize the likelihood
     logL = -logL;
+    % for extreme values, all elements are NaN and the likelihood evaluates
+    % to 0, but should be Inf instead. Otherwise, the algorithm thinks this
+    % is a good point.
+    if logL == 0
+        logL = Inf;
+    end
 end
 
 % model for MLE fitting (global)
@@ -4819,7 +4850,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.FitTab.Table.CellEditCallback=[];
         %%% Column namges & widths
-        Columns=cell(69,1);
+        Columns=cell(59,1);
         Columns{1}='Active';
         for i=1:6
             Columns{9*i-7}=['<HTML><b> A<sub>' num2str(i) '</sub></b>'];
