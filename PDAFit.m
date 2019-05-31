@@ -3129,8 +3129,8 @@ else
                 rates{3,1} = rates_state3(2);
                 rates{3,3} = rates_state3(3);
                 %%% assign k12 and k21 as well to table
-                rates{1,3} = PDAMeta.FitParams(1,1);
-                rates{2,1} = PDAMeta.FitParams(1,4);
+                rates{2,1} = PDAMeta.FitParams(1,1);
+                rates{1,3} = PDAMeta.FitParams(1,4);
                 rates{1,5} = PDAMeta.FitParams(1,7);
                 h.KineticRates_table.Data = rates;
             end
