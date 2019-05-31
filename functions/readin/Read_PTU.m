@@ -1,8 +1,9 @@
-function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,Chunkwise)
 
 %%% Input parameters:
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
+%%% Chunkwise: Data read-in in consecutive chunks and maximum Data limit
 fid=fopen(FileName,'r');
 fseek(fid,0,1);
 filesize = ftell(fid);
@@ -247,6 +248,10 @@ switch TTResultFormat_TTTRRecType
             % Select the custom Leuven_PTU read-in routine and custom datatype!
             Header.LineStartMarker = 2; %linestarts and -stops are both in here!
             Header.FrameStartMarker = 1; %framestarts and -stops are both in here!
+        elseif strcmp(CreatorSW_Name,'Imspector')
+            Header.LineStartMarker = 1;
+            Header.LineStopMarker = 2;
+            Header.FrameStartMarker = 3;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -279,25 +284,26 @@ switch TTResultFormat_TTTRRecType
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        if filesize > 1.5E9
-            filesize = 1.5E9;
-            msgbox('Maximum filesize reached. Continuing with ~2 GB.', 'Warning','warn');
-            T3Record = zeros(filesize/4,1);
-            fileChunks = ceil(filesize/NoE);
-            for i = 1:fileChunks
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                fileChunks = ceil(filesize/NoE);
+                T3Record = zeros(NoE/4*(fileChunks-1),1);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record = [T3Record;fread(fid, NoE/4, 'ubit32')];
             end
         else
-            fileChunks = ceil(filesize/NoE);
-            T3Record = zeros(NoE/4*(fileChunks-1),1);
-            for i = 1:fileChunks-1
-                T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
-            end
-            T3Record = [T3Record;fread(fid, NoE/4, 'ubit32')];
+            T3Record = fread(fid, Inf, 'ubit32');     % all 32 bits
         end
-        
-        %T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
@@ -323,7 +329,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection = zeros(1,length(nsync));
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
@@ -360,7 +366,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        nsync = int16(bitand(T3Record,65535));
+        nsync = uint32(bitand(T3Record,65535));
         
         Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         

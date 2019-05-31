@@ -213,6 +213,8 @@ for i = 1:numel(BurstData)
     AddDerivedParameters([],[],h);
     %%% ensure that Cut data is available
     UpdateCuts();
+    %%% Update BVA tab
+    UpdateBVATab([],[],h);
 end
 BurstMeta.SelectedFile = 1;
 

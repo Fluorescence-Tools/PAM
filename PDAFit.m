@@ -5895,4 +5895,5 @@ switch mode
                     end
                 end
         end
+        UpdateBVATab(hb.ConsistencyAnalysis_Button,[],hb);
 end
