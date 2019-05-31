@@ -2396,6 +2396,12 @@ if Mode==0 %%% Loads user values
     end
     P.PDA.MaxPhotons = S.PDA.MaxPhotons;
 
+    if ~isfield(S.PDA, 'ScaleNumberOfPhotons')
+        disp('WARNING: UserValues structure incomplete, field "PDA.ScaleNumberOfPhotons" missing');
+        S.PDA.ScaleNumberOfPhotons = false;
+    end
+    P.PDA.ScaleNumberOfPhotons = S.PDA.ScaleNumberOfPhotons;
+    
     if ~isfield(S.PDA, 'GridRes')
         disp('WARNING: UserValues structure incomplete, field "PDA.GridRes" missing');
         S.PDA.GridRes = '100';

@@ -757,6 +757,19 @@ if isempty(h.GlobalPDAFit)
         'Callback',{@Update_Plots,3,1},...
         'Position',[0.2 0.425 0.05 0.15],...
         'Tag','NumberOfPhotMax_Edit');
+    h.SettingsTab.ScaleNumberOfPhotons_Checkbox = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Value',UserValues.PDA.ScaleNumberOfPhotons,...
+        'Units','normalized',...
+        'String','Scale number of photons',...
+        'TooltipString','<html>Scale the minimum and maximum number of photons with the time window size.<br>The thresholds are multiplied with the respective time window in milliseconds.</html>',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,3,1},...
+        'Position',[0.255 0.625 0.14 0.15],...
+        'Tag','ScaleNumberOfPhotons_Checkbox');
     h.SettingsTab.NumberOfBinsE_Text = uicontrol(...
         'Style','text',...
         'Parent',h.SettingsTab.Panel,...
@@ -1468,13 +1481,30 @@ switch mode
             if strcmp(PDAData.Type{i},'Burst')
                 %%% find valid bins (chosen by thresholds min/max and stoichiometry)
                 StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
-                valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) >= str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... %min photon number
-                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) <= str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... %max photon number
-                    ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                    ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+                valid = ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                        ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+                if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
+                    valid = valid & ...
+                        ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                        ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+                else % minimum number of photons scale with the time window size
+                    % the minimum and maximum number of photons are multiplied
+                    % by the time window in milliseconds, i.e. the 1 ms
+                    % measurement is the reference
+                    valid = valid & ...
+                        ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                        ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+
+                end
             else
-                valid = true(size(PDAData.Data{i}.NF));
-                valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) <= str2double(h.SettingsTab.NumberOfPhotMax_Edit.String); % max photons
+                if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
+                    valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+                else % minimum number of photons scale with the time window size
+                    % the minimum and maximum number of photons are multiplied
+                    % by the time window in milliseconds, i.e. the 1 ms
+                    % measurement is the reference
+                     valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+                end
             end
             %%% Calculate proximity ratio histogram
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
@@ -2246,13 +2276,30 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         if strcmp(PDAData.Type{i},'Burst')
             %%% find valid bins (chosen by thresholds min/max and stoichiometry)
             StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
-            PDAMeta.valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
-                ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... % max photon number
-                ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            PDAMeta.valid{i} = ((StoAll >= str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                    ((StoAll <= str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
+                PDAMeta.valid{i} = PDAMeta.valid{i} & ...
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+            else % minimum number of photons scale with the time window size
+                % the minimum and maximum number of photons are multiplied
+                % by the time window in milliseconds, i.e. the 1 ms
+                % measurement is the reference
+                PDAMeta.valid{i} = PDAMeta.valid{i} & ...
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+
+            end
         else
-            %PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
-            PDAMeta.valid{i} = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+            if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
+                PDAMeta.valid{i} = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+            else % minimum number of photons scale with the time window size
+                % the minimum and maximum number of photons are multiplied
+                % by the time window in milliseconds, i.e. the 1 ms
+                % measurement is the reference
+                 PDAMeta.valid{i} = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+            end
         end
         %%% find the maxN of all data
         maxN = max(maxN, max((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}))));
