@@ -30,9 +30,26 @@ Skip = fread(fid, 8, 'uint32'); % Skip 8 4-byte integers
 % right type function
 %fprintf(1,'\n   %-40s', EvalName);
 SyncRate = Header.Settings(4);
+% Zeiss APDs have a SyncRate of 20 MHz (50 ns)
+% Zeiss GaAsPs have a SyncRate of 15 MHz (66,67 ns)
+
 Resolution = 1;% Resolution in picoseconds!
 %%% read out the detection channel from the Header
-channel = str2double(Header.Header(end));
+while strcmp(Header.Header(end),' ')
+    Header.Header=Header.Header(1:end-1);
+end
+
+if strcmp(Header.Header, 'Carl Zeiss ConfoCor3 - raw data file - version 3.000 - META 1')
+    channel = 1;
+elseif strcmp(Header.Header, 'Carl Zeiss ConfoCor3 - raw data file - version 3.000 - META 2')
+    channel = 2;
+elseif strcmp(Header.Header, 'Carl Zeiss ConfoCor3 - raw data file - version 3.000 - PMT 1')
+    channel = 3;
+elseif strcmp(Header.Header, 'Carl Zeiss ConfoCor3 - raw data file - version 3.000 - PMT 2')
+    channel = 4;
+else
+    channel = 1;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  This reads the T3 mode event records

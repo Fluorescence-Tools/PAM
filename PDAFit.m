@@ -2186,6 +2186,9 @@ end
 if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
+    if isfield(PDAMeta,'P')
+        PDAMeta = rmfield(PDAMeta,'P');
+    end
     for i  = find(PDAMeta.Active)'
         if strcmp(PDAData.Type{i},'Burst')
             %%% find valid bins (chosen by thresholds min/max and stoichiometry)
@@ -2789,8 +2792,8 @@ else
         PDAMeta.SampleGlobal = false(1,16); 
         PDAMeta.SampleGlobal(1) = true; %half globally link k12
         PDAMeta.SampleGlobal(4) = true; %half globally link k21
-        %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-        %PDAMeta.SampleGlobal(2) = true; %half globally link R1
+        PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+        PDAMeta.SampleGlobal(10) = true; %half globally link Area4
         %PDAMeta.SampleGlobal(5) = true; %half globally link R2
         %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
         %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
@@ -3287,7 +3290,13 @@ else %%% dynamic model
     end
     %%% calculate mixtures with brightness correction (always active!)
     if n_states == 2
-        Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        if ~verLessThan('matlab','8.4') && ispc
+            % the old mex function, compiled in 2014b, does not work on
+            % Windows for Matlab versions 2018a or newers
+            Peps = mixPE_c_2018a(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        else
+            Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        end
         Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
         %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
         Peps(:,end) = PE{1};
@@ -3326,7 +3335,7 @@ else %%% dynamic model
         %%% combine mixtures, weighted with PofT (probability to see a certain
         %%% combination)
         %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
-        hFit_Dyn = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Dyn = zeros(numel(PDAMeta.P{i,1}),1);
         for t1 = 1:size(PofT,1)
             for t2 = 1:size(PofT,1)
                 for k =1:numel(PDAMeta.eps_grid{i})
@@ -3337,9 +3346,9 @@ else %%% dynamic model
             end
         end
         % pure state histograms
-        hFit_Ind{1} = zeros(numel(PDAMeta.eps_grid{i}),1);
-        hFit_Ind{2} = zeros(numel(PDAMeta.eps_grid{i}),1);
-        hFit_Ind{3} = zeros(numel(PDAMeta.eps_grid{i}),1);
+        hFit_Ind{1} = zeros(numel(PDAMeta.P{i,1}),1);
+        hFit_Ind{2} = zeros(numel(PDAMeta.P{i,1}),1);
+        hFit_Ind{3} = zeros(numel(PDAMeta.P{i,1}),1);
         % only state 1
         t1 = size(PofT,1);
         t2 = 1;
@@ -3373,7 +3382,7 @@ else %%% dynamic model
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
         norm = (sum(fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2))+1);
-        fitpar(3*PDAMeta.Comp{i}(n_states:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
+        fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
         
         for c = PDAMeta.Comp{i}(n_states+1:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
@@ -3907,6 +3916,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     end
 else %%% dynamic model 
     SimTime = dur/1000; % time bin in seconds
+    %SimSteps = BSD; %
     % The DynRates matrix has the form:
     % ( 11 21 31 ... )
     % ( 12 22 32 ... )
@@ -3929,11 +3939,15 @@ else %%% dynamic model
     R = fitpar(:,2);%[fitpar(1,2),fitpar(2,2)];
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     PRH = cell(sampling,5);
+    
+    % gillespie
+    SimTime_gillespie = SimTime*1000;
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
     for k = 1:sampling
-        fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
+        %fracTauT = dynamic_sim_arbitrary_states(DynRates,SimTime,Freq,numel(BSD));
+        fracTauT = dyn_sim_arbitrary_states_gillespie(DynRates,SimTime_gillespie,numel(BSD));
         % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
@@ -4475,7 +4489,6 @@ switch mode
         PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
-        % when user touches the all row, value is applied to all cells
         h.FitTab.Table.CellEditCallback=[];
         %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
@@ -4694,13 +4707,11 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         % touching a ALL value cell applies that value everywhere
         h.ParametersTab.Table.CellEditCallback=[];
-        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=size(h.ParametersTab.Table.Data,1) && e.Indices(2)~=1)                                                                                             
-                h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
-                return;
-            end
-            NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected                                                                                            
+            h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
+            return;
         end
+        NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
         if isprop(e,'NewData')
             if e.Indices(2) ~= 7
                 NewData = e.NewData;
@@ -5042,7 +5053,7 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                 h.FitTab.Table.ColumnWidth{11} = 70;
                 h.FitTab.Table.Position(3) = 1;
                 h.KineticRates_table.Visible = 'off';
-                h.FitTab.Table.ColumnEditable([2,4,11,13,20,22]) = deal(true);
+                h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(true);
                 if h.SettingsTab.DynamicSystem.Value == 2 %%% three-state model
                     h.FitTab.Table.ColumnName{20} = '<HTML><b>k<sub>31</sub> [ms<sup>-1</sup>]</b>';
                     h.FitTab.Table.ColumnWidth{20} = 70; 
@@ -5053,13 +5064,13 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                     h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(false);
                     h.FitTab.Table.Data(1:end-2,[4,13,22]) = deal({false});
                     %%% unfix third amplitude and set to one
-                    h.FitTab.Table.Data(1:end-2,20) = deal({1});
+                    h.FitTab.Table.Data(1:end-2,20) = deal({'1'});
                     h.FitTab.Table.Data(1:end-2,21) = deal({false});
                     %%% unhide rate table
                     h.KineticRates_table.Visible = 'on';
                     %%% change fit table width
                     h.FitTab.Table.Position(3) = 0.8;                    
-            end
+                end
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
@@ -5333,26 +5344,51 @@ switch mode
         UserValues.BurstBrowser.Settings.KineticRates_table3 = cell2mat(h.KineticRates_table.Data(:,1:2:end));
         active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
         params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
-        hb = guidata(findobj('Tag','BurstBrowser'));
-        for i = 1:numel(PDAData.FileName)
-            if active(i)
-                UserValues.BurstBrowser.Settings.BVA_R1 = params(1,2);
-                UserValues.BurstBrowser.Settings.BVA_R2 = params(1,5);
-                UserValues.BurstBrowser.Settings.BVA_R3 = params(1,8);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(1,3);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(1,6);
-                UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(1,9);
-                hb.KineticRates_table2.Data(1,2) = num2cell(params(1,1));
-                hb.KineticRates_table2.Data(2,1) = num2cell(params(1,4));
-                hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
-                hb.Rstate1_edit.String = num2str(params(1,2));
-                hb.Rsigma1_edit.String = num2str(params(1,3));
-                hb.Rstate2_edit.String = num2str(params(1,5));
-                hb.Rsigma2_edit.String = num2str(params(1,6));
-                hb.Rstate3_edit.String = num2str(params(1,8));
-                hb.Rsigma3_edit.String = num2str(params(1,9));
-            end
-            break
+        if isempty(findobj('Tag','BurstBrowser'))
+            msgbox('Burst Browser is not open.', 'Error','error');
+            return
         end
-        %UserValues.BurstBrowser.Settings.KineticRates_table2 = 
+        hb = guidata(findobj('Tag','BurstBrowser'));
+        
+        switch UserValues.PDA.Dynamic
+            case 0 % static
+                for i = 1:numel(PDAData.FileName)
+                    if active(i)
+                        UserValues.BurstBrowser.Settings.BVA_R1_st = params(i,2);
+                        UserValues.BurstBrowser.Settings.BVA_R2_st = params(i,5);
+                        UserValues.BurstBrowser.Settings.BVA_R3_st = params(i,8);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma1_st = params(i,3);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma2_st = params(i,6);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma3_st = params(i,9);
+                        hb.Rstate1st_edit.String = num2str(params(i,2));
+                        hb.Rsigma1st_edit.String = num2str(params(i,3));
+                        hb.Rstate2st_edit.String = num2str(params(i,5));
+                        hb.Rsigma2st_edit.String = num2str(params(i,6));
+                        hb.Rstate3st_edit.String = num2str(params(i,8));
+                        hb.Rsigma3st_edit.String = num2str(params(i,9));
+                        break
+                    end
+                end
+            case 1 % dynamic
+                for i = 1:numel(PDAData.FileName)
+                    if active(i)
+                        UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
+                        UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
+                        UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
+                        UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
+                        hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
+                        hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
+                        hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
+                        hb.Rstate1_edit.String = num2str(params(i,2));
+                        hb.Rsigma1_edit.String = num2str(params(i,3));
+                        hb.Rstate2_edit.String = num2str(params(i,5));
+                        hb.Rsigma2_edit.String = num2str(params(i,6));
+                        hb.Rstate3_edit.String = num2str(params(i,8));
+                        hb.Rsigma3_edit.String = num2str(params(i,9));
+                        break
+                    end
+                end
+        end
 end

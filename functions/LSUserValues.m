@@ -1446,6 +1446,7 @@ if Mode==0 %%% Loads user values
     % 1  tau1
     % 2  tau2
     % 3  tau3
+<<<<<<< HEAD
     % 4  F1
     % 5  F2
     % 6  ScatPar
@@ -1467,14 +1468,41 @@ if Mode==0 %%% Loads user values
     % 22 rinf2 (used for "Dip and Rise" model)
     % 23 beta parameter for stretched exponential
 
+=======
+    % 4  tau4
+    % 5  F1
+    % 6  F2
+    % 7  F3
+    % 8  ScatPar
+    % 9  ScatPer
+    % 10 BackPar
+    % 11 BackPer
+    % 12 IRF
+    % 13 R0
+    % 14 tauD0
+    % 15 l1
+    % 16 l2
+    % 17 Rho1
+    % 18 Rho2
+    % 19 r0
+    % 20 rinf
+    % 21 R
+    % 22 sigR
+    % 23 FD0
+    % 24 rinf2 (used for "Dip and Rise" model)
+    % 25 beta parameter for stretched exponential
+   
+    
+
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
-        fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
+        params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0]);
         S.TauFit.FitParams = {params,params,params,params};
         S.TauFit.FitFix = {fix,fix,fix,fix};
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
+
     if ~iscell(S.TauFit.FitParams) %%% convert array back to cell, this is lost on save to json
         S.TauFit.FitParams = mat2cell(S.TauFit.FitParams,[ones(1,size(S.TauFit.FitParams,1))],size(S.TauFit.FitParams,2));
     end
@@ -1489,8 +1517,8 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     if numel(S.TauFit.FitParams) < 5
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
-        fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
+        params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0]);
         S.TauFit.FitParams{end+1} = params;
         S.TauFit.FitFix{end+1} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
