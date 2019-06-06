@@ -2732,7 +2732,7 @@ if ~do_global
             UB = [UB,UB_rates];
             % also set the upper boundaries for the rates from the main
             % table to fastest allowed rate constant
-            UB([1,4,7]) = 25;
+            UB([1,4,7]) = 10;
         end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
@@ -2993,7 +2993,7 @@ else
         rates = [rates(2,3),rates(3,1),rates(3,2)];
         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
         fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        LB_rates = zeros(1,3); UB_rates = Inf(1,3);
+        LB_rates = zeros(1,3); UB_rates = 10*ones(1,3);
         LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
         PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
         PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
