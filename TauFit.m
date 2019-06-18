@@ -6648,7 +6648,7 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, [num2cell(TauFitData.ConfInt);{'NaN','NaN'}]];
+            res = [res, num2cell(TauFitData.ConfInt)];
         end
         Mat2clip(res);
 end
