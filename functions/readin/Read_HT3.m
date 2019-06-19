@@ -301,11 +301,20 @@ switch mode
                 for i = 1:fileChunks
                     Progress(i/fileChunks*(0.5/NumFiles),ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
                     T3Record = fread(fid, NoE/4, 'ubit32');
-                    nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
-                    dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
-                    %   the dtime unit depends on "Resolution" that can be obtained from header
-                    channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
-                    special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    if i == 1
+                        SyncRate = 1E10/T3Record(1);T3Record(1) = [];
+                        nsync(1:i*(NoE/4)-1) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                        dtime(1:i*(NoE/4)-1) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                        %   the dtime unit depends on "Resolution" that can be obtained from header
+                        channel(1:i*(NoE/4)-1) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                        special(1:i*(NoE/4)-1) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    else
+                        nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                        dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                        %   the dtime unit depends on "Resolution" that can be obtained from header
+                        channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                        special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    end
                     clear T3Record     % all 32 bits:
                 end
                 delete(warn);
@@ -318,11 +327,20 @@ switch mode
                 for i = 1:fileChunks-1
                     Progress(i/fileChunks*(0.5/NumFiles),ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
                     T3Record = fread(fid, NoE/4, 'ubit32');
-                    nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
-                    dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
-                    %   the dtime unit depends on "Resolution" that can be obtained from header
-                    channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
-                    special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    if i == 1
+                        SyncRate = 1E10/T3Record(1);T3Record(1) = [];
+                        nsync(1:i*(NoE/4)-1) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                        dtime(1:i*(NoE/4)-1) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                        %   the dtime unit depends on "Resolution" that can be obtained from header
+                        channel(1:i*(NoE/4)-1) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                        special(1:i*(NoE/4)-1) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    else
+                        nsync((i-1)*NoE/4+1:i*(NoE/4)) = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+                        dtime((i-1)*NoE/4+1:i*(NoE/4)) = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+                        %   the dtime unit depends on "Resolution" that can be obtained from header
+                        channel((i-1)*NoE/4+1:i*(NoE/4)) = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+                        special((i-1)*NoE/4+1:i*(NoE/4)) = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+                    end
                 end
                 T3Record = fread(fid, NoE/4, 'ubit32');
                 Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Data of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
