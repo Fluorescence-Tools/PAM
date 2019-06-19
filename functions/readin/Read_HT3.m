@@ -335,9 +335,9 @@ switch mode
             end
         else
             Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-            
             T3Record = fread(fid, Inf, 'ubit32');
             % end
+            SyncRate = 1E10/T3Record(1);T3Record(1) = [];
             % nRecords = numel(T3Record);
             
             Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
