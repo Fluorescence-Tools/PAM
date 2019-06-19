@@ -359,7 +359,6 @@ switch mode
             
             clear T3Record
         end
-        toc
         nRecords = length(nsync);
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
