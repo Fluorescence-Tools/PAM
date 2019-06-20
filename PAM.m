@@ -1056,6 +1056,32 @@ h.Burst.NirFilter_Text1 = uicontrol(...
     'Callback',[],...
     'Position',[0.82 0.4 0.18 0.07],...
     'TooltipString',sprintf('Specify the Time Constant for Filter Calculation (e.g. 100 or 100;200 or 100:100:1000)'));
+h.Burst.ConstantDuration_Checkbox = uicontrol(...
+    'Parent',h.Burst.SubPanel_Settings,...
+    'Tag','ConstantDuration_Checkbox',...
+    'Style', 'checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',1,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Total duration',...
+    'Position',[0.05 0.3 0.9 0.08],...
+    'TooltipString',sprintf('Instead of calculating PIE channel count rates by dividing number of photons\nby the duration in the PIE channel, the number of photons is divided by the APBS duration'),...
+    'Callback',@Calculate_Settings);
+% h.Burst.RescaleToBackground_Checkbox = uicontrol(...
+%     'Parent',h.Burst.SubPanel_Settings,...
+%     'Tag','RescaleToBackground_Checkbox',...
+%     'Style', 'checkbox',...
+%     'Units','normalized',...
+%     'FontSize',12,...
+%     'Value',0,...
+%     'BackgroundColor', Look.Back,...
+%     'ForegroundColor', Look.Fore,...
+%     'String','Rescale to background',...
+%     'Position',[0.05 0.2 0.9 0.08],...
+%     'TooltipString',sprintf('If a background measurement was saved into PAM memory,\nthe burst search parameters are rescaled to stay above the background'),...
+%     'Callback',@Calculate_Settings);
 %%%Table for PIE channel assignment
 h.Burst.BurstPIE_Table = uitable(...
     'Parent',h.Burst.MainPanel,...
@@ -7592,6 +7618,17 @@ if any(BAMethod == [1 2]) %total of 6 channels
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
     
     Progress(0.8,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:6
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:3
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Chan = zeros(Number_of_Bursts,6);
     for i = 1:6
@@ -7702,6 +7739,16 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     TBX_TGX(:,1) = TBX_TGX(:,1)./1E-3;
     TBX_TRR(:,1) = TBX_TRR(:,1)./1E-3;
     
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:12
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:6
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     Countrate_per_Chan = zeros(Number_of_Bursts,12);
     for i = 1:12
         Countrate_per_Chan(:,i) = Number_of_Photons_per_Chan(:,i)./Duration_per_Chan(:,i);
@@ -7752,11 +7799,20 @@ elseif BAMethod == 5 %only 3 channels
     TGX_TRR(:,2) = TGX_TRR(:,1)./Duration;
     TGG_TGR(:,1) = TGG_TGR(:,1)./1E-3;
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:4
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Color = zeros(Number_of_Bursts,3);
     for i = 1:3
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
+    
     
 end
 
@@ -7954,6 +8010,7 @@ BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
+BurstData.TotalDuration = h.Burst.ConstantDuration_Checkbox.Value; %1 if all count rates are calculated with the total duration.
 %%% Store also the FileInfo in BurstData
 BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later
