@@ -3472,6 +3472,7 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = sum(log_term-hFit);
     end
     chi2 = loglikelihood;
+    PDAMeta.chi2(i) = chi2;
 end
 %Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
@@ -3538,7 +3539,7 @@ if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of 
     end 
     %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-    mean_chi2 = sum(loglikelihood);
+    mean_chi2 = sum(PDAMeta.chi2);
 end
 
 if h.SettingsTab.LiveUpdate.Value
