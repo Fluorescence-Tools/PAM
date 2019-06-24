@@ -60,9 +60,7 @@ catch
 end
 
 %%% /setup group
-datastruct.setup.detection_wavelengths = h5read(file,'/setup/detection_wavelengths');
 datastruct.setup.excitation_cw = h5read(file,'/setup/excitation_cw');
-datastruct.setup.excitation_wavelengths = h5read(file,'/setup/excitation_wavelengths');
 datastruct.setup.lifetime = h5read(file,'/setup/lifetime');
 datastruct.setup.modulated_excitation = h5read(file,'/setup/modulated_excitation');
 datastruct.setup.num_pixels = h5read(file,'/setup/num_pixels');
@@ -70,46 +68,88 @@ datastruct.setup.num_polarization_ch = h5read(file,'/setup/num_polarization_ch')
 datastruct.setup.num_spectral_ch = h5read(file,'/setup/num_spectral_ch');
 datastruct.setup.num_split_ch = h5read(file,'/setup/num_split_ch');
 datastruct.setup.num_spots = h5read(file,'/setup/num_spots');
-
+try
+    datastruct.setup.detection_wavelengths = h5read(file,'/setup/detection_wavelengths');
+    datastruct.setup.excitation_wavelengths = h5read(file,'/setup/excitation_wavelengths');
+catch
+    datastruct.setup.detection_wavelengths = '';
+    datastruct.setup.excitation_wavelengths = '';
+end
 %%% read photon data
-if strcmp(measurement_type,'smFRET-usALEX')
-    %%% /photon_data group
-    %%% /photon_data/measurement_specs
-    datastruct.photon_data.measurement_specs.alex_excitation_period1 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period1');
-    datastruct.photon_data.measurement_specs.alex_excitation_period2 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period2');
-    datastruct.photon_data.measurement_specs.alex_period = h5read(file,'/photon_data/measurement_specs/alex_period');
-    datastruct.photon_data.measurement_specs.alex_offset = h5read(file,'/photon_data/measurement_specs/alex_offset'); 
-    datastruct.photon_data.measurement_specs.measurement_type = measurement_type;
-    %%% /photon_data/measurement_specs/detectors_specs
-    datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch1 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch1');
-    datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch2 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch2');
-    %%% /photon_data/timestamps_specs
-    datastruct.photon_data.timestamps_specs.timestamps_unit = h5read(file,'/photon_data/timestamps_specs/timestamps_unit');
+switch measurement_type
+    case 'smFRET-usALEX'
+        %%% /photon_data group
+        %%% /photon_data/measurement_specs
+        datastruct.photon_data.measurement_specs.alex_excitation_period1 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period1');
+        datastruct.photon_data.measurement_specs.alex_excitation_period2 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period2');
+        datastruct.photon_data.measurement_specs.alex_period = h5read(file,'/photon_data/measurement_specs/alex_period');
+        datastruct.photon_data.measurement_specs.alex_offset = h5read(file,'/photon_data/measurement_specs/alex_offset'); 
+        datastruct.photon_data.measurement_specs.measurement_type = measurement_type;
+        %%% /photon_data/measurement_specs/detectors_specs
+        datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch1 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch1');
+        datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch2 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch2');
+        %%% /photon_data/timestamps_specs
+        datastruct.photon_data.timestamps_specs.timestamps_unit = h5read(file,'/photon_data/timestamps_specs/timestamps_unit');
+        %%% photon data is read and transformed into PAM MT/MI scheme, discarding
+        %%% the channel variable
+        timestamps = h5read(file,'/photon_data/timestamps');
+        detectors =  h5read(file,'/photon_data/detectors');
+
+        %%% read alex parameters
+        det = unique(detectors);
+        MT = cell(10,1); MI = cell(10,1);
+        for i = 1:numel(det)
+            MT{det(i)+1} = double(timestamps(detectors == det(i)))';
+        end
+        clear timestamps nanotimes detectors
+        %%% apply alex period and offset to gain the alex information
+        alex_period = double(datastruct.photon_data.measurement_specs.alex_period);
+        alex_offset= double(datastruct.photon_data.measurement_specs.alex_offset);
+        for i = 1:numel(MT)
+            MI{i} = mod(MT{i}-alex_offset,alex_period);
+        end
+        %%% fix orientation of arrays
+        if size(MT{1},1) < size(MT{1},2) %%% horizontal array, make vertical
+            MT = cellfun(@transpose,MT,'UniformOutput',false);
+            MI = cellfun(@transpose,MI,'UniformOutput',false);
+        end
+case 'smFRET' % this seems to be data from PyBroMo simulation
     %%% photon data is read and transformed into PAM MT/MI scheme, discarding
     %%% the channel variable
-    timestamps = h5read(file,'/photon_data/timestamps');
+    timestamps = h5read(file,'/photon_data/timestamps');    
     detectors =  h5read(file,'/photon_data/detectors');
-    
-    %%% read alex parameters
+
     det = unique(detectors);
     MT = cell(10,1); MI = cell(10,1);
     for i = 1:numel(det)
         MT{det(i)+1} = double(timestamps(detectors == det(i)))';
+        MI{det(i)+1} = ones(size(MT{det(i)+1})); % dummy variable
     end
-    clear timestamps nanotimes detectors
-    %%% apply alex period and offset to gain the alex information
-    alex_period = double(datastruct.photon_data.measurement_specs.alex_period);
-    alex_offset= double(datastruct.photon_data.measurement_specs.alex_offset);
-    for i = 1:numel(MT)
-        MI{i} = mod(MT{i}-alex_offset,alex_period);
-    end
+    clear timestamps detectors
+
     %%% fix orientation of arrays
     if size(MT{1},1) < size(MT{1},2) %%% horizontal array, make vertical
         MT = cellfun(@transpose,MT,'UniformOutput',false);
         MI = cellfun(@transpose,MI,'UniformOutput',false);
     end
     
-else
+    %%% /photon_data group
+    %%% /photon_data/measurement_specs
+    %datastruct.photon_data.measurement_specs.alex_excitation_period1 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period1');
+    %datastruct.photon_data.measurement_specs.alex_excitation_period2 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period2');
+    datastruct.photon_data.measurement_specs.laser_repetition_rate = 10/1E9;%h5read(file,'/photon_data/measurement_specs/laser_repetition_rate');
+    datastruct.photon_data.measurement_specs.measurement_type = measurement_type;
+    %%% /photon_data/measurement_specs/detectors_specs
+    datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch1 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch1');
+    datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch2 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch2');
+
+    %%% /photon_data/nanotimes_specs
+    datastruct.photon_data.nanotimes_specs.tcspc_num_bins = 100;%h5read(file,'/photon_data/nanotimes_specs/tcspc_num_bins');
+    datastruct.photon_data.nanotimes_specs.tcspc_range = 10E-9;%h5read(file,'/photon_data/nanotimes_specs/tcspc_range');
+    datastruct.photon_data.nanotimes_specs.tcspc_unit = 0.1E-9;%h5read(file,'/photon_data/nanotimes_specs/tcspc_unit');
+    %%% /photon_data/timestamps_specs
+    datastruct.photon_data.timestamps_specs.timestamps_unit = h5read(file,'/photon_data/timestamps_specs/timestamps_unit');
+otherwise
     %%% photon data is read and transformed into PAM MT/MI scheme, discarding
     %%% the channel variable
     timestamps = h5read(file,'/photon_data/timestamps');

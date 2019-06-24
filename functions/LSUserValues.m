@@ -2328,7 +2328,14 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Database={};
         disp('UserValues.BurstBrowser.Database was incomplete');
     end
-    P.BurstBrowser.Database = S.BurstBrowser.Database;    
+    P.BurstBrowser.Database = S.BurstBrowser.Database;
+    
+        %%% Check, if BurstBrowser.Dog_Mode subfield exists
+    if ~isfield(S.BurstBrowser, 'Dog_Mode')
+        S.BurstBrowser.Dog_Mode = false;
+        disp('UserValues.BurstBrowser.Dog_Mode was incomplete');
+    end
+    P.BurstBrowser.Dog_Mode = S.BurstBrowser.Dog_Mode;
     %% PDA
     if ~isfield(S, 'PDA')
         disp('WARNING: UserValues structure incomplete, field "PDA" missing');

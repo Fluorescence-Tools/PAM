@@ -936,7 +936,7 @@ switch (Type)
             end
             
         end
-        FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        FileInfo.MeasurementTime = double(PhotonHDF5_Data.acquisiton_duration); %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')

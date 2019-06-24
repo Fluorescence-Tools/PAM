@@ -919,7 +919,7 @@ if strcmp(method,'ensemble')
         'Position',[0.05 0.05 0.29 0.12],...
         'String','Perform tail fit',...
         'Callback',@Start_Fit);
-    h.Fit_Tail_Menu = uicontextmenu;
+    h.Fit_Tail_Menu = uicontextmenu;f
     h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
         'Label','2 exponentials',...
         'Checked','off',...
@@ -1258,6 +1258,11 @@ h.FitResultToClip = uimenu(...
     'Label','Copy Fit Result to Clipboard',...
     'Callback',@Export);
 h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
+%%% Get tau values and plot dynamic FRET line in Burst Browser
+h.PlotDynamicFRETLine = uimenu(...
+    'Parent',h.FitPar_Table.UIContextMenu,...
+    'Label','Plot dynamic FRET line',...
+    'Callback',@Export);
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -6137,7 +6142,7 @@ LSUserValues(1);
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export(obj,~)
-global UserValues TauFitData FileInfo BurstData
+global UserValues TauFitData FileInfo BurstData BurstMeta
 h = guidata(findobj('Tag','TauFit'));
 switch obj
     case {h.Menu.Export_MIPattern_Fit, h.Menu.Export_MIPattern_Data}
@@ -6648,9 +6653,58 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, [num2cell(TauFitData.ConfInt);{'NaN','NaN'}]];
+            res = [res, num2cell(TauFitData.ConfInt)];
         end
         Mat2clip(res);
+    case h.PlotDynamicFRETLine
+        %%% get tau values and plot dynamic FRET line in Burst Browser
+        BBgui = guidata(findobj('Tag','BurstBrowser'));
+        file = BurstMeta.SelectedFile;
+        %%% Query using edit box
+        %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+        data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
+            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(cell2mat(h.FitPar_Table.Data(1,1))),num2str(cell2mat(h.FitPar_Table.Data(2,1)))});
+        data = cellfun(@str2double,data);
+        if any(isnan(data)) || isempty(data)
+            return;
+        end
+        x = data(2:end);
+        line = data(1);
+        if line < 1 || line > 3
+            return;
+        end
+        % Update UserValues
+        UserValues.BurstBrowser.Settings.DynFRETLine_Line = line;
+        UserValues.BurstBrowser.Settings.DynFRETLineTau1 = x(1);
+        UserValues.BurstBrowser.Settings.DynFRETLineTau2 = x(2);
+        %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+        %    x);
+        switch BBgui.lifetime_ind_popupmenu.Value
+            case {5,6} % Phasor plots
+                % get channel (donor or acceptor)
+                chan = h.lifetime_ind_popupmenu.Value-4;
+                % Calculate frequency
+                Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+                % convert lifetimes to phasor coordinates
+                g = 1./(1+(2*pi*Freq*x).^2);
+                s = (2*pi*Freq*x).*g;
+                x = g; y = s;
+                % draw a line through the universal circles
+                m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
+                % use p-q formula
+                p = (2*m*b-1)/(m^2+1); q = b^2/(m^2+1);
+                xp1 = -p/2 - sqrt(p^2/4-q); xp2 =  -p/2 + sqrt(p^2/4-q);
+                xp = xp1:0.01:xp2; yp = m*xp+b;
+                plot(xp,yp,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine2,'Parent',BBgui.axes_lifetime_ind_2d);
+                BBgui.axes_lifetime_ind_2d.UIContextMenu = BBgui.axes_lifetime_ind_1d_x.UIContextMenu; set(BBgui.axes_lifetime_ind_2d.Children,'UIContextMenu',BBgui.axes_lifetime_ind_1d_x.UIContextMenu);
+                return;
+        end
+    [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+        x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
 end
 
 
