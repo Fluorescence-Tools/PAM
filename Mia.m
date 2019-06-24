@@ -1495,7 +1495,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.56, 0.9 0.06],...
-    'String','Custom Filtetype:');
+    'String','Custom Filetype:');
 
 %%% Allows custom Filetype selection
 if ~isdeployed
@@ -8165,7 +8165,7 @@ switch mode
         %%% Out: cell array containing:
         %%% 1: File extension
         %%% 2: File description
-        %%% 3: Settings object handels
+        %%% 3: Settings object handles
         %%% 4: Function handle
         Out = Function(1);
         Out{4} = Function;
@@ -8260,12 +8260,12 @@ h = guidata(findobj('Tag','Mia'));
 %are background corrected, and thus the Pearson's calculation also.
 
 if size(MIAData.Data,1) > 1
+    Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
     if iscell(MIAData.AR)
         AROI = MIAData.AR{1,2}; %for now top right AROI
     else
         AROI = true(size(Image));
     end
-    Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
     Image = Image(AROI); %linear array of only the included pixels
     Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
     Image2 = Image2(AROI); %linear array of only the included pixels
