@@ -3462,7 +3462,7 @@ else %%% dynamic model
             % ( .. .. .. ... )
             n_states = size(DynRates,1);
             change_prob = cumsum(DynRates);
-            change_prob = change_prob ./ change_prob(end,:);
+            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
             dwell_mean = 1 ./ sum(DynRates);  
             for j = 1:n_states
             DynRates(j,j) = -sum(DynRates(:,j));
