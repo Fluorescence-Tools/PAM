@@ -2725,14 +2725,14 @@ if ~do_global
             fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
             fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
             LB_rates = zeros(1,3); UB_rates = 25*ones(1,3); % fastest rate to consider
+            % also set the upper boundaries for the rates from the main
+            % table to fastest allowed rate constant
+            UB([1,4,7]) = 25;
             LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
             fitpar = [fitpar, rates];
             fixed = [fixed,fixed_rates];
             LB = [LB,LB_rates];
-            UB = [UB,UB_rates];
-            % also set the upper boundaries for the rates from the main
-            % table to fastest allowed rate constant
-            UB([1,4,7]) = 10;
+            UB = [UB,UB_rates];            
         end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
