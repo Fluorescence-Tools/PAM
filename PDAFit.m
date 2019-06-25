@@ -3560,7 +3560,7 @@ else %%% dynamic model
         hFit_Ind{1} = hFit_Ind{1} * PofT(t1,t2);   
         % only state 2
         t1 = 1;
-        t2 = size(PofT,1);
+        t2 = size(PofT,2);
         for k = 1:numel(PDAMeta.eps_grid{i})
             hFit_Ind{2} = hFit_Ind{2} + Peps(k,t2,t1).*PDAMeta.P{i,k};        
         end
@@ -3573,6 +3573,44 @@ else %%% dynamic model
         end
         hFit_Ind{3} = hFit_Ind{3} * PofT(t1,t2);     
         hFit_Ind_dyn = cell(size(PofT,1),1);
+        
+        % also get the pure two-state dynamic exchange histograms
+        two_state_dynamics = false;
+        if two_state_dynamics
+            % only exchange between states 1-2
+            h12 = zeros(numel(PDAMeta.P{i,1}),1);
+            for t1 = 2:(size(PofT,1)-1)
+                t2 = size(PofT,2)-t1+1;
+                for k = 1:numel(PDAMeta.eps_grid{i})
+                    h12 = h12 + PofT(t1,t2) * Peps(k,t2,t1).*PDAMeta.P{i,k};        
+                end
+            end
+            % only exchange between states 1-3
+            h13 = zeros(numel(PDAMeta.P{i,1}),1);
+            for t1 = 2:(size(PofT,1)-1)
+                t2 = 1;
+                for k = 1:numel(PDAMeta.eps_grid{i})
+                    h13 = h13 + PofT(t1,t2) * Peps(k,t2,t1).*PDAMeta.P{i,k};        
+                end
+            end
+            % only exchange between states 2-3
+            h23 = zeros(numel(PDAMeta.P{i,1}),1);
+            for t2 = 2:(size(PofT,1)-1)
+                t1 = 1;
+                for k = 1:numel(PDAMeta.eps_grid{i})
+                    h23 = h23 + PofT(t1,t2) * Peps(k,t2,t1).*PDAMeta.P{i,k};        
+                end
+            end
+            % only exchange between 1-2-3
+            h123 = zeros(numel(PDAMeta.P{i,1}),1);
+            for t1 = 2:(size(PofT,1)-1)
+                for t2 = 2:(size(PofT,2)-t1+1)
+                    for k = 1:numel(PDAMeta.eps_grid{i})
+                        h123 = h123 + PofT(t1,t2) * Peps(k,t2,t1).*PDAMeta.P{i,k};        
+                    end
+                end
+            end
+        end
     end
     
     %%% Add static models
