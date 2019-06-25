@@ -1297,7 +1297,7 @@ for i = 1:numel(FileName)
                 LSUserValues(1)
             end
             if isfield(SavedData,'DynamicSystem')
-                h.SettingsTab.DynamiSystem.Value = SavedData.DynamicSystem;
+                h.SettingsTab.DynamicSystem.Value = SavedData.DynamicSystem;
             end
             if isfield(SavedData,'ThreeStateModel');
                 h.KineticRates_table.Data = SavedData.ThreeStateModel;
