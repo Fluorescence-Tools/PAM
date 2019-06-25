@@ -2729,10 +2729,7 @@ if ~do_global
             fitpar = [fitpar, rates];
             fixed = [fixed,fixed_rates];
             LB = [LB,LB_rates];
-            UB = [UB,UB_rates];
-            % also set the upper boundaries for the rates from the main
-            % table to fastest allowed rate constant
-            UB([1,4,7]) = 10;
+            UB = [UB,UB_rates];            
         end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
