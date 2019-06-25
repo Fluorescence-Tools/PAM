@@ -1836,19 +1836,30 @@ switch mode
             end
             
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
-            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 1
-                % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
-                tmp = fitpar(4)/(fitpar(1)+fitpar(4));
-                tmp2 = fitpar(1)/(fitpar(1)+fitpar(4));
-                fitpar(1) = tmp;
-                fitpar(4) = tmp2;
+            if h.SettingsTab.DynamicModel.Value 
+                if h.SettingsTab.DynamicSystem.Value == 1 % two-state system
+                    % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
+                    tmp = fitpar(4)/(fitpar(1)+fitpar(4));
+                    tmp2 = fitpar(1)/(fitpar(1)+fitpar(4));
+                    fitpar(1) = tmp;
+                    fitpar(4) = tmp2;
+                elseif h.SettingsTab.DynamicSystem.Value == 2 % three-state system
+                    % the amplitudes in fitpar are already the equilibrium fractions
+                end
             end
             % normalize the amplitudes to get a total area of 1
             % this is just for the normpdf plots
             fitpar(1:3:end) = fitpar(1:3:end)/sum(fitpar(1:3:end));
-
+            
+            comp = PDAMeta.Comp{i};
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                % for three-state model, some rates may be fixed to zero,
+                % but the states should still be plotted
+                comp = [1,2,3,comp(comp > 3)];
+            end
+            
             %%% Calculate Gaussian Distance Distributions
-            for c = PDAMeta.Comp{i}
+            for c = comp
                 pdf = normpdf(PDAMeta.Plots.Gauss_All{i,1}.XData,fitpar(3*c-1),fitpar(3*c));
                 Gauss{c} = fitpar(3*c-2).*pdf;
                 if h.SettingsTab.GaussAmp_Fix.Value
@@ -1872,14 +1883,8 @@ switch mode
                 'YData', ydatafit./sum(ydatafit));
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
-                'YData', real(ydatares));
-            
-            comp = PDAMeta.Comp{i};
-            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-                % for three-state model, some rates may be fixed to zero,
-                % but the states should still be plotted
-                comp = [1,2,3,comp(comp > 3)];
-            end
+                'YData', real(ydatares));            
+          
             for c = comp
                 if h.SettingsTab.OuterBins_Fix.Value
                     % do not display or take into account during fitting, the
@@ -2730,8 +2735,14 @@ if ~do_global
             % fitpar = [...,k32,k13,k23]
             % Read them from the table
             rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-            rates = [rates(2,3),rates(3,1),rates(3,2)];
             fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+            % sort the rates k12, k21 and k13 into the fitpar array
+            fitpar([1,4,7]) = [rates(2,1),rates(1,2),rates(1,3)];
+            fixed([1,4,7]) = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
+            LB([1,4,7]) = zeros(1,3); UB([1,4,7]) =  25*ones(1,3); % fastest rate to consider
+            LB(fixed) = fitpar(fixed); UB(fixed) = fitpar(fixed); % fix parameters
+            % append the other rates to the end
+            rates = [rates(2,3),rates(3,1),rates(3,2)];
             fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
             LB_rates = zeros(1,3); UB_rates = 25*ones(1,3); % fastest rate to consider
             LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
@@ -2922,11 +2933,23 @@ if ~do_global
             rates{2,5} = rates_state3(1);
             rates{3,1} = rates_state3(2);
             rates{3,3} = rates_state3(3);
-            %%% assign k12 and k21 as well to table
+            %%% assign k12, k21 and k31 as well to table                                                                                 -
             rates{2,1} = fitpar(1);
             rates{1,3} = fitpar(4);
             rates{1,5} = fitpar(7);
             h.KineticRates_table.Data = rates;
+            %%% assign equilibrium fraction to the fitpar table 
+            DynRates = cell2mat(rates(:,1:2:end));
+            DynRates(isnan(DynRates)) = 0;
+            for j = 1:3
+                DynRates(j,j) = -sum(DynRates(:,j));
+            end
+            DynRates(end+1,:) = ones(1,3);
+            b = zeros(3,1); b(end+1) = 1;
+            p_eq = DynRates\b;
+            fitpar(1) = p_eq(1);
+            fitpar(4) = p_eq(2);
+            fitpar(7) = p_eq(3); 
         end
         
         %%% If sigma was fixed at fraction of R, update edit box here and
@@ -2994,12 +3017,22 @@ else
         % Append the additional rates associated with the third state here
         % rate k31 is taken from the amplitude of species 3!
         % fitpar = [...,k32,k13,k23]
+        LB_rates = zeros(1,3); UB_rates = 25*ones(1,3);
         % Read them from the table
         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(2,3),rates(3,1),rates(3,2)];
         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+        % sort the rates k12, k21 and k13 into the fitpar array
+        rates_temp = [rates(2,1),rates(1,2),rates(1,3)];
+        fixed_rates_temp = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
+        PDAMeta.FitParams(:,[1,4,7]) = repmat(rates_temp,size(PDAMeta.FitParams,1),1);
+        PDAMeta.Fixed(:,[1,4,7]) = repmat(fixed_rates_temp,size(PDAMeta.Fixed,1),1);
+        LB_rates_temp = LB_rates; LB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
+        UB_rates_temp = UB_rates; UB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
+        PDAMeta.LB(:,[1,4,7]) = repmat(LB_rates_temp,size(PDAMeta.LB,1),1);
+        PDAMeta.UB(:,[1,4,7]) = repmat(UB_rates_temp,size(PDAMeta.UB,1),1);
+        % append the other rates to the end
+        rates = [rates(2,3),rates(3,1),rates(3,2)];        
         fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        LB_rates = zeros(1,3); UB_rates = 10*ones(1,3);
         LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
         PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
         PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
@@ -3136,9 +3169,21 @@ else
                 rates{3,3} = rates_state3(3);
                 %%% assign k12 and k21 as well to table
                 rates{2,1} = PDAMeta.FitParams(1,1);
-                rates{1,3} = PDAMeta.FitParams(1,4);
+                rates{1,3} = PDAMeta.FitParams(1,1);
                 rates{1,5} = PDAMeta.FitParams(1,7);
                 h.KineticRates_table.Data = rates;
+                %%% assign equilibrium fraction to the FitParam table 
+                DynRates = cell2mat(rates(:,1:2:end));
+                DynRates(isnan(DynRates)) = 0;
+                for j = 1:3
+                    DynRates(j,j) = -sum(DynRates(:,j));
+                end
+                DynRates(end+1,:) = ones(1,3);
+                b = zeros(3,1); b(end+1) = 1;
+                p_eq = DynRates\b;
+                PDAMeta.FitParams(:,1) = repmat(p_eq(1),size(PDAMeta.FitParams,1),1);
+                PDAMeta.FitParams(:,4) = repmat(p_eq(2),size(PDAMeta.FitParams,1),1);
+                PDAMeta.FitParams(:,7) = repmat(p_eq(3),size(PDAMeta.FitParams,1),1);
             end
             
             %%% If sigma was fixed at fraction of R, update edit box here and
@@ -5667,7 +5712,9 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                 h.KineticRates_table.Visible = 'off';
                 h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(true);
                 if h.SettingsTab.DynamicSystem.Value == 2 %%% three-state model
-                    h.FitTab.Table.ColumnName{20} = '<HTML><b>k<sub>31</sub> [ms<sup>-1</sup>]</b>';
+                     h.FitTab.Table.ColumnName{2} = '<HTML><b>F<sub>1</sub></b>';
+                    h.FitTab.Table.ColumnName{11} = '<HTML><b>F<sub>2</sub></b>';
+                    h.FitTab.Table.ColumnName{20} = '<HTML><b>F<sub>3</sub></b>';
                     h.FitTab.Table.ColumnWidth{20} = 70; 
                     %%% disable columns for amplitudes of species 1,2 and 3
                     %%% use rate table instead
