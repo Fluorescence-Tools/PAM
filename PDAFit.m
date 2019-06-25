@@ -3738,7 +3738,13 @@ end
 PDAMeta.w_res{i} = w_res;
 PDAMeta.hFit{i} = hFit;
 PDAMeta.chi2(i) = chi2;
-for c = PDAMeta.Comp{i}
+comp = PDAMeta.Comp{i};
+if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+    % for three-state model, some rates may be fixed to zero,
+    % but the states should still be plotted
+    comp = [1,2,3,comp(comp > 3)];
+end
+for c = comp
     PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
 end
 if sum(PDAMeta.Global) == 0
