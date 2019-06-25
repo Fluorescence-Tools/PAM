@@ -1770,16 +1770,17 @@ switch mode
             end
             
             if h.SettingsTab.DynamicModel.Value
+                colors = lines(4);
                 % state 1
-                PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
+                PDAMeta.Plots.Fit_Single{1,2}.Color = colors(1,:);%[1 0 1];
                 % state 2
-                PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
+                PDAMeta.Plots.Fit_Single{1,3}.Color = colors(2,:);%[0 1 1];
                 if h.SettingsTab.DynamicSystem.Value == 2
                     % state 3
-                    PDAMeta.Plots.Fit_Single{1,4}.Color = [0.4706 0.6706 0.18821];
+                    PDAMeta.Plots.Fit_Single{1,4}.Color = colors(4,:);%[0.4706 0.6706 0.18821];
                 end
                 % in between 1 and 2
-                PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
+                PDAMeta.Plots.Fit_Single{1,8}.Color = colors(3,:);%[1 1 0];
             end
 
             % bsd
@@ -2105,9 +2106,17 @@ switch mode
                 set(PDAMeta.Plots.Fit_Single{1,8},...
                     'Visible', 'on',...
                     'YData', ydatafitind);
-                PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
-                PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
-                PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
+                colors = lines(4);
+                % state 1
+                PDAMeta.Plots.Fit_Single{1,2}.Color = colors(1,:);%[1 0 1];
+                % state 2
+                PDAMeta.Plots.Fit_Single{1,3}.Color = colors(2,:);%[0 1 1];
+                if h.SettingsTab.DynamicSystem.Value == 2
+                    % state 3
+                    PDAMeta.Plots.Fit_Single{1,4}.Color = colors(4,:);%[0.4706 0.6706 0.18821];
+                end
+                % in between 1 and 2
+                PDAMeta.Plots.Fit_Single{1,8}.Color = colors(3,:);%[1 1 0];
             else
                 set(PDAMeta.Plots.Fit_Single{1,8},'Visible', 'off');
                 PDAMeta.Plots.Fit_Single{1,2}.Color = [0.2 0.2 0.2];
