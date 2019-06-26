@@ -1424,7 +1424,7 @@ if Mode==0 %%% Loads user values
     % 27 sigR2
     
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
-    if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
+    if ~isfield(S.TauFit,'FitParams') || any(cellfun(@numel,S.TauFit.FitParams) ~= 27)
         params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2];
         fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0]);
         S.TauFit.FitParams = {params,params,params,params};
