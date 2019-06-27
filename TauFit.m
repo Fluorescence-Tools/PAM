@@ -6834,5 +6834,7 @@ valid = valid & (data ~= 0) & (model ~= 0);
 
 log_summand = zeros(size(data));
 log_summand(valid) = data(valid).*log(model(valid)./data(valid));
-
-w_res_MLE = sqrt(2*(model - data) - 2*log_summand);
+w_res_MLE = 2*(model - data) - 2*log_summand; %squared residuals
+% avoid complex numbers
+w_res_MLE(w_res_MLE < 0) = 0;
+w_res_MLE = sqrt(w_res_MLE);
