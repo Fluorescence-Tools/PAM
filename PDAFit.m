@@ -2300,9 +2300,9 @@ end
 if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
-    if isfield(PDAMeta,'P')
-        PDAMeta = rmfield(PDAMeta,'P');
-    end
+    %if isfield(PDAMeta,'P')
+    %    PDAMeta = rmfield(PDAMeta,'P');
+    %end
     for i  = find(PDAMeta.Active)'
         if strcmp(PDAData.Type{i},'Burst')
             %%% find valid bins (chosen by thresholds min/max and stoichiometry)
@@ -2695,6 +2695,7 @@ else %%% check if fix sigma at fraction of R option is enable
         end
     end
 end
+PDAMeta.FittingGlobal = do_global;
 % if do_global
 %     disp('Global fit');
 % else
@@ -3752,7 +3753,7 @@ if sum(PDAMeta.Global) == 0
 end
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
-if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
+if h.SettingsTab.LiveUpdate.Value && ~PDAMeta.FittingGlobal %sum(PDAMeta.Global) == 0
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];

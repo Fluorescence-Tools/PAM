@@ -4508,7 +4508,7 @@ switch obj
             %%% ask to fix the lifetimes
             lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
             [lifetimes,order] = sort(lifetimes);
-            fraction = UserValues.TauFit.FitParams{chan}(4);
+            fraction = UserValues.TauFit.FitParams{chan}(5);
             if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
                 fraction = 1-fraction;
             end
@@ -6834,5 +6834,7 @@ valid = valid & (data ~= 0) & (model ~= 0);
 
 log_summand = zeros(size(data));
 log_summand(valid) = data(valid).*log(model(valid)./data(valid));
-
-w_res_MLE = sqrt(2*(model - data) - 2*log_summand);
+w_res_MLE = 2*(model - data) - 2*log_summand; %squared residuals
+% avoid complex numbers
+w_res_MLE(w_res_MLE < 0) = 0;
+w_res_MLE = sqrt(w_res_MLE);

@@ -628,7 +628,8 @@ switch obj
         delete(panel_copy.Children(logical(del)));
         for i = 1:numel(panel_copy.Children)
             if strcmp(panel_copy.Children(i).Type,'legend')
-                continue;
+                pause(1e-100) % for some reason, matlab needs an infinitesimal break here for the correct positioning of the x axes
+                continue
             end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];

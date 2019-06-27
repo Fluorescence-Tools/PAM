@@ -1424,7 +1424,7 @@ if Mode==0 %%% Loads user values
     % 27 sigR2
     
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
-    if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
+    if ~isfield(S.TauFit,'FitParams') || any(cellfun(@numel,S.TauFit.FitParams) ~= 27)
         params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2];
         fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0]);
         S.TauFit.FitParams = {params,params,params,params};
@@ -1932,6 +1932,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.logY was incomplete');
     end
     P.BurstBrowser.Display.logY = S.BurstBrowser.Display.logY;
+    %%% Checks, if BurstBrowser.Display.Multiplot_Contour subfield exists
+    if ~isfield(S.BurstBrowser.Display,'Multiplot_Contour')
+        S.BurstBrowser.Display.Multiplot_Contour=0;
+        disp('UserValues.BurstBrowser.Display.Multiplot_Contour was incomplete');
+    end
+    P.BurstBrowser.Display.Multiplot_Contour = S.BurstBrowser.Display.Multiplot_Contour;
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield(S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
