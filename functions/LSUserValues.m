@@ -1931,6 +1931,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.logY was incomplete');
     end
     P.BurstBrowser.Display.logY = S.BurstBrowser.Display.logY;
+    %%% Checks, if BurstBrowser.Display.Multiplot_Contour subfield exists
+    if ~isfield(S.BurstBrowser.Display,'Multiplot_Contour')
+        S.BurstBrowser.Display.Multiplot_Contour=0;
+        disp('UserValues.BurstBrowser.Display.Multiplot_Contour was incomplete');
+    end
+    P.BurstBrowser.Display.Multiplot_Contour = S.BurstBrowser.Display.Multiplot_Contour;
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield(S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];

@@ -184,7 +184,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         c(3).YData = datapoints(:,2);
         c(3).CData = colordata;
     end
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
         c(2).Visible = 'off';
         axes(h.axes_lifetime_ind_2d);
         % overlay contour plots
