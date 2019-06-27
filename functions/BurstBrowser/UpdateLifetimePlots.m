@@ -109,7 +109,7 @@ end
 if numel(h.axes_EvsTauGG.Children) > 8
     delete(h.axes_EvsTauGG.Children(1:end-8));
 end
-if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
     BurstMeta.Plots.EvsTauGG(2).Visible = 'off';
     axes(h.axes_EvsTauGG);
     % overlay contour plots
@@ -212,7 +212,7 @@ end
 if numel(h.axes_EvsTauRR.Children) > 8
     delete(h.axes_EvsTauRR.Children(1:end-3));
 end
-if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
     BurstMeta.Plots.EvsTauRR(2).Visible = 'off';
     axes(h.axes_EvsTauRR);
     % overlay contour plots
@@ -311,7 +311,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     if numel(h.axes_rGGvsTauGG.Children) > 8
         delete(h.axes_rGGvsTauGG.Children(1:end-8));
     end
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') && (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
         BurstMeta.Plots.rGGvsTauGG(2).Visible = 'off';
         axes(h.axes_rGGvsTauGG);
         % overlay contour plots
@@ -408,7 +408,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     if numel(h.axes_rRRvsTauRR.Children) > 8
         delete(h.axes_rRRvsTauRR.Children(1:end-8));
     end
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
         BurstMeta.Plots.rRRvsTauRR(2).Visible = 'off';
         axes(h.axes_rRRvsTauRR);
         % overlay contour plots
