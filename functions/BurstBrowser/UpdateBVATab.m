@@ -139,9 +139,9 @@ else
         case h.Rsigma3st_edit
             UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static;
-        case h.BVA_Nstates_Popupmenu
-            UserValues.BurstBrowser.Settings.BVA_Nstates = h.BVA_Nstates_Popupmenu.Value+1; 
-            switch UserValues.BurstBrowser.Settings.BVA_Nstates
+        case h.DynamicStates_Popupmenu
+            UserValues.BurstBrowser.Settings.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_DynamicStates
                 case 2
                     h.KineticRates_table3.Visible = 'off';
                     h.KineticRates_table2.Visible = 'on';
@@ -150,11 +150,6 @@ else
                     h.Rstate3_edit.Visible = 'off';
                     h.Rsigma3_text.Visible = 'off';
                     h.Rsigma3_edit.Visible = 'off';
-                    h.state3st_text.Visible = 'off';
-                    h.Rstate3st_text.Visible = 'off';
-                    h.Rstate3st_edit.Visible = 'off';
-                    h.Rsigma3st_text.Visible = 'off';
-                    h.Rsigma3st_edit.Visible = 'off';
                 case 3
                     h.KineticRates_table2.Visible = 'off';
                     h.KineticRates_table3.Visible = 'on';
@@ -163,6 +158,17 @@ else
                     h.Rstate3_edit.Visible = 'on';
                     h.Rsigma3_text.Visible = 'on';
                     h.Rsigma3_edit.Visible = 'on';
+            end
+        case h.StaticStates_Popupmenu
+            UserValues.BurstBrowser.Settings.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_StaticStates
+                case 2
+                    h.state3st_text.Visible = 'off';
+                    h.Rstate3st_text.Visible = 'off';
+                    h.Rstate3st_edit.Visible = 'off';
+                    h.Rsigma3st_text.Visible = 'off';
+                    h.Rsigma3st_edit.Visible = 'off';
+                case 3
                     h.state3st_text.Visible = 'on';
                     h.Rstate3st_text.Visible = 'on';
                     h.Rstate3st_edit.Visible = 'on';
@@ -203,6 +209,21 @@ else
             UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
         case h.ConsistencyMethod_Popupmenu
             UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method = h.ConsistencyMethod_Popupmenu.Value;
+        case h.ConsistencyAnalysis_Button
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2 = cell2mat(h.KineticRates_table2.Data);
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3 = cell2mat(h.KineticRates_table3.Data);
+            BurstData{file}.AdditionalParameters.BVA_R1 = str2double(h.Rstate1_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_R2 = str2double(h.Rstate2_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_R3 = str2double(h.Rstate3_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1 = str2double(h.Rsigma1_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2 = str2double(h.Rsigma2_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3 = str2double(h.Rsigma3_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_R1_static = str2double(h.Rstate1st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_R2_static = str2double(h.Rstate2st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_R3_static = str2double(h.Rstate3st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_static = str2double(h.Rsigma1st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_static = str2double(h.Rsigma2st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
     end
 end
 LSUserValues(1);

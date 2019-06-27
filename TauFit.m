@@ -871,7 +871,7 @@ if strcmp(method,'ensemble')
     end
     %%% Popup Menu for Fit Method Selection
     h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-    'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
     'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
     %%% Button for loading the selected PIE Channels
@@ -919,7 +919,7 @@ if strcmp(method,'ensemble')
         'Position',[0.05 0.05 0.29 0.12],...
         'String','Perform tail fit',...
         'Callback',@Start_Fit);
-    h.Fit_Tail_Menu = uicontextmenu;
+    h.Fit_Tail_Menu = uicontextmenu;f
     h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
         'Label','2 exponentials',...
         'Checked','off',...
@@ -1050,7 +1050,7 @@ if exist('bh','var')
             'FontSize',10);
         %%% Popup Menu for Fit Method Selection
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-            'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
@@ -1258,6 +1258,11 @@ h.FitResultToClip = uimenu(...
     'Label','Copy Fit Result to Clipboard',...
     'Callback',@Export);
 h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
+%%% Get tau values and plot dynamic FRET line in Burst Browser
+h.PlotDynamicFRETLine = uimenu(...
+    'Parent',h.FitPar_Table.UIContextMenu,...
+    'Label','Plot dynamic FRET line',...
+    'Callback',@Export);
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -2689,13 +2694,13 @@ switch obj
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
-                UserValues.TauFit.FitFix{chan}(6) = fix(2);
-                UserValues.TauFit.FitFix{chan}(8) = fix(3);
-                UserValues.TauFit.FitFix{chan}(10) = fix(4);
+                UserValues.TauFit.FitFix{chan}(8) = fix(2);
+                UserValues.TauFit.FitFix{chan}(10) = fix(3);
+                UserValues.TauFit.FitFix{chan}(12) = fix(4);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{3};
                 UserValues.TauFit.IRFShift{chan} = FitResult{4};
             case 'Biexponential'
                 %%% Parameter:
@@ -2783,16 +2788,16 @@ switch obj
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
-                UserValues.TauFit.FitFix{chan}(4) = fix(3);
-                UserValues.TauFit.FitFix{chan}(6) = fix(4);
-                UserValues.TauFit.FitFix{chan}(8) = fix(5);
-                UserValues.TauFit.FitFix{chan}(10) = fix(6);
+                UserValues.TauFit.FitFix{chan}(5) = fix(3);
+                UserValues.TauFit.FitFix{chan}(8) = fix(4);
+                UserValues.TauFit.FitFix{chan}(10) = fix(5);
+                UserValues.TauFit.FitFix{chan}(12) = fix(6);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{5};
                 UserValues.TauFit.IRFShift{chan} = FitResult{6};
             case 'Three Exponentials'
                 %%% Parameter:
@@ -2897,19 +2902,19 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
                 UserValues.TauFit.FitFix{chan}(3) = fix(3);
-                UserValues.TauFit.FitFix{chan}(4) = fix(4);
-                UserValues.TauFit.FitFix{chan}(5) = fix(5);
-                UserValues.TauFit.FitFix{chan}(6) = fix(6);
-                UserValues.TauFit.FitFix{chan}(8) = fix(7);
-                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(5) = fix(4);
+                UserValues.TauFit.FitFix{chan}(6) = fix(5);
+                UserValues.TauFit.FitFix{chan}(8) = fix(6);
+                UserValues.TauFit.FitFix{chan}(10) = fix(7);
+                UserValues.TauFit.FitFix{chan}(12) = fix(8);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(3) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(4) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
             case 'Four Exponentials'
                 %%% Parameter:
@@ -3017,14 +3022,17 @@ switch obj
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
-                UserValues.TauFit.FitFix{chan}(1) = fix(1);
-                UserValues.TauFit.FitFix{chan}(2) = fix(2);
-                UserValues.TauFit.FitFix{chan}(3) = fix(3);
-                UserValues.TauFit.FitFix{chan}(4) = fix(4);
-                UserValues.TauFit.FitFix{chan}(5) = fix(5);
-                UserValues.TauFit.FitFix{chan}(6) = fix(6);
-                UserValues.TauFit.FitFix{chan}(8) = fix(7);
-                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                    UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                    UserValues.TauFit.FitFix{chan}(2) = fix(2);
+                    UserValues.TauFit.FitFix{chan}(3) = fix(3);
+                    UserValues.TauFit.FitFix{chan}(4) = fix(4);
+                    UserValues.TauFit.FitFix{chan}(5) = fix(5);
+                    UserValues.TauFit.FitFix{chan}(6) = fix(6);
+                    UserValues.TauFit.FitFix{chan}(7) = fix(7);
+                    UserValues.TauFit.FitFix{chan}(8) = fix(8);
+                    UserValues.TauFit.FitFix{chan}(10) = fix(9);
+                    UserValues.TauFit.FitFix{chan}(12) = fix(10);
+                    
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
@@ -3032,8 +3040,10 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(4) = FitResult{4};
                 UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
                 UserValues.TauFit.FitParams{chan}(6) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
-                UserValues.TauFit.IRFShift{chan} = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(7) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{9};
+                UserValues.TauFit.IRFShift{chan} = FitResult{10};
             case 'Stretched Exponential'
                 %%% Parameter:
                 %%% tau    - Lifetime
@@ -3111,15 +3121,15 @@ switch obj
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
-                UserValues.TauFit.FitFix{chan}(23) = fix(2);
-                UserValues.TauFit.FitFix{chan}(6) = fix(3);
-                UserValues.TauFit.FitFix{chan}(8) = fix(4);
-                UserValues.TauFit.FitFix{chan}(10) = fix(5);
+                UserValues.TauFit.FitFix{chan}(25) = fix(2);
+                UserValues.TauFit.FitFix{chan}(8) = fix(3);
+                UserValues.TauFit.FitFix{chan}(10) = fix(4);
+                UserValues.TauFit.FitFix{chan}(12) = fix(5);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(23) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(25) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{4};
                 UserValues.TauFit.IRFShift{chan} = FitResult{5};
             case 'Distribution'
                 %%% Parameter:
@@ -3194,20 +3204,20 @@ switch obj
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
-                UserValues.TauFit.FitFix{chan}(19) = fix(1);
-                UserValues.TauFit.FitFix{chan}(20) = fix(2);
-                UserValues.TauFit.FitFix{chan}(6) = fix(3);
-                UserValues.TauFit.FitFix{chan}(8) = fix(4);
-                UserValues.TauFit.FitFix{chan}(11) = fix(5);
-                UserValues.TauFit.FitFix{chan}(12) = fix(6);
-                UserValues.TauFit.FitFix{chan}(10) = fix(7);
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(8) = fix(3);
+                UserValues.TauFit.FitFix{chan}(10) = fix(4);
+                UserValues.TauFit.FitFix{chan}(13) = fix(5);
+                UserValues.TauFit.FitFix{chan}(14) = fix(6);
+                UserValues.TauFit.FitFix{chan}(12) = fix(7);
                 end
-                UserValues.TauFit.FitParams{chan}(19) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(20) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(11) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(12) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{6};
                 UserValues.TauFit.IRFShift{chan} = FitResult{7};
             case 'Distribution plus Donor only'
                 %%% Parameter:
@@ -3282,23 +3292,122 @@ switch obj
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
-                UserValues.TauFit.FitFix{chan}(19) = fix(1);
-                UserValues.TauFit.FitFix{chan}(20) = fix(2);
-                UserValues.TauFit.FitFix{chan}(21) = fix(3);
-                UserValues.TauFit.FitFix{chan}(6) = fix(4);
-                UserValues.TauFit.FitFix{chan}(8) = fix(5);
-                UserValues.TauFit.FitFix{chan}(11) = fix(6);
-                UserValues.TauFit.FitFix{chan}(12) = fix(7);
-                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(23) = fix(3);
+                UserValues.TauFit.FitFix{chan}(8) = fix(4);
+                UserValues.TauFit.FitFix{chan}(10) = fix(5);
+                UserValues.TauFit.FitFix{chan}(13) = fix(6);
+                UserValues.TauFit.FitFix{chan}(14) = fix(7);
+                UserValues.TauFit.FitFix{chan}(12) = fix(8);
                 end
-                UserValues.TauFit.FitParams{chan}(19) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(20) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(21) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(11) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(12) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+            case 'Two Distributions plus Donor only'
+                %%% Parameter:
+                %%% Center R1
+                %%% sigmaR1
+                %%% Center R2
+                %%% sigmaR2
+                %%% Fraction 1
+                %%% Fraction D only
+                %%% Scatter
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime
+                
+                %%% Convert Lifetimes
+                x0(10) = x0(10)/TauFitData.TACChannelWidth;
+                lb(10) = lb(10)/TauFitData.TACChannelWidth;
+                ub(10) = ub(10)/TauFitData.TACChannelWidth;
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
+                end
+                
+                FitFun = fitfun_2dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(26) = fix(3);
+                UserValues.TauFit.FitFix{chan}(27) = fix(4);
+                UserValues.TauFit.FitFix{chan}(5) = fix(5);
+                UserValues.TauFit.FitFix{chan}(23) = fix(6);
+                UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(13) = fix(9);
+                UserValues.TauFit.FitFix{chan}(14) = fix(10);
+                UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                end
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(26) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(27) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
+                UserValues.TauFit.IRFShift{chan} = FitResult{11};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -3404,27 +3513,27 @@ switch obj
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
-                UserValues.TauFit.FitFix{chan}(15) = fix(2);
-                UserValues.TauFit.FitFix{chan}(17) = fix(3);
-                UserValues.TauFit.FitFix{chan}(18) = fix(4);
-                UserValues.TauFit.FitFix{chan}(6) = fix(5);
-                UserValues.TauFit.FitFix{chan}(7) = fix(6);
-                UserValues.TauFit.FitFix{chan}(8) = fix(7);
-                UserValues.TauFit.FitFix{chan}(9) = fix(8);
-                UserValues.TauFit.FitFix{chan}(13) = fix(9);
-                UserValues.TauFit.FitFix{chan}(14) = fix(10);
-                UserValues.TauFit.FitFix{chan}(10) = fix(11);
+                UserValues.TauFit.FitFix{chan}(17) = fix(2);
+                UserValues.TauFit.FitFix{chan}(19) = fix(3);
+                UserValues.TauFit.FitFix{chan}(20) = fix(4);
+                UserValues.TauFit.FitFix{chan}(8) = fix(5);
+                UserValues.TauFit.FitFix{chan}(9) = fix(6);
+                UserValues.TauFit.FitFix{chan}(10) = fix(7);
+                UserValues.TauFit.FitFix{chan}(11) = fix(8);
+                UserValues.TauFit.FitFix{chan}(15) = fix(9);
+                UserValues.TauFit.FitFix{chan}(16) = fix(10);
+                UserValues.TauFit.FitFix{chan}(12) = fix(11);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(15) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(17) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(18) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(7) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{10};
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
                 h.l1_edit.String = num2str(FitResult{9});
                 h.l2_edit.String = num2str(FitResult{10});
@@ -3552,30 +3661,30 @@ switch obj
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
-                UserValues.TauFit.FitFix{chan}(4) = fix(3);
-                UserValues.TauFit.FitFix{chan}(15) = fix(4);
-                UserValues.TauFit.FitFix{chan}(17) = fix(5);
-                UserValues.TauFit.FitFix{chan}(18) = fix(6);
-                UserValues.TauFit.FitFix{chan}(6) = fix(7);
-                UserValues.TauFit.FitFix{chan}(7) = fix(8);
-                UserValues.TauFit.FitFix{chan}(8) = fix(9);
-                UserValues.TauFit.FitFix{chan}(9) = fix(10);
-                UserValues.TauFit.FitFix{chan}(13) = fix(11);
-                UserValues.TauFit.FitFix{chan}(14) = fix(12);
-                UserValues.TauFit.FitFix{chan}(10) = fix(13);
+                UserValues.TauFit.FitFix{chan}(5) = fix(3);
+                UserValues.TauFit.FitFix{chan}(17) = fix(4);
+                UserValues.TauFit.FitFix{chan}(19) = fix(5);
+                UserValues.TauFit.FitFix{chan}(20) = fix(6);
+                UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                UserValues.TauFit.FitFix{chan}(9) = fix(8);
+                UserValues.TauFit.FitFix{chan}(10) = fix(9);
+                UserValues.TauFit.FitFix{chan}(11) = fix(10);
+                UserValues.TauFit.FitFix{chan}(15) = fix(11);
+                UserValues.TauFit.FitFix{chan}(16) = fix(12);
+                UserValues.TauFit.FitFix{chan}(12) = fix(13);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(15) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(17) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(18) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(7) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{10};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{11};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{12};
                 UserValues.TauFit.IRFShift{chan} = FitResult{13};
                 h.l1_edit.String = num2str(FitResult{11});
                 h.l2_edit.String = num2str(FitResult{12});
@@ -3689,29 +3798,29 @@ switch obj
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
-                UserValues.TauFit.FitFix{chan}(15) = fix(2);
-                UserValues.TauFit.FitFix{chan}(16) = fix(3);
-                UserValues.TauFit.FitFix{chan}(17) = fix(4);
-                UserValues.TauFit.FitFix{chan}(18) = fix(5);
-                UserValues.TauFit.FitFix{chan}(6) = fix(6);
-                UserValues.TauFit.FitFix{chan}(7) = fix(7);
-                UserValues.TauFit.FitFix{chan}(8) = fix(8);
-                UserValues.TauFit.FitFix{chan}(9) = fix(9);
-                UserValues.TauFit.FitFix{chan}(13) = fix(10);
-                UserValues.TauFit.FitFix{chan}(14) = fix(11);
-                UserValues.TauFit.FitFix{chan}(10) = fix(12);
+                UserValues.TauFit.FitFix{chan}(17) = fix(2);
+                UserValues.TauFit.FitFix{chan}(18) = fix(3);
+                UserValues.TauFit.FitFix{chan}(19) = fix(4);
+                UserValues.TauFit.FitFix{chan}(20) = fix(5);
+                UserValues.TauFit.FitFix{chan}(8) = fix(6);
+                UserValues.TauFit.FitFix{chan}(9) = fix(7);
+                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(11) = fix(9);
+                UserValues.TauFit.FitFix{chan}(15) = fix(10);
+                UserValues.TauFit.FitFix{chan}(16) = fix(11);
+                UserValues.TauFit.FitFix{chan}(12) = fix(12);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(15) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(16) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(17) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(18) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(7) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{10};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(18) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{11};
                 UserValues.TauFit.IRFShift{chan} = FitResult{12};
                 h.l1_edit.String = num2str(FitResult{10});
                 h.l2_edit.String = num2str(FitResult{11});
@@ -3841,32 +3950,32 @@ switch obj
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
-                UserValues.TauFit.FitFix{chan}(4) = fix(3);
-                UserValues.TauFit.FitFix{chan}(15) = fix(4);
-                UserValues.TauFit.FitFix{chan}(16) = fix(5);
-                UserValues.TauFit.FitFix{chan}(17) = fix(6);
-                UserValues.TauFit.FitFix{chan}(18) = fix(7);
-                UserValues.TauFit.FitFix{chan}(6) = fix(8);
-                UserValues.TauFit.FitFix{chan}(7) = fix(9);
-                UserValues.TauFit.FitFix{chan}(8) = fix(10);
-                UserValues.TauFit.FitFix{chan}(9) = fix(11);
-                UserValues.TauFit.FitFix{chan}(13) = fix(12);
-                UserValues.TauFit.FitFix{chan}(14) = fix(13);
-                UserValues.TauFit.FitFix{chan}(10) = fix(14);
+                UserValues.TauFit.FitFix{chan}(5) = fix(3);
+                UserValues.TauFit.FitFix{chan}(17) = fix(4);
+                UserValues.TauFit.FitFix{chan}(18) = fix(5);
+                UserValues.TauFit.FitFix{chan}(19) = fix(6);
+                UserValues.TauFit.FitFix{chan}(20) = fix(7);
+                UserValues.TauFit.FitFix{chan}(8) = fix(8);
+                UserValues.TauFit.FitFix{chan}(9) = fix(9);
+                UserValues.TauFit.FitFix{chan}(10) = fix(10);
+                UserValues.TauFit.FitFix{chan}(11) = fix(11);
+                UserValues.TauFit.FitFix{chan}(15) = fix(12);
+                UserValues.TauFit.FitFix{chan}(16) = fix(13);
+                UserValues.TauFit.FitFix{chan}(12) = fix(14);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(15) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(16) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(17) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(18) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(7) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{10};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{11};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{12};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{13};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(18) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{13};
                 UserValues.TauFit.IRFShift{chan} = FitResult{14};
                 h.l1_edit.String = num2str(FitResult{12});
                 h.l2_edit.String = num2str(FitResult{13});
@@ -3997,34 +4106,34 @@ switch obj
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
-                UserValues.TauFit.FitFix{chan}(4) = fix(3);
-                UserValues.TauFit.FitFix{chan}(15) = fix(4);
-                UserValues.TauFit.FitFix{chan}(16) = fix(5);
-                UserValues.TauFit.FitFix{chan}(17) = fix(6);
-                UserValues.TauFit.FitFix{chan}(18) = fix(7);
-                UserValues.TauFit.FitFix{chan}(22) = fix(8);
-                UserValues.TauFit.FitFix{chan}(6) = fix(9);
-                UserValues.TauFit.FitFix{chan}(7) = fix(10);
-                UserValues.TauFit.FitFix{chan}(8) = fix(11);
-                UserValues.TauFit.FitFix{chan}(9) = fix(12);
-                UserValues.TauFit.FitFix{chan}(13) = fix(13);
-                UserValues.TauFit.FitFix{chan}(14) = fix(14);
-                UserValues.TauFit.FitFix{chan}(10) = fix(15);
+                UserValues.TauFit.FitFix{chan}(5) = fix(3);
+                UserValues.TauFit.FitFix{chan}(17) = fix(4);
+                UserValues.TauFit.FitFix{chan}(18) = fix(5);
+                UserValues.TauFit.FitFix{chan}(19) = fix(6);
+                UserValues.TauFit.FitFix{chan}(20) = fix(7);
+                UserValues.TauFit.FitFix{chan}(24) = fix(8);
+                UserValues.TauFit.FitFix{chan}(8) = fix(9);
+                UserValues.TauFit.FitFix{chan}(9) = fix(10);
+                UserValues.TauFit.FitFix{chan}(10) = fix(11);
+                UserValues.TauFit.FitFix{chan}(11) = fix(12);
+                UserValues.TauFit.FitFix{chan}(15) = fix(13);
+                UserValues.TauFit.FitFix{chan}(16) = fix(14);
+                UserValues.TauFit.FitFix{chan}(12) = fix(15);
                 end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(15) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(16) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(17) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(18) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(22) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(7) = FitResult{10};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{11};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{12};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{13};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{14};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(18) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(24) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{13};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{14};
                 UserValues.TauFit.IRFShift{chan} = FitResult{15};
                 h.l1_edit.String = num2str(FitResult{13});
                 h.l2_edit.String = num2str(FitResult{14});
@@ -4399,7 +4508,7 @@ switch obj
             %%% ask to fix the lifetimes
             lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
             [lifetimes,order] = sort(lifetimes);
-            fraction = UserValues.TauFit.FitParams{chan}(4);
+            fraction = UserValues.TauFit.FitParams{chan}(5);
             if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
                 fraction = 1-fraction;
             end
@@ -5864,11 +5973,12 @@ Parameters{4} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Tau4 [ns]','Fraction 1','F
 Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{8} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{10} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{9} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -5897,6 +6007,8 @@ sigR = UserValues.TauFit.FitParams{chan}(22);
 FD0 = UserValues.TauFit.FitParams{chan}(23);
 rinf2 = UserValues.TauFit.FitParams{chan}(24);
 beta = UserValues.TauFit.FitParams{chan}(25);
+R2 = UserValues.TauFit.FitParams{chan}(26);
+sigR2 = UserValues.TauFit.FitParams{chan}(27);
 
 tau1f = UserValues.TauFit.FitFix{chan}(1);
 tau2f = UserValues.TauFit.FitFix{chan}(2);
@@ -5923,6 +6035,8 @@ sigRf = UserValues.TauFit.FitFix{chan}(22);
 FD0f = UserValues.TauFit.FitFix{chan}(23);
 rinf2f = UserValues.TauFit.FitFix{chan}(24);
 betaf = UserValues.TauFit.FitFix{chan}(25);
+R2f = UserValues.TauFit.FitFix{chan}(26);
+sigR2f = UserValues.TauFit.FitFix{chan}(27);
 
 StartPar = cell(7,1);
 StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
@@ -5932,15 +6046,16 @@ StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau
 StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
 StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
 StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
-StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
+StartPar{9} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{11} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 startpar = StartPar{model};
 names = Parameters{model};
@@ -6027,7 +6142,7 @@ LSUserValues(1);
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export(obj,~)
-global UserValues TauFitData FileInfo BurstData
+global UserValues TauFitData FileInfo BurstData BurstMeta
 h = guidata(findobj('Tag','TauFit'));
 switch obj
     case {h.Menu.Export_MIPattern_Fit, h.Menu.Export_MIPattern_Data}
@@ -6538,9 +6653,58 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, [num2cell(TauFitData.ConfInt);{'NaN','NaN'}]];
+            res = [res, num2cell(TauFitData.ConfInt)];
         end
         Mat2clip(res);
+    case h.PlotDynamicFRETLine
+        %%% get tau values and plot dynamic FRET line in Burst Browser
+        BBgui = guidata(findobj('Tag','BurstBrowser'));
+        file = BurstMeta.SelectedFile;
+        %%% Query using edit box
+        %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+        data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
+            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(cell2mat(h.FitPar_Table.Data(1,1))),num2str(cell2mat(h.FitPar_Table.Data(2,1)))});
+        data = cellfun(@str2double,data);
+        if any(isnan(data)) || isempty(data)
+            return;
+        end
+        x = data(2:end);
+        line = data(1);
+        if line < 1 || line > 3
+            return;
+        end
+        % Update UserValues
+        UserValues.BurstBrowser.Settings.DynFRETLine_Line = line;
+        UserValues.BurstBrowser.Settings.DynFRETLineTau1 = x(1);
+        UserValues.BurstBrowser.Settings.DynFRETLineTau2 = x(2);
+        %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+        %    x);
+        switch BBgui.lifetime_ind_popupmenu.Value
+            case {5,6} % Phasor plots
+                % get channel (donor or acceptor)
+                chan = h.lifetime_ind_popupmenu.Value-4;
+                % Calculate frequency
+                Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+                % convert lifetimes to phasor coordinates
+                g = 1./(1+(2*pi*Freq*x).^2);
+                s = (2*pi*Freq*x).*g;
+                x = g; y = s;
+                % draw a line through the universal circles
+                m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
+                % use p-q formula
+                p = (2*m*b-1)/(m^2+1); q = b^2/(m^2+1);
+                xp1 = -p/2 - sqrt(p^2/4-q); xp2 =  -p/2 + sqrt(p^2/4-q);
+                xp = xp1:0.01:xp2; yp = m*xp+b;
+                plot(xp,yp,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine2,'Parent',BBgui.axes_lifetime_ind_2d);
+                BBgui.axes_lifetime_ind_2d.UIContextMenu = BBgui.axes_lifetime_ind_1d_x.UIContextMenu; set(BBgui.axes_lifetime_ind_2d.Children,'UIContextMenu',BBgui.axes_lifetime_ind_1d_x.UIContextMenu);
+                return;
+        end
+    [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+        x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
 end
 
 
@@ -6670,5 +6834,7 @@ valid = valid & (data ~= 0) & (model ~= 0);
 
 log_summand = zeros(size(data));
 log_summand(valid) = data(valid).*log(model(valid)./data(valid));
-
-w_res_MLE = sqrt(2*(model - data) - 2*log_summand);
+w_res_MLE = 2*(model - data) - 2*log_summand; %squared residuals
+% avoid complex numbers
+w_res_MLE(w_res_MLE < 0) = 0;
+w_res_MLE = sqrt(w_res_MLE);

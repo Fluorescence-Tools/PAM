@@ -16,7 +16,7 @@ Param(2): tauD[&mu;s]      = 2500;   LB = 0;     UB = Inf;
 Param(3): p             = 5;	LB = 0;     UB = Inf;
 Param(4): alpha         = 1;	LB = 0;     UB = Inf;
 Param(5): tauT[&mu;s]      = 1;	LB = 0;     UB = Inf;
-Param(6): A             = 1;    LB = 0;     UB = 1;
+Param(6): A             = 1;    LB = 0;     UB = Inf;
 Param(7): y0            = 0;    LB = -1;    UB = 1;
 Param(8): isCCF         = 0;    LB = 0;    UB = 1;f
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%

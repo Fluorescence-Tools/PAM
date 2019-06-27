@@ -2374,6 +2374,19 @@ h.MT.Number_Section = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.28 0.62 0.1 0.06]);
+%%% Checkbox for chunk-wise TCSPC data read-in
+h.MT.Use_Chunkwise_Read_In = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT_Use_Chunk-wise read-in',...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'String','Chunkwise TCSPC data read-in',...
+    'Callback',@Calculate_Settings,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.52 0.30 0.06]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -4195,33 +4208,35 @@ if any(mode == 10)
                 h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
-    if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
-        for t = h.PIE.List.Value
-            %%% create plot
-            h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+    if UserValues.Settings.Pam.Use_PCH
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+            for t = h.PIE.List.Value
+                %%% create plot
+                h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+            end
+            guidata(h.Pam,h);
+            h.PCH.Axes.YLimMode = 'auto';
+            h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
+            h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = 'Frequency';
+            h.PCH.Axes.YScale = 'log';
+            h.PCH.Axes.DataAspectRatioMode = 'auto';
+        else
+            sel = h.PIE.List.Value;
+            sel = sel(1:2);
+            [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
+                0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
+            h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
+                x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
+            h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
+            guidata(h.Pam,h);
+            h.PCH.Axes.YScale = 'lin';
+            h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
         end
-        guidata(h.Pam,h);
-        h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
-        h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = 'Frequency';
-        h.PCH.Axes.YScale = 'log';
-        h.PCH.Axes.DataAspectRatioMode = 'auto';
-    else
-        sel = h.PIE.List.Value;
-        sel = sel(1:2);
-        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
-            0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
-        h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
-            x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
-        h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
-        guidata(h.Pam,h);
-        h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
     end
     if obj == h.PCH.PCH_Export_Menu
         hfig = figure('Visible','on','Units','pixel',...

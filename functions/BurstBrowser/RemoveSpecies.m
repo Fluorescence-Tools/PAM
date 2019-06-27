@@ -42,13 +42,13 @@ switch level
             BurstData{file}.SpeciesNames{species(1),species(2)} = [];
             temp = BurstData{file}.SpeciesNames(species(1),:);
             temp = temp(~cellfun(@isempty,temp));
-            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.SpeciesNames(species(1),:) = cell(1,size(BurstData{file}.SpeciesNames,2));
             BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
 
             BurstData{file}.Cut{species(1),species(2)} = [];
             temp = BurstData{file}.Cut(species(1),:);
             temp = temp(cellfun(@iscell,temp));
-            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.Cut(species(1),:) = cell(1,size(BurstData{file}.Cut,2));;
             BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
         end
 end

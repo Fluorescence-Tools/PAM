@@ -108,6 +108,9 @@ if obj == h.SmoothKDE
     UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;
     UpdateLifetimePlots(obj,[]);
 end
+if obj == h.Multiplot_Contour
+    UserValues.BurstBrowser.Display.Multiplot_Contour = h.Multiplot_Contour.Value;
+end
 if obj == h.ColorMapInvert
     UserValues.BurstBrowser.Display.ColorMapInvert = h.ColorMapInvert.Value;
 end

@@ -153,12 +153,13 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
         hold on;
         X_expectedSD = linspace(0,1,1000);
+        sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         switch UserValues.BurstBrowser.Settings.BVA_X_axis
             case 1
                 xlabel('Proximity Ratio, E*'); 
                 ylabel('SD of E*, s');
                 BinCenters = BinCenters';
-                sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
+                [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX);
             case 2
                 xlabel('FRET Efficiency'); 
                 ylabel('SD of FRET, s');
@@ -167,11 +168,10 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
 
                 BinCenters = PRtoFRET(BinCenters);
-                sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
                 X_expectedSD = PRtoFRET(X_expectedSD);
-                %X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+                E = PRtoFRET(E);
+                [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); %H(H==0) = NaN;
         end
-        [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); %H(H==0) = NaN;
         
         switch UserValues.BurstBrowser.Display.PlotType
             case 'Contour'
@@ -189,7 +189,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             case 'Hex'
                 hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
-        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.4,'edgecolor','none','HandleVisibility','off');
+        patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
         if sampling ~=0
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;

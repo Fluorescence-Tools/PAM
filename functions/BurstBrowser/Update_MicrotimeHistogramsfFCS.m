@@ -404,7 +404,6 @@ if isMFD
     h.axes_fFCS_DecayPerp.Visible = 'on';
     set(h.axes_fFCS_DecayPerp.Children,'Visible','on');
     h.axes_fFCS_DecayPar.Position(3) = 0.42;
-    h.fFCS_SubTabPerpFilter.Parent = 'on';
     h.fFCS_SubTabPerp.Parent = h.MainTabfFCSPanel;
     h.fFCS_SubTabPar.Position(3) = 0.5;
 else
