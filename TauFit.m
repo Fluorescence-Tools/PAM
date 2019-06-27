@@ -4508,7 +4508,7 @@ switch obj
             %%% ask to fix the lifetimes
             lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
             [lifetimes,order] = sort(lifetimes);
-            fraction = UserValues.TauFit.FitParams{chan}(4);
+            fraction = UserValues.TauFit.FitParams{chan}(5);
             if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
                 fraction = 1-fraction;
             end
