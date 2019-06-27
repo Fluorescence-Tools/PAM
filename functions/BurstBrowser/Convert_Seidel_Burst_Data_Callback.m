@@ -107,6 +107,30 @@ if exist([PathName filesep 'br4'],'dir') || exist([PathName filesep 'tr4'],'dir'
     %data_br4(sum(data_br4,2)==0,:) = [];
 end
 
+% get files in by4 folder
+if exist([PathName filesep 'by4'],'dir') || exist([PathName filesep 'ty4'],'dir')
+    by4_files = dir([PathName filesep 'by4']);
+    if isempty(by4_files)
+        % try ty4, i.e. time-window burst analysis
+        by4_files = dir([PathName filesep 'ty4']);
+    end
+    params_by4 = [];
+    data_by4 = cell(0);
+    for i = 1:numel(br4_files)
+        if ~by4_files(i).isdir
+            if isempty(params_by4) %%% read names
+                fid = fopen([by4_files(i).folder filesep by4_files(i).name],'r');
+                params_by4 = strsplit(fgetl(fid),'\t');
+                params_by4(cellfun(@isempty,params_by4)) = [];
+                fclose(fid);
+            end
+            data = dlmread([by4_files(i).folder filesep by4_files(i).name],'\t',2,0);
+            data_by4{end+1} = data;
+        end
+        Progress(i/numel(by4_files),h.Progress_Axes,h.Progress_Text,'Converting by4 files... (Step 3 of 3)');
+    end
+end
+
 % read info
 fid = fopen([PathName filesep 'info' filesep 'Paris_x64 info.txt']);
 info = {};
@@ -129,7 +153,12 @@ if exist('params_br4','var')
     ParameterNames = [ParameterNames, params_br4];
     Data = [Data,vertcat(data_br4{:})];
 end
+if exist('params_by4','var')
+    ParameterNames = [ParameterNames, params_by4];
+    Data = [Data,vertcat(data_by4{:})];
+end
 Data(sum(Data,2)==0,:) = [];
+
 Progress(1,h.Progress_Axes,h.Progress_Text,'Saving converted data...');
 % rename parameters
 ParameterNames{strcmp(ParameterNames,'Duration (ms)')} = 'Duration [ms]';
@@ -157,16 +186,34 @@ if sum(strcmp(ParameterNames,'Proximity Ratio')) == 0
     Data(:,end+1) = Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))./...
         (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)')));
 end
-
-% add missing acceptor information
-if all(strcmp(ParameterNames,'Stoichiometry') == 0)
+if sum(strcmp(ParameterNames,'Stoichiometry')) == 0
     ParameterNames{end+1} = 'Stoichiometry';
-    ParameterNames{end+1} = 'Lifetime A [ns]';
-    ParameterNames{end+1} = 'Anisotropy A';
+    Data = [Data, zeros(size(Data,1),1)];
+end
+if sum(strcmp(ParameterNames,'Number of Photons (yellow)')) == 0 % no PIE information    
     ParameterNames{end+1} = 'Number of Photons (AA)';
     ParameterNames{end+1} = 'Number of Photons (AA par)';
     ParameterNames{end+1} = 'Number of Photons (AA perp)';
-    Data = [Data, zeros(size(Data,1),6)];
+    Data = [Data, zeros(size(Data,1),3)];
+end
+if sum(strcmp(ParameterNames,'Tau (yellow)')) == 0 % no lifetime PIE information    
+    ParameterNames{end+1} = 'Lifetime A [ns]';
+    ParameterNames{end+1} = 'Anisotropy A';
+    Data = [Data, zeros(size(Data,1),2)];
+end
+
+% rename acceptor parameters
+ParameterNames{strcmp(ParameterNames,'Number of Photons (yellow)')} = 'Number of Photons (AA)';
+ParameterNames{strcmp(ParameterNames,'Ny-p-all')} = 'Number of Photons (AA par)';
+ParameterNames{strcmp(ParameterNames,'Ny-s-all')} = 'Number of Photons (AA perp)';
+ParameterNames{strcmp(ParameterNames,'Tau (yellow)')} = 'Lifetime A [ns]';
+ParameterNames{strcmp(ParameterNames,'r Experimental (yellow)')} = 'Anisotropy A';
+
+% add raw Stoichiometry
+if sum(strcmp(ParameterNames,'Stoichiometry (raw)')) == 0
+    ParameterNames{end+1} = 'Stoichiometry (raw)';
+    Data(:,end+1) = (Data(:,strcmp(ParameterNames,'Number of Photons (DD)'))+Data(:,strcmp(ParameterNames,'Number of Photons (DA)')))./...
+        (Data(:,strcmp(ParameterNames,'Number of Photons (DD)')) + Data(:,strcmp(ParameterNames,'Number of Photons (DA)'))+ Data(:,strcmp(ParameterNames,'Number of Photons (AA)')));
 end
 
 % fill missing field in BurstData structure
