@@ -66,16 +66,32 @@ nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 switch UserValues.BurstBrowser.Settings.LifetimeMode
     case 1
         YLim = [-0.1 1.1];
-    case {2,3}
-        YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+    case 2
+        if ~h.MultiselectOnCheckbox.UserData
+            YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+        else
+            YLim = [];
+        end
+    case 3
+        if ~h.MultiselectOnCheckbox.UserData
+            YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+        else
+            YLim = [];
+        end
+        maxX = 1;
 end
 if ~h.MultiselectOnCheckbox.UserData
-    maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
+    if UserValues.BurstBrowser.Settings.LifetimeMode ~= 3
+        maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
+    end
     [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], YLim);
     datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
 else
-    maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
+    if UserValues.BurstBrowser.Settings.LifetimeMode ~= 3
+        maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
+    end
     [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], YLim});
+    YLim = [ybins(1) ybins(end)];
 end
 if(get(h.Hist_log10, 'Value'))
     H = log10(H);
@@ -163,7 +179,11 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     BurstMeta.HexPlot.EvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
 end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauGG,YLim);
+if ~isempty(YLim)
+    ylim(h.axes_EvsTauGG,YLim);
+else
+    ylim(h.axes_EvsTauGG,'auto');
+end
 
 h.axes_EvsTauGG.CLimMode = 'auto';
 h.axes_EvsTauGG.CLim(1) = 0;
@@ -266,7 +286,11 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     BurstMeta.HexPlot.EvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
 end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauRR,YLim);
+if ~isempty(YLim)
+    ylim(h.axes_EvsTauRR,YLim);
+else
+    ylim(h.axes_EvsTauRR,'auto');
+end
 h.axes_EvsTauRR.CLimMode = 'auto';
 h.axes_EvsTauRR.CLim(1) = 0;
 try;h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;

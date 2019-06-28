@@ -176,11 +176,15 @@ if obj == h.LifetimeMode_Menu
         case 1
             h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
             h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+            h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+            h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
             h.lifetime_ind_popupmenu.String{1} = '<html>E vs &tau;<sub>D(A)</sub></html>';
             h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
         case 2
             h.axes_EvsTauGG.YLabel.String = 'log(FD/FA)';
             h.axes_EvsTauRR.YLabel.String = 'log(FD/FA)';
+            h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+            h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
             h.lifetime_ind_popupmenu.String{1} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>D(A)</sub></html>';
             h.lifetime_ind_popupmenu.String{2} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>A</sub></html>';
         case 3
