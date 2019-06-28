@@ -4866,8 +4866,8 @@ end
     Initialize_Plots(1);
     UpdateOptions(h.Fit_NGaussian_Popupmenu,[],h);
     UpdateGUIOptions(h.PlotGridAboveDataCheckbox,[],h);
+    UpdateGUIOptions(h.LifetimeMode_Menu,[],h);
     ChangePlotType([],[],h);
-    UpdateGUIOptions(h,[],h.LifetimeMode_Menu);
     %%% Load sample data
     BBSampleData
     %% set UserValues in GUI
