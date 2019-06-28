@@ -43,7 +43,15 @@ switch BurstData{file}.BAMethod
         idx_tauRR = strcmp('Lifetime A [ns]',NameArray);
         idx_rGG = strcmp('Anisotropy D',NameArray);
         idx_rRR = strcmp('Anisotropy A',NameArray);
-        idxE = find(strcmp(NameArray,'FRET Efficiency'));
+        switch UserValues.BurstBrowser.Settings.LifetimeMode
+            case 1
+                idxE = find(strcmp(NameArray,'FRET Efficiency'));
+            case 2
+                idxE = find(strcmp(NameArray,'log(FD/FA)'));            
+            case 3
+                idxE = find(strcmp(NameArray,'M1-M2'));
+                idx_tauGG = strcmp('FRET Efficiency',NameArray);
+        end
     case {3,4}
         idx_tauGG = strcmp('Lifetime GG [ns]',NameArray);
         idx_tauRR = strcmp('Lifetime RR [ns]',NameArray);
@@ -55,13 +63,19 @@ end
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 %% Plot E vs. tauGG in first plot
+switch UserValues.BurstBrowser.Settings.LifetimeMode
+    case 1
+        YLim = [-0.1 1.1];
+    case {2,3}
+        YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+end
 if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.1 1.1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], YLim);
     datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], YLim});
 end
 if(get(h.Hist_log10, 'Value'))
     H = log10(H);
@@ -149,7 +163,8 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     BurstMeta.HexPlot.EvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
 end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauGG,[-0.1 1.1]);
+ylim(h.axes_EvsTauGG,YLim);
+
 h.axes_EvsTauGG.CLimMode = 'auto';
 h.axes_EvsTauGG.CLim(1) = 0;
 try;h.axes_EvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
@@ -160,11 +175,11 @@ end
 %% Plot E vs. tauRR in second plot
 if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+2]);
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.1 1.1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], YLim);
     datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
-    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], YLim});
 end
 if(get(h.Hist_log10, 'Value'))
     H = log10(H);
@@ -251,7 +266,7 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     BurstMeta.HexPlot.EvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
 end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauRR,[-0.1 1.1]);
+ylim(h.axes_EvsTauRR,YLim);
 h.axes_EvsTauRR.CLimMode = 'auto';
 h.axes_EvsTauRR.CLim(1) = 0;
 try;h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;

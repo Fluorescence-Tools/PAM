@@ -2322,6 +2322,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.DynFRETLineTau2 = S.BurstBrowser.Settings.DynFRETLineTau2;
     
+    %%% Check, if BurstBrowser.Settings.LifetimeMode subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'LifetimeMode')
+        S.BurstBrowser.Settings.LifetimeMode=1;
+        disp('UserValues.BurstBrowser.Settings.LifetimeMode was incomplete');
+    end
+    P.BurstBrowser.Settings.LifetimeMode = S.BurstBrowser.Settings.LifetimeMode;
+    
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};

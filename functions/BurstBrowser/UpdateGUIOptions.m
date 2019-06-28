@@ -169,4 +169,29 @@ if obj == h.MarkerSize_edit
     end
     PlotLifetimeInd([],[],h);
 end
+if obj == h.LifetimeMode_Menu
+    UserValues.BurstBrowser.Settings.LifetimeMode = h.LifetimeMode_Menu.Value;
+    % change axis labels and lifetime_ind selection box
+    switch UserValues.BurstBrowser.Settings.LifetimeMode
+        case 1
+            h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
+            h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+            h.lifetime_ind_popupmenu.String{1} = '<html>E vs &tau;<sub>D(A)</sub></html>';
+            h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+        case 2
+            h.axes_EvsTauGG.YLabel.String = 'log(FD/FA)';
+            h.axes_EvsTauRR.YLabel.String = 'log(FD/FA)';
+            h.lifetime_ind_popupmenu.String{1} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>D(A)</sub></html>';
+            h.lifetime_ind_popupmenu.String{2} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>A</sub></html>';
+        case 3
+            h.axes_EvsTauGG.YLabel.String = 'M_1-M_2';
+            h.axes_EvsTauGG.XLabel.String = 'FRET Efficiency';
+            h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub>) vs E</html>';
+            h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+    end
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
+    % hide dynamic FRET lines
+    set(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG,'Visible','off');
+end
 LSUserValues(1);

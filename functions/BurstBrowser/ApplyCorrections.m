@@ -159,6 +159,9 @@ BurstData{file}.DataArray(:,indS) = S;
 %BurstData{file}.DataArray(:,indEPR) = EPR;
 if any(BurstData{file}.BAMethod == [1,2,5])
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = beta_gr*NGR./NRR;
+    FDFA = gamma_gr.*NGG./NGR; FDFA(FDFA<=0) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'log(FD/FA)')) = log(FDFA);
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'M1-M2')) = (1-E).*(1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'))./BurstData{file}.Corrections.DonorLifetime);   
 end
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections

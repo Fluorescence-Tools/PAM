@@ -24,11 +24,19 @@ end
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
     %%% Calculate static FRET line in presence of linker fluctuations
-    [staticFRETline, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+    [E, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
         BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
+    switch UserValues.BurstBrowser.Settings.LifetimeMode 
+        case 2 % convert E to FD/FA
+            E = log(1./E-1);
+        case 3 % convert to moment difference
+            E_temp = E;  
+            E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetime); % (1-E)*E_F
+            tau = E_temp;
+    end
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
-    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
+    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = E;
     %BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     if any(BurstData{file}.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
@@ -163,11 +171,25 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                         return;
                 end
             end
-            [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+            if UserValues.BurstBrowser.Settings.LifetimeMode == 3
+                % we picked FRET efficiency, not lifetime
+                % better would be to find the nearest point on the static
+                % FRET line!
+                x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
+            end
+            [E, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
                 x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
+            switch UserValues.BurstBrowser.Settings.LifetimeMode 
+                case 2 % convert E to FD/FA
+                    E = log(1./E-1);
+                case 3 % convert to moment difference
+                    E_temp = E;  
+                    E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetime); % (1-E)*E_F
+                    tau = E_temp;
+            end
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
-            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
+            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = E;
         case h.DynamicFRETRemove_Menu
             data = inputdlg({'Line #'},'Remove dynamic line...',1,{'1'});
             data = cellfun(@str2double,data);
