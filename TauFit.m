@@ -4353,7 +4353,7 @@ switch obj
         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
         
         % get fit parameters (scatter,background, irfshift)
-        x0 = [ UserValues.TauFit.FitParams{chan}([6,8]) UserValues.TauFit.IRFShift{chan}];
+        x0 = [ UserValues.TauFit.FitParams{chan}([8,10]) UserValues.TauFit.IRFShift{chan}];
         switch obj
             case h.Fit_Button_MEM_tau
                 mode = 'tau';
