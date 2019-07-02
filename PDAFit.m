@@ -521,65 +521,6 @@ if isempty(h.GlobalPDAFit)
         'Units','normalized',...
         'Position',[0 0 1 0.2]);
     
-    %% Database tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     h.PDADatabase.Tab= uitab(...
-        'Parent',h.Tabgroup_Down,...
-        'Tag','PDADatabase_Tab',...
-        'Title','Database');    
-    %%% Database panel
-    h.PDADatabase.Panel = uibuttongroup(...
-        'Parent',h.PDADatabase.Tab,...
-        'Tag','PDADatabase_Panel',...
-        'Units','normalized',...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'HighlightColor', Look.Control,...
-        'ShadowColor', Look.Shadow,...
-        'Position',[0 0 1 1]);    
-    %%% Database list
-    h.PDADatabase.List = uicontrol(...
-        'Parent',h.PDADatabase.Panel,...
-        'Tag','PDADatabase_List',...
-        'Style','listbox',...
-        'Units','normalized',...
-        'FontSize',14,...
-        'Max',2,...
-        'String',[],...
-        'BackgroundColor', Look.List,...
-        'ForegroundColor', Look.ListFore,...
-        'KeyPressFcn',{@Database,0},...
-        'Tooltipstring', ['<html>'...
-                          'List of files in database <br>',...
-                          '<i>"return"</i>: Loads selected files <br>',...
-                          '<I>"delete"</i>: Removes selected files from list </b>'],...
-        'Position',[0.01 0.01 0.9 0.98]);   
-    %%% Button to add files to the database
-    h.PDADatabase.Load = uicontrol(...
-        'Parent',h.PDADatabase.Panel,...
-        'Tag','PDADatabase_Load_Button',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'String','Load',...
-        'Callback',{@Database,2},...
-        'Position',[0.93 0.55 0.05 0.15],...
-        'Tooltipstring', 'Load database from file');
-    %%% Button to add files to the database
-    h.PDADatabase.Save = uicontrol(...
-        'Parent',h.PDADatabase.Panel,...
-        'Tag','PDADatabase_Save_Button',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'String','Save',...
-        'Callback',{@Database,3},...
-        'Position',[0.93 0.35 0.05 0.15],...
-        'enable', 'off',...
-        'Tooltipstring', 'Save database to a file');
-    
     %% Fit tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     h.FitTab_Menu = uicontextmenu;
@@ -608,25 +549,33 @@ if isempty(h.GlobalPDAFit)
         'FontSize',12,...
         'Position',[0 0 .8 1],...
         'CellEditCallback',{@Update_FitTable,3},...
-        'CellSelectionCallback',{@Update_FitTable,3},...
+        'CellSelectionCallback',{@Update_FitTable,3},...        
         'UIContextMenu',h.FitTab_Menu);
 
-        initial_rates = ones(3);
-        initial_rates(1,1) = NaN;
-        initial_rates(2,2) = NaN;
-        initial_rates(3,3) = NaN;
-        data = cell(size(initial_rates,1),2*size(initial_rates,2));
-        for i = 1:size(initial_rates,2)
-            data(:,2*i-1) = num2cell(initial_rates(:,i));
-            data(:,2*i) = num2cell(false(size(initial_rates,1),1));
-        end
-        columnnames = {'<HTML> 1 &rarr;','F','<HTML> 2 &rarr;','F','<HTML> 3 &rarr;','F'};
-        rownames = {'1','2','3'};
-        columnwidth = {50,25,50,25,50,25};
-        columnformat = {'numeric','logical','numeric','logical','numeric','logical'};
+        initial_rates = {1,false,false,1,false,false,1,false,false,1,false,false,1,false,false,1,false,false};
+        lb =  {0,[],[],0,[],[],0,[],[],0,[],[],0,[],[],0,[],[]};
+        ub =  {10,[],[],10,[],[],10,[],[],10,[],[],10,[],[],10,[],[]};
+        data = [initial_rates;lb;ub];
+%         initial_rates(1,1) = NaN;
+%         initial_rates(2,2) = NaN;
+%         initial_rates(3,3) = NaN;
+%         data = cell(size(initial_rates,1),2*size(initial_rates,2));
+%         for i = 1:size(initial_rates,2)
+%             data(:,2*i-1) = num2cell(initial_rates(:,i));
+%             data(:,2*i) = num2cell(false(size(initial_rates,1),1));
+%         end
+        columnnames = {'<HTML><b>k<sub>12</sub></b>','F','G',...
+            '<HTML><b>k<sub>13</sub></b>','F','G',...
+            '<HTML><b>k<sub>21</sub></b>','F','G',...
+            '<HTML><b>k<sub>23</sub></b>','F','G',...
+            '<HTML><b>k<sub>31</sub></b>','F','G',...
+            '<HTML><b>k<sub>32</sub></b>','F','G'};%{'<HTML> 1 &rarr;','F','<HTML> 2 &rarr;','F','<HTML> 3 &rarr;','F'};
+        rownames = [];%{'1','2','3'};
+        columnwidth = {35,20,20,35,20,20,35,20,20,35,20,20,35,20,20,35,20,20};
+        %columnformat = {'numeric','logical','logical','numeric','logical','logical','numeric','logical','logical','numeric','logical','logical','numeric','logical','logical','numeric','logical','logical'};
     h.KineticRates_table = uitable(...
         'Data',data,'ColumnName',columnnames,'RowName',rownames,...
-        'ColumnWidth',columnwidth,'ColumnFormat',columnformat,...
+        'ColumnWidth',columnwidth,...%'ColumnFormat',columnformat,...
         'ColumnEditable',true,...
         'Parent',h.FitTab.Panel,...
         'Tag','KineticRates_table',...
@@ -635,10 +584,20 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor',[Look.Table1;Look.Table2],...
         'FontSize',12,...
         'Visible','on',...
-        'CellEditCallback',@Update_GUI,...
-        'Position',[0.8 0 .2 1],...
+        'Position',[0.69 0 .31 1],...
+        'CellEditCallback',{@Update_FitTable,3},...
+        'CellSelectionCallback',{@Update_FitTable,3},...        
         'UIContextMenu',h.FitTab_Menu);
-    
+    %%% get jobj for tables to synchronize the vertical scroll behavior
+    h.jobj.FitTable_JScrollPane = findjobj(h.FitTab.Table);
+    h.jobj.KineticRatesTable_JScrollPane = findjobj(h.KineticRates_table);
+    set(h.jobj.FitTable_JScrollPane,...
+        'AdjustmentValueChangedCallback',{@table_vertical_scroll_listener,h.jobj},...
+        'MouseWheelMovedCallback',{@table_vertical_scroll_listener,h.jobj});
+    set(h.jobj.KineticRatesTable_JScrollPane,...
+        'AdjustmentValueChangedCallback',{@table_vertical_scroll_listener,h.jobj},...
+        'MouseWheelMovedCallback',{@table_vertical_scroll_listener,h.jobj});
+   
     h.Export_Clipboard = uimenu(...
         'Parent',h.FitTab_Menu,...
         'Label','Copy Results to Clipboard',...
@@ -1088,6 +1047,65 @@ if isempty(h.GlobalPDAFit)
         'Value',UserValues.PDA.DeconvoluteBackground,...
         'Callback', {@Update_Plots, 0},...
         'Position',[0.65 0.3 0.15 0.15]);
+        %% Database tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     h.PDADatabase.Tab= uitab(...
+        'Parent',h.Tabgroup_Down,...
+        'Tag','PDADatabase_Tab',...
+        'Title','Database');    
+    %%% Database panel
+    h.PDADatabase.Panel = uibuttongroup(...
+        'Parent',h.PDADatabase.Tab,...
+        'Tag','PDADatabase_Panel',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0 1 1]);    
+    %%% Database list
+    h.PDADatabase.List = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_List',...
+        'Style','listbox',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'Max',2,...
+        'String',[],...
+        'BackgroundColor', Look.List,...
+        'ForegroundColor', Look.ListFore,...
+        'KeyPressFcn',{@Database,0},...
+        'Tooltipstring', ['<html>'...
+                          'List of files in database <br>',...
+                          '<i>"return"</i>: Loads selected files <br>',...
+                          '<I>"delete"</i>: Removes selected files from list </b>'],...
+        'Position',[0.01 0.01 0.9 0.98]);   
+    %%% Button to add files to the database
+    h.PDADatabase.Load = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_Load_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Load',...
+        'Callback',{@Database,2},...
+        'Position',[0.93 0.55 0.05 0.15],...
+        'Tooltipstring', 'Load database from file');
+    %%% Button to add files to the database
+    h.PDADatabase.Save = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_Save_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Save',...
+        'Callback',{@Database,3},...
+        'Position',[0.93 0.35 0.05 0.15],...
+        'enable', 'off',...
+        'Tooltipstring', 'Save database to a file');
+    
     %% downscale fontsize on windows
     if ispc
         scale_factor = 1/1.25;
@@ -1129,10 +1147,10 @@ if isempty(h.GlobalPDAFit)
     guidata(h.GlobalPDAFit,h);
     SampleData
     Update_FitTable([],[],0); %initialize
-    Update_ParamTable([],[],0);
-    Update_GUI(h.SettingsTab.DynamicModel,[]);
+    Update_ParamTable([],[],0);    
     Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
     Update_FitTable([],[],0); %reset to standard
+    Update_GUI(h.SettingsTab.DynamicModel,[]);
 else
     figure(h.GlobalPDAFit); % Gives focus to GlobalPDAFit figure
 end
@@ -1184,6 +1202,7 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.MaxS = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
+    h.KineticRates_table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
     h.ParametersTab.Table.Data(1:end-1,:)=[];
     h.PDADatabase.List.String = [];
@@ -1299,8 +1318,11 @@ for i = 1:numel(FileName)
             if isfield(SavedData,'DynamicSystem')
                 h.SettingsTab.DynamicSystem.Value = SavedData.DynamicSystem;
             end
-            if isfield(SavedData,'ThreeStateModel');
-                h.KineticRates_table.Data = SavedData.ThreeStateModel;
+            if isfield(SavedData,'KineticRatesTable');
+                PDAData.KineticRatesTable{i} = SavedData.KineticRatesTable;
+                %h.KineticRates_table.Data = SavedData.ThreeStateModel;
+            else
+                PDAData.KineticRatesTable{i} = [];
             end
             if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
                 PDAData.Type{end+1} = SavedData.Type;
@@ -1394,7 +1416,7 @@ for i = 1:numel(PDAData.FileName)
         h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
     SavedData.DynamicSystem = h.SettingsTab.DynamicSystem.Value;
-    SavedData.ThreeStateModel = h.KineticRates_table.Data;
+    SavedData.KineticRatesTable = h.KineticRates_table.Data(i,:);
     SavedData.MinN = str2double(h.SettingsTab.NumberOfPhotMin_Edit.String);
     SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
     SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
@@ -2640,7 +2662,27 @@ UB = h.FitTab.Table.Data(end  ,2:3:end-1);
 PDAMeta.UB = cellfun(@str2double,UB);
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 PDAMeta.FitParams = FitTable(1:end-3,2:3:end-1);
-        
+if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
+    FitTable = cellfun(@str2double,h.KineticRates_table.Data);
+    Rates = FitTable(1:end-3,1:3:end);
+    LB_rates = FitTable(end-1,1:3:end);
+    UB_rates = FitTable(end,1:3:end);
+    Fixed_rates = FitTable(end-1,2:3:end);
+    Global_rates = FitTable(end-1,3:3:end);
+    %%% sort the kinetic rates into the FitParams array in PDAMeta
+    % The amplitudes of the first three species are the rates k12, k21, k31
+    PDAMeta.FitParams(:,[1,4,7]) = Rates(:,[1,3,5]);
+    PDAMeta.LB(:,[1,4,7]) = LB_rates(:,[1,3,5]);
+    PDAMeta.UB(:,[1,4,7]) = UB_rates(:,[1,3,5]);
+    PDAMeta.Fixed(:,[1,4,7]) = Fixed_rates(:,[1,3,5]);
+    PDAMeta.Global(:,[1,4,7]) = Global_rates(:,[1,3,5]);
+    % Append the rest to the end: fitpar = [...,k32,k13,k23]
+    PDAMeta.FitParams(:,end+1:end+3) = Rates(:,[6,2,4]);
+    PDAMeta.LB(:,end+1:end+3) = LB_rates(:,[6,2,4]);
+    PDAMeta.UB(:,end+1:end+3) = UB_rates(:,[6,2,4]);
+    PDAMeta.Fixed(:,end+1:end+3) = Fixed_rates(:,[6,2,4]);
+    PDAMeta.Global(:,end+1:end+3) = Global_rates(:,[6,2,4]);
+end
 clear LB UB FitTable
 
 if any(isnan(PDAMeta.FitParams(:)))
@@ -2729,29 +2771,6 @@ if ~do_global
             end
         end 
         
-        if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2            
-            %%% DynamicModel with up to three states
-            % Append the additional rates associated with the third state here
-            % rate k31 is taken from the amplitude of species 3!
-            % fitpar = [...,k32,k13,k23]
-            % Read them from the table
-            rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-            fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-            % sort the rates k12, k21 and k13 into the fitpar array
-            fitpar([1,4,7]) = [rates(2,1),rates(1,2),rates(1,3)];
-            fixed([1,4,7]) = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
-            LB([1,4,7]) = zeros(1,3); UB([1,4,7]) =  25*ones(1,3); % fastest rate to consider
-            LB(fixed) = fitpar(fixed); UB(fixed) = fitpar(fixed); % fix parameters
-            % append the other rates to the end
-            rates = [rates(2,3),rates(3,1),rates(3,2)];
-            fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-            LB_rates = zeros(1,3); UB_rates = 25*ones(1,3); % fastest rate to consider
-            LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
-            fitpar = [fitpar, rates];
-            fixed = [fixed,fixed_rates];
-            LB = [LB,LB_rates];
-            UB = [UB,UB_rates];            
-        end
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
             A = [];
@@ -2927,21 +2946,14 @@ if ~do_global
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
         
         if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-            %%% last 4 elements are kinetic rates to and from state 3
-            rates_state3 = fitpar(end-2:end); fitpar(end-2:end) = [];
-            %%% sort values into rate matrix table
-            rates = h.KineticRates_table.Data;           
-            rates{2,5} = rates_state3(1);
-            rates{3,1} = rates_state3(2);
-            rates{3,3} = rates_state3(3);
-            %%% assign k12, k21 and k31 as well to table                                                                                 -
-            rates{2,1} = fitpar(1);
-            rates{1,3} = fitpar(4);
-            rates{1,5} = fitpar(7);
-            h.KineticRates_table.Data = rates;
-            %%% assign equilibrium fraction to the fitpar table 
-            DynRates = cell2mat(rates(:,1:2:end));
-            DynRates(isnan(DynRates)) = 0;
+            % [k12,k13,k21,k23,k31,k32]
+            rates = [fitpar(1),fitpar(end-1),fitpar(4),fitpar(end),fitpar(7),fitpar(end-2)];
+            h.KineticRates_table.Data(i,1:3:end) = num2cell(rates);
+            %%% assign equilibrium fraction to the fitpar table
+            %%% DynRates = [k11 k21 k31,
+            %%%             k12 k22 k32,
+            %%%             k13 k23 k33]
+            DynRates = [0,rates(3),rates(5);rates(1),0,rates(6);rates(2),rates(4),0];
             for j = 1:3
                 DynRates(j,j) = -sum(DynRates(:,j));
             end
@@ -2985,16 +2997,33 @@ else
         % number of time windows per file
         PDAMeta.BlockSize = str2double(h.SettingsTab.TW_edit.String); 
         
-        % hardcode here which parameters are global only within a set of time windows of one file
-        PDAMeta.SampleGlobal = false(1,16); 
-        PDAMeta.SampleGlobal(1) = true; %half globally link k12
-        PDAMeta.SampleGlobal(4) = true; %half globally link k21
-        PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-        PDAMeta.SampleGlobal(10) = true; %half globally link Area4
-        %PDAMeta.SampleGlobal(5) = true; %half globally link R2
-        %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-        %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-        
+        if h.SettingsTab.DynamicModel.Value          
+            % hardcode here which parameters are global only within a set of time windows of one file
+            % standard is to link the rates of the dynamic states for each block
+            switch h.SettingsTab.DynamicSystem.Value
+                case 1 % two state system
+                    PDAMeta.SampleGlobal = false(1,16); 
+                    PDAMeta.SampleGlobal(1) = true; %half globally link k12
+                    PDAMeta.SampleGlobal(4) = true; %half globally link k21
+                    %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+                    %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+                    %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+                case 2
+                    PDAMeta.SampleGlobal = false(1,16); 
+                    PDAMeta.SampleGlobal(1) = true; %half globally link k12
+                    PDAMeta.SampleGlobal(4) = true; %half globally link k21
+                    PDAMeta.SampleGlobal(7) = true; %half globally link k31                
+                    PDAMeta.SampleGlobal(end-2) = true; %half globally link k32
+                    PDAMeta.SampleGlobal(end-1) = true; %half globally link k13
+                    PDAMeta.SampleGlobal(end) = true; %half globally link k23
+                    %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+                    %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+            end
+        end
         PDAMeta.Blocks = numel(PDAData.Data)/PDAMeta.BlockSize; %number of data blocks
         if ~isequal(round(PDAMeta.Blocks), PDAMeta.Blocks)
             msgbox(['The "Sample-based global" checkbox is checked; each loaded dataset needs to consist of exactly ' h.SettingsTab.TW_edit.String ' time windows!'])
@@ -3012,37 +3041,37 @@ else
         PDAMeta.UB(:,end+1) = 1;
         fraction = PDAMeta.FitParams(end);
     end 
-    % if three-state model, add other rates here and set all rates as global parameters
-    if h.SettingsTab.DynamicModel.Value == 1 && h.SettingsTab.DynamicSystem.Value == 2      
-        %%% DynamicModel with up to three states
-        % Append the additional rates associated with the third state here
-        % rate k31 is taken from the amplitude of species 3!
-        % fitpar = [...,k32,k13,k23]
-        LB_rates = zeros(1,3); UB_rates = 25*ones(1,3);
-        % Read them from the table
-        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        % sort the rates k12, k21 and k13 into the fitpar array
-        rates_temp = [rates(2,1),rates(1,2),rates(1,3)];
-        fixed_rates_temp = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
-        PDAMeta.FitParams(:,[1,4,7]) = repmat(rates_temp,size(PDAMeta.FitParams,1),1);
-        PDAMeta.Fixed(:,[1,4,7]) = repmat(fixed_rates_temp,size(PDAMeta.Fixed,1),1);
-        LB_rates_temp = LB_rates; LB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
-        UB_rates_temp = UB_rates; UB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
-        PDAMeta.LB(:,[1,4,7]) = repmat(LB_rates_temp,size(PDAMeta.LB,1),1);
-        PDAMeta.UB(:,[1,4,7]) = repmat(UB_rates_temp,size(PDAMeta.UB,1),1);
-        % append the other rates to the end
-        rates = [rates(2,3),rates(3,1),rates(3,2)];        
-        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
-        PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
-        PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
-        PDAMeta.LB(:,end+1:end+3) = repmat(LB_rates,size(PDAMeta.LB,1),1);
-        PDAMeta.UB(:,end+1:end+3) = repmat(UB_rates,size(PDAMeta.UB,1),1);
-        %%% set all rates that are not fixed global
-        PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(1,end-2:end);%true(size(PDAMeta.Global,1),numel(rates));
-        PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(1,[1,4,7]);%true(size(PDAMeta.Global,1),2);
-    end
+%     % if three-state model, add other rates here and set all rates as global parameters
+%     if h.SettingsTab.DynamicModel.Value == 1 && h.SettingsTab.DynamicSystem.Value == 2      
+%         %%% DynamicModel with up to three states
+%         % Append the additional rates associated with the third state here
+%         % rate k31 is taken from the amplitude of species 3!
+%         % fitpar = [...,k32,k13,k23]
+%         LB_rates = zeros(1,3); UB_rates = 25*ones(1,3);
+%         % Read them from the table
+%         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+%         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+%         % sort the rates k12, k21 and k13 into the fitpar array
+%         rates_temp = [rates(2,1),rates(1,2),rates(1,3)];
+%         fixed_rates_temp = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
+%         PDAMeta.FitParams(:,[1,4,7]) = repmat(rates_temp,size(PDAMeta.FitParams,1),1);
+%         PDAMeta.Fixed(:,[1,4,7]) = repmat(fixed_rates_temp,size(PDAMeta.Fixed,1),1);
+%         LB_rates_temp = LB_rates; LB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
+%         UB_rates_temp = UB_rates; UB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
+%         PDAMeta.LB(:,[1,4,7]) = repmat(LB_rates_temp,size(PDAMeta.LB,1),1);
+%         PDAMeta.UB(:,[1,4,7]) = repmat(UB_rates_temp,size(PDAMeta.UB,1),1);
+%         % append the other rates to the end
+%         rates = [rates(2,3),rates(3,1),rates(3,2)];        
+%         fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+%         LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
+%         PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
+%         PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
+%         PDAMeta.LB(:,end+1:end+3) = repmat(LB_rates,size(PDAMeta.LB,1),1);
+%         PDAMeta.UB(:,end+1:end+3) = repmat(UB_rates,size(PDAMeta.UB,1),1);
+%         %%% set all rates that are not fixed global
+%         PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(1,end-2:end);%true(size(PDAMeta.Global,1),numel(rates));
+%         PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(1,[1,4,7]);%true(size(PDAMeta.Global,1),2);
+%     end
         
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
@@ -3158,33 +3187,32 @@ else
             %%% if three-state dynamic model was used, update table and
             %%% remove from fitpar array
             if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-                %%% last 3 elements are kinetic rates k32, k13, k23
-                rates_state3 = PDAMeta.FitParams(1,end-2:end); 
-                PDAMeta.FitParams(:,end-2:end) = [];
-                PDAMeta.Global(:,end-2:end) = [];
-                PDAMeta.Fixed(:,end-2:end) = [];
-                %%% sort values into rate matrix table
-                rates = h.KineticRates_table.Data;
-                rates{2,5} = rates_state3(1);
-                rates{3,1} = rates_state3(2);
-                rates{3,3} = rates_state3(3);
-                %%% assign k12 and k21 as well to table
-                rates{2,1} = PDAMeta.FitParams(1,1);
-                rates{1,3} = PDAMeta.FitParams(1,4);
-                rates{1,5} = PDAMeta.FitParams(1,7);
-                h.KineticRates_table.Data = rates;
-                %%% assign equilibrium fraction to the FitParam table 
-                DynRates = cell2mat(rates(:,1:2:end));
-                DynRates(isnan(DynRates)) = 0;
-                for j = 1:3
-                    DynRates(j,j) = -sum(DynRates(:,j));
+                for i=find(PDAMeta.Active)'
+                    % [k12,k13,k21,k23,k31,k32]
+                    rates = [PDAMeta.FitParams(i,1),PDAMeta.FitParams(i,end-1),PDAMeta.FitParams(i,4),...
+                        PDAMeta.FitParams(i,end),PDAMeta.FitParams(i,7),PDAMeta.FitParams(i,end-2)];
+                    h.KineticRates_table.Data(i,1:3:end) = num2cell(rates);
+                    PDAMeta.FitParams(:,end-2:end) = [];
+                    PDAMeta.Global(:,end-2:end) = [];
+                    PDAMeta.Fixed(:,end-2:end) = [];
+                    %%% assign equilibrium fraction to the fitpar table
+                    %%% DynRates = [k11 k21 k31,
+                    %%%             k12 k22 k32,
+                    %%%             k13 k23 k33]
+                    DynRates = [0,rates(3),rates(5);rates(1),0,rates(6);rates(2),rates(4),0];
+                    for j = 1:3
+                        DynRates(j,j) = -sum(DynRates(:,j));
+                    end
+                    DynRates(end+1,:) = ones(1,3);
+                    b = zeros(3,1); b(end+1) = 1;
+                    p_eq = DynRates\b;
+                    fitpar(1) = p_eq(1);
+                    fitpar(4) = p_eq(2);
+                    fitpar(7) = p_eq(3); 
+                    PDAMeta.FitParams(i,1) = p_eq(1);
+                    PDAMeta.FitParams(i,4) = p_eq(2);
+                    PDAMeta.FitParams(i,7) = p_eq(3);
                 end
-                DynRates(end+1,:) = ones(1,3);
-                b = zeros(3,1); b(end+1) = 1;
-                p_eq = DynRates\b;
-                PDAMeta.FitParams(:,1) = repmat(p_eq(1),size(PDAMeta.FitParams,1),1);
-                PDAMeta.FitParams(:,4) = repmat(p_eq(2),size(PDAMeta.FitParams,1),1);
-                PDAMeta.FitParams(:,7) = repmat(p_eq(3),size(PDAMeta.FitParams,1),1);
             end
             
             %%% If sigma was fixed at fraction of R, update edit box here and
@@ -5002,7 +5030,7 @@ else
 end
 
 % Update the Fit Tab
-function Update_FitTable(~,e,mode)
+function Update_FitTable(obj,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
 global PDAMeta PDAData
 switch mode
@@ -5076,178 +5104,286 @@ switch mode
         PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
         h.FitTab.Table.ColumnEditable=[true(1,numel(Columns)-1),false];
         %%% Enables cell callback again
-        h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
+        h.FitTab.Table.CellEditCallback={@Update_FitTable,3};        
     case 1 %%% Updates tables when new data is loaded
-        h.FitTab.Table.CellEditCallback=[];
-        %%% Sets row names to file names
-        Rows=cell(numel(PDAData.Data)+3,1);
-        tmp = PDAData.FileName;
-        %%% Cuts the filename up if too long
-        for i = 1:numel(tmp)
-           try 
-               tmp{i} = [tmp{i}(1:10) '...' tmp{i}(end-10:end)];
-           end
-        end
-        Rows(1:numel(tmp))=deal(tmp);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
-        h.FitTab.Table.RowName=Rows;
-        Data=cell(numel(Rows),size(h.FitTab.Table.Data,2));
-        %%% Sets previously loaded files
-        Data(1:(size(h.FitTab.Table.Data,1)-3),:)=h.FitTab.Table.Data(1:end-3,:);
-        %%% Set last 3 row to ALL, lb and ub
-        Data(end-2:end,:)=h.FitTab.Table.Data(end-2:end,:);
-        %%% Add FitTable data of new files in between old data and ALL row
-        a = size(h.FitTab.Table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
-        for i = a:(size(Data,1)-3) % i = 4:5
-            %%% Added D only fraction, so check old data for compatibility
-            if (numel(PDAData.FitTable{i}) ~= 50)
-                dummy = cell(50,1);
-                dummy(1:46) = PDAData.FitTable{i}(1:46);
-                dummy(47:49) = {'0',true,false};
-                dummy(50) = PDAData.FitTable{i}(end);
-                PDAData.FitTable{i} = dummy;
+            h.FitTab.Table.CellEditCallback=[];
+            %%% Sets row names to file names
+            Rows=cell(numel(PDAData.Data)+3,1);
+            tmp = PDAData.FileName;
+            %%% Cuts the filename up if too long
+            for i = 1:numel(tmp)
+               try 
+                   tmp{i} = [tmp{i}(1:10) '...' tmp{i}(end-10:end)];
+               end
             end
-            if (numel(PDAData.FitTable{i}) ~= 59) %%% before addition of sixth species
-                dummy = cell(59,1);
-                dummy(1:46) = PDAData.FitTable{i}(1:46);
-                dummy(47:55) = {'0',true,false,'50',true,false,'5',true,false};
-                dummy(56:58) = PDAData.FitTable{i}(47:49);
-                dummy(59) = PDAData.FitTable{i}(end);
-                PDAData.FitTable{i} = dummy;
+            Rows(1:numel(tmp))=deal(tmp);
+            Rows{end-2}='ALL';
+            Rows{end-1}='Lower bound';
+            Rows{end}='Upper bound';
+            h.FitTab.Table.RowName=Rows;
+            Data=cell(numel(Rows),size(h.FitTab.Table.Data,2));
+            %%% Sets previously loaded files
+            Data(1:(size(h.FitTab.Table.Data,1)-3),:)=h.FitTab.Table.Data(1:end-3,:);
+            %%% Set last 3 row to ALL, lb and ub
+            Data(end-2:end,:)=h.FitTab.Table.Data(end-2:end,:);
+            %%% Add FitTable data of new files in between old data and ALL row
+            a = size(h.FitTab.Table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
+            for i = a:(size(Data,1)-3) % i = 4:5
+                %%% Added D only fraction, so check old data for compatibility
+                if (numel(PDAData.FitTable{i}) ~= 50)
+                    dummy = cell(50,1);
+                    dummy(1:46) = PDAData.FitTable{i}(1:46);
+                    dummy(47:49) = {'0',true,false};
+                    dummy(50) = PDAData.FitTable{i}(end);
+                    PDAData.FitTable{i} = dummy;
+                end
+                if (numel(PDAData.FitTable{i}) ~= 59) %%% before addition of sixth species
+                    dummy = cell(59,1);
+                    dummy(1:46) = PDAData.FitTable{i}(1:46);
+                    dummy(47:55) = {'0',true,false,'50',true,false,'5',true,false};
+                    dummy(56:58) = PDAData.FitTable{i}(47:49);
+                    dummy(59) = PDAData.FitTable{i}(end);
+                    PDAData.FitTable{i} = dummy;
+                end
+                Data(i,:) = PDAData.FitTable{i};
             end
-            Data(i,:) = PDAData.FitTable{i};
-        end
-        for i = 1:18 % all fittable parameters
-            if all(cell2mat(Data(1:end-3,3*i+1)))
-                % this parameter is global for all files
-                % so make the ALL row also global
-                Data(end-2,3*i+1) = {true};
-                % make the fix checkbox false
-                Data(end-2,3*i) = {false};
-                % make the ALL row the mean of all values for that parameter
-                Data(end-2,3*i-1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*i-1))))};
-            else
-                % this parameter is not global for all files
-                % so make it not global for all files
-                Data(1:end-2,3*i+1) = {false};
+            for i = 1:19 % all fittable parameters
+                if all(cell2mat(Data(1:end-3,3*(i-1)+4)))
+                    % this parameter is global for all files
+                    % so make the ALL row also global
+                    Data(end-2,3*(i-1)+4) = {true};
+                    % make the fix checkbox false
+                    Data(end-2,3*(i-1)+3) = {false};
+                    % make the ALL row the mean of all values for that parameter
+                    Data(end-2,3*(i-1)+2) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+2))))};
+                else
+                    % this parameter is not global for all files
+                    % so make it not global for all files
+                    Data(1:end-2,3*(i-1)+4) = {false};
+                end
+                if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
+                    % all of the fix checkboxes are true
+                    % make the ALL fix checkbox true
+                    Data(end-2,3*(i-1)+3) = {true};
+                else
+                    Data(end-2,3*(i-1)+3) = {false};
+                end           
             end
-            if all(cell2mat(Data(1:end-3,3*i)))
-                % all of the fix checkboxes are true
-                % make the ALL fix checkbox true
-                Data(end-2,3*i) = {true};
-            else
-                Data(end-2,3*i) = {false};
-            end           
-        end
-        h.FitTab.Table.Data=Data;
-        %%% Enables cell callback again
-        h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
-        PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
-        PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
+            h.FitTab.Table.Data=Data;
+            %%% Enables cell callback again
+            h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
+            PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
+            PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
+            if strcmp(h.KineticRates_table.Visible,'on')
+                %%% three state system
+                h.KineticRates_table.CellEditCallback=[];
+                Data=cell(size(h.FitTab.Table.Data,1),18);
+                %%% Sets previously loaded files
+                Data(1:(size(h.KineticRates_table.Data,1)-3),:)=h.KineticRates_table.Data(1:end-3,:);
+                %%% Set last 3 row to ALL, lb and ub
+                Data(end-2:end,:)=h.KineticRates_table.Data(end-2:end,:);
+                %%% Add FitTable data of new files in between old data and ALL row
+                a = size(h.KineticRates_table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
+                for i = a:(size(Data,1)-3) % i = 4:5
+                    if ~isempty(PDAData.KineticRatesTable{i})
+                        % kinetic rates for three states exist
+                        Data(i,:) = PDAData.KineticRatesTable{i};
+                    else % fill in standard values
+                        Data(i,:) = repmat({1,false,false},1,6);
+                    end
+                end
+                for i = 1:6 % all fittable parameters
+                    if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
+                        % this parameter is global for all files
+                        % so make the ALL row also global
+                        Data(end-2,3*(i-1)+3) = {true};
+                        % make the fix checkbox false
+                        Data(end-2,3*(i-1)+2) = {false};
+                        % make the ALL row the mean of all values for that parameter
+                        Data(end-2,3*(i-1)+1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1))))};
+                    else
+                        % this parameter is not global for all files
+                        % so make it not global for all files
+                        Data(1:end-2,3*(i-1)+3) = {false};
+                    end
+                    if all(cell2mat(Data(1:end-3,3*(i-1)+2)))
+                        % all of the fix checkboxes are true
+                        % make the ALL fix checkbox true
+                        Data(end-2,3*(i-1)+2) = {true};
+                    else
+                        Data(end-2,3*(i-1)+2) = {false};
+                    end           
+                end
+                h.KineticRates_table.Data=Data;
+                %%% Enables cell callback again
+                h.KineticRates_table.CellEditCallback={@Update_FitTable,3};
+                PDAMeta.Params_3States = cellfun(@str2double,h.KineticRates_table.Data(end-2,2:3:end));
+            end
     case 2 %%% Re-loads table from loaded data upon File menu - load fit parameters
         for i = 1:numel(PDAData.FileName)
             h.FitTab.Table.Data(i,:) = PDAData.FitTable{i};
         end
         PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
     case 3 %%% Individual cells callbacks
-        %%% Disables cell callbacks, to prohibit double callback
-        h.FitTab.Table.CellEditCallback=[];
-        %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
-        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-1) && e.Indices(2)~=1)
-                h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
-                return;
-            end
-            NewData = h.FitTab.Table.Data{e.Indices(1),e.Indices(2)};
-        end
-        if isprop(e,'NewData')
-            NewData = e.NewData;
-        end
-        if e.Indices(1)==size(h.FitTab.Table.Data,1)-2
-            %% ALL row was used => Applies to all files
-            h.FitTab.Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            if mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=1
-                %% Value was changed => Apply value to global variables
-            elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
-                %% Value was fixed => Uncheck global
-                %%% Uncheck global for all files to prohibit fixed and global
-                h.FitTab.Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
-            elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
-                %% Global was change
-                %%% Apply value to all files
-                h.FitTab.Table.Data(1:end-2,e.Indices(2)-2)=h.FitTab.Table.Data(e.Indices(1),e.Indices(2)-2);
-                %%% Unfixes all files to prohibit fixed and global
-                h.FitTab.Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
-            elseif e.Indices(2) == 1
-                %% Active was changed
-                if strcmp(e.EventName,'CellSelection')
-                    h.FitTab.Table.Data(1:end-2,1) = deal({~NewData});
-                else
-                    h.FitTab.Table.Data(1:end-2,1) = deal({NewData});
+        switch obj
+            case h.FitTab.Table
+                tab = h.FitTab.Table;                
+                %%% Disables cell callbacks, to prohibit double callback
+                tab.CellEditCallback=[];
+                %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
+                if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+                    if isempty(e.Indices) || (e.Indices(1)~=(size(tab.Data,1)-1) && e.Indices(2)~=1)
+                        tab.CellEditCallback={@Update_FitTable,3};
+                        return;
+                    end
+                    NewData = tab.Data{e.Indices(1),e.Indices(2)};
                 end
-            end
-        elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4 && e.Indices(1)<size(h.FitTab.Table.Data,1)-1
-            %% Global was changed => Applies to all files
-            h.FitTab.Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            if NewData
-                %%% Apply value to all files
-                h.FitTab.Table.Data(1:end-2,e.Indices(2)-2)=h.FitTab.Table.Data(e.Indices(1),e.Indices(2)-2);
-                %%% Unfixes all file to prohibit fixed and global
-                h.FitTab.Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
-            end
-        elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=3 && e.Indices(1)<size(h.FitTab.Table.Data,1)-1
-            %% Value was fixed
-            %%% if an amplitude was clicked, check if it is zero
-            %%% -if it is zero and was disabled before, enable all related
-            %%% parameters
-            %%% -otherwise, disable all
-            if any(e.Indices(2) == 3:9:size(h.FitTab.Table.Data,2)-11)
-                if strcmp(h.FitTab.Table.Data(e.Indices(1),e.Indices(2)-1),'0')
-                    if NewData == true
-                        h.FitTab.Table.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({true});
-                    elseif NewData == false
-                        h.FitTab.Table.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({false});
+                if isprop(e,'NewData')
+                    NewData = e.NewData;
+                end
+                if e.Indices(1)==size(tab.Data,1)-2
+                    %%% ALL row was used => Applies to all files
+                    tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    if mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=1
+                        %%% Value was changed => Apply value to global variables
+                    elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
+                        %%% Value was fixed => Uncheck global
+                        %%% Uncheck global for all files to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                    elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
+                        %%% Global was change
+                        %%% Apply value to all files
+                        tab.Data(1:end-2,e.Indices(2)-2)=tab.Data(e.Indices(1),e.Indices(2)-2);
+                        %%% Unfixes all files to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                    elseif e.Indices(2) == 1
+                        %%% Active was changed
+                        if strcmp(e.EventName,'CellSelection')
+                            tab.Data(1:end-2,1) = deal({~NewData});
+                        else
+                            tab.Data(1:end-2,1) = deal({NewData});
+                        end
+                    end
+                elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Global was changed => Applies to all files
+                    tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    if NewData
+                        %%% Apply value to all files
+                        tab.Data(1:end-2,e.Indices(2)-2)=tab.Data(e.Indices(1),e.Indices(2)-2);
+                        %%% Unfixes all file to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                    end
+                elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=3 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Value was fixed
+                    %%% if an amplitude was clicked, check if it is zero
+                    %%% -if it is zero and was disabled before, enable all related
+                    %%% parameters
+                    %%% -otherwise, disable all
+                    if any(e.Indices(2) == 3:9:size(tab.Data,2)-11)
+                        if strcmp(tab.Data(e.Indices(1),e.Indices(2)-1),'0')
+                            if NewData == true
+                                tab.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({true});
+                            elseif NewData == false
+                                tab.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({false});
+                            end
+                        end
+                    end
+                    %%% Updates ALL row
+                    if all(cell2mat(tab.Data(1:end-3,e.Indices(2))))
+                        tab.Data{end-2,e.Indices(2)}=true;
+                    else
+                        tab.Data{end-2,e.Indices(2)}=false;
+                    end
+                    %%% Unchecks global to prohibit fixed and global
+                    tab.Data(1:end-2,e.Indices(2)+1)=deal({false;});
+                elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Value was changed
+                    if tab.Data{e.Indices(1),e.Indices(2)+2}
+                        %%% Global => changes value of all files
+                        tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    else
+                        %%% Not global => only changes value
                     end
                 end
-            end
-            %%% Updates ALL row
-            if all(cell2mat(h.FitTab.Table.Data(1:end-3,e.Indices(2))))
-                h.FitTab.Table.Data{end-2,e.Indices(2)}=true;
-            else
-                h.FitTab.Table.Data{end-2,e.Indices(2)}=false;
-            end
-            %%% Unchecks global to prohibit fixed and global
-            h.FitTab.Table.Data(1:end-2,e.Indices(2)+1)=deal({false;});
-        elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(h.FitTab.Table.Data,1)-1
-            %% Value was changed
-            if h.FitTab.Table.Data{e.Indices(1),e.Indices(2)+2}
-                %% Global => changes value of all files
-                h.FitTab.Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            else
-                %% Not global => only changes value
-            end
+                if e.Indices(2)==1
+                    %%% Active was changed
+                    %%% check if at least one fit is still active
+                    if sum(cell2mat(tab.Data(1:end-3,1))) >= 0
+                        tab.Enable='off';
+                        pause(0.2)
+                        %Update_Plots([],[],4)
+                        Update_Plots([],[],2) % to display the correct one on the single tab
+                        tab.Enable='on';
+                    else
+                        %%% reset status
+                        tab.Data{e.Indices(1),e.Indices(2)} = true;
+                    end
+                end
+                %%% Enables cell callback again
+                tab.CellEditCallback={@Update_FitTable,3};
+            case h.KineticRates_table
+                tab = h.KineticRates_table;
+                %%% Disables cell callbacks, to prohibit double callback
+                tab.CellEditCallback=[];
+                %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
+                if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+                    if isempty(e.Indices) || (e.Indices(1)~=(size(tab.Data,1)-1))
+                        tab.CellEditCallback={@Update_FitTable,3};
+                        return;
+                    end
+                    NewData = tab.Data{e.Indices(1),e.Indices(2)};
+                end
+                if isprop(e,'NewData')
+                    NewData = e.NewData;
+                end
+                if e.Indices(1)==size(tab.Data,1)-2
+                    %%% ALL row was used => Applies to all files
+                    tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    if mod(e.Indices(2)-1,3)==0
+                        %%% Value was changed => Apply value to global variables
+                    elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=1 && NewData==1
+                        %%% Value was fixed => Uncheck global
+                        %%% Uncheck global for all files to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                    elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
+                        %%% Global was change
+                        %%% Apply value to all files
+                        tab.Data(1:end-2,e.Indices(2)-2)=tab.Data(e.Indices(1),e.Indices(2)-2);
+                        %%% Unfixes all files to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});                    
+                    end
+                elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=3 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Global was changed => Applies to all files
+                    tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    if NewData
+                        %%% Apply value to all files
+                        tab.Data(1:end-2,e.Indices(2)-2)=tab.Data(e.Indices(1),e.Indices(2)-2);
+                        %%% Unfixes all file to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                    end
+                elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Value was fixed
+                    %%% Updates ALL row
+                    if all(cell2mat(tab.Data(1:end-3,e.Indices(2))))
+                        tab.Data{end-2,e.Indices(2)}=true;
+                    else
+                        tab.Data{end-2,e.Indices(2)}=false;
+                    end
+                    %%% Unchecks global to prohibit fixed and global
+                    tab.Data(1:end-2,e.Indices(2)+1)=deal({false;});
+                elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
+                    %%% Value was changed
+                    if tab.Data{e.Indices(1),e.Indices(2)+2}
+                        %%% Global => changes value of all files
+                        tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                    else
+                        %%% Not global => only changes value
+                    end
+                end                
+                %%% Enables cell callback again
+                tab.CellEditCallback={@Update_FitTable,3};
         end
-        if e.Indices(2)==1
-            %% Active was changed
-            %%% check if at least one fit is still active
-            if sum(cell2mat(h.FitTab.Table.Data(1:end-3,1))) >= 0
-                h.FitTab.Table.Enable='off';
-                pause(0.2)
-                %Update_Plots([],[],4)
-                Update_Plots([],[],2) % to display the correct one on the single tab
-                h.FitTab.Table.Enable='on';
-            else
-                %%% reset status
-                h.FitTab.Table.Data{e.Indices(1),e.Indices(2)} = true;
-            end
-        end
-        %%% Mirror the table in PDAData.FitTable
-        %PDAData.FitTable = h.FitTab.Table.Data(1:end-3,:);
-        %%% Enables cell callback again
-        h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
-        %PDAMeta.PreparationDone = 0;
+        
 end
 
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
@@ -5719,10 +5855,12 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                 h.KineticRates_table.Visible = 'off';
                 h.FitTab.Table.ColumnEditable([2,3,4,11,12,13,20,21,22]) = deal(true);
                 if h.SettingsTab.DynamicSystem.Value == 2 %%% three-state model
-                     h.FitTab.Table.ColumnName{2} = '<HTML><b>F<sub>1</sub></b>';
+                    h.FitTab.Table.ColumnName{2} = '<HTML><b>F<sub>1</sub></b>';
                     h.FitTab.Table.ColumnName{11} = '<HTML><b>F<sub>2</sub></b>';
                     h.FitTab.Table.ColumnName{20} = '<HTML><b>F<sub>3</sub></b>';
-                    h.FitTab.Table.ColumnWidth{20} = 70; 
+                    h.FitTab.Table.ColumnWidth{20} = 40;
+                    h.FitTab.Table.ColumnWidth{2} = 40;
+                    h.FitTab.Table.ColumnWidth{11} = 40;
                     %%% disable columns for amplitudes of species 1,2 and 3
                     %%% use rate table instead
                     %%% Rates are always global, so disable global checkbox
@@ -5735,7 +5873,7 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                     %%% unhide rate table
                     h.KineticRates_table.Visible = 'on';
                     %%% change fit table width
-                    h.FitTab.Table.Position(3) = 0.8;                    
+                    h.FitTab.Table.Position(3) = 0.69;                    
                 end
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
@@ -5756,22 +5894,22 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
     UserValues.PDA.DynamicSystem = h.SettingsTab.DynamicSystem.Value;
 end
 if obj == h.KineticRates_table
-   %%% Update the fields in the fit table for k12, k21 and k31 (value + fixed state)
-   h.FitTab.Table.Data(1:end-2,2) = deal({num2str(h.KineticRates_table.Data{2,1})});
-   h.FitTab.Table.Data(1:end-2,3) = deal({h.KineticRates_table.Data{2,2}});
-   h.FitTab.Table.Data(1:end-2,11) = deal({num2str(h.KineticRates_table.Data{1,3})});
-   h.FitTab.Table.Data(1:end-2,12) = deal({h.KineticRates_table.Data{1,4}});
-   h.FitTab.Table.Data(1:end-2,20) = deal({num2str(h.KineticRates_table.Data{1,5})});
-   h.FitTab.Table.Data(1:end-2,21) = deal({h.KineticRates_table.Data{1,6}});
-   %%% if diagonal elements were clicked, reset them to NaN to indicate
-   %%% that they are not used
-   h.KineticRates_table.Data(1,1) = {NaN};
-   h.KineticRates_table.Data(2,3) = {NaN};
-   h.KineticRates_table.Data(3,5) = {NaN};
-   %%% reset fixed to false for diagonal as well
-   h.KineticRates_table.Data(1,2) = {false};
-   h.KineticRates_table.Data(2,4) = {false};
-   h.KineticRates_table.Data(3,6) = {false};
+%   %%% Update the fields in the fit table for k12, k21 and k31 (value + fixed state)
+%    h.FitTab.Table.Data(1:end-2,2) = deal({num2str(h.KineticRates_table.Data{2,1})});
+%    h.FitTab.Table.Data(1:end-2,3) = deal({h.KineticRates_table.Data{2,2}});
+%    h.FitTab.Table.Data(1:end-2,11) = deal({num2str(h.KineticRates_table.Data{1,3})});
+%    h.FitTab.Table.Data(1:end-2,12) = deal({h.KineticRates_table.Data{1,4}});
+%    h.FitTab.Table.Data(1:end-2,20) = deal({num2str(h.KineticRates_table.Data{1,5})});
+%    h.FitTab.Table.Data(1:end-2,21) = deal({h.KineticRates_table.Data{1,6}});
+%    %%% if diagonal elements were clicked, reset them to NaN to indicate
+%    %%% that they are not used
+%    h.KineticRates_table.Data(1,1) = {NaN};
+%    h.KineticRates_table.Data(2,3) = {NaN};
+%    h.KineticRates_table.Data(3,5) = {NaN};
+%    %%% reset fixed to false for diagonal as well
+%    h.KineticRates_table.Data(1,2) = {false};
+%    h.KineticRates_table.Data(2,4) = {false};
+%    h.KineticRates_table.Data(3,6) = {false};
 end
 % function for loading of brightness reference, i.e. donor only sample
 function Load_Brightness_Reference(obj,~,mode)
