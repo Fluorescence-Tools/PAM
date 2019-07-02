@@ -2985,10 +2985,10 @@ if ~do_global
 else
     %% Global fitting
     %%% Sets initial value and bounds for global parameters
-    % PDAMeta.Global    = 1     x 16 logical
-    % PDAMeta.Fixed     = files x 16 logical
-    % PDAMeta.FitParams = files x 16 double
-    % PDAMeta.UB/LB     = 1     x 16 double
+    % PDAMeta.Global    = 1     x 22 logical
+    % PDAMeta.Fixed     = files x 22 logical
+    % PDAMeta.FitParams = files x 22 double
+    % PDAMeta.UB/LB     = 1     x 22 double
     
     % check 'Sample-based Global' if you want to globally link a parameter 
     % within a set of time windows of one file. 
@@ -3002,7 +3002,7 @@ else
             % standard is to link the rates of the dynamic states for each block
             switch h.SettingsTab.DynamicSystem.Value
                 case 1 % two state system
-                    PDAMeta.SampleGlobal = false(1,16); 
+                    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
                     %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
@@ -3011,7 +3011,7 @@ else
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                 case 2
-                    PDAMeta.SampleGlobal = false(1,16); 
+                    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
                     PDAMeta.SampleGlobal(7) = true; %half globally link k31                
@@ -3191,10 +3191,7 @@ else
                     % [k12,k13,k21,k23,k31,k32]
                     rates = [PDAMeta.FitParams(i,1),PDAMeta.FitParams(i,end-1),PDAMeta.FitParams(i,4),...
                         PDAMeta.FitParams(i,end),PDAMeta.FitParams(i,7),PDAMeta.FitParams(i,end-2)];
-                    h.KineticRates_table.Data(i,1:3:end) = num2cell(rates);
-                    PDAMeta.FitParams(:,end-2:end) = [];
-                    PDAMeta.Global(:,end-2:end) = [];
-                    PDAMeta.Fixed(:,end-2:end) = [];
+                    h.KineticRates_table.Data(i,1:3:end) = num2cell(rates);                    
                     %%% assign equilibrium fraction to the fitpar table
                     %%% DynRates = [k11 k21 k31,
                     %%%             k12 k22 k32,
@@ -3213,6 +3210,9 @@ else
                     PDAMeta.FitParams(i,4) = p_eq(2);
                     PDAMeta.FitParams(i,7) = p_eq(3);
                 end
+                PDAMeta.FitParams(:,end-2:end) = [];
+                PDAMeta.Global(:,end-2:end) = [];
+                PDAMeta.Fixed(:,end-2:end) = [];
             end
             
             %%% If sigma was fixed at fraction of R, update edit box here and
