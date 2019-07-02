@@ -2989,11 +2989,11 @@ else
     
     % check 'Sample-based Global' if you want to globally link a parameter 
     % within a set of time windows of one file. 
-    % Do not F that parameter but G it in the UI.   
+    % Do not F that parameter but G it in the UI.
+    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
     if UserValues.PDA.HalfGlobal
         % number of time windows per file
-        PDAMeta.BlockSize = str2double(h.SettingsTab.TW_edit.String); 
-        PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
+        PDAMeta.BlockSize = str2double(h.SettingsTab.TW_edit.String);        
         if h.SettingsTab.DynamicModel.Value          
             % hardcode here which parameters are global only within a set of time windows of one file
             % standard is to link the rates of the dynamic states for each block
@@ -3017,13 +3017,14 @@ else
                     %PDAMeta.SampleGlobal(5) = true; %half globally link R2
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-            end
+            end            
         end
         PDAMeta.Blocks = numel(PDAData.Data)/PDAMeta.BlockSize; %number of data blocks
         if ~isequal(round(PDAMeta.Blocks), PDAMeta.Blocks)
             msgbox(['The "Sample-based global" checkbox is checked; each loaded dataset needs to consist of exactly ' h.SettingsTab.TW_edit.String ' time windows!'])
             return
         end
+        PDAMeta.Global = PDAMeta.Global | PDAMeta.SampleGlobal;
     end    
    
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
@@ -3037,6 +3038,7 @@ else
             UB = [UB PDAMeta.UB(PDAMeta.SampleGlobal)];
         end
     end
+    
     PDAMeta.hProxGlobal = [];
     for i=find(PDAMeta.Active)'
         %%% Concatenates y data of all active datasets
@@ -3125,17 +3127,19 @@ else
             %%% Sort optimized fit parameters back into table
             PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
             fitpar(1:sum(PDAMeta.Global))=[];
-            for i=find(PDAMeta.Active)'
-                PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-                fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
-            end
+            
             if UserValues.PDA.HalfGlobal
                 for i = 1:PDAMeta.Blocks
                     PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1:i*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
                     fitpar(1:sum(PDAMeta.SampleGlobal))=[];
                 end
             end
-
+            
+            for i=find(PDAMeta.Active)'
+                PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+                fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+            end
+            
             %%% if three-state dynamic model was used, update table and
             %%% remove from fitpar array
             if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
@@ -5801,6 +5805,7 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                 %%% Change label of Fit Parameter Table
                 h.FitTab.Table.ColumnName{2} = '<HTML><b>k<sub>12</sub> [ms<sup>-1</sup>]</b>';
                 h.FitTab.Table.ColumnName{11} = '<HTML><b>k<sub>21</sub> [ms<sup>-1</sup>]</b>';
+                h.FitTab.Table.ColumnName{20} = '<HTML><b>A<sub>3</sub></b>';
                 h.FitTab.Table.ColumnWidth{2} = 70;
                 h.FitTab.Table.ColumnWidth{11} = 70;
                 h.FitTab.Table.Position(3) = 1;
