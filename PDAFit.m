@@ -2662,6 +2662,16 @@ UB = h.FitTab.Table.Data(end  ,2:3:end-1);
 PDAMeta.UB = cellfun(@str2double,UB);
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 PDAMeta.FitParams = FitTable(1:end-3,2:3:end-1);
+%%% If sigma is fixed at fraction of R, add the parameter here
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    PDAMeta.FitParams(:,end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
+    %%% Set either not fixed and global, or fixed and not global
+    PDAMeta.Global(:,end+1) = 1-h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+    PDAMeta.Fixed(:,end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+    PDAMeta.LB(:,end+1) = 0;
+    PDAMeta.UB(:,end+1) = 1;
+end
+%%% if three state dynamic system, read out and append the rates
 if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
     FitTable = h.KineticRates_table.Data;
     Rates = cell2mat(FitTable(1:end-3,1:3:end));
@@ -2757,19 +2767,6 @@ if ~do_global
         fixed = PDAMeta.Fixed(i,:);
         LB(fixed) = fitpar(fixed);
         UB(fixed) = fitpar(fixed);
-        
-        %%% If sigma is fixed at fraction of R, add the parameter here
-        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-            fitpar(end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
-            fixed(end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
-            if h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value %%% Value should be fixed
-                LB(end+1) = fitpar(end);
-                UB(end+1) = fitpar(end);
-            else
-                LB(end+1) = 0;
-                UB(end+1) = 1;
-            end
-        end 
         
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
@@ -2992,17 +2989,16 @@ else
     
     % check 'Sample-based Global' if you want to globally link a parameter 
     % within a set of time windows of one file. 
-    % Do not F that parameter but G it in the UI.
+    % Do not F that parameter but G it in the UI.   
     if UserValues.PDA.HalfGlobal
         % number of time windows per file
         PDAMeta.BlockSize = str2double(h.SettingsTab.TW_edit.String); 
-        
+        PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
         if h.SettingsTab.DynamicModel.Value          
             % hardcode here which parameters are global only within a set of time windows of one file
             % standard is to link the rates of the dynamic states for each block
             switch h.SettingsTab.DynamicSystem.Value
                 case 1 % two state system
-                    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
                     %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
@@ -3011,7 +3007,6 @@ else
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                 case 2
-                    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global)); 
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
                     PDAMeta.SampleGlobal(7) = true; %half globally link k31                
@@ -3029,57 +3024,15 @@ else
             msgbox(['The "Sample-based global" checkbox is checked; each loaded dataset needs to consist of exactly ' h.SettingsTab.TW_edit.String ' time windows!'])
             return
         end
-    end
-    
-    %%% If sigma is fixed at fraction of R, add the parameter here
-    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-        PDAMeta.FitParams(:,end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
-        %%% Set either not fixed and global, or fixed and not global
-        PDAMeta.Global(:,end+1) = 1-h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
-        PDAMeta.Fixed(:,end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
-        PDAMeta.LB(:,end+1) = 0;
-        PDAMeta.UB(:,end+1) = 1;
-        fraction = PDAMeta.FitParams(end);
-    end 
-%     % if three-state model, add other rates here and set all rates as global parameters
-%     if h.SettingsTab.DynamicModel.Value == 1 && h.SettingsTab.DynamicSystem.Value == 2      
-%         %%% DynamicModel with up to three states
-%         % Append the additional rates associated with the third state here
-%         % rate k31 is taken from the amplitude of species 3!
-%         % fitpar = [...,k32,k13,k23]
-%         LB_rates = zeros(1,3); UB_rates = 25*ones(1,3);
-%         % Read them from the table
-%         rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-%         fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-%         % sort the rates k12, k21 and k13 into the fitpar array
-%         rates_temp = [rates(2,1),rates(1,2),rates(1,3)];
-%         fixed_rates_temp = [fixed_rates(2,1),fixed_rates(1,2),fixed_rates(1,3)];
-%         PDAMeta.FitParams(:,[1,4,7]) = repmat(rates_temp,size(PDAMeta.FitParams,1),1);
-%         PDAMeta.Fixed(:,[1,4,7]) = repmat(fixed_rates_temp,size(PDAMeta.Fixed,1),1);
-%         LB_rates_temp = LB_rates; LB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
-%         UB_rates_temp = UB_rates; UB_rates_temp(fixed_rates_temp) = rates_temp(fixed_rates_temp);
-%         PDAMeta.LB(:,[1,4,7]) = repmat(LB_rates_temp,size(PDAMeta.LB,1),1);
-%         PDAMeta.UB(:,[1,4,7]) = repmat(UB_rates_temp,size(PDAMeta.UB,1),1);
-%         % append the other rates to the end
-%         rates = [rates(2,3),rates(3,1),rates(3,2)];        
-%         fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-%         LB_rates(fixed_rates) = rates(fixed_rates); UB_rates(fixed_rates) = rates(fixed_rates);
-%         PDAMeta.FitParams(:,end+1:end+3) =  repmat(rates,size(PDAMeta.FitParams,1),1);
-%         PDAMeta.Fixed(:,end+1:end+3) = repmat(fixed_rates,size(PDAMeta.Fixed,1),1);
-%         PDAMeta.LB(:,end+1:end+3) = repmat(LB_rates,size(PDAMeta.LB,1),1);
-%         PDAMeta.UB(:,end+1:end+3) = repmat(UB_rates,size(PDAMeta.UB,1),1);
-%         %%% set all rates that are not fixed global
-%         PDAMeta.Global(:,end+1:end+3) = ~PDAMeta.Fixed(1,end-2:end);%true(size(PDAMeta.Global,1),numel(rates));
-%         PDAMeta.Global(:,[1,4,7]) = ~PDAMeta.Fixed(1,[1,4,7]);%true(size(PDAMeta.Global,1),2);
-%     end
-        
+    end    
+   
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
     UB = PDAMeta.UB(PDAMeta.Global); 
     if UserValues.PDA.HalfGlobal
         % put the sample-globally linked parameter after the global ones
-        for i = 1:(PDAMeta.Blocks-1)
-            fitpar = [fitpar PDAMeta.FitParams(i*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
+        for i = 1:PDAMeta.Blocks
+            fitpar = [fitpar PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
             LB = [LB PDAMeta.LB(PDAMeta.SampleGlobal)];
             UB = [UB PDAMeta.UB(PDAMeta.SampleGlobal)];
         end
@@ -3172,18 +3125,17 @@ else
             %%% Sort optimized fit parameters back into table
             PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
             fitpar(1:sum(PDAMeta.Global))=[];
-            if UserValues.PDA.HalfGlobal
-                for i = 1:(PDAMeta.Blocks-1)
-                    PDAMeta.FitParams(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
-                    fitpar(1:sum(PDAMeta.SampleGlobal))=[];
-                end
-            end
-
             for i=find(PDAMeta.Active)'
                 PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             end
-            
+            if UserValues.PDA.HalfGlobal
+                for i = 1:PDAMeta.Blocks
+                    PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1:i*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
+                    fitpar(1:sum(PDAMeta.SampleGlobal))=[];
+                end
+            end
+
             %%% if three-state dynamic model was used, update table and
             %%% remove from fitpar array
             if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
