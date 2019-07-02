@@ -2355,7 +2355,13 @@ if Mode==0 %%% Loads user values
         S.PDA.Dynamic = 0;
     end
     P.PDA.Dynamic = S.PDA.Dynamic;
-
+    
+    if ~isfield(S.PDA, 'DynamicSystem')
+        disp('WARNING: UserValues structure incomplete, field "PDA.DynamicSystem" missing');
+        S.PDA.DynamicSystem = 1;
+    end
+    P.PDA.DynamicSystem = S.PDA.DynamicSystem;
+    
     if ~isfield(S.PDA, 'IgnoreOuterBins')
         disp('WARNING: UserValues structure incomplete, field "PDA.IgnoreOuterBins" missing');
         S.PDA.IgnoreOuterBins = 0;
