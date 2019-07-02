@@ -2959,7 +2959,8 @@ if ~do_global
             p_eq = DynRates\b;
             fitpar(1) = p_eq(1);
             fitpar(4) = p_eq(2);
-            fitpar(7) = p_eq(3); 
+            fitpar(7) = p_eq(3);
+            fitpar(end-2:end) = [];
         end
         
         %%% If sigma was fixed at fraction of R, update edit box here and
