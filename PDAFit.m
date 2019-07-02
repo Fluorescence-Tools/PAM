@@ -2663,12 +2663,12 @@ PDAMeta.UB = cellfun(@str2double,UB);
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 PDAMeta.FitParams = FitTable(1:end-3,2:3:end-1);
 if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
-    FitTable = cellfun(@str2double,h.KineticRates_table.Data);
-    Rates = FitTable(1:end-3,1:3:end);
-    LB_rates = FitTable(end-1,1:3:end);
-    UB_rates = FitTable(end,1:3:end);
-    Fixed_rates = FitTable(end-1,2:3:end);
-    Global_rates = FitTable(end-1,3:3:end);
+    FitTable = h.KineticRates_table.Data;
+    Rates = cell2mat(FitTable(1:end-3,1:3:end));
+    LB_rates = cell2mat(FitTable(end-1,1:3:end));
+    UB_rates = cell2mat(FitTable(end,1:3:end));
+    Fixed_rates = cell2mat(FitTable(1:end-3,2:3:end));
+    Global_rates = cell2mat(FitTable(end-2,3:3:end));
     %%% sort the kinetic rates into the FitParams array in PDAMeta
     % The amplitudes of the first three species are the rates k12, k21, k31
     PDAMeta.FitParams(:,[1,4,7]) = Rates(:,[1,3,5]);
