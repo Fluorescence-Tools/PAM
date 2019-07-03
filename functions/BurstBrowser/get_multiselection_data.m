@@ -1,4 +1,4 @@
-function data = get_multiselection_data(h,param)
+function [data_concat, data] = get_multiselection_data(h,param)
 %%% return concatenated data for parameter over all selected species
 %%% if only one argument is supplied, gives out the total data array over
 %%% all parameters
@@ -23,4 +23,4 @@ for i = 1:num_species
         data{i} = data{i}(:,par{i});
     end
 end
-data = vertcat(data{:});
+data_concat = vertcat(data{:});
