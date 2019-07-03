@@ -3030,15 +3030,7 @@ else
    
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
-    UB = PDAMeta.UB(PDAMeta.Global); 
-    if UserValues.PDA.HalfGlobal
-        % put the sample-globally linked parameter after the global ones
-        for i = 1:PDAMeta.Blocks
-            fitpar = [fitpar PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
-            LB = [LB PDAMeta.LB(PDAMeta.SampleGlobal)];
-            UB = [UB PDAMeta.UB(PDAMeta.SampleGlobal)];
-        end
-    end
+    UB = PDAMeta.UB(PDAMeta.Global);     
     
     PDAMeta.hProxGlobal = [];
     for i=find(PDAMeta.Active)'
@@ -3048,6 +3040,15 @@ else
         fitpar = [fitpar PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:)& ~PDAMeta.Global)];
         LB=[LB PDAMeta.LB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
         UB=[UB PDAMeta.UB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
+    end
+    
+    if UserValues.PDA.HalfGlobal
+        % put the sample-globally linked parameters at the end
+        for i = 2:PDAMeta.Blocks
+            fitpar = [fitpar PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
+            LB = [LB PDAMeta.LB(PDAMeta.SampleGlobal)];
+            UB = [UB PDAMeta.UB(PDAMeta.SampleGlobal)];
+        end
     end
     
     switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
@@ -3128,19 +3129,16 @@ else
             %%% Sort optimized fit parameters back into table
             PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
             fitpar(1:sum(PDAMeta.Global))=[];
-            
-            if UserValues.PDA.HalfGlobal
-                for i = 1:PDAMeta.Blocks
-                    PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1:i*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
-                    fitpar(1:sum(PDAMeta.SampleGlobal))=[];
-                end
-            end
-            
             for i=find(PDAMeta.Active)'
                 PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             end
-            
+            if UserValues.PDA.HalfGlobal
+                for i = 2:PDAMeta.Blocks
+                    PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1:i*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
+                    fitpar(1:sum(PDAMeta.SampleGlobal))=[];
+                end
+            end
             %%% if three-state dynamic model was used, update table and
             %%% remove from fitpar array
             if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
@@ -3792,6 +3790,9 @@ P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
 PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
 
+% extract out half-global parameters (stored at the end)
+fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
+
 for j=1:sum(PDAMeta.Active)
     Active = find(PDAMeta.Active)';
     i = Active(j);
@@ -3799,8 +3800,8 @@ for j=1:sum(PDAMeta.Active)
     if UserValues.PDA.HalfGlobal
         if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==j)
             % if arriving at the next block, replace sample-based global values and delete from fitpar
-            P(PDAMeta.SampleGlobal)=fitpar(1:sum(PDAMeta.SampleGlobal));
-            fitpar(1:sum(PDAMeta.SampleGlobal))=[];
+            P(PDAMeta.SampleGlobal)=fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal));
+            fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal))=[];
         end
     end
     %%% Sets non-fixed parameters
