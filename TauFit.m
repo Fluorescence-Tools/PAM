@@ -6705,6 +6705,7 @@ switch obj
     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
+    PlotLifetimeInd(BBgui.BurstBrowser,[],BBgui);
 end
 
 
