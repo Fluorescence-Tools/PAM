@@ -263,7 +263,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             %ci = sqrt(1./hessian)*1.96;            
             % calculate the KBL around the minimum
             range = [max(0.01,fitGamma-0.1),min(10,fitGamma+0.1)];
-            g = range(1):0.001:range(2); k = zeros(numel(g),1);
+            g = range(1):0.0005:range(2); k = zeros(numel(g),1);
             for i = 1:numel(g);
                 % set beta to 1 as we are not interested in it here
                 k(i) = KBL(g(i),1,[NGG{1},NGR{1},NRR{1}],[NGG{2},NGR{2},NRR{2}]);
@@ -275,7 +275,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             % plot the result
             figure('Color',[1,1,1]); hold on;
             %patch([fitGamma-ci,fitGamma+ci,fitGamma+ci,fitGamma-ci],[0,0,max(k),max(k)],[0.5,0.5,0.5],'FaceAlpha',0.25);
-            plot(g,smooth(k),'LineWidth',2);
+            plot(g,k,'LineWidth',2);
             plot([fitGamma,fitGamma],[0,max(k)],'LineWidth',2);
             xlabel('\gamma factor');
             ylabel('Kullback-Leibler divergence');
