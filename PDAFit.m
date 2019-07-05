@@ -5145,7 +5145,11 @@ switch mode
                 for i = a:(size(Data,1)-3) % i = 4:5
                     if ~isempty(PDAData.KineticRatesTable{i})
                         % kinetic rates for three states exist
-                        Data(i,:) = PDAData.KineticRatesTable{i};
+                        try
+                            Data(i,:) = PDAData.KineticRatesTable{i};
+                        catch 
+                            Data(i,:) = repmat({1,false,false},1,6);
+                        end
                     else % fill in standard values
                         Data(i,:) = repmat({1,false,false},1,6);
                     end
