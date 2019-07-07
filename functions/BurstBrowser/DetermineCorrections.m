@@ -133,7 +133,7 @@ if obj == h.DetermineCorrectionsButton
         end
     end
 end
-if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
+if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution])
     %% plot gamma plot for two populations (or lifetime versus E)
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
@@ -227,6 +227,65 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             
             gamma = (b - 1)/(b + m - 1);
             beta = b+m-1;
+        case h.FitGammaFromStoichiometryDistribution
+            % read data from the selected species
+            file_n = get_multiselection(h);
+            if numel(file_n) < 2
+                disp('Select more than one species.');
+                return;
+            end
+            [~,NGR] = get_multiselection_data(h,'Number of Photons (DA)');
+            [~,NGG] = get_multiselection_data(h,'Number of Photons (DD)');
+            [~,NRR] = get_multiselection_data(h,'Number of Photons (AA)');
+            [~,dur] = get_multiselection_data(h,'Duration [ms]');
+            % correct photon counts
+            for i = 1:numel(file_n)
+                %%% Read out background counts
+                if ~(BurstData{file_n(i)}.BAMethod == 5) %%% MFD
+                    Background_GR = BurstData{file_n(i)}.Background.Background_GRpar + BurstData{file_n(i)}.Background.Background_GRperp;
+                    Background_GG = BurstData{file_n(i)}.Background.Background_GGpar + BurstData{file_n(i)}.Background.Background_GGperp;
+                    Background_RR = BurstData{file_n(i)}.Background.Background_RRpar + BurstData{file_n(i)}.Background.Background_RRperp;
+                elseif BurstData{file_n(i)}.BAMethod == 5
+                    Background_GR = BurstData{file_n(i)}.Background.Background_GRpar;
+                    Background_GG = BurstData{file_n(i)}.Background.Background_GGpar;
+                    Background_RR = BurstData{file_n(i)}.Background.Background_RRpar;
+                end
+                % correct photon counts
+                NGR{i} = NGR{i} - Background_GR.*dur{i};
+                NGG{i} = NGG{i} - Background_GG.*dur{i};
+                NRR{i} = NRR{i} - Background_RR.*dur{i};
+                NGR{i} = NGR{i} - BurstData{file_n(i)}.Corrections.DirectExcitation_GR.*NRR{i} - BurstData{file_n(i)}.Corrections.CrossTalk_GR.*NGG{i};
+            end
+            % Calculate the Kullback-Leibler divergence between the S
+            % distributions of the two datasets.
+            [fitGamma,KBL_min,~,~,~,~,hessian] = fmincon(@(x) KBL(x,1,[NGG{1},NGR{1},NRR{1}],[NGG{2},NGR{2},NRR{2}]),1,[],[],[],[],0.01,10);
+            % estimate 95% confidence intervals from the hessian
+            %ci = sqrt(1./hessian)*1.96;            
+            % calculate the KBL around the minimum
+            range = [max(0.01,fitGamma-0.1),min(10,fitGamma+0.1)];
+            g = range(1):0.0005:range(2); k = zeros(numel(g),1);
+            for i = 1:numel(g);
+                % set beta to 1 as we are not interested in it here
+                k(i) = KBL(g(i),1,[NGG{1},NGR{1},NRR{1}],[NGG{2},NGR{2},NRR{2}]);
+            end
+            k = smooth(k,10);
+            % find the minimum of k
+            [min_k,idx] = min(k);
+            fitGamma = g(idx);
+            % plot the result
+            figure('Color',[1,1,1]); hold on;
+            %patch([fitGamma-ci,fitGamma+ci,fitGamma+ci,fitGamma-ci],[0,0,max(k),max(k)],[0.5,0.5,0.5],'FaceAlpha',0.25);
+            plot(g,k,'LineWidth',2);
+            plot([fitGamma,fitGamma],[0,max(k)],'LineWidth',2);
+            xlabel('\gamma factor');
+            ylabel('Kullback-Leibler divergence');
+            ylim([min_k-(max(k)-min_k)/10,max(k)]);
+            xlim(range);
+            title(sprintf('\\gamma = %.4f',fitGamma));
+            %title('Kullback-Leibler divergence of the stoichiometry distributions vs. \gamma-factor');
+            set(gca,'LineWidth',2,'FontSize',20,'Layer','top');
+            gamma = fitGamma;
+            beta = UserValues.BurstBrowser.Corrections.Beta_GR; %unchanged
     end
     
     UserValues.BurstBrowser.Corrections.Gamma_GR = gamma;
@@ -687,3 +746,20 @@ UpdateCorrections([],[],h);
 % Apply Corrections
 ApplyCorrections(gcbo,[]);
 
+% define the objective function as the kullback leibler divergence
+function k = KBL(g,b,D1,D2)
+% D1 and D2 are vectors of the photon counts NGG, NGR, NRR
+% convert to beta and gamma corrected stoichiometries
+S1 = (g*D1(:,1)+D1(:,2))./(g*D1(:,1)+D1(:,2)+b.*D1(:,3));
+S2 = (g*D2(:,1)+D2(:,2))./(g*D2(:,1)+D2(:,2)+b.*D2(:,3));
+% approximate distributions by kernel density estimation
+% the default bandwidth is optimal for estimating normally distributed
+% data.
+P = ksdensity(S1,linspace(0,1,100));
+P = P./sum(P);
+Q = ksdensity(S2,linspace(0,1,100));
+Q = Q./sum(Q);
+% calculate KBL
+k = P.*log(P./Q);
+k(~isfinite(k)) = 0;
+k = abs(sum(k));

@@ -4,7 +4,24 @@ file = BurstMeta.SelectedFile;
 
 %% Add/Update distance (from intensity), E (from lifetime) and distance (from lifetime) entries
 if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
-    %No. of Photons (GX) and Countrate (GX)
+    % FD/FA FRET indicator
+    if ~sum(strcmp(BurstData{file}.NameArray,'log(FD/FA)'))
+        BurstData{file}.NameArray{end+1} = 'log(FD/FA)';
+        BurstData{file}.DataArray(:,end+1) = NaN;
+    end    
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'log(FD/FA)')) = ...
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'))./BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+    
+     % M1-M2, difference between first and second normalized moment of the
+     % lifetime distribution
+    if ~sum(strcmp(BurstData{file}.NameArray,'M1-M2'))
+        BurstData{file}.NameArray{end+1} = 'M1-M2';
+        BurstData{file}.DataArray(:,end+1) = NaN;
+    end    
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'M1-M2')) = ...
+        (1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'))).*(1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'))./BurstData{file}.Corrections.DonorLifetime);
+    
+    % No. of Photons (GX) and Countrate (GX)
     if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (DX)'))
         BurstData{file}.NameArray{end+1} = 'Number of Photons (DX)';
         BurstData{file}.DataArray(:,end+1) = 0;

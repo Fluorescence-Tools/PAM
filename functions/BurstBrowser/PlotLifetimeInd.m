@@ -23,12 +23,30 @@ switch BurstData{file}.BAMethod
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
-                paramX = 'Lifetime D [ns]';
-                paramY = 'FRET Efficiency';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime D [ns]';
+                        paramY = 'FRET Efficiency';
+                    case 2
+                        paramX = 'Lifetime D [ns]';
+                        paramY = 'log(FD/FA)';
+                    case 3
+                        paramX = 'FRET Efficiency';
+                        paramY = 'M1-M2';
+                end                
             case 2 %E vs tauRR
-                origin = h.axes_EvsTauRR;
-                paramX = 'Lifetime A [ns]';
-                paramY = 'FRET Efficiency';
+                origin = h.axes_EvsTauRR;                
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'FRET Efficiency';
+                    case 2
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'log(FD/FA)';
+                    case 3
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'FRET Efficiency';
+                end     
             case 3 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
                 paramX = 'Lifetime D [ns]';
@@ -49,7 +67,7 @@ switch BurstData{file}.BAMethod
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
                 paramX = 'Lifetime GG [ns]';
-                paramY = 'FRET Efficiency GR';
+                paramY = 'FRET Efficiency GR';                
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
                 paramX = 'Lifetime RR [ns]';

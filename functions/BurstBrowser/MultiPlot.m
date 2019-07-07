@@ -170,10 +170,14 @@ if ~exist('limits','var')
     y_boundaries(2) = max([y_boundaries(2) max(ylimits(:,2))]);
 elseif exist('limits','var') %%% called with absolute limits
     %%% obey specified limits!
-    x_boundaries(1) = limits{1}(1);
-    x_boundaries(2) = limits{1}(2);
-    y_boundaries(1) = limits{2}(1);
-    y_boundaries(2) = limits{2}(2);
+    if ~isempty(limits{1})
+        x_boundaries(1) = limits{1}(1);
+        x_boundaries(2) = limits{1}(2);
+    end
+    if ~isempty(limits{2})
+        y_boundaries(1) = limits{2}(1);
+        y_boundaries(2) = limits{2}(2);
+    end
 %     x_boundaries(1) = max([x_boundaries(1) limits{1}(1)]);
 %     x_boundaries(2) = min([x_boundaries(2) limits{1}(2)]);
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);

@@ -265,8 +265,8 @@ UpdateCuts();
 
 ChangePlotType(h.PlotContourLines) 
 ChangePlotType(h.PlotTypePopumenu) 
-
 Update_fFCS_GUI(gcbo,[]);
+UpdateGUIOptions(h.LifetimeMode_Menu,[],h);
 
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
