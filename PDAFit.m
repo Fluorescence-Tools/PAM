@@ -3790,8 +3790,10 @@ P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
 PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
 
-% extract out half-global parameters (stored at the end)
-fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
+if UserValues.PDA.HalfGlobal
+    % extract out half-global parameters (stored at the end)
+    fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
+end
 
 for j=1:sum(PDAMeta.Active)
     Active = find(PDAMeta.Active)';
@@ -4587,7 +4589,7 @@ else %%% dynamic model
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     if n_states == 3
         change_prob = cumsum(DynRates);
-        change_prob = change_prob ./ change_prob(end,:);
+        change_prob = change_prob ./ repmat(change_prob(end,:),3,1);%change_prob(end,:);
     end
     dwell_mean = 1 ./ sum(DynRates./1000);
     for i = 1:n_states
@@ -4682,7 +4684,7 @@ end
 
 % Model for Monte Carle based fitting (global) 
 function [mean_chi2] = PDAMonteCarloFit_Global(fitpar,h)
-global PDAMeta
+global PDAMeta UserValues
 % h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% iterate the counter
@@ -4705,20 +4707,28 @@ P=zeros(numel(Global),1);
 %%% Assigns global parameters
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
+PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
+
+if UserValues.PDA.HalfGlobal
+    % extract out half-global parameters (stored at the end)
+    fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
+end
 
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
+    if UserValues.PDA.HalfGlobal
+        if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==j)
+            % if arriving at the next block, replace sample-based global values and delete from fitpar
+            P(PDAMeta.SampleGlobal)=fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal));
+            fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal))=[];
+        end
+    end
     %%% Sets non-fixed parameters
     P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
     fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    
-    %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
-
-    %%% create individual histograms
     [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P,h);
 end
 mean_chi2 = mean(PDAMeta.chi2);
