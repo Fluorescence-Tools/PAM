@@ -128,7 +128,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
     nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
     %%% set limits
-    if ~h.MultiselectOnCheckbox.UserData
+    if ~(h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
         datatoplot = BurstData{file}.DataCut;
         min_max = max(datatoplot(:,idx_x))-min(datatoplot(:,idx_x));
         x_lim = [max([-0.1,min(datatoplot(:,idx_x))-0.1*min_max]),min([1.1,max(datatoplot(:,idx_x))+0.1*min_max])];
@@ -138,7 +138,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
         NameArray = BurstData{file}.NameArray;
-        [H,xbins,ybins,x_lim,y_lim,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y});
+        [H,xbins,ybins,x_lim,y_lim,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{[-0.1,1.1],[-0.1,0.75]});
         if iscell(H)
             HH = zeros(numel(ybins),numel(xbins));
             for i = 1:numel(H)

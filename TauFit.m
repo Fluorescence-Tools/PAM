@@ -4360,8 +4360,8 @@ switch obj
             case h.Fit_Button_MEM_dist
                 mode = 'dist';
                 %%% append F?rster distance and donor-only lifetime
-                x0(end+1) = UserValues.TauFit.FitParams{chan}(11);
-                x0(end+1) = UserValues.TauFit.FitParams{chan}(12);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(13);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(14);
         end
         [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata,mode);
         
@@ -6653,7 +6653,7 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, num2cell(TauFitData.ConfInt)];
+            res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
         end
         Mat2clip(res);
     case h.PlotDynamicFRETLine

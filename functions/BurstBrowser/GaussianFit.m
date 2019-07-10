@@ -42,9 +42,9 @@ coefficients = coeffvalues(gauss);
 mean = coefficients(2);
 GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
 
-if gof.adjrsquare < 0.9 %%% fit was bad
+if gof.adjrsquare < 0.95 %%% fit was bad
     %%% fit with 2 Gaussians
-    Gauss2fun = @(A1,m1,s1,A2,m2,s2,b,x) A1*exp(-(x-m1).^2./s1^2)+A2*exp(-(x-m2).^2./s2^2)+b;
+    Gauss2fun = @(A1,m1,s1,A2,m2,s2,b,x) (A1./sqrt(2*pi*s1)).*exp(-(x-m1).^2./s1^2)+(A2./sqrt(2*pi*s2)).*exp(-(x-m2).^2./s2^2)+b;
     if nargin <5 %no start parameters specified
         A1 = max(y_data);%set amplitude as max value
         A2 = A1;
