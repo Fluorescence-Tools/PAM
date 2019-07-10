@@ -271,6 +271,7 @@ switch obj
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
                     end
                 case 'Axes_1D_X'
+                    drawnow;
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     lim = 0;
