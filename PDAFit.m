@@ -2239,6 +2239,7 @@ global PDAData PDAMeta UserValues
 h = guidata(findobj('Tag','GlobalPDAFit'));
 %%% disable Fit Menu and Fit parameters table
 h.FitTab.Table.Enable='off';
+h.KineticRates_table.Enable = 'off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
 %%% Specify the update interval (used for interrupting of fit and updating
@@ -2796,6 +2797,7 @@ if ~do_global
                     Progress(1, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Done');
                     %%% re-enable Fit Menu
                     h.FitTab.Table.Enable='on';
+                    h.KineticRates_table.Enable = 'on';
                     PDAMeta.FitInProgress = 0;
                     return;
                 end
@@ -3369,6 +3371,7 @@ Progress(1, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Done');
 Update_Plots([],[],1)
 %%% re-enable Fit Menu
 h.FitTab.Table.Enable='on';
+h.KineticRates_table.Enable = 'on';
 PDAMeta.FitInProgress = 0;
 
 % File menu - stop fitting
@@ -3377,6 +3380,7 @@ global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 PDAMeta.FitInProgress = 0;
 h.FitTab.Table.Enable='on';
+h.KineticRates_table.Enable = 'on';
 
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar,h)
