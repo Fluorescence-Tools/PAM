@@ -3028,8 +3028,10 @@ else
             return
         end
         PDAMeta.Global = PDAMeta.Global | PDAMeta.SampleGlobal;
-    end    
-   
+    end
+    
+    PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
+    
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
     UB = PDAMeta.UB(PDAMeta.Global);     
@@ -3396,9 +3398,9 @@ end
 if ~PDAMeta.FitInProgress
     if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
         % chi2 must be an array!
-        chi2 = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        chi2 = PDAMeta.w_res{i};%zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
     else
-        chi2 = 0;
+        chi2 = PDAMeta.chi2(i);
     end
     return;
 end
@@ -3792,7 +3794,6 @@ P=zeros(numel(Global),1);
 %%% Assigns global parameters
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
-PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
 
 if UserValues.PDA.HalfGlobal
     % extract out half-global parameters (stored at the end)
