@@ -5593,7 +5593,7 @@ for i=Channel
     
     %%% Thresholding operates on uncorrected data
     Data=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-    %%% Exdents aray to determine which pixels to use, because now
+    %%% Extends aray to determine which pixels to use, because now
     %%% every frame is calculated individually
     Use=repmat(Use,[1 1 size(Data,3)]);
     if Var_SubSub>1 && Var_Sub>Var_SubSub
@@ -5633,6 +5633,12 @@ for i=Channel
                     Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)>Int_Min(i));
                 end
             end
+            %%% For very low frame intensities, the IntFold and VarFold calculations fail
+            %%% Include regions again in the ROI that contained no signal to begin with
+            Mean1_zero = false(size(Mean1));
+            Mean1_zero(Mean1==0) = true;
+            Use(:,:,j) = Use(:,:,j) | Mean1_zero;
+            %%% median filter the image
             if h.Mia_Image.Settings.ROI_AR_median.Value
                 Use(:,:,j) = medfilt2(Use(:,:,j),[Var_SubSub,Var_SubSub]);
             end
@@ -5640,6 +5646,7 @@ for i=Channel
         %%% Discards border pixels, where variance and intensity were not calculated
         Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
         Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
+        
     end
     
     %%% Removes pixels, if invalid pixels were used for averaging
