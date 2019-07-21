@@ -68,7 +68,14 @@ h.Pam = figure(...
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.Pam,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 13:17]))
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 13:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
+end
+
 %%% Sets background of axes and other things
 whitebg(Look.Axes);
 %%% Changes Pam background; must be called after whitebg
@@ -201,20 +208,29 @@ h.Menu.OpenMia = uimenu(...
     'Tag','OpenMia',...
     'Label','MIA',...
     'Callback',@Mia);
-h.Menu.OpenPhasor = uimenu(...
+h.Menu.PhasorMenu = uimenu(...
     'Parent', h.Menu.AdvancedAnalysis,...
+    'Tag','PhasorMenu',...
+    'Label','Phasor');
+h.Menu.OpenPhasor = uimenu(...
+    'Parent', h.Menu.PhasorMenu,...
     'Tag','OpenPhasor',...
     'Label','Phasor',...
     'Callback',@Phasor);
-h.Menu.OpenPhasorParticle = uimenu(...
-    'Parent', h.Menu.AdvancedAnalysis,...
-    'Tag','OpenPhasorParticle',...
-    'Label','Phasor particle detection',...
+h.Menu.OpenParticleDetection = uimenu(...
+    'Parent', h.Menu.PhasorMenu,...
+    'Tag','OpenParticleDetection',...
+    'Label','Particle Detection',...
     'Callback',@ParticleDetection);
+h.Menu.OpenParticleViewer = uimenu(...
+    'Parent', h.Menu.PhasorMenu,...
+    'Tag','OpenParticleViewer',...
+    'Label','Particle Viewer',...
+    'Callback',@ParticleViewer);
 h.Menu.OpenPhasorTIFF = uimenu(...
-    'Parent', h.Menu.AdvancedAnalysis,...
+    'Parent', h.Menu.PhasorMenu,...
     'Tag','OpenPhasorTIFF',...
-    'Label','PhasorTIFF',...
+    'Label','Phasor for TIFF images',...
     'Callback',@PhasorTIFF);
 h.Menu.OpenPCF = uimenu(...
     'Parent', h.Menu.AdvancedAnalysis,...
@@ -351,7 +367,7 @@ h.MI.All_Panel = uibuttongroup(...
     'Position',[0 0 1 1]);
 %%% Contexmenu for all microtime axes
 h.MI.Menu = uicontextmenu;
-%%% Menu for Log scal plotting
+%%% Menu for Log scale plotting
 h.MI.Log = uimenu(...
     'Parent',h.MI.Menu,...
     'Label','Plot as log scale',...
@@ -360,7 +376,7 @@ h.MI.Log = uimenu(...
     'Callback',@Calculate_Settings);
 %%% Contextmenu for individual microtime axes
 h.MI.Menu_Individual = uicontextmenu;
-%%% Menu for Log scal plotting
+%%% Menu for Log scale plotting
 h.MI.Log_Ind = uimenu(...
     'Parent',h.MI.Menu_Individual,...
     'Label','Plot as log scale',...
@@ -921,6 +937,10 @@ h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Export total measurement to PDA',...
     'Callback',@Export_total_to_PDA,...
     'Separator','on');
+h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
+    'Label','Estimate background count rates from burst experiment',...
+    'Callback',@Estimate_Background_From_Burst,...
+    'Separator','on');
 h.Burst.Button.UIContextMenu = h.Burst.Button_Menu;
 %%% Right-click menu for BurstLifetime_Button to allow loading of
 %%% IRF/Scatter AFTER performed burst search using stored PIE settings
@@ -931,6 +951,9 @@ h.Burst.BurstLifetime_Button_Menu_StoreIRF = uimenu(h.Burst.BurstLifetime_Button
 h.Burst.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.Burst.BurstLifetime_Button_Menu,...
     'Label','Store current Scatter and background measurement in *.bur file',...
     'Callback',{@Store_IRF_Scat_inBur,1});
+h.Burst.BurstLifetime_Button_Menu_StorePhasorReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
+    'Label','Store current Phasor Reference in *.bur file',...
+    'Callback',{@Store_IRF_Scat_inBur,2});
 
 %%% Button to start burstwise Lifetime Fitting
 h.Burst.BurstLifetime_Button = uicontrol(...
@@ -1033,6 +1056,32 @@ h.Burst.NirFilter_Text1 = uicontrol(...
     'Callback',[],...
     'Position',[0.82 0.4 0.18 0.07],...
     'TooltipString',sprintf('Specify the Time Constant for Filter Calculation (e.g. 100 or 100;200 or 100:100:1000)'));
+h.Burst.ConstantDuration_Checkbox = uicontrol(...
+    'Parent',h.Burst.SubPanel_Settings,...
+    'Tag','ConstantDuration_Checkbox',...
+    'Style', 'checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',1,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Total duration',...
+    'Position',[0.05 0.3 0.9 0.08],...
+    'TooltipString',sprintf('Instead of calculating PIE channel count rates by dividing number of photons\nby the duration in the PIE channel, the number of photons is divided by the APBS duration'),...
+    'Callback',@Calculate_Settings);
+% h.Burst.RescaleToBackground_Checkbox = uicontrol(...
+%     'Parent',h.Burst.SubPanel_Settings,...
+%     'Tag','RescaleToBackground_Checkbox',...
+%     'Style', 'checkbox',...
+%     'Units','normalized',...
+%     'FontSize',12,...
+%     'Value',0,...
+%     'BackgroundColor', Look.Back,...
+%     'ForegroundColor', Look.Fore,...
+%     'String','Rescale to background',...
+%     'Position',[0.05 0.2 0.9 0.08],...
+%     'TooltipString',sprintf('If a background measurement was saved into PAM memory,\nthe burst search parameters are rescaled to stay above the background'),...
+%     'Callback',@Calculate_Settings);
 %%%Table for PIE channel assignment
 h.Burst.BurstPIE_Table = uitable(...
     'Parent',h.Burst.MainPanel,...
@@ -2070,6 +2119,11 @@ h.Trace.Axes.YLabel.Color=Look.Fore;
 h.Plots.Trace{1}=handle(plot([0 1],[0 0],'b'));
 
 h.Trace.Menu = uicontextmenu;
+h.Trace.Log = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Plot as log scale',...
+    'Checked',UserValues.Settings.Pam.PlotLogTrace,...
+    'Callback',@Calculate_Settings);
 h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
@@ -2422,6 +2476,31 @@ h.MT.Use_Lifetime = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.14 0.38 0.06]);
+%%% Median Filter lifetime image
+h.MT.Lifetime_Median = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT.Lifetime_Median',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Callback',@Calculate_Settings,...
+    'String','3',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.22 0.07 0.05 0.06]);
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'String','smoothing radius:',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'choose the radius of the median filter for smoothing the lifetime images',...
+    'Position',[0.03 0.07 0.15 0.06]);
+
 %%% Checkbox to determine if TCSPC channel or microtime is used for
 %%% microtime plots
 h.MT.ToggleTACTime = uicontrol(...
@@ -2540,12 +2619,6 @@ h.PIE.Color = uimenu(...
     'Label','Change channel colors',...
     'Tag','PIE_Color',...
     'Callback',@PIE_List_Functions);
-%%% Saves the current Measurement as IRF for the Channel
-h.PIE.IRF = uimenu(...
-    'Parent',h.PIE.List_Menu,...
-    'Label','Save IRF for selected PIE Channel',...
-    'Tag','PIE_IRF',...
-    'Callback',@SaveLoadIrfScat);
 %%% Export main
 h.PIE.Export = uimenu(...
     'Parent',h.PIE.List_Menu,...
@@ -2585,6 +2658,18 @@ h.PIE.Export_MicrotimePattern = uimenu(...
     'Label','...microtime pattern (as .dec)',...
     'Tag','PIE_Export_MicrotimePattern',...
     'Callback',@PIE_List_Functions);
+%%% Saves the current Measurement as IRF for the Channel
+h.PIE.IRF = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save IRF for selected PIE Channel',...
+    'Tag','PIE_IRF',...
+    'Callback',@SaveLoadIrfScat);
+%%% Saves the current Measurement as Phasor reference for the Channel
+h.PIE.PhasorReference = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save Phasor Reference for selected PIE Channel',...
+    'Tag','PIE_Phasor_Ref',...
+    'Callback',@SaveLoadIrfScat);
 %%% PIE Channel list
 h.PIE.List = uicontrol(...
     'Parent',h.PIE.Panel,...
@@ -3460,10 +3545,13 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 %% Calculates trace
                 %%% Takes PIE channel macrotimes
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
-                PamMeta.BinsPCH{i} = 0:1:10;
-                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                if mode == 1 % reset trace
+                    PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
+                elseif mode == 2 % reset PCH
+                    PamMeta.BinsPCH{i} = 0:1:10;
+                    PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                    PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
+                end
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
@@ -3527,7 +3615,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
                             tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
-                            PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
+                            radius = str2double(h.MT.Lifetime_Median.String);
+                            PamMeta.Lifetime{i} = medfilt2(tmp,[radius radius]); %median filter to remove nonsense
                         end
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
@@ -3682,6 +3771,10 @@ elseif obj == h.MT.ToggleTACTime
     Update_Data([],[],0,0,3);
     Update_Display([],[],3);
     Update_Display([],[],4);
+elseif obj == h.MT.Lifetime_Median
+    Update_Data([],[],0,0,3);
+    Update_Display([],[],3);
+    Update_Display([],[],4);
     %%% When changing trace bin size
 elseif obj == h.MT.Binning
     UserValues.Settings.Pam.MT_Binning=str2double(h.MT.Binning.String);
@@ -3725,7 +3818,18 @@ elseif obj == h.MI.Log_Ind || obj == h.MI.Log
     end
     Update_Display([],[],9)
     Update_Display([],[],5)
-elseif obj == h.MI.IRF
+elseif obj == h.Trace.Log
+    %%% Puts Y-axis of Trace in log scale
+    if strcmp(h.Trace.Log.Checked,'off')
+        UserValues.Settings.Pam.PlotLogTrace = 'on';
+        h.Trace.Log.Checked='on';
+    else
+        UserValues.Settings.Pam.PlotLogTrace = 'off';
+        h.Trace.Log.Checked='off';
+    end
+    Update_Display([],[],11)
+    Update_Display([],[],5)
+    
     %%% Switches IRF Check Display
     if strcmp(h.MI.IRF.Checked,'on')
         h.MI.IRF.Checked = 'off';
@@ -3877,6 +3981,7 @@ h = guidata(findobj('Tag','Pam'));
 %%% 8: Plot IRF or Scatter Pattern
 %%% 9: Y-axis log
 %%% 10: PCH plot
+%%% 11: Y-axis log of Trace
 if nargin<3 || any(mode==0)
     mode=[1:5, 6, 8, 9, 10];
 end
@@ -4113,33 +4218,35 @@ if any(mode == 10)
                 h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
-    if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
-        for t = h.PIE.List.Value
-            %%% create plot
-            h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+    if UserValues.Settings.Pam.Use_PCH
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+            for t = h.PIE.List.Value
+                %%% create plot
+                h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+            end
+            guidata(h.Pam,h);
+            h.PCH.Axes.YLimMode = 'auto';
+            h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
+            h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = 'Frequency';
+            h.PCH.Axes.YScale = 'log';
+            h.PCH.Axes.DataAspectRatioMode = 'auto';
+        else
+            sel = h.PIE.List.Value;
+            sel = sel(1:2);
+            [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
+                0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
+            h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
+                x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
+            h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
+            guidata(h.Pam,h);
+            h.PCH.Axes.YScale = 'lin';
+            h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
         end
-        guidata(h.Pam,h);
-        h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
-        h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = 'Frequency';
-        h.PCH.Axes.YScale = 'log';
-        h.PCH.Axes.DataAspectRatioMode = 'auto';
-    else
-        sel = h.PIE.List.Value;
-        sel = sel(1:2);
-        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
-            0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
-        h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
-            x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
-        h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
-        guidata(h.Pam,h);
-        h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
     end
     if obj == h.PCH.PCH_Export_Menu
         hfig = figure('Visible','on','Units','pixel',...
@@ -4566,6 +4673,17 @@ if any(mode==9)
     end
 end
 
+%% Plot Trace Y-axis in log %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this has to be before mode == 5 PIE Patches!
+if any(mode==11)
+    if strcmp(h.Trace.Log.Checked, 'on')
+        h.Trace.Axes.YScale='Log';
+        h.Trace.Axes.YLim=[1 h.Trace.Axes.YLim(1,2)];       
+    else
+        h.Trace.Axes.YScale='Linear';
+    end
+end
+
 %% PIE Patches %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==5)
     %%% Deletes all PIE Patches
@@ -4747,6 +4865,8 @@ switch e.Key
         UserValues.PIE.IRF{end+1} = zeros(1,4096);
         UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
+        UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
+        UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
@@ -6205,6 +6325,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if ~isempty(strfind(PIE_Name2,'Comb'))
                     PIE_Name2=PIE_Name2(8:end);
                 end
+                Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
+                Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                 if any(h.Cor.Format.Value == [1 3])
                     %%% Generates filename
                     Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
@@ -6222,9 +6344,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
                         end
                     end
-                    
-                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
                 end
                 if any(h.Cor.Format.Value == [2 3])
@@ -6247,7 +6366,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
                     
-                    %%% Writes Heater
+                    %%% Writes Header
                     fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
                     fprintf(FileID, ['Count rate channel 1 [kHz]: ' num2str(Counts(1), '%12.2f') '\n']);
                     fprintf(FileID, ['Count rate channel 2 [kHz]: ' num2str(Counts(2), '%12.2f') '\n']);
@@ -6257,7 +6376,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     
                     %%% Writes data as columns: Time    Averaged    SEM     Individual bins
                     fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
-                    fclose(FileID);
+                    fclose(FileID);                    
                 end
                 %% Plots Data
                 %%% Creates new Tab with axes
@@ -7230,8 +7349,8 @@ BAMethod = UserValues.BurstSearch.Method;
 SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
-ChunkSize = 30; %30 minutes, hard-coded for now
-Number_of_Chunks = ceil(FileInfo.MeasurementTime/(ChunkSize*60));
+Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
+ChunkSize = FileInfo.MeasurementTime/Number_of_Chunks;
 %%% Preallocation
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
@@ -7245,7 +7364,7 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Channel_all = cell(Number_of_Chunks,1);
 end
 
-for i = 1:Number_of_Chunks
+for i = find(PamMeta.Selected_MT_Patches)'
     Progress((i-1)/Number_of_Chunks,h.Progress.Axes, h.Progress.Text,'Performing Burst Search...');
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons
@@ -7403,6 +7522,7 @@ for i = 1:Number_of_Chunks
         % Channel_all{i} = uint8(Channel);
     end
 end
+
 %%% Concatenate data from chunks
 Macrotime = vertcat(Macrotime_dummy{:});
 Microtime = vertcat(Microtime_dummy{:});
@@ -7502,6 +7622,17 @@ if any(BAMethod == [1 2]) %total of 6 channels
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
     
     Progress(0.8,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:6
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:3
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Chan = zeros(Number_of_Bursts,6);
     for i = 1:6
@@ -7612,6 +7743,16 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     TBX_TGX(:,1) = TBX_TGX(:,1)./1E-3;
     TBX_TRR(:,1) = TBX_TRR(:,1)./1E-3;
     
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:12
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:6
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     Countrate_per_Chan = zeros(Number_of_Bursts,12);
     for i = 1:12
         Countrate_per_Chan(:,i) = Number_of_Photons_per_Chan(:,i)./Duration_per_Chan(:,i);
@@ -7662,11 +7803,20 @@ elseif BAMethod == 5 %only 3 channels
     TGX_TRR(:,2) = TGX_TRR(:,1)./Duration;
     TGG_TGR(:,1) = TGG_TGR(:,1)./1E-3;
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:4
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Color = zeros(Number_of_Bursts,3);
     for i = 1:3
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
+    
     
 end
 
@@ -7864,6 +8014,7 @@ BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
+BurstData.TotalDuration = h.Burst.ConstantDuration_Checkbox.Value; %1 if all count rates are calculated with the total duration.
 %%% Store also the FileInfo in BurstData
 BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later
@@ -7881,7 +8032,7 @@ BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
 BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
 
 % get the IRF, scatter decay and background from UserValues
-BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1]);
+BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1,2]);
 
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
@@ -8158,10 +8309,12 @@ for t=1:numel(tau_2CDE)
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
             parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
                 if ~(numel(Macrotime{i}) > 1E5)
-                    [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+                    [FRET_2CDE(i), ALEX_2CDE(i), E_D(i), E_A(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
                 else
                     ALEX_2CDE(i) = NaN;
                     FRET_2CDE(i) = NaN;
+                    E_D(i) = NaN;
+                    E_A(i) = NaN;
                 end
             end
         end
@@ -8169,6 +8322,9 @@ for t=1:numel(tau_2CDE)
         idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
         BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
         BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+        %%% Add the intermediate quantities used to calculate FRET-2CDE as well
+        BurstData.NirFilter.E_D = E_D;
+        BurstData.NirFilter.E_A = E_A;
     elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
         FRET_2CDE = zeros(numel(Macrotime),3);
         ALEX_2CDE = zeros(numel(Macrotime),3);
@@ -8256,7 +8412,7 @@ h.Burst.Button.ForegroundColor = [0 0.8 0];
 %%% Enable Lifetime and 2CDE Button
 h.Burst.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
-if any(BurstData.BAMethod == [1,2])
+if any(BurstData.BAMethod == [1,2,5])
     if (sum(BurstData.DataArray(:,strcmp('Lifetime D [ns]',BurstData.NameArray))) == 0 )
         %%% no lifetime fit
         h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
@@ -8276,7 +8432,7 @@ end
 
 h.Burst.NirFilter_Button.Enable = 'on';
 %%% Check if NirFilter was calculated before
-if any(BurstData.BAMethod == [1,2])
+if any(BurstData.BAMethod == [1,2,5])
     if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
         %%% no NirFilter
         h.Burst.NirFilter_Button.ForegroundColor = [1 0 0];
@@ -8967,6 +9123,42 @@ switch obj
         Update_Display([],[],8)
         h.Progress.Text.String = FileInfo.FileName{1};
         h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.PIE.PhasorReference
+        % Saves the current PIE channel as IRF pattern
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving Phasore Reference';
+        h.Progress.Axes.Color=[1 0 0];
+        %%% Find selected channels
+        Sel=h.PIE.List.Value;
+        %%% ask for the lifetime of the reference
+        lt = inputdlg('Lifetime of Reference [ns]:','Phasor Referencing',1,{num2str(UserValues.PIE.PhasorReferenceLifetime(Sel(1)))});
+        if isempty(lt)
+            errordlg('No reference lifetime given.');
+            return;
+        end
+        lt = str2num(lt{1});
+        if ~isfinite(lt)
+            errordlg('Invalid reference lifetime given.');
+            return;
+        end
+        
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update IRF of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.PhasorReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+                UserValues.PIE.PhasorReferenceLifetime(Sel(i)) = lt;
+            else
+                uiwait(msgbox('Phasor Reference cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
+        end
+        LSUserValues(1);
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
     case h.Menu.SaveScatter
         if strcmp(FileInfo.FileName{1},'Nothing loaded')
             errordlg('Load a measurement first!','No measurement loaded...');
@@ -9222,6 +9414,25 @@ switch BurstData.BAMethod
         for i = 1:2
             TauFitData.hScat_Par{i} = (TauFitData.hScat_Par{i}./max(TauFitData.hScat_Par{i})).*max(TauFitData.hMI_Par{i});
             TauFitData.hScat_Per{i} = (TauFitData.hScat_Per{i}./max(TauFitData.hScat_Per{i})).*max(TauFitData.hMI_Per{i});
+        end
+        
+        %%% Read Out the Phasor Reference
+        TauFitData.PhasorReference_Par = cell(2); TauFitData.PhasorReference_Per = cell(2);
+        if isfield(BurstData,'Phasor') && isfield(BurstData.Phasor,'PhasorReference')
+            try
+                TauFitData.PhasorReference_Par{1} = BurstData.Phasor.PhasorReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+                TauFitData.PhasorReference_Par{2} = BurstData.Phasor.PhasorReference{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+                TauFitData.PhasorReference_Per{1} = BurstData.Phasor.PhasorReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+                TauFitData.PhasorReference_Per{2} = BurstData.Phasor.PhasorReference{idx_RRperp}((BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
+            end
+        end
+        
+        TauFitData.PhasorReferenceLifetime = zeros(2,1);
+        if isfield(BurstData,'Phasor') && isfield(BurstData.Phasor,'PhasorReferenceLifetime')
+            try
+                TauFitData.PhasorReferenceLifetime(1) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_GGpar,idx_GGperp]));
+                TauFitData.PhasorReferenceLifetime(2) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_RRpar,idx_RRperp]));
+            end
         end
         
         %%% Generate XData
@@ -9511,6 +9722,43 @@ if any(mode==1)
     end
 end
 
+if any(mode==2)
+    %% Save the Phasor Reference as well
+    %%% Read out the Microtime Histograms of the Phasor References for the channels
+    switch BurstData.BAMethod
+        case {1,2}
+            PhasorReference_GGpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            PhasorReference_GGperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            PhasorReference_GRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            PhasorReference_GRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            PhasorReference_RRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            PhasorReference_RRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            try
+                BurstData.Phasor.PhasorReference = {PhasorReference_GGpar; PhasorReference_GGperp;...
+                    PhasorReference_GRpar; PhasorReference_GRperp;...
+                    PhasorReference_RRpar; PhasorReference_RRperp};
+                BurstData.Phasor.PhasorReferenceLifetime = [...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}))];
+            end
+        case {5}
+            PhasorReference_GG = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            PhasorReference_GR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            PhasorReference_RR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            BurstData.Phasor.PhasorReference = {PhasorReference_GG;...
+                PhasorReference_GR;...
+                PhasorReference_RR};
+            BurstData.Phasor.PhasorReferenceLifetime = [...
+                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})),...
+                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
+                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))];      
+    end
+end
+
 if ~strcmp(obj,'nothing')
     % function is called from right clicking the Burstwise lifetime button
     save(BurstData.FileName,'BurstData');
@@ -9584,8 +9832,17 @@ else
 end
 KDE = (1+2/numel(B)).*KDE;
 
-function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
-
+function [FRET_2CDE, ALEX_2CDE,E_D,E_A] = KDE(Trace,Chan_Trace,tau,BAMethod)
+%%% Additional output:
+%%% (E)_D = E_D - FRET efficiency estimated around donor photons
+%%% (1-E)_A = E_A - 1-FRET efficiency estimated around
+%%% acceptor photons
+%%%
+%%% These quantities are used to calculate FRET_2CDE by:
+%%% FRET_2CDE = 110 - 100 x ( (E)_D + (1-E)_A )
+%%%
+%%% They are needed in BurstBrowser to perform correct averaging of the 
+%%% FRET-2CDE filter over a set of bursts.
 switch BAMethod
     case {1,2} %MFD
         T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
@@ -10829,10 +11086,12 @@ switch obj
             end
             [~,PamMeta.fFCS.MIPattern_Name{i},~] = fileparts(filename{1}{1});
             PamMeta.fFCS.MIPattern{i} = MIPattern;
-            %dummy = load(fullfile(Path,File{i}),'-mat');
-            %[~, FileName, ~] = fileparts(File{i});
-            %PamMeta.fFCS.MIPattern_Name{i} = FileName;
-            %PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
+                
+            % BurstBrowser exports mat files, use this code instead
+            % dummy = load(fullfile(Path,File{i}),'-mat');
+            % [~, FileName, ~] = fileparts(File{i});
+            % PamMeta.fFCS.MIPattern_Name{i} = FileName;
+            % PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
         end
         Update_fFCS_GUI(obj,[]);
 end
@@ -10872,11 +11131,13 @@ switch obj
             for j = 1:(numel(PamMeta.fFCS.MIPattern_Name)+1)
                 if j < (numel(PamMeta.fFCS.MIPattern_Name)+1)
                     if isempty(UserValues.PIE.Combined{i}) %exclude combined channels
-                        if ~isempty(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)})
-                            % there is data in the corresponding detector/router channel
-                            if sum(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
-                                % there is data in the PIE channel range
-                                PIEexist(i,j) = 1;
+                        if (size(PamMeta.fFCS.MIPattern{j},1) >= UserValues.PIE.Detector(i)) && (size(PamMeta.fFCS.MIPattern{j},2) >= UserValues.PIE.Router(i))
+                            if ~isempty(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)})
+                                % there is data in the corresponding detector/router channel
+                                if sum(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                                    % there is data in the PIE channel range
+                                    PIEexist(i,j) = 1;
+                                end
                             end
                         end
                     end
@@ -11660,3 +11921,42 @@ if isempty(notepad)
 else
     figure(notepad);
 end
+
+%%% Estimates background count rates from burst experiment using
+%%% exponential tail fit to interphoton time distribution
+%%% see Ingargiola, A. et al. PLoS ONE (2016) for more details
+function Estimate_Background_From_Burst(~,~)
+global UserValues TCSPCData FileInfo
+
+BAMethod = UserValues.BurstSearch.Method;
+%%% get channels to estimate background for
+chans = UserValues.BurstSearch.PIEChannelSelection{BAMethod}'; chans = chans(:);
+%%% MLE for Poissonian errors
+logL = @(x,xdata,ydata) sum(ydata.*log(ydata./(x(1).*exp(-xdata.*x(2)))) - ydata + x(1).*exp(-xdata.*x(2)) );
+for i = 1:numel(chans)
+    %%% read out photons
+    MT = Get_Photons_from_PIEChannel(chans{i},'Macrotime');
+    MT = diff(MT).*FileInfo.ClockPeriod*1000; % convert to interphoton time and milliseconds
+    %calculate histogram
+    [hMT, dt] = hist(MT,0:.1:max(MT));
+    valid = (dt>max(dt/5)) & (hMT > 1);
+    x0 = [hMT(1),3/max(dt)];
+    x = fmincon(@(x) logL(x,dt(valid),hMT(valid)),x0,[],[],[],[],[0,0],[Inf,Inf]);
+    figure; plot(dt,hMT);hold on; plot(dt,x(1).*exp(-dt.*x(2)));set(gca,'YScale','log');
+    bg(i) = x(2);
+    disp(sprintf('Fitted channel %d of %d',i,numel(chans)));
+end
+disp('The estimated background count rates are:')
+result = [chans,num2cell(bg')]';
+disp(sprintf('%s: %f kHz\n',result{:}));
+%%% sort background into channels and update display
+%%% Store Background Counts in PIE subfield of UserValues structure (PIE.Background) in kHz
+for i=1:numel(chans)%numel(UserValues.PIE.Name)
+    c = find(strcmp(UserValues.PIE.Name,chans{i}));
+    if isempty(UserValues.PIE.Combined{c})
+        UserValues.PIE.Background(c) = bg(c);
+    end
+end
+LSUserValues(1);
+Update_Display([],[],[1,8])
+disp('Done estimating background count rates from burst experiment.');

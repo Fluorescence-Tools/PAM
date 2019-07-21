@@ -7,7 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // This function does the actual calculation
 ///////////////////////////////////////////////////////////////////////////
-void mixPeps(double *eps, double *PE1, double *PE2, double *PofT, unsigned int N_bins_T, unsigned int N_bins_eps,
+void mixPeps(double *eps, double *PE1, double *PE2, unsigned int N_bins_T, unsigned int N_bins_eps,
         double Q1, double Q2,
         double *PEmix)
 {
@@ -22,20 +22,26 @@ void mixPeps(double *eps, double *PE1, double *PE2, double *PofT, unsigned int N
     {
         //p1 = (double)k/(double)(N_bins_T-1);
         T1 = (double)k;
-        T2 = (double)(N_bins_T-1-k);
+        T2 = (double)(N_bins_T-k-1);
         for (i=0;i<N_bins_eps;i++)
             {
-            for (j=0;j<N_bins_eps;j++)
+                if (PE1[i] > 1E-3)
                 {
-                //meanEps = p1*eps[i]+(1-p1)*eps[j];
-                // now with brightness correction!
-                meanEps = (Q1*T1*eps[i]+Q2*T2*eps[j])/(Q1*T1+Q2*T2);
-                for (ix = 0; ix<N_bins_eps; ix++)
+                    for (j=0;j<N_bins_eps;j++)                        
                     {
-                    if (meanEps <= eps[ix])
-                        {break;}
+                        if (PE2[j] > 1E-3)
+                        {
+                            //meanEps = p1*eps[i]+(1-p1)*eps[j];
+                            // now with brightness correction!
+                            meanEps = (Q1*T1*eps[i]+Q2*T2*eps[j])/(Q1*T1+Q2*T2);
+                            for (ix = 0; ix<N_bins_eps; ix++)
+                                {
+                                if (meanEps <= eps[ix])
+                                    {break;}
+                                }
+                            PEmix[N_bins_eps*k+ix] += PE1[i]*PE2[j];    
+                        }
                     }
-                PEmix[N_bins_eps*k+ix] += PE1[i]*PE2[j];        
                 }
             }
     }
@@ -61,25 +67,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Initializes output matrix and assigns pointer to it
     double *PEmix; 
     
-    unsigned int N_bins_T = (unsigned int)mxGetScalar(prhs[4]);
-    unsigned int N_bins_eps = (unsigned int)mxGetScalar(prhs[5]);
-    double Q1 = (double)mxGetScalar(prhs[6]);
-    double Q2 = (double)mxGetScalar(prhs[7]);
+    unsigned int N_bins_T = (unsigned int)mxGetScalar(prhs[3]);
+    unsigned int N_bins_eps = (unsigned int)mxGetScalar(prhs[4]);
+    double Q1 = (double)mxGetScalar(prhs[5]);
+    double Q2 = (double)mxGetScalar(prhs[6]);
     
     // Assigns input pointers to initialized pointers
     eps = mxGetPr(prhs[0]);
     PE1 = mxGetPr(prhs[1]);
     PE2 = mxGetPr(prhs[2]);
-    PofT = mxGetPr(prhs[3]); 
-    
-    
     
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)(N_bins_eps*N_bins_T), mxREAL);
     PEmix = mxGetPr(plhs[0]);    
 
     
     // Calls function to do the actual work
-    mixPeps(eps,PE1,PE2,PofT,N_bins_T,N_bins_eps,Q1,Q2,PEmix);     
+    mixPeps(eps,PE1,PE2,N_bins_T,N_bins_eps,Q1,Q2,PEmix);     
 };
 
 

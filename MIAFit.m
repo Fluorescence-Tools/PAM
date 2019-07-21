@@ -46,7 +46,13 @@ h.MIAFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.MIAFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 13:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 13:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Menubar %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,7 +133,7 @@ h.Fit_Table = uitable(...
     'Units','normalized',...
     'ForegroundColor',Look.TableFore,...
     'BackgroundColor',[Look.Table1;Look.Table2],...
-    'FontSize',8,...
+    'FontSize',12,...
     'Position',[0 0 1 1],...
     'CellEditCallback',{@Update_Table,3},...
     'CellSelectionCallback',{@Update_Table,3});
@@ -2182,14 +2188,14 @@ switch mode
         %%% Generates column names and resized them
         Columns=cell(3*numel(MIAFitMeta.Model.Params)+4,1);
         Columns{1}='Active';
-        Columns{2}='<HTML><b> Counts [khz] </b>';
-        Columns{3}='<HTML><b> Brightness [khz]</b>';
+        Columns{2}='<HTML><b> Counts [kHz] </b>';
+        Columns{3}='<HTML><b> Brightness [kHz]</b>';
         for i=1:numel(MIAFitMeta.Model.Params)
             Columns{3*i+1}=['<HTML><b>' MIAFitMeta.Model.Params{i} '</b>'];
             Columns{3*i+2}='F';
             Columns{3*i+3}='G';
         end
-        Columns{end}='Chi?';
+        Columns{end}='<HTML><b>Chi2</b>';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(4:3:end-1) = 80;
         ColumnWidth(5:3:end-1)=20;
@@ -2203,9 +2209,9 @@ switch mode
         %%% Sets row names to file names
         Rows=cell(size(MIAFitData.Data,1)+3,1);
         Rows(1:size(MIAFitData.Data,1))=deal(MIAFitData.FileName);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
+        Rows{end-2}='<HTML><b>ALL</b>';
+        Rows{end-1}='<HTML><b>Lower bound</b>';
+        Rows{end}='<HTML><b>Upper bound</b>';
         h.Fit_Table.RowName=Rows;
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
@@ -2227,9 +2233,13 @@ switch mode
 %         Data(:,5:3:end-1)=deal({false});
 %         Data(:,6:3:end-1)=deal({false});
         Data(:,5:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==1)',size(Data,1),1);
+        Data(end-1:end,5:3:end-1)=deal({[]});
         Data(:,6:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==2)',size(Data,1),1);
+        Data(end-1:end,6:3:end-1)=deal({[]});
         Data(:,1)=deal({true});
+        Data(end-1:end,1)=deal({[]});
         Data(:,end)=deal({'0'});
+        Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=Data;
         h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];
         %%% Enables cell callback again
@@ -2273,10 +2283,55 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
+            %%% detect click of "All" row, in which case the callback
+            %%% should finish to update the values
+            %%% problem in 2018a: Updating the other values causes the cell
+            %%% selection to drop, making it impossible to set another
+            %%% value.
+            %%% The "All" row thus only updates if the user types a
+            %%% different value, causing the EditCallback to fire.
+            if ~isempty(e.Indices) && e.Indices(1) == size(h.Fit_Table.Data,1)-2
+                %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
+            else
+                if isempty(e.Indices) % sometime, indices is empty
+                    h.Fit_Table.CellEditCallback={@Update_Table,3};
+                    return;
+                end
+                %%% if a lower boundary/upperboundary field of a logical
+                %%% quantity was clicked (i.e. active/fixed/global)
+                %%% make sure to deselect the field to prevent the user
+                %%% from typing a value
+                deselect = 0;
+                if e.Indices(1) > size(h.Fit_Table.Data,1)-2 %%% clicked lb/ub field
+                    if e.Indices(2) == 1 %%% clicked the "active" column
+                        deselect = 1;
+                    elseif e.Indices(2) == size(h.Fit_Table.Data,2) % clicked chi2 field
+                        deselect = 1;
+                    elseif mod(e.Indices(2)-4,3) ~= 0 % clicked fixed or global field
+                        deselect = 1;
+                    end
+                end
+                if deselect
+                    %%% deselection of field is only possible by assigning
+                    %%% a dummy to the data and re-assigning the original
+                    %%% data afterwards
+                    temp = h.Fit_Table.Data;
+                    h.Fit_Table.Data = repmat({'dummy'},size(h.Fit_Table.Data));
+                    h.Fit_Table.Data = temp;
+                end
+                %%% re-assign callback and exit
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
                 return;
             end
-            NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+            % previously, the following code was called that caused the GUI to get stuck in version 2018a and upwards
+            %if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
+            %if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %    h.Fit_Table.CellEditCallback={@Update_Table,3};
+            %    return;
+            %end
+            %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
         end
         if isprop(e,'NewData')
             NewData = e.NewData;
@@ -2557,7 +2612,7 @@ h.Fit_Table.Enable = 'off';
 MIAFitMeta.FitInProgress = 1;
 drawnow;
 %%% Reads parameters from table
-Fixed = cell2mat(h.Fit_Table.Data(1:end-1,5:3:end-1));
+Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end-1));
 Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end-1));
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 lb = h.Fit_Table.Data(end-1,4:3:end-1);
