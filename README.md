@@ -37,7 +37,7 @@ Installing and updating the open-source version of PAM
 ========================================================
 
 The open source version of PAM requires a valid licence for MATLAB (2014b or newer).
-Certain features further need access to tool boxes (curve fitting, image processing, statistics and machine learning, parallel computing) to work.
+Certain features further need access to tool boxes (curve fitting, optimization, image processing, statistics and machine learning, parallel computing) to work.
 
 You can obtain and update **PAM** either through direct download from *Gitlab*, using the command line through *Git*, or by using the MATLAB *Git* integration.
 
