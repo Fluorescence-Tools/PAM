@@ -19,7 +19,7 @@ function [MT, MI,SyncRate,Resolution,PLF] = Read_HT3(FileName,NoE,ProgressAxes,P
 
 fid=fopen(FileName,'r');
 switch mode
-    case 1 %%% .ht3 file from HydraHarp Software, read whole header etc...
+    case {1,3} %%% .ht3 file from HydraHarp Software, read whole header etc...
         Progress(0/NumFiles,ProgressAxes,ProgressText,['Processing Header of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -221,8 +221,21 @@ switch mode
             
             TimeTag(special == 1 & channel == 63) = double(T3WRAPAROUND);
             TimeTag = cumsum(TimeTag);
-            ValidIndices = find(special == 0 | ((channel>=1)&(channel<=15)));
-            TimeTag(ValidIndices) = double(nsync(ValidIndices))+TimeTag(ValidIndices)';
+            TimeTag = double(nsync)+TimeTag';
+            if mode == 3
+                % Seidel-CLSM, read out line start stop and frame start
+                LineStartMarker = 1;
+                LineStopMarker = 2;
+                FrameStartMarker = 3;
+                % imaging marker timetags
+                FrameStart = TimeTag(special == 1 & channel < 15 & bitget(channel,FrameStartMarker))';
+                LineStart = TimeTag(special == 1 & channel < 15 & bitget(channel,LineStartMarker))';
+                LineStop = TimeTag(special == 1 & channel < 15 & bitget(channel,LineStopMarker))';
+                PLF = {FrameStart, LineStart, LineStop};
+            end
+            
+            ValidIndices = find(special == 0 | ((channel>=1)&(channel<=15))); % these are photons
+            %TimeTag(ValidIndices) = double(nsync(ValidIndices))+TimeTag(ValidIndices)';
             TimeTag = TimeTag(ValidIndices);
             channel = channel(ValidIndices);
             dtime = dtime(ValidIndices);
@@ -309,7 +322,6 @@ switch mode
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);
         dtime = dtime(ValidIndices);
-
 end
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
