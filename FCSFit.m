@@ -2247,7 +2247,7 @@ switch mode
             end
         end
         FitResult = horzcat(Params,horzcat(FitResult{:}));
-        Mat2clip(FitResult);
+        Mat2clip(FitResult');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
