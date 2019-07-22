@@ -1360,7 +1360,7 @@ switch mode
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
         h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
-        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 1 %%% Updates tables when new data is loaded
@@ -1395,7 +1395,7 @@ switch mode
             end
         end
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 2 %%% Updates table after fit
@@ -1415,7 +1415,7 @@ switch mode
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
-        h.Fit_Table.CellEditCallback=[];
+        h.Fit_Table.CellEditCallback=[];        
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
             %%% detect click of "All" row, in which case the callback
             %%% should finish to update the values
