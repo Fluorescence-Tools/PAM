@@ -1200,6 +1200,7 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.MaxN = [];
     PDAData.MinS = [];
     PDAData.MaxS = [];
+    PDAData.KineticRatesTable = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.KineticRates_table.Data(1:end-3,:)=[];
@@ -1278,6 +1279,7 @@ for i = 1:numel(FileName)
                 PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
                 PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
             end
+            PDAData.KineticRatesTable{end+1} = [];
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
         elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
@@ -1318,7 +1320,7 @@ for i = 1:numel(FileName)
             if isfield(SavedData,'DynamicSystem')
                 h.SettingsTab.DynamicSystem.Value = SavedData.DynamicSystem;
             end
-            if isfield(SavedData,'KineticRatesTable');
+            if isfield(SavedData,'KineticRatesTable')
                 PDAData.KineticRatesTable{i} = SavedData.KineticRatesTable;
                 %h.KineticRates_table.Data = SavedData.ThreeStateModel;
             else
