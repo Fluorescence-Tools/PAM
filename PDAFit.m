@@ -1961,7 +1961,7 @@ switch mode
             set(PDAMeta.Plots.Gauss_All{i,1},...
                 'Visible', 'on',...
                 'YData', GaussSum);
-            for c = PDAMeta.Comp{i}
+            for c = comp
                 set(PDAMeta.Plots.Gauss_All{i,c+1},...
                     'Visible', 'on',...
                     'YData', Gauss{c});
@@ -2032,7 +2032,7 @@ switch mode
         % get all active files and components
         Mini = 40; Maxi = 60;
         for i = Active
-            for c = PDAMeta.Comp{i}
+            for c = comp
                 Mini = min(Mini, FitTable(i,3*c-1)-3*FitTable(i,3*c));
                 Maxi = max(Maxi, FitTable(i,3*c-1)+3*FitTable(i,3*c));
             end
@@ -2174,12 +2174,12 @@ for i = 1:numel(PDAData.FileName)
         PDAMeta.Plots.Res_All{i}.Visible = tex;
     end
     PDAMeta.Plots.BSD_All{i}.Visible = tex;
-    for j = 1:8
+    for j = 1:7
         % 1 = all
         % 2:6 = substates
         % 7 = D only
         % 8 = all dynamic bursts
-        if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0;
+        if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0
             % data has been fitted before and component exists
             PDAMeta.Plots.Fit_All{i,j}.Visible = tex;
             PDAMeta.Plots.Gauss_All{i,j}.Visible = tex;
@@ -2193,12 +2193,12 @@ for i = 1:numel(PDAData.FileName)
             PDAMeta.Plots.Res_Single.Visible = 'off';
         end
         PDAMeta.Plots.BSD_Single.Visible = 'off';
-        for j = 1:8
+        for j = 1:7
             % 1 = all
             % 2:6 = substates
             % 7 = D only
             % 8 = all dynamic bursts
-            if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
+            if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0
                 % data has been fitted before and component exists
                 PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
                 PDAMeta.Plots.Gauss_Single{1,j}.Visible = 'off';
