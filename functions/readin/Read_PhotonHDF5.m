@@ -12,16 +12,15 @@ datastruct.description = h5read(file,'/description');
 datastruct.acquisiton_duration = h5read(file,'/acquisition_duration');
 
 %%% /identity group
-datastruct.identity.author = h5read(file,'/identity/author');
-datastruct.identity.author_affiliation = h5read(file,'/identity/author_affiliation');
-datastruct.identity.creation_time = h5read(file,'/identity/creation_time');
-datastruct.identity.fname = h5read(file,'/identity/filename');
-datastruct.identity.fname_full = h5read(file,'/identity/filename_full');
-datastruct.identity.format_name = h5read(file,'/identity/format_name');
-datastruct.identity.format_url = h5read(file,'/identity/format_url');
-datastruct.identity.format_version = h5read(file,'/identity/format_version');
-datastruct.identity.software = h5read(file,'/identity/software');
-datastruct.identity.software_version = h5read(file,'/identity/software_version');
+try;datastruct.identity.author = h5read(file,'/identity/author');end;
+try;.identity.author_affiliation = h5read(file,'/identity/author_affiliation');end;
+try;datastruct.identity.creation_time = h5read(file,'/identity/creation_time');end;
+try;datastruct.identity.fname_full = h5read(file,'/identity/filename_full');end;
+try;datastruct.identity.format_name = h5read(file,'/identity/format_name');end;
+try;datastruct.identity.format_url = h5read(file,'/identity/format_url');end;
+try;datastruct.identity.format_version = h5read(file,'/identity/format_version');end;
+try;datastruct.identity.software = h5read(file,'/identity/software');end;
+try;datastruct.identity.software_version = h5read(file,'/identity/software_version');end;
 
 %%% /provenance group
 try
