@@ -1200,6 +1200,7 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.MaxN = [];
     PDAData.MinS = [];
     PDAData.MaxS = [];
+    PDAData.KineticRatesTable = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.KineticRates_table.Data(1:end-3,:)=[];
@@ -1278,6 +1279,7 @@ for i = 1:numel(FileName)
                 PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
                 PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
             end
+            PDAData.KineticRatesTable{end+1} = [];
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
         elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
@@ -1318,7 +1320,7 @@ for i = 1:numel(FileName)
             if isfield(SavedData,'DynamicSystem')
                 h.SettingsTab.DynamicSystem.Value = SavedData.DynamicSystem;
             end
-            if isfield(SavedData,'KineticRatesTable');
+            if isfield(SavedData,'KineticRatesTable')
                 PDAData.KineticRatesTable{i} = SavedData.KineticRatesTable;
                 %h.KineticRates_table.Data = SavedData.ThreeStateModel;
             else
@@ -1959,7 +1961,7 @@ switch mode
             set(PDAMeta.Plots.Gauss_All{i,1},...
                 'Visible', 'on',...
                 'YData', GaussSum);
-            for c = PDAMeta.Comp{i}
+            for c = comp
                 set(PDAMeta.Plots.Gauss_All{i,c+1},...
                     'Visible', 'on',...
                     'YData', Gauss{c});
@@ -2030,7 +2032,7 @@ switch mode
         % get all active files and components
         Mini = 40; Maxi = 60;
         for i = Active
-            for c = PDAMeta.Comp{i}
+            for c = comp
                 Mini = min(Mini, FitTable(i,3*c-1)-3*FitTable(i,3*c));
                 Maxi = max(Maxi, FitTable(i,3*c-1)+3*FitTable(i,3*c));
             end
@@ -2172,12 +2174,12 @@ for i = 1:numel(PDAData.FileName)
         PDAMeta.Plots.Res_All{i}.Visible = tex;
     end
     PDAMeta.Plots.BSD_All{i}.Visible = tex;
-    for j = 1:8
+    for j = 1:7
         % 1 = all
         % 2:6 = substates
         % 7 = D only
         % 8 = all dynamic bursts
-        if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0;
+        if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0
             % data has been fitted before and component exists
             PDAMeta.Plots.Fit_All{i,j}.Visible = tex;
             PDAMeta.Plots.Gauss_All{i,j}.Visible = tex;
@@ -2191,12 +2193,12 @@ for i = 1:numel(PDAData.FileName)
             PDAMeta.Plots.Res_Single.Visible = 'off';
         end
         PDAMeta.Plots.BSD_Single.Visible = 'off';
-        for j = 1:8
+        for j = 1:7
             % 1 = all
             % 2:6 = substates
             % 7 = D only
             % 8 = all dynamic bursts
-            if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
+            if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0
                 % data has been fitted before and component exists
                 PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
                 PDAMeta.Plots.Gauss_Single{1,j}.Visible = 'off';
@@ -5147,55 +5149,54 @@ switch mode
             h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
             PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
             PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
-            if strcmp(h.KineticRates_table.Visible,'on')
-                %%% three state system
-                h.KineticRates_table.CellEditCallback=[];
-                Data=cell(size(h.FitTab.Table.Data,1),18);
-                %%% Sets previously loaded files
-                Data(1:(size(h.KineticRates_table.Data,1)-3),:)=h.KineticRates_table.Data(1:end-3,:);
-                %%% Set last 3 row to ALL, lb and ub
-                Data(end-2:end,:)=h.KineticRates_table.Data(end-2:end,:);
-                %%% Add FitTable data of new files in between old data and ALL row
-                a = size(h.KineticRates_table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
-                for i = a:(size(Data,1)-3) % i = 4:5
-                    if ~isempty(PDAData.KineticRatesTable{i})
-                        % kinetic rates for three states exist
-                        try
-                            Data(i,:) = PDAData.KineticRatesTable{i};
-                        catch 
-                            Data(i,:) = repmat({1,false,false},1,6);
-                        end
-                    else % fill in standard values
+            
+            %%% three state system
+            h.KineticRates_table.CellEditCallback=[];
+            Data=cell(size(h.FitTab.Table.Data,1),18);
+            %%% Sets previously loaded files
+            Data(1:(size(h.KineticRates_table.Data,1)-3),:)=h.KineticRates_table.Data(1:end-3,:);
+            %%% Set last 3 row to ALL, lb and ub
+            Data(end-2:end,:)=h.KineticRates_table.Data(end-2:end,:);
+            %%% Add FitTable data of new files in between old data and ALL row
+            a = size(h.KineticRates_table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
+            for i = a:(size(Data,1)-3) % i = 4:5
+                if ~isempty(PDAData.KineticRatesTable{i})
+                    % kinetic rates for three states exist
+                    try
+                        Data(i,:) = PDAData.KineticRatesTable{i};
+                    catch 
                         Data(i,:) = repmat({1,false,false},1,6);
                     end
+                else % fill in standard values
+                    Data(i,:) = repmat({1,false,false},1,6);
                 end
-                for i = 1:6 % all fittable parameters
-                    if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
-                        % this parameter is global for all files
-                        % so make the ALL row also global
-                        Data(end-2,3*(i-1)+3) = {true};
-                        % make the fix checkbox false
-                        Data(end-2,3*(i-1)+2) = {false};
-                        % make the ALL row the mean of all values for that parameter
-                        Data(end-2,3*(i-1)+1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1))))};
-                    else
-                        % this parameter is not global for all files
-                        % so make it not global for all files
-                        Data(1:end-2,3*(i-1)+3) = {false};
-                    end
-                    if all(cell2mat(Data(1:end-3,3*(i-1)+2)))
-                        % all of the fix checkboxes are true
-                        % make the ALL fix checkbox true
-                        Data(end-2,3*(i-1)+2) = {true};
-                    else
-                        Data(end-2,3*(i-1)+2) = {false};
-                    end           
-                end
-                h.KineticRates_table.Data=Data;
-                %%% Enables cell callback again
-                h.KineticRates_table.CellEditCallback={@Update_FitTable,3};
-                PDAMeta.Params_3States = cellfun(@str2double,h.KineticRates_table.Data(end-2,2:3:end));
             end
+            for i = 1:6 % all fittable parameters
+                if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
+                    % this parameter is global for all files
+                    % so make the ALL row also global
+                    Data(end-2,3*(i-1)+3) = {true};
+                    % make the fix checkbox false
+                    Data(end-2,3*(i-1)+2) = {false};
+                    % make the ALL row the mean of all values for that parameter
+                    Data(end-2,3*(i-1)+1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1))))};
+                else
+                    % this parameter is not global for all files
+                    % so make it not global for all files
+                    Data(1:end-2,3*(i-1)+3) = {false};
+                end
+                if all(cell2mat(Data(1:end-3,3*(i-1)+2)))
+                    % all of the fix checkboxes are true
+                    % make the ALL fix checkbox true
+                    Data(end-2,3*(i-1)+2) = {true};
+                else
+                    Data(end-2,3*(i-1)+2) = {false};
+                end           
+            end
+            h.KineticRates_table.Data=Data;
+            %%% Enables cell callback again
+            h.KineticRates_table.CellEditCallback={@Update_FitTable,3};
+            PDAMeta.Params_3States = cellfun(@str2double,h.KineticRates_table.Data(end-2,2:3:end));
     case 2 %%% Re-loads table from loaded data upon File menu - load fit parameters
         for i = 1:numel(PDAData.FileName)
             h.FitTab.Table.Data(i,:) = PDAData.FitTable{i};
