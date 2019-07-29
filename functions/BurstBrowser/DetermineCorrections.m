@@ -310,8 +310,12 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
-
-        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+            case {3,4}
+                indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+        end
         tauGG = BurstData{file}.DataArray(Valid,indTauGG);
         
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
@@ -325,8 +329,12 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
         NGG = get_multiselection_data(h,'Number of Photons (DD)');
         NRR = get_multiselection_data(h,'Number of Photons (AA)');
         dur = get_multiselection_data(h,'Duration [ms]');
-        tauGG = get_multiselection_data(h,'Lifetime D [ns]');
-        
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                tauGG = get_multiselection_data(h,'Lifetime D [ns]');
+            case {3,4}
+                tauGG = get_multiselection_data(h,'Lifetime GG [ns]');
+        end
         NGR = NGR - Background_GR.*dur;
         NGG = NGG - Background_GG.*dur;
         NRR = NRR - Background_RR.*dur;
