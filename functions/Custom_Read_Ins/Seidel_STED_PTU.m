@@ -220,5 +220,5 @@ FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcD
 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
 
 LSUserValues(1);
-% Calculate_Settings = PAM ('Calculate_Settings');
-% Calculate_Settings(h.MT.Use_Image,[]);
+Calculate_Settings = PAM ('Calculate_Settings');
+Calculate_Settings(h.MT.Use_Image,[]);
