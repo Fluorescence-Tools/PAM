@@ -13,7 +13,7 @@ datastruct.acquisiton_duration = h5read(file,'/acquisition_duration');
 
 %%% /identity group
 try;datastruct.identity.author = h5read(file,'/identity/author');end;
-try;.identity.author_affiliation = h5read(file,'/identity/author_affiliation');end;
+try;datastruct.identity.author_affiliation = h5read(file,'/identity/author_affiliation');end;
 try;datastruct.identity.creation_time = h5read(file,'/identity/creation_time');end;
 try;datastruct.identity.fname_full = h5read(file,'/identity/filename_full');end;
 try;datastruct.identity.format_name = h5read(file,'/identity/format_name');end;
