@@ -205,6 +205,13 @@ for i=1:numel(FileName)
         UserValues.Settings.Pam.Use_Image = 0;
         h.Image.Tab.Parent = [];
         FileInfo.Lines = 1; %Leave here
+        % duplicate the information to the "routing" channels so that it
+        % can be used a reference for PHasor
+        % consider 4 "routing" channels
+        for i = 2:4
+            TcspcData.MT(:,i) = TcspcData.MT(:,1);
+            TcspcData.MI(:,i) = TcspcData.MI(:,1);
+        end
     end
 end
 
