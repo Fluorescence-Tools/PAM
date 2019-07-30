@@ -17,6 +17,9 @@ if isempty(hfig)
     if ispc
         fontSize = fontSize/1.25;
     end
+    if isunix
+        fontSize = fontSize/1.5;
+    end
     %%% set opacity of images
     opacity = 0.4;
     %%% set color of text
