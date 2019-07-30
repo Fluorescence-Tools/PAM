@@ -21,3 +21,4 @@ end
 fid = fopen('compile_PAM.sh','w');
 fprintf(fid,'#!/bin/bash\n');
 fprintf(fid,command);
+fclose(fid);
