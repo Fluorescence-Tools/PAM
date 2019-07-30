@@ -121,7 +121,7 @@ for i=1:numel(FileName)
         FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
     end
     
-    if ~isempty(Header.LineStart) % Image PTU data  
+    if ~isempty(Header.LineStart) && numel(Header.LineStart) == numel(Header.LineStop) % Image PTU data
         % cumulative n.o. frames
         % Header.Frames might contain NoF already
         f = size(Header.FrameStart,2);
