@@ -28,18 +28,27 @@ try
 catch
     datastruct.provenance.creation_time = string(datetime);
 end
-datastruct.provenance.filename = h5read(file,'/provenance/filename');
+try
+    datastruct.provenance.filename = h5read(file,'/provenance/filename');
+catch
+    [~,filen,ext] = fileparts(file);
+    datastruct.provenance.filename = [filen, ext];
+end
 try
     datastruct.provenance.filename_full = h5read(file,'/provenance/filename_full');
 catch
-    datastruct.provenance.filename_full = datastruct.provenance.filename;
+    datastruct.provenance.filename_full = file;
 end
 try
     datastruct.provenance.modification_time = h5read(file,'/provenance/modification_time');
 catch
     datastruct.provenance.modification_time = string(datetime);
 end
-datastruct.provenance.software = h5read(file,'/provenance/software');
+try
+    datastruct.provenance.software = h5read(file,'/provenance/software');
+catch
+    datastruct.provenance.software = 'unknown';
+end
 
 %%% /sample group
 try
