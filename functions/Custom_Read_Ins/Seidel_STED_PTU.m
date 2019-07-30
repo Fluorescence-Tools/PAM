@@ -153,7 +153,7 @@ for i=1:numel(FileName)
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Converting File ' num2str(i) ' of ' num2str(numel(FileName))]);
             % ask the user for the excitation period.
             % Assuming only the last scan is red.
-            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'4'}));
+            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'2'}));
             lines = FileInfo.Pixels*period;
             % transform the raw MT data to split up into duty cycle periods.
             % Currently, for each line the setup performs 3 scans with green
@@ -164,9 +164,9 @@ for i=1:numel(FileName)
                 if ~isempty(TcspcData.MT{j,1})
                     [Image,Bin] = CalculateImage(TcspcData.MT{j,1}*FileInfo.ClockPeriod, 4);
                     Bin = double(Bin);
-                    Frame = floor(Bin/(250*lines))+1;
+                    Frame = floor(Bin/(FileInfo.Pixels*lines))+1;
                     valid = Bin ~= 0;       
-                    Line = mod(ceil(Bin/250),lines);Line(Line == 0) = lines;
+                    Line = mod(ceil(Bin/FileInfo.Pixels),lines);Line(Line == 0) = lines;
                     %Line = floor(mod(Bin,250*1000)/250)+1;
                     Cycle = mod(Line-1,period);
                     for f = 1:size(lstart,1)
@@ -189,8 +189,7 @@ for i=1:numel(FileName)
             end
             FileInfo.LineTimes = FileInfo.LineTimes(:,1:period:end);
             FileInfo.LineStops = FileInfo.LineStops(:,1:period:end);
-            FileInfo.Lines = 250;
-            FileInfo.Pixels = 250;
+            FileInfo.Lines = FileInfo.Pixels;
         end
         
         %%% Enables image plotting
