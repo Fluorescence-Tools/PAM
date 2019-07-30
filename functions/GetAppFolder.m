@@ -13,6 +13,9 @@ if isdeployed
 %         %%% remove filename and extension
 %         PathToApp = fileparts(PathToApp);
 %     end
+    if isunix % on UNIX, the relevant data is placed in a subfolder "PAM" in ctfroot
+        PathToApp = [PathToApp filesep 'PAM'];
+    end
 else
     %%% if not deployed, the folder to PAM. is one up from /functions
     PathToApp = [fileparts(mfilename('fullpath')) filesep '..'];
