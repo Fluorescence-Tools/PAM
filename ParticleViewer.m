@@ -332,6 +332,18 @@ h.Particle_FillGaps = uicontrol(...
           'Phasor data is automatically re-extracted. '],...
     'Position',[0.57 0.56, 0.38 0.14]);
 
+%%% Button to subtract particle background
+h.Particle_BGSubtract = uicontrol(...
+    'Parent',h.Plot_Control_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback', @Subtract_Background,...
+    'String', 'Subtract Background',...
+    'TooltipString', 'Subtract Particle Intensity Background',...
+    'Position',[0.57 0.41, 0.38 0.14]);
+
 %%% Button to save particle data
 h.Particle_SaveData = uicontrol(...
     'Parent',h.Plot_Control_Panel,...
@@ -341,7 +353,7 @@ h.Particle_SaveData = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Callback', @Save_Data,...
     'String', 'Save Particle Data',...
-    'Position',[0.57 0.41, 0.38 0.14]);
+    'Position',[0.57 0.26, 0.38 0.14]);
 
 %%% Controls for exporting image plot
 h.Particle_Export = uicontrol(...
@@ -766,7 +778,7 @@ switch Plot_Type
     case 3 %Mean of TauP and TauM
         XValue = 1:size(ParticleViewer.TauP, 2);
         TauP = ParticleViewer.TauP(PartNum,:);
-        TauP(TauP == 0) = NaN;
+        TauP(TauP <= 0) = NaN;
         TauM = ParticleViewer.TauM(PartNum,:);
         TauM(isinf(TauM)) = NaN;
         YValue = (TauP + TauM)/2;
@@ -775,8 +787,10 @@ switch Plot_Type
         XLabel = 'Frames';
         Property = {'XLim', [1, size(YValue, 2)+1]};
     case 4 %Intensity
-        XValue = 1:size(ParticleViewer.Intensity, 2);
         YValue = ParticleViewer.Intensity(PartNum,:);
+        YValue(ParticleViewer.Regions(PartNum).Frame) = ...
+            YValue(ParticleViewer.Regions(PartNum).Frame)./ParticleViewer.Regions(PartNum).Area';
+        XValue = 1:size(ParticleViewer.Intensity, 2);
         YValue(YValue==0) = NaN;
         LineSpec = '.-r';
         YLabel = 'Intensity (counts)';
@@ -899,6 +913,57 @@ axes.YColor = Look.Fore;
 
 end
 
+function Subtract_Background(~,~)
+global ParticleViewer PhasorViewer
+
+%%% Stops execution if data is not complete
+if ~isfield(ParticleViewer, 'Regions') || ~isfield(PhasorViewer, 'Intensity')
+    f = msgbox('Required particle or phasor image data not loaded.', 'Error','error');
+    return;
+end
+
+%%% Undo G and S normalization
+Int = PhasorViewer.Intensity;
+
+%%% Creates arrays with size(Particle,Frames)
+Intensity=NaN(size(ParticleViewer.Intensity));
+
+%%% Create ring mask for background subtraction
+InnerRadius = 3;
+OuterRadius = 5;
+[columns, rows] = meshgrid(-OuterRadius:OuterRadius);
+% Next create the circle in the image.
+DistFromCenter = sqrt(rows.^2 + columns.^2);
+ringMask = DistFromCenter > InnerRadius & DistFromCenter <= OuterRadius;
+ringMask = ringMask / sum(ringMask(:));
+
+%%% Convolution to obtain background at each position
+IntBackground = imfilter(Int, ringMask, 'symmetric');
+
+%%%Calculates frame-wise average for each particle
+for i=1:numel(ParticleViewer.Regions)
+    %%% Extends PixelId for every frame
+    PixelId = ParticleViewer.Regions(i).PixelIdxList;
+    [~,~,z] = ind2sub(size(Int),PixelId);
+    Int_temp = mat2cell(Int(PixelId),histcounts(z, [1:max(z), Inf]), 1);
+    dint = cellfun('isempty',Int_temp);
+    Intensity(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),Int_temp(~dint));
+    
+    % Background correction
+    CentroidIdx = sub2ind(size(Int),round(ParticleViewer.Regions(i).Centroid(:,1)),...
+        round(ParticleViewer.Regions(i).Centroid(:,2)), ParticleViewer.Regions(i).Frame);
+    bg = IntBackground(CentroidIdx);
+    Intensity(i,ParticleViewer.Regions(i).Frame) = ...
+        Intensity(i,ParticleViewer.Regions(i).Frame) - (bg.*ParticleViewer.Regions(i).Area)';
+end
+
+Intensity(isnan(Intensity) | Intensity < 0)=0;
+
+%%% Updates parameters in global variable
+ParticleViewer.Intensity = Intensity;
+
+end
+
 function Extract_Particle_Phasor(~,~)
 global ParticleViewer PhasorViewer
 
@@ -927,6 +992,7 @@ for i=1:numel(ParticleViewer.Regions)
     Int_temp = mat2cell(Int(PixelId),histcounts(z, [1:max(z), Inf]), 1);
     dint = cellfun('isempty',Int_temp);
     Intensity(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),Int_temp(~dint));
+    
     G_temp = mat2cell(G(PixelId),histcounts(z,[1:max(z),Inf]),1);
     dg = cellfun('isempty',G_temp);
     g(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),G_temp(~dg));
@@ -1129,8 +1195,6 @@ Var.NPar = size(ParticleViewer.Intensity,1);
 Int = ParticleViewer.Intensity;
 TauM = ParticleViewer.TauM;
 TauP = ParticleViewer.TauP;
-LFall = (TauM + TauP)/2;
-LFall(isinf(LFall)) = NaN;
 s = ParticleViewer.s;
 g = ParticleViewer.g;
 
@@ -1138,16 +1202,28 @@ g = ParticleViewer.g;
 thr = sum(~(ParticleViewer.Intensity == 0), 2) < Var.Threshold;
 Int(thr, :) = NaN;
 TauM(thr, :) = NaN;
+TauM(TauP <= 0 | TauM <= 0) = NaN;
 TauP(thr, :) = NaN;
+TauP(TauP <= 0 | TauM <= 0) = NaN;
 LFall(thr, :) = NaN;
 s(thr, :) = NaN;
 g(thr, :) = NaN;
 
 %%%Calculates mean lifetime for each particle
+LFall = (TauM + TauP)/2;
+LFall(isinf(LFall)) = NaN;
 MeanLF = mean(LFall, 2, 'omitnan');
 
+%%%Calculates framewise mean intensity
+Area = zeros(size(Int));
+for p = 1:Var.NPar
+    Area(p,ParticleViewer.Regions(p).Frame) = ParticleViewer.Regions(p).Area;
+end
+Area(Area==0) = NaN;
+MeanInt = Int./Area;
+
 %%%Moving Average
-if h.Particle_MovingAverage.Value
+if h.Particle_MovingAverage.Value > 1
     %TauM = movmean(TauM, Window, 'omitnan');
     %TauP = movmean(TauP, Window, 'omitnan');
     LFall = movmean(LFall, Var.MovingAvg, 2, 'omitnan');
@@ -1177,6 +1253,7 @@ Table.S = array2table(s', 'VariableNames', PartNo);
 Table.G = array2table(g', 'VariableNames', PartNo);
 Table.LFall = array2table(LFall', 'VariableNames', PartNo);
 Table.MeanLF = array2table(MeanLF', 'VariableNames', PartNo);
+Table.MeanInt = array2table(MeanInt', 'VariableNames', PartNo);
 
 %%% Saves data
 writetable(Table.Var,fullfile(savePath,'Variables.csv'));
@@ -1187,6 +1264,7 @@ writetable(Table.S,fullfile(savePath,'S.csv'));
 writetable(Table.G,fullfile(savePath,'G.csv'));
 writetable(Table.LFall,fullfile(savePath,'LFall.csv'));
 writetable(Table.MeanLF,fullfile(savePath,'MeanLF.csv'));
+writetable(Table.MeanInt,fullfile(savePath,'MeanInt.csv'));
 
 %%% Save Traces
 if Var.WriteTraces
