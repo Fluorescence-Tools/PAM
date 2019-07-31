@@ -1056,6 +1056,32 @@ h.Burst.NirFilter_Text1 = uicontrol(...
     'Callback',[],...
     'Position',[0.82 0.4 0.18 0.07],...
     'TooltipString',sprintf('Specify the Time Constant for Filter Calculation (e.g. 100 or 100;200 or 100:100:1000)'));
+h.Burst.ConstantDuration_Checkbox = uicontrol(...
+    'Parent',h.Burst.SubPanel_Settings,...
+    'Tag','ConstantDuration_Checkbox',...
+    'Style', 'checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',1,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Total duration',...
+    'Position',[0.05 0.3 0.9 0.08],...
+    'TooltipString',sprintf('Instead of calculating PIE channel count rates by dividing number of photons\nby the duration in the PIE channel, the number of photons is divided by the APBS duration'),...
+    'Callback',@Calculate_Settings);
+% h.Burst.RescaleToBackground_Checkbox = uicontrol(...
+%     'Parent',h.Burst.SubPanel_Settings,...
+%     'Tag','RescaleToBackground_Checkbox',...
+%     'Style', 'checkbox',...
+%     'Units','normalized',...
+%     'FontSize',12,...
+%     'Value',0,...
+%     'BackgroundColor', Look.Back,...
+%     'ForegroundColor', Look.Fore,...
+%     'String','Rescale to background',...
+%     'Position',[0.05 0.2 0.9 0.08],...
+%     'TooltipString',sprintf('If a background measurement was saved into PAM memory,\nthe burst search parameters are rescaled to stay above the background'),...
+%     'Callback',@Calculate_Settings);
 %%%Table for PIE channel assignment
 h.Burst.BurstPIE_Table = uitable(...
     'Parent',h.Burst.MainPanel,...
@@ -2193,7 +2219,8 @@ h.Image.Axes = axes(...
     'Parent',h.Image.Panel,...
     'Tag','Image_Axes',...
     'Units','normalized',...
-    'Position',[0.01 0.01 0.7 0.98]);
+    'Position',[0.01 0.01 0.7 0.98],...
+    'DataAspectRatio',[1,1,1]);
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
@@ -2913,7 +2940,7 @@ h.Export.List = uicontrol(...
     'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
-    'Position',[0.01 0.01 0.6 0.98]);
+    'Position',[0.01 0.61 0.98 0.38]);
 %%% Table containig the PIE channels to export
 h.Export.PIE = uitable(...
     'Parent',h.Export.Panel,...
@@ -2927,7 +2954,7 @@ h.Export.PIE = uitable(...
     'ColumnWidth',{15},...
     'ColumnEditable',true,...
     'Data',false(numel(UserValues.PIE.Name)+1,1),...
-    'Position',[0.62 0.61 0.36 0.38]);
+    'Position',[0.01 0.01 0.60 0.58]);
 %%% Changes the size of the ROW names
 drawnow
 Export_PIE = findjobj(h.Export.PIE);
@@ -2947,9 +2974,9 @@ h.Export.Text{end+1} = uicontrol(...
     'Parent',h.Export.Panel,...
     'Style','text',...
     'Units','normalized',...
-    'FontSize',12,...
+    'FontSize',14,...
     'HorizontalAlignment','left',...
-    'String','Manage export',...
+    'String','Manage export:',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.52 0.2 0.07]);
@@ -3309,7 +3336,7 @@ else
     %%% compiled application
     %%% custom file types are embedded
     %%% names are in associated text file
-    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'rt');
+    fid = fopen([PathToApp filesep 'functions' filesep 'Custom_Read_Ins' filesep 'Custom_Read_Ins.txt'],'rt');
     if fid == -1
         disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
         Custom_Methods = {'none'};
@@ -3560,8 +3587,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                         else
                             PamMeta.Image{i} = im;
                             h.Image.Colorbar.YLabel.String = 'Counts';
-                        end
-                        
+                        end                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3637,29 +3663,29 @@ for i=find(UserValues.PIE.Detector==0)
     PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
     PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
         trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
-        if UserValues.Settings.Pam.Use_Image
+        if UserValues.Settings.Pam.Use_Image && any(mode == 3)
             PamMeta.Image{i}=PamMeta.Image{i}+PamMeta.Image{j};
             if UserValues.Settings.Pam.Use_Lifetime
                 PamMeta.Lifetime{i}=PamMeta.Lifetime{i}+PamMeta.Lifetime{j};
             end
         end
-        if UserValues.Settings.Pam.Use_TimeTrace
+        if UserValues.Settings.Pam.Use_TimeTrace && any(mode == 1)
             PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
         end
-        if UserValues.Settings.Pam.Use_PCH
+        if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
             PamMeta.TracePCH{i} = PamMeta.TracePCH{i} + PamMeta.TracePCH{j};
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
-    if UserValues.Settings.Pam.Use_Lifetime
+    if UserValues.Settings.Pam.Use_Lifetime && any(mode == 3)
         PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
     end
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
         PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
     end
@@ -3670,7 +3696,7 @@ end
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calculate_Settings(obj,~)
-global UserValues PamMeta
+global UserValues PamMeta FileInfo
 h = guidata(findobj('Tag','Pam'));
 Display=0;
 %%% If Calculate image was clicked
@@ -3686,14 +3712,16 @@ if obj == h.MT.Use_Image
         h.MT.Settings_Tab.Parent = [];
         h.Image.Tab.Parent = h.MT.Tab;
         h.MT.Settings_Tab.Parent =  h.MT.Tab;
-        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
+        h.MT.Tab.SelectedTab = h.Image.Tab;
     else
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    %if UserValues.Settings.Pam.Use_Image
-        Update_Display([],[],3);
-    %end
+    % define axis limits for image plot
+    h.Image.Axes.DataAspectRatio = [1,1,1];
+    h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
+    h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    Update_Display([],[],3);
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
@@ -4192,33 +4220,35 @@ if any(mode == 10)
                 h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
-    if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
-        for t = h.PIE.List.Value
-            %%% create plot
-            h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+    if UserValues.Settings.Pam.Use_PCH
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+            for t = h.PIE.List.Value
+                %%% create plot
+                h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+            end
+            guidata(h.Pam,h);
+            h.PCH.Axes.YLimMode = 'auto';
+            h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
+            h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = 'Frequency';
+            h.PCH.Axes.YScale = 'log';
+            h.PCH.Axes.DataAspectRatioMode = 'auto';
+        else
+            sel = h.PIE.List.Value;
+            sel = sel(1:2);
+            [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
+                0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
+            h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
+                x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
+            h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
+            guidata(h.Pam,h);
+            h.PCH.Axes.YScale = 'lin';
+            h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
+            h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
+            %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
         end
-        guidata(h.Pam,h);
-        h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
-        h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = 'Frequency';
-        h.PCH.Axes.YScale = 'log';
-        h.PCH.Axes.DataAspectRatioMode = 'auto';
-    else
-        sel = h.PIE.List.Value;
-        sel = sel(1:2);
-        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
-            0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
-        h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
-            x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
-        h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
-        guidata(h.Pam,h);
-        h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
-        %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
     end
     if obj == h.PCH.PCH_Export_Menu
         hfig = figure('Visible','on','Units','pixel',...
@@ -4245,9 +4275,10 @@ end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
 if any(mode==3)
-    switch h.Image.Type.Value
-        %%% Intensity image
-        case 1
+    h.Image.Axes.DataAspectRatio=[1 1 1];
+    switch h.Image.Type.Value        
+        %%% Intensity image        
+        case 1            
             h.Plots.Image.CData=PamMeta.Image{Sel};
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
@@ -4298,7 +4329,7 @@ if any(mode==3)
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
                 h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
-            end
+            end            
     end
     switch h.Image.Type.Value %label the colorbar correctly
         case 1
@@ -4314,8 +4345,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-    h.Image.Axes.XLim=[0.5 size(PamMeta.Image{Sel},2)+0.5];
-    h.Image.Axes.YLim=[0.5 size(PamMeta.Image{Sel},1)+0.5];
+%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
+%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
+%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
+%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4329,16 +4362,15 @@ if any(mode==4)
         h.Plots.MI_All(numel(PamMeta.MI_Hist)+1:end)=[];
         cellfun(@delete,Unused)
     end
-    axes(h.MI.All_Axes);
-    xlim([1 FileInfo.MI_Bins]);
+    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];       
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
-        if ~isempty(h.Plots.MI_All{i})
+        if ~isempty(h.Plots.MI_All{i}) && isvalid(h.Plots.MI_All{i})
             %%% Only changes YData of plot to increase speed
             h.Plots.MI_All{i}.YData=PamMeta.MI_Hist{i};
         else
             %%% Plots new lineseries, if none exists
-            h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
+            h.Plots.MI_All{i}=handle(plot(h.MI.All_Axes,PamMeta.MI_Hist{i}));
         end
         %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
         h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:);
@@ -6270,7 +6302,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 elseif any(h.Cor.Type.Value == [4,5])
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
-                %%% Calculates average and standard error of mean (without tinv_table yet
+                %%% Calculates average and standard error of mean (without
+                %%% tinv_table yet)
                 if size(Cor_Array,2)>1
                     Cor_Average=mean(Cor_Array,2);
                     %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
@@ -6278,7 +6311,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Amplitude=sum(Cor_Array,1);
                     Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
                     Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-                    
+                    % Code for adjusting the standord error of the mean
+                    % with the student's t distribution
+                    % p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
+                    % Cor_SEM = Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2));
                 else
                     Cor_Average=Cor_Array;
                     Cor_SEM=Cor_Array;
@@ -7590,6 +7626,17 @@ if any(BAMethod == [1 2]) %total of 6 channels
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
     
     Progress(0.8,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:6
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:3
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Chan = zeros(Number_of_Bursts,6);
     for i = 1:6
@@ -7700,6 +7747,16 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     TBX_TGX(:,1) = TBX_TGX(:,1)./1E-3;
     TBX_TRR(:,1) = TBX_TRR(:,1)./1E-3;
     
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:12
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:6
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     Countrate_per_Chan = zeros(Number_of_Bursts,12);
     for i = 1:12
         Countrate_per_Chan(:,i) = Number_of_Photons_per_Chan(:,i)./Duration_per_Chan(:,i);
@@ -7750,11 +7807,20 @@ elseif BAMethod == 5 %only 3 channels
     TGX_TRR(:,2) = TGX_TRR(:,1)./Duration;
     TGG_TGR(:,1) = TGG_TGR(:,1)./1E-3;
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:4
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Color = zeros(Number_of_Bursts,3);
     for i = 1:3
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
+    
     
 end
 
@@ -7952,6 +8018,7 @@ BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
+BurstData.TotalDuration = h.Burst.ConstantDuration_Checkbox.Value; %1 if all count rates are calculated with the total duration.
 %%% Store also the FileInfo in BurstData
 BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later

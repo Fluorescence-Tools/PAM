@@ -2792,8 +2792,8 @@ else
         PDAMeta.SampleGlobal = false(1,16); 
         PDAMeta.SampleGlobal(1) = true; %half globally link k12
         PDAMeta.SampleGlobal(4) = true; %half globally link k21
-        %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-        %PDAMeta.SampleGlobal(2) = true; %half globally link R1
+        PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+        PDAMeta.SampleGlobal(10) = true; %half globally link Area4
         %PDAMeta.SampleGlobal(5) = true; %half globally link R2
         %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
         %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
@@ -3382,7 +3382,7 @@ else %%% dynamic model
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
         norm = (sum(fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2))+1);
-        fitpar(3*PDAMeta.Comp{i}(n_states:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
+        fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
         
         for c = PDAMeta.Comp{i}(n_states+1:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
@@ -3472,6 +3472,7 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = sum(log_term-hFit);
     end
     chi2 = loglikelihood;
+    PDAMeta.chi2(i) = chi2;
 end
 %Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
@@ -3538,7 +3539,7 @@ if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of 
     end 
     %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-    mean_chi2 = sum(loglikelihood);
+    mean_chi2 = sum(PDAMeta.chi2);
 end
 
 if h.SettingsTab.LiveUpdate.Value
