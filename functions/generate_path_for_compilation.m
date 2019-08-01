@@ -2,7 +2,11 @@
 % compilation instructions
 
 % get folders
-folders = strsplit(genpath('functions'),':');
+if ~ispc
+    folders = strsplit(genpath('functions'),':');
+else
+    folders = strsplit(genpath('functions'),';');
+end
 % exclude C_Files folder as it causes an error
 remove = find(cell2mat(cellfun(@(x) ~isempty(strfind(x,'C_Files')),folders,'UniformOutput',false)));
 folders(remove) = [];
@@ -20,5 +24,5 @@ end
 % write bash script
 fid = fopen('compile_PAM.sh','w');
 fprintf(fid,'#!/bin/bash\n');
-fprintf(fid,command);
+fprintf(fid,'%s',command);
 fclose(fid);
