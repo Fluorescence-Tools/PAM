@@ -192,7 +192,7 @@ if size(CutState,2) > 0
         %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
         %%% efficiency parameter if the cut limits fall within that range
         if ~isempty(strfind(NameArray{x},'Stoichiometry')) || ~isempty(strfind(NameArray{x},'Efficiency'))
-            xlimits = [max(xlimits(1),-0.1) min(xlimits(2),1.1)];
+            xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
             if UserValues.BurstBrowser.Display.logX
                 if xlimits(1) <= 0
                     xlimits(1) = 1E-2;
@@ -201,7 +201,7 @@ if size(CutState,2) > 0
             end
         end
         if ~isempty(strfind(NameArray{y},'Stoichiometry')) || ~isempty(strfind(NameArray{y},'Efficiency'))
-            ylimits = [max(ylimits(1),-0.1) min(ylimits(2),1.1)];
+            ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
             if UserValues.BurstBrowser.Display.logY
                 if ylimits(1) <= 0
                     ylimits(1) = 1E-2;
