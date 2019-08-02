@@ -2,8 +2,8 @@ function [Suffix, Description] = Seidel_STED_PTU(FileName, Path, Type,h)
 
 %%% Outputs Suffix and Description for file selection querry
 if nargin == 0
-    Suffix ='*.ptu';
-    Description ='PQ Hydraharp PTU Seidel-STED custom scanning format';
+    Suffix ='*.ht3';
+    Description ='PQ Hydraharp HT3 Seidel-CLSM data (*.ht3)';
     return;
 end
 
@@ -72,14 +72,14 @@ for i=1:numel(FileName)
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-    [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
+    [MT, MI, SyncRate, Resolution, PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),3);
     
     
     if isempty(FileInfo.SyncPeriod)
-        FileInfo.SyncPeriod = 1/Header.SyncRate;
+        FileInfo.SyncPeriod = 1/SyncRate;
     end
     if isempty(FileInfo.ClockPeriod)
-        FileInfo.ClockPeriod = 1/Header.SyncRate;
+        FileInfo.ClockPeriod = 1/SyncRate;
     end
     %%% Finds, which routing bits to use
     if strcmp(UserValues.Detector.Auto,'off')
@@ -121,26 +121,33 @@ for i=1:numel(FileName)
         FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
     end
     
-    if ~isempty(Header.LineStart) && numel(Header.LineStart) == numel(Header.LineStop) % Image PTU data
+    if ~isempty(PLF) % Image PTU data  
+        FrameStart = PLF{1};
+        LineStart = PLF{2};
+        LineStop = PLF{3};
+        LineStart(LineStart>FrameStart(end))=[];
+        LineStop(LineStop>FrameStart(end))=[];
+        %%% remove the last incomplete frame 
+        FrameStart(end)=[];
         % cumulative n.o. frames
         % Header.Frames might contain NoF already
-        f = size(Header.FrameStart,2);
+        f = size(FrameStart,2);
         FileInfo.Frames = FileInfo.Frames + f;
         
         %%% create actual image and line times
         % framestarts and -stops are both written on bit 1 in the 6-bit CH entry of the PTU files
-        FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart+MaxMT)'*FileInfo.ClockPeriod];
+        FileInfo.ImageTimes=[FileInfo.ImageTimes; (FrameStart+MaxMT)'*FileInfo.ClockPeriod];
         % FileInfo.ImageStops=[FileInfo.ImageStops; (Header.FrameStart(2:2:end)+MaxMT)'*FileInfo.ClockPeriod]; % not used anyway
         % linestarts and -stops are both written on bit 1 in the 6-bit CH entry of the PTU files
-        lstart = reshape((Header.LineStart+MaxMT),[],f)';
-        lstop = reshape((Header.LineStop+MaxMT),[],f)';
+        lstart = reshape((LineStart+MaxMT),[],f)';
+        lstop = reshape((LineStop+MaxMT),[],f)';
   
         FileInfo.LineTimes=[FileInfo.LineTimes; lstart*FileInfo.ClockPeriod];
         FileInfo.LineStops=[FileInfo.LineStops; lstop*FileInfo.ClockPeriod];
         %%% image info
         if i == 1
             FileInfo.Lines = size(lstart,2);
-            FileInfo.Pixels = Header.PixX;
+            FileInfo.Pixels = FileInfo.Lines;
             FileInfo.PixTime = mean(mean(lstop-lstart))./FileInfo.Pixels*FileInfo.ClockPeriod;
         else
             if ~isequal(FileInfo.Lines, size(lstart,2))
@@ -148,12 +155,12 @@ for i=1:numel(FileName)
             end
         end
         
-        transform = true;
+        transform = false;
         if transform
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Converting File ' num2str(i) ' of ' num2str(numel(FileName))]);
             % ask the user for the excitation period.
             % Assuming only the last scan is red.
-            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'2'}));
+            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'4'}));
             lines = FileInfo.Pixels*period;
             % transform the raw MT data to split up into duty cycle periods.
             % Currently, for each line the setup performs 3 scans with green
@@ -164,9 +171,9 @@ for i=1:numel(FileName)
                 if ~isempty(TcspcData.MT{j,1})
                     [Image,Bin] = CalculateImage(TcspcData.MT{j,1}*FileInfo.ClockPeriod, 4);
                     Bin = double(Bin);
-                    Frame = floor(Bin/(FileInfo.Pixels*lines))+1;
+                    Frame = floor(Bin/(250*lines))+1;
                     valid = Bin ~= 0;       
-                    Line = mod(ceil(Bin/FileInfo.Pixels),lines);Line(Line == 0) = lines;
+                    Line = mod(ceil(Bin/250),lines);Line(Line == 0) = lines;
                     %Line = floor(mod(Bin,250*1000)/250)+1;
                     Cycle = mod(Line-1,period);
                     for f = 1:size(lstart,1)
@@ -189,7 +196,8 @@ for i=1:numel(FileName)
             end
             FileInfo.LineTimes = FileInfo.LineTimes(:,1:period:end);
             FileInfo.LineStops = FileInfo.LineStops(:,1:period:end);
-            FileInfo.Lines = FileInfo.Pixels;
+            FileInfo.Lines = 250;
+            FileInfo.Pixels = 250;
         end
         
         %%% Enables image plotting
@@ -203,15 +211,8 @@ for i=1:numel(FileName)
         h.MT.Use_Lifetime.Value = 0;
         UserValues.Settings.Pam.Use_Lifetime = 0;
         UserValues.Settings.Pam.Use_Image = 0;
-        h.Image.Tab.Parent = [];
+        %h.Image.Tab.Parent = [];
         FileInfo.Lines = 1; %Leave here
-        % duplicate the information to the "routing" channels so that it
-        % can be used a reference for PHasor
-        % consider 4 "routing" channels
-        for i = 2:4
-            TcspcData.MT(:,i) = TcspcData.MT(:,1);
-            TcspcData.MI(:,i) = TcspcData.MI(:,1);
-        end
     end
 end
 

@@ -113,14 +113,17 @@ function [data, imfo] = Read_CZI(varargin)
     
     % at this point, the file is open and can be read from.
     
+    % Anders: disabling waitbar as the progress_obj class causes issue on
+    % compilation of PAM
+    opts.wb_tf = false;
     if opts.wb_tf
         % prepare the waitbar if required
         
         % inform the user about the current status
-        opts.h_wb = progress_obj([], ['Reading ''' imfo.filename ''' ...'], 'min_elapsed_time', 0.5, 'reduce_calls', 'on');
+        %opts.h_wb = progress_obj([], ['Reading ''' imfo.filename ''' ...'], 'min_elapsed_time', 0.5, 'reduce_calls', 'on');
         
         % close the waitbar when the function stops
-        wb_stop = onCleanup(@() opts.h_wb.close);
+        %wb_stop = onCleanup(@() opts.h_wb.close);
     else
         opts.h_wb.update = @() true;
     end
@@ -511,14 +514,14 @@ function [data, imfo] = Read_CZI(varargin)
                 % update waitbar if present
                 if opts.wb_tf
                     % keep track of elpased time
-                    opts.time_log = testimator(opts.time_log, m);
+                    %opts.time_log = testimator(opts.time_log, m);
                         
-                    if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
+                    %if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
                         % stop the current operation
-                        data = [];
-                        imfo = [];
-                        return
-                    end
+                    %     data = [];
+                    %     imfo = [];
+                    %    return
+                    %end
                 end
                 
                 temp = read_imagesubblock_segment(opts, typecast(offsets(m,2:3), 'int64'));
@@ -659,14 +662,14 @@ function [data, imfo] = Read_CZI(varargin)
                 % update waitbar if present
                 if opts.wb_tf
                     % keep track of elpased time
-                    opts.time_log = testimator(opts.time_log, m);
+                    %opts.time_log = testimator(opts.time_log, m);
                         
-                    if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
+                    %if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
                         % stop the current operation
-                        data = [];
-                        imfo = [];
-                        return
-                    end
+                    %    data = [];
+                    %    imfo = [];
+                    %    return
+                    %end
                 end
                 
                 temp = read_imagesubblock_segment(opts, typecast(offsets(m,2:3), 'int64'));
@@ -729,14 +732,14 @@ function [data, imfo] = Read_CZI(varargin)
                 % update waitbar if present
                 if opts.wb_tf
                     % keep track of elpased time
-                    opts.time_log = testimator(opts.time_log, m);
+                    % opts.time_log = testimator(opts.time_log, m);
                         
-                    if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
-                        % stop the current operation
-                        data = [];
-                        imfo = [];
-                        return
-                    end
+                    % if ~opts.h_wb.update(opts.time_log.ratio, ['Reading ''' imfo.filename ''': frame ' num2str(m) ' of ' num2str(size(offsets,1)) ' ' opts.time_log.txt])
+                    %     % stop the current operation
+                    %     data = [];
+                    %    imfo = [];
+                    %     return
+                    % end
                 end
                 
                 temp = read_imagesubblock_segment(opts, typecast(offsets(m,2:3), 'int64'));

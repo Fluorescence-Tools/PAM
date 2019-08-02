@@ -71,6 +71,29 @@ h.Mia_Load_TIFF_Single = uimenu(...
     'Callback',{@Mia_Load,1},...
     'Tag','Load_Mia_TIFF_SIngle');
 %%% Load TIFF
+h.Mia_Load_TIFF_RGB = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...RGB TIFFs');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Green-Red',...
+    'Callback',{@Mia_Load,4},...
+    'Tag','Load_Mia_TIFF_SIngle');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Blue-Green',...
+    'Callback',{@Mia_Load,5},...
+    'Tag','Load_Mia_TIFF_SIngle');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Blue-Red',...
+    'Callback',{@Mia_Load,6},...
+    'Tag','Load_Mia_TIFF_SIngle');
+
+%%% Load TIFF
 h.Mia_Load_TIFF_RLICS = uimenu(...
     'Parent',h.Mia_Load,...
     'Label','...weighted TIFFs',...
@@ -773,18 +796,6 @@ h.Mia_Image.Settings.Image_Mean_CR = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.52, 0.96 0.1],...
     'String','Mean Countrate [kHz]:');
-%% text string to indicate the Pearson
-h.Mia_Image.Settings.Image_Pearsons = uicontrol(...
-    'Parent', h.Mia_Image.Settings.Image_Panel,...
-    'Style','text',...
-    'Units','normalized',...
-    'FontSize',12,...
-    'HorizontalAlignment','left',...
-    'BackgroundColor', Look.Back,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.42, 0.96 0.1],...
-    'String','Pearsons correlation: ',...
-    'ToolTipString', 'Pearsons correlation coefficient for the corrected images within the AROI');
 %% Mia ROI setting tab
 %%% Tab and panel for Mia ROI settings UIs
 h.Mia_Image.Settings.ROI_Tab= uitab(...
@@ -912,7 +923,7 @@ h.Text{end+1} = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.68, 0.25 0.06],...
+    'Position',[0.02 0.68, 0.35 0.06],...
     'String','Special selection:');
 
 %%% Select unselection criteria
@@ -1484,7 +1495,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.56, 0.9 0.06],...
-    'String','Custom Filtetype:');
+    'String','Custom Filetype:');
 
 %%% Allows custom Filetype selection
 if ~isdeployed
@@ -1884,6 +1895,188 @@ h.Mia_Image.Calculations.NB_Detector_Deadtime = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.7 0.60, 0.22 0.06],...
     'String','100');
+
+%% Perform FRET tab
+%%% Tab and panel for perform correlation UIs
+h.Mia_Image.Calculations.FRET_Tab= uitab(...
+    'Parent',h.Mia_Image.Calculations_Tabs,...
+    'Tag','MI_Image_Tab',...
+    'Title','FRET');
+h.Mia_Image.Calculations.FRET_Panel = uibuttongroup(...
+    'Parent',h.Mia_Image.Calculations.FRET_Tab,...
+    'Tag','Mia_Calculations_FRET_Panel',...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0 0 1 1]);
+
+%%% Select, which FRET method to use
+h.Mia_Image.Calculations.FRET_Type = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.92, 0.96 0.06],...
+    'String',{'norm A/D','A/D','Fc (Youvan)', 'FRETN (Gordon)', 'N-FRET (Xia)'});
+if ismac
+    h.Mia_Image.Calculations.FRET_Type.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.FRET_Type.BackgroundColor = [1 1 1];
+end
+%%% Button to start FRET calculation
+h.Mia_Image.Calculations.DoFRET = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.72, 0.47 0.06],...
+    'Callback',@Do_FRET,...
+    'String','Do FRET');
+%%% Selects data saving procedure
+h.Mia_Image.Calculations.Save_FRET = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.51 0.72, 0.47 0.06],...
+    'String',{'Do not save','Save'});
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.82, 0.4 0.06],...
+    'String','Normalize on frames:');
+%%% Editbox for Averaging radius
+h.Mia_Image.Calculations.FRET_norm = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.52 0.82, 0.15 0.06],...
+    'String','1:5',...
+    'Tooltipstring','normalizes the FRET data on frames n:m');
+if ismac
+    h.Mia_Image.Calculations.Save_FRET.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Save_FRET.BackgroundColor = [1 1 1];
+end
+
+%% Perform Colocalization tab
+%%% Tab and panel for perform correlation UIs
+h.Mia_Image.Calculations.Coloc_Tab= uitab(...
+    'Parent',h.Mia_Image.Calculations_Tabs,...
+    'Tag','MI_Image_Tab',...
+    'Title','Colocalization');
+h.Mia_Image.Calculations.Coloc_Panel = uibuttongroup(...
+    'Parent',h.Mia_Image.Calculations.Coloc_Tab,...
+    'Tag','Mia_Calculations_Coloc_Panel',...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0 0 1 1]);
+
+%%% Select, which Coloc method to use
+h.Mia_Image.Calculations.Coloc_Type = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.92, 0.5 0.06],...
+    'String',{'Pearson','Manders', 'Costes', 'Van Steensel', 'Li', 'object-based'});
+if ismac
+    h.Mia_Image.Calculations.Coloc_Type.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Coloc_Type.BackgroundColor = [1 1 1];
+end
+
+%%% Checkboxbox for intensity weighting
+h.Mia_Image.Calculations.Coloc_weighting = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.82, 0.5 0.06],...
+    'String','Intensity weighted',...
+    'Tooltipstring','Calculate the colocalization using intensity-weighting. Option doesn`t work yet!');
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.72, 0.3 0.06],...
+    'String','Averaging diameter:');
+%%% Editbox for Averaging radius
+h.Mia_Image.Calculations.Coloc_avg = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.52 0.72, 0.15 0.06],...
+    'String','3',...
+    'Tooltipstring','size of the square subregion for calculating the square');
+
+h.Mia_Image.Calculations.Coloc_avg.Visible = 'off';
+h.Text{end}.Visible = 'off';
+
+%%% Button to start Coloc calculation
+h.Mia_Image.Calculations.DoColoc = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.62, 0.3 0.06],...
+    'Callback',@Do_Coloc,...
+    'Tooltipstring','Calculate the colocalization using the top right AROI',...
+    'String','Analyze');
+%%% Selects data saving procedure
+h.Mia_Image.Calculations.Save_Coloc = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.35 0.62, 0.47 0.06],...
+    'String',{'Do not save','Save'});
+%% mean Pearson's coefficient
+h.Mia_Image.Calculations.Coloc_Pearsons = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.47, 0.96 0.1],...
+    'String','mean Pearson`s: ',...
+    'ToolTipString', 'Pearsons correlation coefficient/nfor the corrected images within the AROI');% %%% Text
+if ismac
+    h.Mia_Image.Calculations.Save_Coloc.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Save_Coloc.BackgroundColor = [1 1 1];
+end
 
 %% Additional Properties Tab
 s.ProgressRatio = 0.15;
@@ -3599,10 +3792,262 @@ switch mode
         h.Plots.Image(2,2).Visible = 'on';
         h.Plots.ROI(2).Visible = 'on';
         
+        Progress(1);
+        %%% Updates plots
+        Mia_ROI([],[],1)
+    case {4,5,6} %%% Loads RGB TIFFs
+        % case 4 green red
+        % case 5 blue green
+        % case 6 blue red
+        [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFF', UserValues.File.MIAPath, 'MultiSelect', 'on');
+        
+        if all(Path1==0)
+            retur
+        end
+        UserValues.File.MIAPath = Path1;
+        Path2 = Path1;
+        LSUserValues(1);
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName1)
+            FileName1={FileName1};
+        end
+        FileName2 = FileName1;      
+        MIAData.Data = {};
+        MIAData.Type = mode;
+        MIAData.FileName = [];
+        MIAData.PCH = [];
+        %% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
+        MIAData.STICS = [];
+        MIAData.STICS_SEM = [];
+        MIAData.RLICS = [];
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_ICS.Axes(i,1).Visible='off';
+            h.Mia_ICS.Axes(i,2).Visible='off';
+            h.Mia_ICS.Axes(i,3).Visible='off';
+            h.Mia_ICS.Axes(i,4).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+            h.Plots.Cor(i,4).Visible='off';
+            h.Plots.Cor(i,5).Visible='off';
+            h.Plots.Cor(i,6).Visible='off';
+            h.Plots.Cor(i,7).Visible='off';
+            h.Plots.TICS(i,1).Visible = 'off';
+            h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
+            h.Plots.TICSImage(i).Visible = 'off';
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
+        end
+        h.Mia_ICS.Frame_Slider.Min=0;
+        h.Mia_ICS.Frame_Slider.Max=0;
+        h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
+        h.Mia_ICS.Frame_Slider.Value=0;
+        h.Mia_STICS.Lag_Slider.Min=0;
+        h.Mia_STICS.Lag_Slider.Max=1;
+        h.Mia_STICS.Lag_Slider.SliderStep=[1 1];
+        h.Mia_STICS.Lag_Slider.Value=0;
+        %% Clears N&B data and plots
+        MIAData.NB=[];
+        h.Plots.NB(1).CData=zeros(1,1);
+        h.Plots.NB(2).CData=zeros(1,1);
+        h.Plots.NB(3).CData=zeros(1,1);
+        h.Plots.NB(4).YData=0;
+        h.Plots.NB(4).XData=0;
+        h.Plots.NB(5).CData=zeros(1,1);        
+        %% Loads all frames for channel 1
+        for i=1:numel(FileName1)  
+            MIAData.FileName{1}{i}=FileName1{i};
+            Info=imfinfo(fullfile(Path1,FileName1{i}));
+            
+            %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==5 && numel(Stop)==5
+                    h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image.Settings.Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                elseif numel(Start)==7 && numel(Stop)==7
+                    h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image.Settings.Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                    MIAData.RLICS(1,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
+                end
+            end
+            H = Info.Height;
+            W = Info.Width;
+            
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+            TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
+            
+                Frames = 1:numel(Info);
+                Data = zeros([H, W, numel(Frames)], 'uint16');
+            for j=Frames
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);
+                end
+                %%% Reads the actual data
+                TIFF_Handle.setDirectory(j);
+               
+                data = TIFF_Handle.read();
+                if mode == 4
+                    data = data(:,:,2); %green
+                else %mode == 5 or 6
+                    data = data(:,:,3); %blue
+                    
+                end
+                Data(:,:,j) = data;
+            end
+            
+            % Concatenate to existing data if available
+            if i > 1
+                MIAData.Data{1,1} = cat(3, MIAData.Data{1,1}, Data);
+            else
+                MIAData.Data{1,1} = Data;
+            end
+            TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+        end
+        %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image.Settings.Channel_Link.Value = 0;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'off';
+        h.Mia_Image.Axes(2,1).Visible = 'off';
+        h.Mia_Image.Axes(2,2).Visible = 'off';
+        h.Plots.Image(2,1).Visible = 'off';
+        h.Plots.Image(2,2).Visible = 'off';
+        h.Plots.ROI(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
+        %% Stops function, if only one channel was loaded and clear channel 2
+        if all(Path2==0) 
+            %%% Clears images
+            h.Plots.Image(2,1).CData=zeros(1,1,3);
+            h.Mia_Image.Axes(2,1).XLim=[0 1]+0.5;
+            h.Mia_Image.Axes(2,1).YLim=[0 1]+0.5;
+            h.Plots.Image(2,2).CData=zeros(1,1,3);
+            h.Mia_Image.Axes(2,2).XLim=[0 1]+0.5;
+            h.Mia_Image.Axes(2,2).YLim=[0 1]+0.5;
+            %%% Resets slider
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1 1];
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=1;
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=1;
+            h.Mia_Image.Settings.Channel_Frame(2).String='1';
+            Progress(1);
+            %%% Updates plot
+            Mia_ROI([],[],1)  
+            return
+        end
+        %% Loads all frames for channel 2
+        for i=1:numel(FileName2)
+            MIAData.FileName{2}{i}=FileName2{i};
+            Info=imfinfo(fullfile(Path2,FileName2{i}));
+                        
+            %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==7 && numel(Stop)==7
+                    MIAData.RLICS(2,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(2,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
+                end
+            end
+            H = Info.Height;
+            W = Info.Width;
+            
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+            TIFF_Handle = Tiff(fullfile(Path2,FileName2{i}),'r'); % Open tif reference
+            
+            Frames = 1:numel(Info);
+            Data = zeros([H, W, numel(Frames)], 'uint16');
+            
+            
+            for j=Frames
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName2)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName2)) ' for Channel 2']);
+                end
+                TIFF_Handle.setDirectory(j);
+                
+                
+                data = TIFF_Handle.read();
+                if mode == 5
+                    data = data(:,:,2); % green
+                else
+                    data = data(:,:,1);
+                end
+                Data(:,:,j) = data;
+            end
+            
+            % Concatenate to existing data if available
+            if i>1
+                MIAData.Data{2,1} = cat(3, MIAData.Data{2,1}, Data);
+            else
+                MIAData.Data{2,1} = Data;
+            end
+            TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+        end
+        % convert data using S and offset parameter
+        Mia_Orientation([],[],5)
+
+        %%% Updates frame settings for channel 2
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=0;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=0;
+        h.Plots.ROI(2).Position=[10 10 200 200];
+        h.Plots.ROI(4).Position=[10 10 200 200];
+        %%% Links frames
+        h.Mia_Image.Settings.Channel_Link.Value = 1;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'on';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'on';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'on';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'on';
+        h.Mia_Image.Axes(2,1).Visible = 'on';
+        h.Mia_Image.Axes(2,2).Visible = 'on';
+        h.Plots.Image(2,1).Visible = 'on';
+        h.Plots.Image(2,2).Visible = 'on';
+        h.Plots.ROI(2).Visible = 'on';
+        
         Progress(1);  
         %%% Updates plots
         Mia_ROI([],[],1)
-        
     case 2 %%% Loads data from Pam
         %% Aborts, if not Data is loaded or Pam is closed
         if isempty(findobj('Tag','Pam'))
@@ -3981,31 +4426,7 @@ if any(mode==1)
             h.Mia_Image.Axes(i,2).XLim=[0 size(Image,2)]+0.5;
             h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
         end
-        if exist('Image','var')
-            PearsonIm{i} = Image;
-        end
         drawnow
-    end
-    % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
-    if numel(channel)==2
-        Image = PearsonIm{1};
-        Image2 = PearsonIm{2};
-        if iscell(MIAData.AR)
-            AROI = MIAData.AR{1,2}; %for now top right AROI
-        else
-            AROI = true(size(Image));
-        end
-        mean_1 = mean2(Image(AROI));  % the mean intensity of image1 in the ROI
-        std_1 = std2(Image(AROI));
-        mean_2 = mean2(Image2(AROI)) ;
-        std_2 = std2(Image2(AROI));
-        n = sum(sum(AROI)); %number of included pixels
-        ImageP = Image.*Image2;
-        ImageP = ImageP(AROI);
-        Pearson = (sum(sum(ImageP)) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
-        %Pearson = 1;
-        h.Mia_Image.Settings.Image_Pearsons.String = ['Pearsons correlation: ',...
-            num2str(Pearson)];
     end
 end
 
@@ -4498,14 +4919,14 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1);
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{2,2};
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             
         end
         
@@ -5172,7 +5593,7 @@ for i=Channel
     
     %%% Thresholding operates on uncorrected data
     Data=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-    %%% Exdents aray to determine which pixels to use, because now
+    %%% Extends aray to determine which pixels to use, because now
     %%% every frame is calculated individually
     Use=repmat(Use,[1 1 size(Data,3)]);
     if Var_SubSub>1 && Var_Sub>Var_SubSub
@@ -5212,6 +5633,12 @@ for i=Channel
                     Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)>Int_Min(i));
                 end
             end
+            %%% For very low frame intensities, the IntFold and VarFold calculations fail
+            %%% Include regions again in the ROI that contained no signal to begin with
+            Mean1_zero = false(size(Mean1));
+            Mean1_zero(Mean1==0) = true;
+            Use(:,:,j) = Use(:,:,j) | Mean1_zero;
+            %%% median filter the image
             if h.Mia_Image.Settings.ROI_AR_median.Value
                 Use(:,:,j) = medfilt2(Use(:,:,j),[Var_SubSub,Var_SubSub]);
             end
@@ -5219,6 +5646,7 @@ for i=Channel
         %%% Discards border pixels, where variance and intensity were not calculated
         Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
         Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
+        
     end
     
     %%% Removes pixels, if invalid pixels were used for averaging
@@ -7744,7 +8172,7 @@ switch mode
         %%% Out: cell array containing:
         %%% 1: File extension
         %%% 2: File description
-        %%% 3: Settings object handels
+        %%% 3: Settings object handles
         %%% 4: Function handle
         Out = Function(1);
         Out{4} = Function;
@@ -7776,5 +8204,180 @@ switch mode
 
 end
 
+function Do_FRET(~,~)
+% Function for calculating intensity based FRET
+global MIAData
+h = guidata(findobj('Tag','Mia'));
 
+% what is plotted in the count rate tab solid lines,
+% i.e. the AROI pixels
+donor = h.Plots.Int(1,2).YData;
+acceptor = h.Plots.Int(2,2).YData;
+
+%go to a post
+DIm = medfilt2(mean(MIAData.Data{1,2}(:,:,10:50),3),[3,3]);
+AIm = medfilt2(mean(MIAData.Data{2,2}(:,:,10:50),3),[3,3]);
+DIm(DIm<0)=0;
+AIm(AIm<0)=0;
+ar  = MIAData.AR{1,2};
+DIm(~ar)=0;
+ar  = MIAData.AR{2,2};
+AIm(~ar)=0;
+% range over which the normalization is calculated
+normrange = eval(h.Mia_Image.Calculations.FRET_norm.String);
+
+method = h.Mia_Image.Calculations.FRET_Type.Value;
+if method == 1
+    normFactor = mean(acceptor(normrange)./donor(normrange));
+elseif method == 2
+    normFactor = 1;
+else 
+    return
+end
+
+frametime = str2double(h.Mia_NB.Image.Frame.String);
+AoverD = (acceptor./donor)./normFactor;
+time = (0:(numel(donor)-1))*frametime;
+figure
+hold on 
+plot(time, AoverD);
+xlabel('time [s]');
+ylabel('normalized A/D');
+hold off
+
+f = figure;
+im=axes(f);
+AoverDim = medfilt2(AIm./DIm./normFactor,[5,5]);
+imagesc(im, flipud(AoverDim));
+axis equal
+im.XLim= [0,size(AoverDim,2)];
+im.YLim= [0,size(AoverDim,1)];
+colormap(im, jet);
+colorbar(im)
+
+
+
+function Do_Coloc(~,~)
+% Function for calculating intensity based FRET
+global MIAData
+h = guidata(findobj('Tag','Mia'));
+
+%if the 'get background from ROI' button on the ROI tab was pushed, or if a
+%background count rate was entered in the corresponding edit boxes, images
+%are background corrected, and thus the Pearson's calculation also.
+
+if size(MIAData.Data,1) > 1
+    Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
+    if iscell(MIAData.AR)
+        AROI = MIAData.AR{1,2}; %for now top right AROI
+    else
+        AROI = true(size(Image));
+    end
+    Image = Image(AROI); %linear array of only the included pixels
+    Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
+    Image2 = Image2(AROI); %linear array of only the included pixels
+    
+    switch h.Mia_Image.Calculations.Coloc_Type.Value
+        case 1 %Pearson's correlation coefficient
+            % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
+            
+            if ~h.Mia_Image.Calculations.Coloc_weighting.Value
+                %% Calculations without intensity weighting
+                %% Mean Pearson's coefficient
+                mean_1 = mean2(Image);  % the mean intensity of image1 in the ROI
+                std_1 = std2(Image);
+                mean_2 = mean2(Image2);
+                std_2 = std2(Image2);
+                ImageP = Image.*Image2;
+                n = numel(Image); %number of included pixels
+                Pearson = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                h.Mia_Image.Calculations.Coloc_Pearsons.String = ['mean Pearson`s: ',num2str(Pearson)];
+                
+                %% Image of the Pearson's coefficeint
+                % to be developed
+                % spatially average the image via gaussian filtering
+                %             stdeviation = str2double(h.Mia_Image.Calculations.Coloc_avg.String);
+                %             Image = imgaussfilt(Image,stdeviation,'Padding','symmetric');
+                %             Image2 = imgaussfilt(Image2,stdeviation,'Padding','symmetric');
+                
+                %% Pearson's coefficient vs. intensity G or R
+                bins = linspace(min(min(Image),min(Image2)),max(max(Image),max(Image2)),50);
+                for i = 1:(numel(bins)-1)
+                    %green
+                    im =   Image(Image>=bins(i) & Image<bins(i+1));
+                    im2 = Image2(Image>=bins(i) & Image<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    IntG(i) = mean(bins(i:i+1));
+                    ccG(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorG(i) = sqrt(ccG(i))/sqrt(n);
+                    
+                    %red
+                    im =   Image(Image2>=bins(i) & Image2<bins(i+1));
+                    im2 = Image2(Image2>=bins(i) & Image2<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    IntR(i) = mean(bins(i:i+1));
+                    ccR(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorR(i) = sqrt(ccR(i))/sqrt(n);
+                end
+                %% Pearson's coefficient vs. G/R
+                GoverR = Image./Image2;
+                bins = linspace(min(GoverR),max(GoverR),50);
+                for i = 1:(numel(bins)-1)
+                    im =   Image(GoverR>=bins(i) & GoverR<bins(i+1));
+                    im2 = Image2(GoverR>=bins(i) & GoverR<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    GR(i) = mean(bins(i:i+1));
+                    ccGR(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorGR(i) = sqrt(ccGR(i))/sqrt(n);
+                end
+            else
+                %plak hier de corresponderende berekening als wél intensity weighting wordt gedaan
+            end
+            
+    %     case 2 %Manders
+    %     case 3 %Costes
+    %     case 4 %Van Steensel
+    %     case 5 %Li
+    %     case 6 %object based (particle localization)
+        otherwise
+            msgbox('not implemented yet')
+            h.Mia_Image.Calculations.Coloc_Type.Value = 1;
+    end
+    
+    %% plotting everything
+    f = figure;
+    ax1 = axes(f);
+    errorbar(ax1,IntG,ccG,ErrorG,'g');
+    hold on
+    errorbar(ax1,IntR,ccR,ErrorR,'r');
+    xlabel(ax1,'Intensity (a.u.)');
+    ylabel(ax1,'Correlation coefficient');
+    ax1.YLim = [-0.05,1.05];
+    ax2 = axes('Position',ax1.Position,'Color','none');
+    errorbar(ax2, GR,ccGR,ErrorGR, 'Color','k');
+    ax2.Color = 'none';
+    ax2.XAxisLocation = 'top';
+    ax2.YAxisLocation = 'right';
+    ax2.XLim = [0,ax2.XLim(2)];
+    ax2.YLim = [-0.05,1.05];
+    xlabel(ax2, 'Intensity ratio G/R');
+    
+else
+    msgbox('load 2-color data!')
+end
 
