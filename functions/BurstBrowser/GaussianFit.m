@@ -37,7 +37,7 @@ if sum(y_data) <= 10 %%% low amount of data, take mean and std instead
     GaussFun = (GaussFun./max(GaussFun)).*max(y_data);
     return;
 end
-[gauss, gof] = fit(x_data,y_data,Gauss,'StartPoint',param,'Lower',[0,0,0,0],'Upper',[Inf,Inf,Inf,A/4]);
+[gauss, gof] = fit(x_data,y_data,Gauss,'StartPoint',param,'Lower',[0,-Inf,0,0],'Upper',[Inf,Inf,Inf,A/4]);
 coefficients = coeffvalues(gauss);
 mean = coefficients(2);
 GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
@@ -55,7 +55,8 @@ if gof.adjrsquare < 0.95 %%% fit was bad
         b=0;%assume zero background
         param = [A1,m1,s1,A2,m2,s2,b];
     end
-    [gauss,~] = fit(x_data,y_data,Gauss2fun,'StartPoint',param,'Lower',zeros(1,numel(param)),'Upper',[inf(1,numel(param)-1),A1/4]);
+    LB = zeros(1,numel(param)); LB([2,5]) = -1;
+    [gauss,~] = fit(x_data,y_data,Gauss2fun,'StartPoint',param,'Lower',LB,'Upper',[inf(1,numel(param)-1),A1/4]);
     coefficients = coeffvalues(gauss);
     %get maximum amplitude
     [~,Amax] = max([coefficients(1) coefficients(4)]);
@@ -76,4 +77,7 @@ if gof.adjrsquare < 0.95 %%% fit was bad
         end
         GaussFun = Gauss2fun(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
     end
+end
+if mean < 0
+    mean = 0;
 end
