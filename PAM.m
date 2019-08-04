@@ -3721,6 +3721,7 @@ if obj == h.MT.Use_Image
     h.Image.Axes.DataAspectRatio = [1,1,1];
     h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
     h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    resetplotview(h.Image.Axes,'SaveCurrentView');
     Update_Display([],[],3);
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
