@@ -1439,6 +1439,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.FitFix{4} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
+    
     if numel(S.TauFit.FitParams) < 5
         params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2];
         fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0]);
@@ -1448,6 +1449,15 @@ if Mode==0 %%% Loads user values
         S.TauFit.FitFix{end+1} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
+    
+    if numel(S.TauFit.FitParams{5}) ~= 27
+        params =      [2 2 2 2 0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0]);
+        S.TauFit.FitParams{5} = params;
+        S.TauFit.FitFix{5} = fix;
+        disp('UserValues.TauFit.FitParams/FitFix was incomplete');
+    end
+    
     P.TauFit.FitParams = S.TauFit.FitParams;
     P.TauFit.FitFix = S.TauFit.FitFix;
 
