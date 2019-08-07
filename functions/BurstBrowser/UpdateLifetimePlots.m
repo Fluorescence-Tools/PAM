@@ -57,7 +57,16 @@ switch BurstData{file}.BAMethod
         idx_tauRR = strcmp('Lifetime RR [ns]',NameArray);
         idx_rGG = strcmp('Anisotropy GG',NameArray);
         idx_rRR = strcmp('Anisotropy RR',NameArray);
-        idxE = find(strcmp(NameArray,'FRET Efficiency GR'));
+        
+        switch UserValues.BurstBrowser.Settings.LifetimeMode
+            case 1
+                idxE = find(strcmp(NameArray,'FRET Efficiency GR'));
+            case 2
+                idxE = find(strcmp(NameArray,'log(FGG/FGR)'));            
+            case 3
+                idxE = find(strcmp(NameArray,'M1-M2 GR'));
+                idx_tauGG = strcmp('FRET Efficiency GR',NameArray);
+        end
 end
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
