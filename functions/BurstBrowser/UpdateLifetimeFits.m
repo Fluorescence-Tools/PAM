@@ -49,7 +49,7 @@ if obj == h.PlotStaticFRETButton
                 E = log(1./E-1);
             case 3 % convert to moment difference
                 E_temp = E;  
-                E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetime); % (1-E)*E_F
+                E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetimeBlue); % (1-E)*E_F
                 tau = E_temp;
         end
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
