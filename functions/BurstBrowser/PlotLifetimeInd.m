@@ -66,16 +66,43 @@ switch BurstData{file}.BAMethod
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
-                paramX = 'Lifetime GG [ns]';
-                paramY = 'FRET Efficiency GR';                
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime GG [ns]';
+                        paramY = 'FRET Efficiency GR';
+                    case 2
+                        paramX = 'Lifetime GG [ns]';
+                        paramY = 'log(FGG/FGR)';
+                    case 3
+                        paramX = 'FRET Efficiency GR';
+                        paramY = 'M1-M2 GR';
+                end      
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
-                paramX = 'Lifetime RR [ns]';
-                paramY = 'FRET Efficiency GR';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'FRET Efficiency GR';
+                    case 2
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'log(FGG/FGR)';
+                    case 3
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'M1-M2 GR';
+                end
             case 3 %E1A vs tauBB
                 origin = h.axes_E_BtoGRvsTauBB;
-                paramX = 'Lifetime BB [ns]';
-                paramY = 'FRET Efficiency B->G+R';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime BB [ns]';
+                        paramY = 'FRET Efficiency B->G+R';
+                    case 2
+                        paramX = 'Lifetime BB [ns]';
+                        paramY = 'log(FBB/(FBG+FBR))';
+                    case 3
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'M1-M2 B->G+R';
+                end
             case 4 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
                 paramX = 'Lifetime GG [ns]';

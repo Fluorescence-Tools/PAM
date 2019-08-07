@@ -77,13 +77,13 @@ switch UserValues.BurstBrowser.Settings.LifetimeMode
         YLim = [-0.1 1.1];
     case 2
         if ~h.MultiselectOnCheckbox.UserData
-            YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+            YLim = [min(min(datatoplot(:,idxE)),-2) max(max(datatoplot(:,idxE)),2)];
         else
             YLim = [];
         end
     case 3
         if ~h.MultiselectOnCheckbox.UserData
-            YLim = [min(datatoplot(:,idxE)) max(datatoplot(:,idxE))];
+            YLim = [min(min(datatoplot(:,idxE)),-0.25) max(max(datatoplot(:,idxE)),0.5)];
         else
             YLim = [];
         end
@@ -304,6 +304,12 @@ h.axes_EvsTauRR.CLimMode = 'auto';
 h.axes_EvsTauRR.CLim(1) = 0;
 try;h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
+    switch BurstData{file}.BAMethod
+        case {1,2,5} %2color
+            idx_tauGG = strcmp('Lifetime D [ns]',NameArray);
+        case {3,4}
+            idx_tauGG = strcmp('Lifetime GG [ns]',NameArray);
+    end
     %% Plot rGG vs. tauGG in third plot
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
@@ -503,16 +509,42 @@ end
 if any(BurstData{file}.BAMethod == [3,4])
     idx_tauBB = strcmp('Lifetime BB [ns]',NameArray);
     idx_rBB = strcmp('Anisotropy BB',NameArray);
-    idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
+    switch UserValues.BurstBrowser.Settings.LifetimeMode
+        case 1
+            idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
+        case 2
+            idxE1A = find(strcmp(NameArray,'log(FBB/(FBG+FBR))'));            
+        case 3
+            idxE1A = find(strcmp(NameArray,'M1-M2 B->G+R'));
+            idx_tauBB = strcmp('FRET Efficiency B->G+R',NameArray);
+    end    
+    
     %% Plot E1A vs. tauBB
+    switch UserValues.BurstBrowser.Settings.LifetimeMode
+        case 1
+            YLim = [-0.1 1.1];
+        case 2
+            if ~h.MultiselectOnCheckbox.UserData
+                YLim = [min(min(datatoplot(:,idxE1A)),-2) max(max(datatoplot(:,idxE1A)),2)];
+            else
+                YLim = [];
+            end
+        case 3
+            if ~h.MultiselectOnCheckbox.UserData
+                YLim = [max(min(datatoplot(:,idxE1A)),-0.25) min(max(datatoplot(:,idxE1A)),0.5)];
+            else
+                YLim = [];
+            end
+            maxX = 1;
+    end
     if ~h.MultiselectOnCheckbox.UserData
         valid = (datatoplot(:,idx_tauBB) > 0.01);
-        maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
-        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.1 1.1]);
+        %maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], YLim);
         datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A)];
     else
-        maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
-        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.1 1.1]});
+        %maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
+        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], YLim});
     end
     if(get(h.Hist_log10, 'Value'))
         H = log10(H);
@@ -564,10 +596,16 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.HexPlot.E_BtoGRvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
     end
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
-    ylim(h.axes_E_BtoGRvsTauBB,[-0.1 1.1]);
+    try h.axes_EvsTauGG.XLim=[0,maxX]; end
+    if ~isempty(YLim)
+        ylim(h.axes_E_BtoGRvsTauBB,YLim);
+    else
+        ylim(h.axes_E_BtoGRvsTauBB,'auto');
+    end
     h.axes_E_BtoGRvsTauBB.CLimMode = 'auto';h.axes_E_BtoGRvsTauBB.CLim(1) = 0;
     try;h.axes_E_BtoGRvsTauBB.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
     %% Plot rBB vs tauBB
+    idx_tauBB = strcmp('Lifetime BB [ns]',NameArray);
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);

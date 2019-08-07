@@ -45,6 +45,7 @@ if obj == h.PlotStaticFRETButton
             BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
         switch UserValues.BurstBrowser.Settings.LifetimeMode 
             case 2 % convert E to FD/FA
+                E(E>=1) = NaN;
                 E = log(1./E-1);
             case 3 % convert to moment difference
                 E_temp = E;  
