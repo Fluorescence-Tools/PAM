@@ -417,6 +417,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));        
         %%% use selected species
         Valid = UpdateCuts();
+        data_for_corrections = BurstData{file}.DataArray;
         tauBB = data_for_corrections(Valid,indTauBB);
         %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
         %%% excitation,crosstalk, and background corrections!
@@ -425,8 +426,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         NBR = data_for_corrections(Valid,indNBR) - Background_BR.*data_for_corrections(Valid,indDur);
         NGG = data_for_corrections(Valid,indNGG) - Background_GG.*data_for_corrections(Valid,indDur);
         NGR = data_for_corrections(Valid,indNGR) - Background_GR.*data_for_corrections(Valid,indDur);
-        NRR = data_for_corrections(Valid,indNRR) - Background_RR.*data_for_corrections(Valid,indDur);
-        data_for_corrections = BurstData{file}.DataArray;
+        NRR = data_for_corrections(Valid,indNRR) - Background_RR.*data_for_corrections(Valid,indDur);        
     else
         NBB = get_multiselection_data(h,'Number of Photons (BB)');
         NBG = get_multiselection_data(h,'Number of Photons (BG)');
