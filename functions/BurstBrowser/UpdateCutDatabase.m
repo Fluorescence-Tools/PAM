@@ -91,8 +91,8 @@ switch obj
             case h.AddCutDatabase
                 file = BurstMeta.SelectedFile;
                 %%% add a new top level species
-                BurstData{file}.SpeciesNames{end+1,1} = cutName;
-                BurstData{file}.Cut{end+1,1} = cutToApply;
+                BurstData{file}.SpeciesNames(end+1,1:3) = {cutName,'Subspecies 1', 'Subspecies 2'};                
+                BurstData{file}.Cut(end+1,1:3) = {cutToApply,cutToApply,cutToApply};
                 UpdateSpeciesList(h);
         end
         %%% Update Cuts
