@@ -172,7 +172,12 @@ end
 if obj == h.LifetimeMode_Menu
     UserValues.BurstBrowser.Settings.LifetimeMode = h.LifetimeMode_Menu.Value;
     % change axis labels and lifetime_ind selection box
-    switch BurstData{BurstMeta.SelectedFile}.BAMethod
+    if isempty(BurstData)
+        BAMethod = 1;
+    else
+        BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
+    end
+    switch BAMethod
         case {1,2,5}
             switch UserValues.BurstBrowser.Settings.LifetimeMode
                 case 1
