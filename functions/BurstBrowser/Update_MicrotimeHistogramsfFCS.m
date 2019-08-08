@@ -50,7 +50,7 @@ if strcmp(h.fFCS_Species3_popupmenu.Enable,'on') && ~(h.fFCS_Species3_popupmenu.
 else
     use_species3 = false;
 end
-Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data ...');
 if isempty(BurstTCSPCData{file})
     Load_Photons();
 end

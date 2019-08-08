@@ -156,7 +156,7 @@ switch UserValues.BurstBrowser.Settings.fFCS_Mode
         % but only up to timewindowsize/2 to avoid the edge artifacts
         max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < 1E-3*UserValues.BurstBrowser.Settings.Corr_TimeWindowSize/2, 1, 'last');
     otherwise
-        max_time = BurstMeta.fFCS.Result.Cor_Times{end}/2;
+        max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < BurstMeta.fFCS.Result.Cor_Times{1}(end)/2, 1, 'last');
 end
 if ~use_species3
     BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
