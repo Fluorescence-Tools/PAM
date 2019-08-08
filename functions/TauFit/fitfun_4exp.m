@@ -30,8 +30,8 @@ if (A1+A2+A3) > 1
     A2 = A2./norm;
     A3 = A3./norm;
 end
-sc = param(7);
-bg = param(8);
+sc = param(8);
+bg = param(9);
 tau = param(1:4);
 tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
