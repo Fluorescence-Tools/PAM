@@ -28,15 +28,15 @@ for s = 1:numel(sel)
             end
             file = find(file);
             % which one?
-            try
+            if ~isempty(file)
                 for i = 1:numel(h.SpeciesList.Species{file})
                     species(i) = h.SpeciesList.Species{file}(i).equals(sel(s));
                 end
-                species = find(species);
-            catch
-                species = 1;
+                species = find(species);                
+            else % sometimes file is empty, catch it here
+                file = 1;
+                species = 1;                
             end
-
             species_n(k) = species;
             subspecies_n(k) = 1;
             file_n(k) = file;
