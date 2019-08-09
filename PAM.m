@@ -4382,14 +4382,13 @@ if any(mode==6) || any(mode==1) %%%
     % hold on
     %%% Finds currently selected PIE channel
     Sel=h.PIE.List.Value(1); %%% delected PIE channels
-    % for
-    % i=Sel;
+    h.Phasor.Table.Data=UserValues.Settings.Pam.Phasor_Selection;
     if UserValues.PIE.Detector(Sel) ~=0
         Det=UserValues.PIE.Detector(Sel);
         %[row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
         Rout=UserValues.PIE.Router(Sel);
         To=UserValues.PIE.To(Sel);
-        From=UserValues.PIE.From(Sel);
+        From=UserValues.PIE.From(Sel);        
         Shift=h.Phasor.Table.Data{Sel, 3};
         
         %% Plots Reference histogram
@@ -4476,7 +4475,6 @@ if any(mode==6) || any(mode==1) %%%
         %       Pha = Pha(From:To);
         %       h.Plots.Phasor.YData=Pha/max(Pha);
         %   end
-        
     end
 obj = gcbo;
 if obj == h.MI.Phasor_Export_Menu
@@ -4770,7 +4768,7 @@ switch e.Key
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
-        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
+        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);        
         %%Update the Phasor.reference with PIE_List
         UserValues.Phasor.Reference(end+1, :)=0;
         UserValues.Phasor.Combined_Reference(end+1, :)=0;
@@ -5750,7 +5748,6 @@ h.Phasor.Table.RowName=[];
 coulumnames={'PIE channel','Ref_LT (ns)', 'Shift (TCSPC)', 'BG (KHz)', 'Ref_BG (KHz)', 'AP (%)', 'G-factor', 'Per_Coeff', 'Select'};
 h.Phasor.Table.ColumnName = coulumnames;
 h.Phasor.Table.ColumnEditable=[false, true, true, true, true, true, true, true, true];
-Phasor.Table_Data = [UserValues.PIE.Name.'];
 PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
 Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT); 
 Shift=(repelem(0, numel(UserValues.PIE.Name))).'; Shift=num2cell(Shift);
@@ -5763,9 +5760,10 @@ Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_
 Phasor.Table_Format = cell(1,size(Phasor.Table_Data,2));
 h.Phasor.Table.Data = Phasor.Table_Data;
 h.Phasor.Table.CellEditCallback={@Update_Phasor_Table};
+h.Phaor.Table.Data = UserValues.Settings.Pam.Phasor_Selection;
 
 %%% Updates Detector calibration 
-List=UserValues.PIE.Name;
+List=UserValues.Detector.Name;
 h.MI.Calib_Det.String=List;
 h.MI.Calib_Det.Value=1;
 
@@ -5840,7 +5838,18 @@ global UserValues
 h=guidata(findobj('Tag','Pam'));
 % % %%% called to reset the table
 if obj == h.Phasor.Reset_Menu
-    h.Phasor.Table.Data{:, 9} = false(h.Phasor.Table.Data{:, 9});
+PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
+Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT); 
+Shift=(repelem(0, numel(UserValues.PIE.Name))).'; Shift=num2cell(Shift);
+Background=(repelem(0, numel(UserValues.PIE.Name))).'; Background=num2cell(Background);
+Background_ref=(repelem(0, numel(UserValues.PIE.Name))).'; Background_ref=num2cell(Background_ref);
+Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing); 
+Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor); 
+Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff); 
+Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
+
+    h.Phasor.Table.Data = Phasor.Table_Data;
+    UserValues.Settings.Pam.Phasor_Selection = h.Phasor.Table.Data;
     return;
 end
 
