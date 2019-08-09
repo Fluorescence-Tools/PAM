@@ -28,10 +28,14 @@ for s = 1:numel(sel)
             end
             file = find(file);
             % which one?
-            for i = 1:numel(h.SpeciesList.Species{file})
-                species(i) = h.SpeciesList.Species{file}(i).equals(sel(s));
+            try
+                for i = 1:numel(h.SpeciesList.Species{file})
+                    species(i) = h.SpeciesList.Species{file}(i).equals(sel(s));
+                end
+                species = find(species);
+            catch
+                species = 1;
             end
-            species = find(species);
 
             species_n(k) = species;
             subspecies_n(k) = 1;

@@ -117,6 +117,9 @@ switch obj
         else
             h.CutDatabase.String = '-';
         end
+        if h.CutDatabase.Value > numel(h.CutDatabase.String)
+            h.CutDatabase.Value = numel(h.CutDatabase.String);
+        end
         LSUserValues(1);
     case h.StoreInCutDatabase_Menu %%% add cut to database
         file = BurstMeta.SelectedFile;
