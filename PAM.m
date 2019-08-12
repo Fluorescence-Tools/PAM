@@ -6956,8 +6956,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     Det=UserValues.Detector.Det(h.MI.Phasor_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI.Phasor_Det.Value);
     %%% Selects filename to save
-    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',UserValues.File.PhasorPath);
-    
+    [~,fn,~] = fileparts(FileInfo.FileName{1});
+    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',[FileInfo.Path filesep fn '.phr']);
+    % Update PhasorPath
+    UserValues.File.PhasorPath = PathName; 
     if ~all(FileName==0)
         Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
         
