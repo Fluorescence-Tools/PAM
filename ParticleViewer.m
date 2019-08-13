@@ -926,11 +926,12 @@ end
 Int = PhasorViewer.Intensity;
 
 %%% Creates arrays with size(Particle,Frames)
-Intensity=NaN(size(ParticleViewer.Intensity));
+Intensity = NaN(size(ParticleViewer.Intensity));
+Background = NaN(size(ParticleViewer.Intensity));
 
 %%% Create ring mask for background subtraction
-InnerRadius = 3;
-OuterRadius = 5;
+InnerRadius = 4;
+OuterRadius = 6;
 [columns, rows] = meshgrid(-OuterRadius:OuterRadius);
 % Next create the circle in the image.
 DistFromCenter = sqrt(rows.^2 + columns.^2);
@@ -953,14 +954,17 @@ for i=1:numel(ParticleViewer.Regions)
     CentroidIdx = sub2ind(size(Int),round(ParticleViewer.Regions(i).Centroid(:,1)),...
         round(ParticleViewer.Regions(i).Centroid(:,2)), ParticleViewer.Regions(i).Frame);
     bg = IntBackground(CentroidIdx);
-    Intensity(i,ParticleViewer.Regions(i).Frame) = ...
-        Intensity(i,ParticleViewer.Regions(i).Frame) - (bg.*ParticleViewer.Regions(i).Area)';
+    Intensity(i, ParticleViewer.Regions(i).Frame) = ...
+        Intensity(i, ParticleViewer.Regions(i).Frame) - ...
+        (bg.*ParticleViewer.Regions(i).Area)';
+    Background(i, ParticleViewer.Regions(i).Frame) = bg;
 end
 
 Intensity(isnan(Intensity) | Intensity < 0)=0;
 
 %%% Updates parameters in global variable
 ParticleViewer.Intensity = Intensity;
+ParticleViewer.Background = Background;
 
 end
 
@@ -1065,27 +1069,11 @@ if isequal(FileName, 0) || isequal(PathName, 0)
     return
 end
 
-g = ParticleViewer.g;
-s = ParticleViewer.s;
-Mean_LT = ParticleViewer.Mean_LT;
-Fi = ParticleViewer.Fi;
-M = ParticleViewer.M;
-TauP = ParticleViewer.TauP;
-TauM = ParticleViewer.TauM;
-Intensity = ParticleViewer.Intensity;
-Lines = ParticleViewer.Lines;
-Pixels = ParticleViewer.Pixels;
-Freq = ParticleViewer.Freq;
-Imagetime = ParticleViewer.Imagetime;
-Frames = ParticleViewer.Frames;
-FileNames = ParticleViewer.FileNames;
-Path = ParticleViewer.Path;
-Type = ParticleViewer.Type;
-Regions = ParticleViewer.Regions;
+SaveData = ParticleViewer;
+ExcludedFields = {'Mask', 'Particle', 'Highlight'};
+SaveData = rmfield(SaveData, ExcludedFields(isfield(SaveData, ExcludedFields)));
 
-save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM',...
-    'Intensity','Lines','Pixels','Freq','Imagetime','Frames',...
-    'FileNames','Path','Type','Regions');
+save(fullfile(PathName,FileName), '-struct', 'SaveData');
 end
 
 %%% Load Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
