@@ -3205,9 +3205,25 @@ else
                 %%% sampling
                 fitfun = @(x) PDAHistogramFit_Global(x,h);
             end
-            [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
-            ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
-            ci = (ci(:,2)-ci(:,1))/2; ci = ci';
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2 %%% three-state system               
+                if obj ==  h.Menu.EstimateErrorHessian
+                    % in three-state system, the kinetic scheme is evaluated by
+                    % monte carlo simulation.
+                    % As a consequence, the objective function is noisy and the
+                    % gradient is not defined.
+                    disp('Jacobian estimate of errors is not available for three-state kinetic analysis. Please use the MCMC method instead.');
+                    return;
+                end
+                % provide a proposal for MCMC sampling, set to 1% of the
+                % fitparameter value
+                ci = fitpar/100;
+            else
+                % for static or two state systems, we can estimate the
+                % error from the jacobain
+                [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
+                ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
+                ci = (ci(:,2)-ci(:,1))/2; ci = ci';
+            end
             if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
                 %%% switch fit function back
                 fitfun = @(x) PDAMLEFit_Global(x,h);
@@ -3216,32 +3232,38 @@ else
                 PDAMeta.FitInProgress = 3; %%% indicate to get loglikelihood instead chi2
                 % get parameter names in correct order
                 param_names = repmat(h.FitTab.Table.ColumnName(2:3:end-1)',size(PDAMeta.FitParams,1),1);
-                param_names = cellfun(@(x) x(11:end-4),param_names,'UniformOutput',false);
+                % remove html tags
+                param_names = cellfun(@(x) regexprep(x, '<.*?>',''),param_names,'UniformOutput',false) ;
+                param_names = cellfun(@(x) regexprep(x, '\[.*?\]',''),param_names,'UniformOutput',false);
+                %param_names = cellfun(@(x) x(11:end-4),param_names,'UniformOutput',false);
                 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1   
                     param_names = [param_names repmat({'sigmaF'},size(param_names,1),1)];
                 end
                 if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-                    param_names = [param_names repmat({'k32','k13','k23'},size(param_names,1),1)];
+                    param_names = [param_names repmat({'k23','k31','k32'},size(param_names,1),1)];
+                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F1'),param_names,'UniformOutput',false))) = deal({'k12'});
+                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F2'),param_names,'UniformOutput',false))) = deal({'k13'});
+                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F3'),param_names,'UniformOutput',false))) = deal({'k21'});
                 end
                 names = param_names(1,PDAMeta.Global); 
                 if UserValues.PDA.HalfGlobal
                     % put the half-globally linked parameter after the global ones
                     for i = 1:(PDAMeta.Blocks-1)
-                        names = [names param_names(i*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
+                        names = [names cellfun(@(x) [x sprintf(' (%i)',i)],param_names(i*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal),'UniformOutput',false)];
                     end
                 end
                 for i=find(PDAMeta.Active)'
                     %%% Concatenates initial values and bounds for non fixed parameters
                     names = [names param_names(i, ~PDAMeta.Fixed(i,:)& ~PDAMeta.Global)];
-                end
+                end               
                 % use MCMC sampling to get errorbar estimates
                 proposal = ci/10; 
                 %%% Sample
                 nsamples = 1E3; spacing = 10;
-                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
-                v = numel(residual)-numel(fitpar); % number of degrees of freedom
+                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,[],1);
+                v = numel(PDAMeta.hProx{1})-numel(fitpar); % number of degrees of freedom = number of E bins - number of fit parameters
                 perc = tinv(1-alpha/2,v);
-                ci_mc = perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
+                ci_mc = perc*std(samples(1:spacing:end,:),[],1); m_mc = mean(samples(1:spacing:end,:),1);
             end
             %%% Sort confidence intervals back to fitparameters
             err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -3301,21 +3323,21 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
     %%% initialize names cell array
     if ~h.SettingsTab.DynamicModel.Value
         names = {'A1';'R1';'sigma1';'A2';'R2';'sigma2';'A3';'R3';'sigma3';...
-            'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+            'A4';'R4';'sigma4';'A5';'R5';'sigma5';'A6';'R6';'sigma6';'Fraction D-only'};
     else
         if h.SettingsTab.DynamicSystem.Value == 1
             names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'A3';'R3';'sigma3';...
-                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'A6';'R6';'sigma6';'Fraction D-only'};
         elseif  h.SettingsTab.DynamicSystem.Value == 2
-            names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'k31';'R3';'sigma3';...
-                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+            names = {'k12';'R1';'sigma1';'k13';'R2';'sigma2';'k21';'R3';'sigma3';...
+                'A4';'R4';'sigma4';'A5';'R5';'sigma5';'A6';'R6';'sigma6';'Fraction D-only'};
         end
     end
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         names{end+1} = 'sigma at fraction  of R';
     end
     if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-        names{end+1} = 'k32'; names{end+1} = 'k13'; names{end+1} = 'k23';
+        names{end+1} = 'k23'; names{end+1} = 'k31'; names{end+1} = 'k32';
     end
     filenames = [];
     ConfInt_Jac = cell(sum(PDAMeta.Active),1);
@@ -3360,9 +3382,12 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         end
     end
     filenames = matlab.lang.makeUniqueStrings(filenames);
-    assignin('base','ConfInt_Jac',ConfInt_Jac);
-    tab_jac = cell2table(num2cell(horzcat(ConfInt_Jac{:})),'RowNames',names(1:lim),'VariableNames',filenames);
-    assignin('base','tab_jac',tab_jac);
+    %%% assign to workspace
+    if obj ==  h.Menu.EstimateErrorHessian
+        assignin('base','ConfInt_Jac',ConfInt_Jac);
+        tab_jac = cell2table(num2cell(horzcat(ConfInt_Jac{:})),'RowNames',names(1:lim),'VariableNames',filenames);
+        assignin('base','tab_jac',tab_jac);
+    end
     if obj == h.Menu.EstimateErrorMCMC
         assignin('base','ConfInt_MCMC',ConfInt_MCMC);
         tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names(1:lim),'VariableNames',filenames);
