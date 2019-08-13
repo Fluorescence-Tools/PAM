@@ -13,7 +13,7 @@ if isdeployed
 %         %%% remove filename and extension
 %         PathToApp = fileparts(PathToApp);
 %     end
-    if isunix % on UNIX, the relevant data is placed in a subfolder "PAM" in ctfroot
+    if ~ismac % on UNIX and Windows, the relevant data is placed in a subfolder "PAM" in ctfroot
         PathToApp = [PathToApp filesep 'PAM'];
     end
 else
