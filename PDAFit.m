@@ -2909,7 +2909,23 @@ if ~do_global
                             % estimate proposal based on fit values
                             proposal = fitpar(~fixed)*0.01;
                         end
-                        [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',fixed',~fixed',cellfun(@(x) x(11:end-4),h.FitTab.Table.ColumnName(2:3:end-1),'UniformOutput',false));
+                        
+                        % get parameter names in correct order 
+                        param_names = h.FitTab.Table.ColumnName(2:3:end-1)';                                              
+                        % remove html tags
+                        param_names = regexprep(param_names, '<.*?>','');
+                        param_names = regexprep(param_names, '\[.*?\]','');
+                        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1   
+                            param_names = [param_names {'sigmaF'}];
+                        end
+                        if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                            param_names = [param_names {'k23','k31','k32'}];
+                            param_names(strcmp(param_names,'F1')) = {'k12'};
+                            param_names(strcmp(param_names,'F2')) = {'k21'};
+                            param_names(strcmp(param_names,'F3')) = {'k31'};                            
+                        end
+                        proposal_dummy = zeros(size(fitpar)); proposal_dummy(~fixed) = proposal;
+                        [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal_dummy,LB,UB,fitpar',fixed',~fixed',param_names,[],1);
                         if exist('residual','var')
                             v = numel(residual)-numel(fitpar(~fixed)); % number of degrees of freedom
                             perc = tinv(1-alpha/2,v);
@@ -3259,7 +3275,10 @@ else
                 % use MCMC sampling to get errorbar estimates
                 proposal = ci/10; 
                 %%% Sample
-                nsamples = 1E3; spacing = 10;
+                %%% query sampling parameters
+                data = inputdlg({'Number of samples:','Spacing for statistical independence:'},'Specify MCMC sampling parameters',1,{'1000','10'});
+                data = cellfun(@str2double,data);
+                nsamples = data(1); spacing = data(2);
                 [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,[],1);
                 v = numel(PDAMeta.hProx{1})-numel(fitpar); % number of degrees of freedom = number of E bins - number of fit parameters
                 perc = tinv(1-alpha/2,v);
@@ -3329,7 +3348,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
             names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'A3';'R3';'sigma3';...
                 'A4';'R4';'sigma4';'A5';'R5';'sigma5';'A6';'R6';'sigma6';'Fraction D-only'};
         elseif  h.SettingsTab.DynamicSystem.Value == 2
-            names = {'k12';'R1';'sigma1';'k13';'R2';'sigma2';'k21';'R3';'sigma3';...
+            names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'k31';'R3';'sigma3';...
                 'A4';'R4';'sigma4';'A5';'R5';'sigma5';'A6';'R6';'sigma6';'Fraction D-only'};
         end
     end
@@ -3350,12 +3369,12 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         fixed = PDAMeta.Fixed(i,:);
         if ~do_global
             if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-                fitpar(end+1) = fraction;
-                if h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value == 0
-                    fixed(end+1) = false;
-                else
-                    fixed(end+1) = true;
-                end
+%                 fitpar(end+1) = fraction;
+%                 if h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value == 0
+%                     fixed(end+1) = false;
+%                 else
+%                     fixed(end+1) = true;
+%                 end
             end
         end
         lim = max(lim,find(~fixed,1,'last'));
@@ -3440,17 +3459,17 @@ if (PDAMeta.FitInProgress == 2) && ((sum(PDAMeta.Global) == 0) || (sum(PDAMeta.A
     fixed_dummy = PDAMeta.Fixed(i,:);
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         %%% add sigma fraction to end
-        fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
-        fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+        %fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        %fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
     if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
         % Read the rates from the table
-        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(2,3),rates(3,1),rates(3,2)];
-        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        fitpar_dummy = [fitpar_dummy, rates];
-        fixed_dummy = [fixed_dummy, fixed_rates];
+        %rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        %rates = [rates(2,3),rates(3,1),rates(3,2)];
+        %fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
+        %fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        %fitpar_dummy = [fitpar_dummy, rates];
+        %fixed_dummy = [fixed_dummy, fixed_rates];
     end
     % overwrite free fit parameters
     fitpar_dummy(~fixed_dummy) = fitpar; 
