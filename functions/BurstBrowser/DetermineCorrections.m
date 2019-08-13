@@ -8,7 +8,17 @@ h = guidata(obj);
 
 file = BurstMeta.SelectedFile;
 
-h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+        h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+    case {3,4}
+        switch obj
+            case {h.DetermineCorrectionsButton,h.DetermineGammaLifetimeTwoColorButton,h.DetermineGammaManuallyButton}
+                h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+            case {h.FitGammaButton,h.DetermineGammaLifetimeThreeColorButton}
+                h.Main_Tab.SelectedTab = h.Main_Tab_Corrections_ThreeCMFD;
+        end
+end
 %%% Change focus to CorrectionsTab
 switch BurstData{file}.BAMethod
     case {1,2,5}
@@ -234,9 +244,16 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 disp('Select more than one species.');
                 return;
             end
-            [~,NGR] = get_multiselection_data(h,'Number of Photons (DA)');
-            [~,NGG] = get_multiselection_data(h,'Number of Photons (DD)');
-            [~,NRR] = get_multiselection_data(h,'Number of Photons (AA)');
+            switch BurstData{1}.BAMethod
+                case {1,2,5}
+                    [~,NGR] = get_multiselection_data(h,'Number of Photons (DA)');
+                    [~,NGG] = get_multiselection_data(h,'Number of Photons (DD)');
+                    [~,NRR] = get_multiselection_data(h,'Number of Photons (AA)');
+                case {3,4}
+                    [~,NGR] = get_multiselection_data(h,'Number of Photons (GR)');
+                    [~,NGG] = get_multiselection_data(h,'Number of Photons (GG)');
+                    [~,NRR] = get_multiselection_data(h,'Number of Photons (RR)');                    
+            end
             [~,dur] = get_multiselection_data(h,'Duration [ms]');
             % correct photon counts
             for i = 1:numel(file_n)
@@ -310,8 +327,12 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
-
-        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+            case {3,4}
+                indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+        end
         tauGG = BurstData{file}.DataArray(Valid,indTauGG);
         
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
@@ -321,12 +342,23 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
         NRR = BurstData{file}.DataArray(Valid,indNRR) - Background_RR.*BurstData{file}.DataArray(Valid,indDur);
         NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     else
-        NGR = get_multiselection_data(h,'Number of Photons (DA)');
-        NGG = get_multiselection_data(h,'Number of Photons (DD)');
-        NRR = get_multiselection_data(h,'Number of Photons (AA)');
+        switch BurstData{file}.BAMethod
+            case {1,2,5} 
+                NGR = get_multiselection_data(h,'Number of Photons (DA)');
+                NGG = get_multiselection_data(h,'Number of Photons (DD)');
+                NRR = get_multiselection_data(h,'Number of Photons (AA)');
+            case {3,4}
+                NGR = get_multiselection_data(h,'Number of Photons (GR)');
+                NGG = get_multiselection_data(h,'Number of Photons (GG)');
+                NRR = get_multiselection_data(h,'Number of Photons (RR)');
+        end
         dur = get_multiselection_data(h,'Duration [ms]');
-        tauGG = get_multiselection_data(h,'Lifetime D [ns]');
-        
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                tauGG = get_multiselection_data(h,'Lifetime D [ns]');
+            case {3,4}
+                tauGG = get_multiselection_data(h,'Lifetime GG [ns]');
+        end
         NGR = NGR - Background_GR.*dur;
         NGG = NGG - Background_GG.*dur;
         NRR = NRR - Background_RR.*dur;
@@ -335,12 +367,9 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% Calculate static FRET line in presence of linker fluctuations
     [FRETline, statFRETfun,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
         BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
-    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     valid = (tauGG < BurstData{file}.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG) & ~isnan(statFRETfun(tauGG));
-    %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
-    %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-    gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
+    gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',BurstData{file}.Corrections.Gamma_GR,'Robust','bisquare');
     gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
@@ -372,8 +401,9 @@ end
 if any(BurstData{file}.BAMethod == [3,4])
     %% 3cMFD corrections
     %%% Read out parameter positions
-    indSBG = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
-    indSBR = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
+    indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR (raw)'));
+    indSBG = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BG (raw)'));
+    indSBR = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BR (raw)'));
     %%% Read out photon counts
     indNBB = find(strcmp(BurstData{file}.NameArray,'Number of Photons (BB)'));
     indNBG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (BG)'));
@@ -382,6 +412,48 @@ if any(BurstData{file}.BAMethod == [3,4])
     Background_BB = BurstData{file}.Background.Background_BBpar + BurstData{file}.Background.Background_BBperp;
     Background_BG = BurstData{file}.Background.Background_BGpar + BurstData{file}.Background.Background_BGperp;
     Background_BR = BurstData{file}.Background.Background_BRpar + BurstData{file}.Background.Background_BRperp;
+    
+    if ~h.MultiselectOnCheckbox.UserData
+        indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));        
+        %%% use selected species
+        Valid = UpdateCuts();
+        data_for_corrections = BurstData{file}.DataArray;
+        tauBB = data_for_corrections(Valid,indTauBB);
+        %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
+        %%% excitation,crosstalk, and background corrections!
+        NBB = data_for_corrections(Valid,indNBB) - Background_BB.*data_for_corrections(Valid,indDur);
+        NBG = data_for_corrections(Valid,indNBG) - Background_BG.*data_for_corrections(Valid,indDur);
+        NBR = data_for_corrections(Valid,indNBR) - Background_BR.*data_for_corrections(Valid,indDur);
+        NGG = data_for_corrections(Valid,indNGG) - Background_GG.*data_for_corrections(Valid,indDur);
+        NGR = data_for_corrections(Valid,indNGR) - Background_GR.*data_for_corrections(Valid,indDur);
+        NRR = data_for_corrections(Valid,indNRR) - Background_RR.*data_for_corrections(Valid,indDur);        
+    else
+        NBB = get_multiselection_data(h,'Number of Photons (BB)');
+        NBG = get_multiselection_data(h,'Number of Photons (BG)');
+        NBR = get_multiselection_data(h,'Number of Photons (BR)');
+        NGR = get_multiselection_data(h,'Number of Photons (GR)');
+        NGG = get_multiselection_data(h,'Number of Photons (GG)');
+        NRR = get_multiselection_data(h,'Number of Photons (RR)');
+        dur = get_multiselection_data(h,'Duration [ms]');
+        tauBB = get_multiselection_data(h,'Lifetime BB [ns]');
+
+        NBB = NBB - Background_BB.*dur;
+        NBG = NBG - Background_BG.*dur;
+        NBR = NBR - Background_BR.*dur;
+        NGR = NGR - Background_GR.*dur;
+        NGG = NGG - Background_GG.*dur;
+        NRR = NRR - Background_RR.*dur;
+        
+        Files = get_multiselection(h);
+        Files = unique(Files);
+        data_for_corrections = cell(numel(Files),1);
+        for i = 1:numel(Files)
+            data_for_corrections{i} = BurstData{Files(i)}.DataArray;
+        end
+        data_for_corrections = vertcat(data_for_corrections{:});
+        %%% (Note for the future: We are assuming here that all files have the
+        %%% same order of parameters in NameArray...)
+    end
     
     if obj == h.DetermineCorrectionsButton
         %% Blue dye only
@@ -512,9 +584,10 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     if obj == h.FitGammaButton
         %m = msgbox('Using double labeled populations for three-color.');
-        m = msgbox('Not implemented for 3 color. Use 2 color standards to determine 3 color gamma factors instead.');
-        pause(1);
-        delete(m);
+        %m = msgbox('Not implemented for 3 color. Use 2 color standards to determine 3 color gamma factors instead.');
+        %pause(1);
+        %delete(m);
+               
         if 0
             %%% Gamma factor determination based on triple labeled population
             %%% using currently selected bursts
@@ -562,7 +635,7 @@ if any(BurstData{file}.BAMethod == [3,4])
             gamma_br = (b - 1)/(b + m - 1);
             beta_br = b+m-1;
         end
-        if 0
+        if 1
         %% Gamma factor determination based on double-labeled species
         %%% BG labeled
         S_threshold = ( (data_for_corrections(:,indS) > 0.9) &...
@@ -575,7 +648,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         EBG_raw = NBG./(NBG+NBB);
         SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
         %%% Calculate 2D-Hist and Fit
-        [H,xbins,ybins] = calc2dhist(EBG_raw,1./SBG_raw,[51 51],[0 1], [1 10]);
+        [H,xbins,ybins] = calc2dhist(EBG_raw,SBG_raw,[51 51],[-0.1 1], [min(SBG_raw) max(SBG_raw)]);
         BurstMeta.Plots.gamma_BG_fit(1).XData= xbins;
         BurstMeta.Plots.gamma_BG_fit(1).YData= ybins;
         BurstMeta.Plots.gamma_BG_fit(1).CData= H;
@@ -586,26 +659,25 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
         xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'FRET Efficiency BG','Color',UserValues.Look.Fore);
-        ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG','Color',UserValues.Look.Fore);
-        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. FRET Efficiency BG for gammaBG = 1','Color',UserValues.Look.Fore);
+        ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Stoichiometry BG','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Stoichiometry BG vs. FRET Efficiency BG for gammaBG = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBG_raw = EBG_raw;
         BurstMeta.Data.SBG_raw = SBG_raw;
+        %%% Fit using E S relation (x is E)
+        funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
+        fitGamma = fit(EBG_raw,SBG_raw,funS,'StartPoint',[1,1],'Robust','LAR');
         %%% Fit linearly
-        valid = ( EBG_raw >= 0 & EBG_raw <= 1 & SBG_raw >= 0 & SBG_raw <= 1);
-        fitGamma = fit(EBG_raw(valid),1./SBG_raw(valid),'poly1');
         BurstMeta.Plots.Fits.gamma_BG.Visible = 'on';
         BurstMeta.Plots.Fits.gamma_BG_manual.Visible = 'off';
-        BurstMeta.Plots.Fits.gamma_BG.XData = linspace(0,1,1000);
-        BurstMeta.Plots.Fits.gamma_BG.YData = fitGamma(linspace(0,1,1000));
+        BurstMeta.Plots.Fits.gamma_BG.XData = linspace(-0.1,1,1000);
+        BurstMeta.Plots.Fits.gamma_BG.YData = fitGamma(linspace(-0.1,1,1000));
         axis(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'tight');
-        ylim(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,[1,10]);
-        xlim(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,[0,1]);
         %%% Determine Gamma and Beta
-        coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
-        UserValues.BurstBrowser.Corrections.Gamma_BG = (b - 1)/(b + m - 1);
+        coeff = coeffvalues(fitGamma); b = coeff(1); g = coeff(2);
+        UserValues.BurstBrowser.Corrections.Gamma_BG = g;
         BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
-        UserValues.BurstBrowser.Corrections.Beta_BG = b+m-1;
+        UserValues.BurstBrowser.Corrections.Beta_BG = b;
         BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
         
         S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
@@ -618,7 +690,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         EBR_raw = NBR./(NBR+NBB);
         SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
         %%% Calculate 2D-Hist and Fit
-        [H,xbins,ybins] = calc2dhist(EBR_raw,1./SBR_raw,[51 51],[0 2], [1 10]);
+        [H,xbins,ybins] = calc2dhist(EBR_raw,SBR_raw,[51 51],[-0.1 1], [min(SBR_raw) max(SBR_raw)]);
         BurstMeta.Plots.gamma_BR_fit(1).XData= xbins;
         BurstMeta.Plots.gamma_BR_fit(1).YData= ybins;
         BurstMeta.Plots.gamma_BR_fit(1).CData= H;
@@ -628,66 +700,29 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BR_fit(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_BR_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
-        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'FRET Efficiency* BR','Color',UserValues.Look.Fore);
-        ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
-        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. FRET Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
+        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'FRET Efficiency BR','Color',UserValues.Look.Fore);
+        ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Stoichiometry BR','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Stoichiometry BR vs. FRET Efficiency BR for gammaBR = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBR_raw = EBR_raw;
         BurstMeta.Data.SBR_raw = SBR_raw;
         %%% Fit linearly
-        %valid = EBR_raw >= 0 & EBR_raw <= 1 &...
-        %     SBR_raw >= 0 & SBR_raw <= 1 ;
-        fitGamma = fit(EBR_raw,1./SBR_raw,'poly1');
+        funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
+        fitGamma = fit(EBR_raw,SBR_raw,funS,'StartPoint',[1,1],'Robust','LAR');
         BurstMeta.Plots.Fits.gamma_BR.Visible = 'on';
         BurstMeta.Plots.Fits.gamma_BR_manual.Visible = 'off';
-        BurstMeta.Plots.Fits.gamma_BR.XData = linspace(0,1,1000);
-        BurstMeta.Plots.Fits.gamma_BR.YData = fitGamma(linspace(0,1,1000));
+        BurstMeta.Plots.Fits.gamma_BR.XData = linspace(-0.1,1,1000);
+        BurstMeta.Plots.Fits.gamma_BR.YData = fitGamma(linspace(-0.1,1,1000));
         axis(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'tight');
-        ylim(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,[1,10]);
-        xlim(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,[0,1]);
         %%% Determine Gamma and Beta
-        coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
-        UserValues.BurstBrowser.Corrections.Gamma_BR = (b - 1)/(b + m - 1);
+        coeff = coeffvalues(fitGamma); b = coeff(1); g = coeff(2);
+        UserValues.BurstBrowser.Corrections.Gamma_BR = g;
         BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
-        UserValues.BurstBrowser.Corrections.Beta_BR = b+m-1;
+        UserValues.BurstBrowser.Corrections.Beta_BR = b;
         BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
         end
     end
     if obj == h.DetermineGammaLifetimeThreeColorButton
-        % use the user selected species
-        if ~h.MultiselectOnCheckbox.UserData
-            indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
-            data_for_corrections = BurstData{file}.DataArray;
-            %%% use selected species
-            Valid = UpdateCuts();
-            tauBB = data_for_corrections(Valid,indTauBB);
-            %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
-            %%% excitation,crosstalk, and background corrections!
-            NBB = data_for_corrections(Valid,indNBB) - Background_BB.*data_for_corrections(Valid,indDur);
-            NBG = data_for_corrections(Valid,indNBG) - Background_BG.*data_for_corrections(Valid,indDur);
-            NBR = data_for_corrections(Valid,indNBR) - Background_BR.*data_for_corrections(Valid,indDur);
-            NGG = data_for_corrections(Valid,indNGG) - Background_GG.*data_for_corrections(Valid,indDur);
-            NGR = data_for_corrections(Valid,indNGR) - Background_GR.*data_for_corrections(Valid,indDur);
-            NRR = data_for_corrections(Valid,indNRR) - Background_RR.*data_for_corrections(Valid,indDur);
-           
-        else
-            NBB = get_multiselection_data(h,'Number of Photons (BB)');
-            NBG = get_multiselection_data(h,'Number of Photons (BG)');
-            NBR = get_multiselection_data(h,'Number of Photons (BR)');
-            NGR = get_multiselection_data(h,'Number of Photons (GR)');
-            NGG = get_multiselection_data(h,'Number of Photons (GG)');
-            NRR = get_multiselection_data(h,'Number of Photons (RR)');
-            dur = get_multiselection_data(h,'Duration [ms]');
-            tauBB = get_multiselection_data(h,'Lifetime BB [ns]');
-                
-            NBB = NBB - Background_BB.*dur;
-            NBG = NBG - Background_BG.*dur;
-            NBR = NBR - Background_BR.*dur;
-            NGR = NGR - Background_GR.*dur;
-            NGG = NGG - Background_GG.*dur;
-            NRR = NRR - Background_RR.*dur;
-        end
-        
         NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
         gamma_gr = BurstData{file}.Corrections.Gamma_GR;
         EGR = NGR./(gamma_gr.*NGG+NGR);
@@ -699,13 +734,15 @@ if any(BurstData{file}.BAMethod == [3,4])
         [statFRETline, statFRETfun,tau] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
             BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
             BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
-        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetimeBlue;
         valid = (tauBB < BurstData{file}.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
         valid = find(valid);
         valid = valid(~isnan(statFRETfun( tauBB(valid))));
         %%% minimize deviation from static FRET line as a function of gamma_br!
         dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - statFRETfun( tauBB(valid) ) ).^2 );
-        gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+        gamma_fit = fmincon(dev,BurstData{file}.Corrections.Gamma_BR,[],[],[],[],0,10);
+        %E_fun = @(gamma,NBB,NBG,NBR) (gamma_gr.*NBG+NBR)./(gamma.*NBB + gamma_gr.*NBG + NBR);
+        %gamma_fit = fit([NBB(valid),NBG(valid),NBR(valid)],statFRETfun(tauBB(valid)),E_fun,'StartPoint',BurstData{file}.Corrections.Gamma_BR,'Robust','bisquare');
+        %gamma_fit = coeffvalues(gamma_fit);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
         [H,xbins,ybins] = calc2dhist(tauBB,E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1.1]);

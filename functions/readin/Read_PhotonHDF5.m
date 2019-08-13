@@ -12,16 +12,15 @@ datastruct.description = h5read(file,'/description');
 datastruct.acquisiton_duration = h5read(file,'/acquisition_duration');
 
 %%% /identity group
-datastruct.identity.author = h5read(file,'/identity/author');
-datastruct.identity.author_affiliation = h5read(file,'/identity/author_affiliation');
-datastruct.identity.creation_time = h5read(file,'/identity/creation_time');
-datastruct.identity.fname = h5read(file,'/identity/filename');
-datastruct.identity.fname_full = h5read(file,'/identity/filename_full');
-datastruct.identity.format_name = h5read(file,'/identity/format_name');
-datastruct.identity.format_url = h5read(file,'/identity/format_url');
-datastruct.identity.format_version = h5read(file,'/identity/format_version');
-datastruct.identity.software = h5read(file,'/identity/software');
-datastruct.identity.software_version = h5read(file,'/identity/software_version');
+try;datastruct.identity.author = h5read(file,'/identity/author');end;
+try;datastruct.identity.author_affiliation = h5read(file,'/identity/author_affiliation');end;
+try;datastruct.identity.creation_time = h5read(file,'/identity/creation_time');end;
+try;datastruct.identity.fname_full = h5read(file,'/identity/filename_full');end;
+try;datastruct.identity.format_name = h5read(file,'/identity/format_name');end;
+try;datastruct.identity.format_url = h5read(file,'/identity/format_url');end;
+try;datastruct.identity.format_version = h5read(file,'/identity/format_version');end;
+try;datastruct.identity.software = h5read(file,'/identity/software');end;
+try;datastruct.identity.software_version = h5read(file,'/identity/software_version');end;
 
 %%% /provenance group
 try
@@ -29,18 +28,27 @@ try
 catch
     datastruct.provenance.creation_time = string(datetime);
 end
-datastruct.provenance.filename = h5read(file,'/provenance/filename');
+try
+    datastruct.provenance.filename = h5read(file,'/provenance/filename');
+catch
+    [~,filen,ext] = fileparts(file);
+    datastruct.provenance.filename = [filen, ext];
+end
 try
     datastruct.provenance.filename_full = h5read(file,'/provenance/filename_full');
 catch
-    datastruct.provenance.filename_full = datastruct.provenance.filename;
+    datastruct.provenance.filename_full = file;
 end
 try
     datastruct.provenance.modification_time = h5read(file,'/provenance/modification_time');
 catch
     datastruct.provenance.modification_time = string(datetime);
 end
-datastruct.provenance.software = h5read(file,'/provenance/software');
+try
+    datastruct.provenance.software = h5read(file,'/provenance/software');
+catch
+    datastruct.provenance.software = 'unknown';
+end
 
 %%% /sample group
 try

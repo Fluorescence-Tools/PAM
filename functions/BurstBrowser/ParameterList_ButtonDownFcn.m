@@ -46,7 +46,7 @@ if strcmpi(clickType,'right')
 
         %%% use default limits for FRET efficiency and Stoichiometry
         switch BurstData{file}.NameArray{clickedIndex}
-            case {'FRET Efficiency','FRET Efficiency GR','FRET Efficiency BG','FRET Efficiency BR'}
+            case {'FRET Efficiency','FRET Efficiency GR','FRET Efficiency BG','FRET Efficiency BR','FRET Efficiency B->G+R','Proximity Ratio GR','Proximity Ratio BG','Proximity Ratio BR'}
                 lower = -0.1;
                 upper = 1;
             case {'Stoichiometry','Stoichiometry GR','Stoichiometry BG','Stoichiometry BR'}

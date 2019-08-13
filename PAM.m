@@ -2222,7 +2222,8 @@ h.Image.Axes = axes(...
     'Parent',h.Image.Panel,...
     'Tag','Image_Axes',...
     'Units','normalized',...
-    'Position',[0.01 0.01 0.7 0.98]);
+    'Position',[0.01 0.01 0.7 0.98],...
+    'DataAspectRatio',[1,1,1]);
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
@@ -2955,7 +2956,7 @@ h.Export.List = uicontrol(...
     'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
-    'Position',[0.01 0.01 0.6 0.98]);
+    'Position',[0.01 0.61 0.98 0.38]);
 %%% Table containig the PIE channels to export
 h.Export.PIE = uitable(...
     'Parent',h.Export.Panel,...
@@ -2969,7 +2970,7 @@ h.Export.PIE = uitable(...
     'ColumnWidth',{15},...
     'ColumnEditable',true,...
     'Data',false(numel(UserValues.PIE.Name)+1,1),...
-    'Position',[0.62 0.61 0.36 0.38]);
+    'Position',[0.01 0.01 0.60 0.58]);
 %%% Changes the size of the ROW names
 drawnow
 Export_PIE = findjobj(h.Export.PIE);
@@ -2989,9 +2990,9 @@ h.Export.Text{end+1} = uicontrol(...
     'Parent',h.Export.Panel,...
     'Style','text',...
     'Units','normalized',...
-    'FontSize',12,...
+    'FontSize',14,...
     'HorizontalAlignment','left',...
-    'String','Manage export',...
+    'String','Manage export:',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.52 0.2 0.07]);
@@ -3351,7 +3352,7 @@ else
     %%% compiled application
     %%% custom file types are embedded
     %%% names are in associated text file
-    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'rt');
+    fid = fopen([PathToApp filesep 'functions' filesep 'Custom_Read_Ins' filesep 'Custom_Read_Ins.txt'],'rt');
     if fid == -1
         disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
         Custom_Methods = {'none'};
@@ -3602,8 +3603,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                         else
                             PamMeta.Image{i} = im;
                             h.Image.Colorbar.YLabel.String = 'Counts';
-                        end
-                        
+                        end                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3679,29 +3679,29 @@ for i=find(UserValues.PIE.Detector==0)
     PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
     PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
         trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
-        if UserValues.Settings.Pam.Use_Image
+        if UserValues.Settings.Pam.Use_Image && any(mode == 3)
             PamMeta.Image{i}=PamMeta.Image{i}+PamMeta.Image{j};
             if UserValues.Settings.Pam.Use_Lifetime
                 PamMeta.Lifetime{i}=PamMeta.Lifetime{i}+PamMeta.Lifetime{j};
             end
         end
-        if UserValues.Settings.Pam.Use_TimeTrace
+        if UserValues.Settings.Pam.Use_TimeTrace && any(mode == 1)
             PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
         end
-        if UserValues.Settings.Pam.Use_PCH
+        if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
             PamMeta.TracePCH{i} = PamMeta.TracePCH{i} + PamMeta.TracePCH{j};
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
-    if UserValues.Settings.Pam.Use_Lifetime
+    if UserValues.Settings.Pam.Use_Lifetime && any(mode == 3)
         PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
     end
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
         PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
     end
@@ -3712,7 +3712,7 @@ end
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calculate_Settings(obj,~)
-global UserValues PamMeta
+global UserValues PamMeta FileInfo
 h = guidata(findobj('Tag','Pam'));
 Display=0;
 %%% If Calculate image was clicked
@@ -3728,14 +3728,16 @@ if obj == h.MT.Use_Image
         h.MT.Settings_Tab.Parent = [];
         h.Image.Tab.Parent = h.MT.Tab;
         h.MT.Settings_Tab.Parent =  h.MT.Tab;
-        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
+        h.MT.Tab.SelectedTab = h.Image.Tab;
     else
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    %if UserValues.Settings.Pam.Use_Image
-        Update_Display([],[],3);
-    %end
+    % define axis limits for image plot
+    h.Image.Axes.DataAspectRatio = [1,1,1];
+    h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
+    h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    Update_Display([],[],3);
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
@@ -4289,9 +4291,10 @@ end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
 if any(mode==3)
-    switch h.Image.Type.Value
-        %%% Intensity image
-        case 1
+    h.Image.Axes.DataAspectRatio=[1 1 1];
+    switch h.Image.Type.Value        
+        %%% Intensity image        
+        case 1            
             h.Plots.Image.CData=PamMeta.Image{Sel};
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
@@ -4342,7 +4345,7 @@ if any(mode==3)
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
                 h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
-            end
+            end            
     end
     switch h.Image.Type.Value %label the colorbar correctly
         case 1
@@ -4358,8 +4361,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-    h.Image.Axes.XLim=[0.5 size(PamMeta.Image{Sel},2)+0.5];
-    h.Image.Axes.YLim=[0.5 size(PamMeta.Image{Sel},1)+0.5];
+%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
+%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
+%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
+%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4373,16 +4378,15 @@ if any(mode==4)
         h.Plots.MI_All(numel(PamMeta.MI_Hist)+1:end)=[];
         cellfun(@delete,Unused)
     end
-    axes(h.MI.All_Axes);
-    xlim([1 FileInfo.MI_Bins]);
+    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];       
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
-        if ~isempty(h.Plots.MI_All{i})
+        if ~isempty(h.Plots.MI_All{i}) && isvalid(h.Plots.MI_All{i})
             %%% Only changes YData of plot to increase speed
             h.Plots.MI_All{i}.YData=PamMeta.MI_Hist{i};
         else
             %%% Plots new lineseries, if none exists
-            h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
+            h.Plots.MI_All{i}=handle(plot(h.MI.All_Axes,PamMeta.MI_Hist{i}));
         end
         %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
         h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:);
@@ -6314,7 +6318,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 elseif any(h.Cor.Type.Value == [4,5])
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
-                %%% Calculates average and standard error of mean (without tinv_table yet
+                %%% Calculates average and standard error of mean (without
+                %%% tinv_table yet)
                 if size(Cor_Array,2)>1
                     Cor_Average=mean(Cor_Array,2);
                     %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
@@ -6322,7 +6327,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Amplitude=sum(Cor_Array,1);
                     Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
                     Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-                    
+                    % Code for adjusting the standord error of the mean
+                    % with the student's t distribution
+                    % p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
+                    % Cor_SEM = Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2));
                 else
                     Cor_Average=Cor_Array;
                     Cor_SEM=Cor_Array;

@@ -1,5 +1,5 @@
 function UpdateGUIOptions(obj,~,h)
-global UserValues BurstMeta
+global UserValues BurstMeta BurstData
 if nargin == 2
     if isempty(obj)
         h = guidata(findobj('Tag','BurstBrowser'));
@@ -172,26 +172,69 @@ end
 if obj == h.LifetimeMode_Menu
     UserValues.BurstBrowser.Settings.LifetimeMode = h.LifetimeMode_Menu.Value;
     % change axis labels and lifetime_ind selection box
-    switch UserValues.BurstBrowser.Settings.LifetimeMode
-        case 1
-            h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
-            h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
-            h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
-            h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
-            h.lifetime_ind_popupmenu.String{1} = '<html>E vs &tau;<sub>D(A)</sub></html>';
-            h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
-        case 2
-            h.axes_EvsTauGG.YLabel.String = 'log(FD/FA)';
-            h.axes_EvsTauRR.YLabel.String = 'log(FD/FA)';
-            h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
-            h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
-            h.lifetime_ind_popupmenu.String{1} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>D(A)</sub></html>';
-            h.lifetime_ind_popupmenu.String{2} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>A</sub></html>';
-        case 3
-            h.axes_EvsTauGG.YLabel.String = 'M_1-M_2';
-            h.axes_EvsTauGG.XLabel.String = 'FRET Efficiency';
-            h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub>) vs E</html>';
-            h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+    if isempty(BurstData)
+        BAMethod = 1;
+    else
+        BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
+    end
+    switch BAMethod
+        case {1,2,5}
+            switch UserValues.BurstBrowser.Settings.LifetimeMode
+                case 1
+                    h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>E vs &tau;<sub>D(A)</sub></html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+                case 2
+                    h.axes_EvsTauGG.YLabel.String = 'log(FD/FA)';
+                    h.axes_EvsTauRR.YLabel.String = 'log(FD/FA)';
+                    h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>D(A)</sub></html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>A</sub></html>';
+                case 3
+                    h.axes_EvsTauGG.YLabel.String = 'M_1-M_2';
+                    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauGG.XLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub>) vs E</html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+            end
+        case {3,4}
+            switch UserValues.BurstBrowser.Settings.LifetimeMode
+                case 1
+                    h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+                    h.axes_E_BtoGRvsTauBB.YLabel.String = 'FRET Efficiency B->G+R';
+                    h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.axes_E_BtoGRvsTauBB.XLabel.String = '\tau_{BB} [ns]';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>E vs &tau;<sub>D(A)</sub></html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+                    h.lifetime_ind_popupmenu.String{3} = '<html>E<sub>B->G+R</sub> vs &tau;<sub>BB</sub></html>';
+                case 2
+                    h.axes_EvsTauGG.YLabel.String = 'log(FGG/FGR)';
+                    h.axes_EvsTauRR.YLabel.String = 'log(FGG/FGR)';
+                    h.axes_E_BtoGRvsTauBB.YLabel.String = 'log(FBBG/(FBG+FBR))';
+                    h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.axes_E_BtoGRvsTauBB.XLabel.String = '\tau_{BB} [ns]';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>D(A)</sub></html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>log(F<sub>D</sub>/F<sub>A</sub>) vs &tau;<sub>A</sub></html>';
+                    h.lifetime_ind_popupmenu.String{3} = '<html>log(F<sub>BB</sub>/(F<sub>BG</sub>+F<sub>BR</sub>))  vs &tau;<sub>BB</sub></html>';
+                case 3
+                    h.axes_EvsTauGG.YLabel.String = 'M_1-M_2';
+                    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+                    h.axes_E_BtoGRvsTauBB.YLabel.String = 'M_1-M_2 B->G+R';
+                    h.axes_EvsTauGG.XLabel.String = 'FRET Efficiency';
+                    h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
+                    h.axes_E_BtoGRvsTauBB.XLabel.String = 'FRET Efficiency B->G+R';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub> vs E</html>';
+                    h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
+                    h.lifetime_ind_popupmenu.String{3} = '<html>M<sub>1</sub>-M<sub>2</sub>(B->G+R) vs E<sub>B->G+R</sub></html>';
+            end
     end
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
