@@ -133,14 +133,6 @@ switch type
                 end
             end
         end 
-        %%% plot
-        %plot_BVA(E,sSelected,BinCenters,sPerBin)
-        if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
-            E1 = 1/(1+(R_states(1,1)/R0)^6);
-            E2 = 1./(1+(R_states(1,2)/R0)^6);
-            hold on
-            BVA_dynamic_FRET(E1,E2,n);
-        end
     case 'Lifetime' % Do both E-tau and phasor
         if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 3
             do_phasor = true;
