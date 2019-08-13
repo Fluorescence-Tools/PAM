@@ -3242,8 +3242,8 @@ else
                 if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
                     param_names = [param_names repmat({'k23','k31','k32'},size(param_names,1),1)];
                     param_names(cell2mat(cellfun(@(x) strcmp(x,'F1'),param_names,'UniformOutput',false))) = deal({'k12'});
-                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F2'),param_names,'UniformOutput',false))) = deal({'k13'});
-                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F3'),param_names,'UniformOutput',false))) = deal({'k21'});
+                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F2'),param_names,'UniformOutput',false))) = deal({'k21'});
+                    param_names(cell2mat(cellfun(@(x) strcmp(x,'F3'),param_names,'UniformOutput',false))) = deal({'k31'});
                 end
                 names = param_names(1,PDAMeta.Global); 
                 if UserValues.PDA.HalfGlobal
@@ -3337,7 +3337,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         names{end+1} = 'sigma at fraction  of R';
     end
     if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
-        names{end+1} = 'k23'; names{end+1} = 'k31'; names{end+1} = 'k32';
+        names{end+1} = 'k32'; names{end+1} = 'k13'; names{end+1} = 'k23';
     end
     filenames = [];
     ConfInt_Jac = cell(sum(PDAMeta.Active),1);
