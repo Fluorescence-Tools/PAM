@@ -2904,10 +2904,10 @@ if ~do_global
                         data = cellfun(@str2double,data);
                         nsamples = data(1); spacing = data(2);
                         if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
-                            proposal = ci'/100;
+                            proposal = ci'/10;
                         else
                             % estimate proposal based on fit values
-                            proposal = fitpar(~fixed)*0.001;
+                            proposal = fitpar(~fixed)*0.01;
                         end
                         
                         % get parameter names in correct order 
