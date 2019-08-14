@@ -2904,10 +2904,10 @@ if ~do_global
                         data = cellfun(@str2double,data);
                         nsamples = data(1); spacing = data(2);
                         if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
-                            proposal = ci'/10;
+                            proposal = ci'/100;
                         else
                             % estimate proposal based on fit values
-                            proposal = fitpar(~fixed)*0.01;
+                            proposal = fitpar(~fixed)*0.001;
                         end
                         
                         % get parameter names in correct order 
@@ -3230,15 +3230,16 @@ else
                     disp('Jacobian estimate of errors is not available for three-state kinetic analysis. Please use the MCMC method instead.');
                     return;
                 end
-                % provide a proposal for MCMC sampling, set to 1% of the
+                % provide a proposal for MCMC sampling, set to .1% of the
                 % fitparameter value
-                ci = fitpar/100;
+                proposal = fitpar/100; ci = proposal;
             else
                 % for static or two state systems, we can estimate the
                 % error from the jacobain
                 [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
                 ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
                 ci = (ci(:,2)-ci(:,1))/2; ci = ci';
+                proposal = ci/100;
             end
             if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
                 %%% switch fit function back
@@ -3273,13 +3274,14 @@ else
                     names = [names param_names(i, ~PDAMeta.Fixed(i,:)& ~PDAMeta.Global)];
                 end               
                 % use MCMC sampling to get errorbar estimates
-                proposal = ci/10; 
+
                 %%% Sample
                 %%% query sampling parameters
                 data = inputdlg({'Number of samples:','Spacing for statistical independence:'},'Specify MCMC sampling parameters',1,{'1000','10'});
                 data = cellfun(@str2double,data);
                 nsamples = data(1); spacing = data(2);
-                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names,[],1);
+                fixed = fitpar == 0;
+                [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',fixed,~fixed,names,[],1);
                 v = numel(PDAMeta.hProx{1})-numel(fitpar); % number of degrees of freedom = number of E bins - number of fit parameters
                 perc = tinv(1-alpha/2,v);
                 ci_mc = perc*std(samples(1:spacing:end,:),[],1); m_mc = mean(samples(1:spacing:end,:),1);
@@ -3411,6 +3413,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         assignin('base','ConfInt_MCMC',ConfInt_MCMC);
         tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names(1:lim),'VariableNames',filenames);
         assignin('base','tab_mcmc',tab_mcmc);
+        assignin('base','samples_mcmc',samples); % the mcmc samples
     end
 end
     
