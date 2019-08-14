@@ -2903,11 +2903,11 @@ if ~do_global
                         data = inputdlg({'Number of samples:','Spacing for statistical independence:'},'Specify MCMC sampling parameters',1,{'1000','10'});
                         data = cellfun(@str2double,data);
                         nsamples = data(1); spacing = data(2);
-                        if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
+                        if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library') && ~(h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2)
                             proposal = ci'/10;
                         else
                             % estimate proposal based on fit values
-                            proposal = fitpar(~fixed)*0.01;
+                            proposal = fitpar(~fixed)*0.001;
                         end
                         
                         % get parameter names in correct order 
@@ -3090,7 +3090,7 @@ else
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
-                    PDAMonteCarloFit_Global(fitpar);
+                    PDAMonteCarloFit_Global(fitpar,h);
                 case {'Histogram Library','MLE'}
                     PDAHistogramFit_Global(fitpar,h);
             end
@@ -3239,7 +3239,7 @@ else
                 [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
                 ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
                 ci = (ci(:,2)-ci(:,1))/2; ci = ci';
-                proposal = ci/100;
+                proposal = ci/10;
             end
             if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
                 %%% switch fit function back
@@ -4726,9 +4726,9 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
         case 2 %%% Assume gaussian error on data, normal chi2
             loglikelihood = (-1/2)*sum(w_res.^2); %%% loglikelihood is the negative of chi2 divided by two
         case 1 %%% Assume poissonian error on data, MLE poissonian
-            %%% compute loglikelihood without normalization to P(x|x)
-            log_term = PDAMeta.hProx{i}.*log(hFit);log_term(isnan(log_term)) = 0;
-            loglikelihood = sum(log_term-hFit);
+            %%% compute loglikelihood without normalization to P(x|x)            
+            log_term = PDAMeta.hProx{i}.*log(hFit');log_term(isnan(log_term)) = 0;
+            loglikelihood = sum(log_term-hFit');
     end
     chi2 = loglikelihood;
 end
@@ -4771,7 +4771,7 @@ end
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     if UserValues.PDA.HalfGlobal
-        if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==j)
+        if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==i)
             % if arriving at the next block, replace sample-based global values and delete from fitpar
             P(PDAMeta.SampleGlobal)=fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal));
             fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal))=[];
