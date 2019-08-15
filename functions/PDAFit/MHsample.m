@@ -115,14 +115,14 @@ while count < (nsamples) && (Stop == 0)
             samples(count,:) = param;
             prob(count) = Posterior_new;
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,100) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         else %%% value not accepted based on posterior, keep old value
             samples(count,:) = samples(count-1,:);
             prob(count) = prob(count-1);
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,1) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         end
@@ -130,7 +130,7 @@ while count < (nsamples) && (Stop == 0)
         samples(count,:) = samples(count-1,:);
         prob(count) = prob(count-1);
         acceptance = acc/count;
-        if (Display ~= 0) && (mod(count,1) == 0)
+        if (Display ~= 0) && (mod(count,plot_interval) == 0)
             UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
         end
     end
