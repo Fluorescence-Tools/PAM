@@ -2744,11 +2744,11 @@ else %%% check if fix sigma at fraction of R option is enable
         end
     end
     %%% check if three-state model is used
-    if h.SettingsTab.DynamicModel.Value
-        if sum(PDAMeta.Active) > 1 %%% more than one file active
-            do_global = true;
-        end
-    end
+    %if h.SettingsTab.DynamicModel.Value
+    %    if sum(PDAMeta.Active) > 1 %%% more than one file active
+    %        do_global = true;
+    %    end
+    %end
 end
 PDAMeta.FittingGlobal = do_global;
 % if do_global
