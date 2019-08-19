@@ -241,6 +241,13 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
             legend('Experimental Data','Simulation','Location','northeast');
         end
+        %plot_BVA(E,sSelected,BinCenters,sPerBin)
+        if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
+            E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
+            E2 = 1./(1+(R_states(1,2)/BurstData{file}.Corrections.FoersterRadius)^6);
+            hold on
+            BVA_dynamic_FRET(E1,E2,n);
+        end
     case 2
         %%% Prepares a plot of FRET efficiency vs. donor fluorescence lifetime,
         %%% including bin-wise averaging with respect to the FRET efficiency.

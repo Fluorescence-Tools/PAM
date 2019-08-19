@@ -605,7 +605,7 @@ if isempty(h.GlobalPDAFit)
     
     h.Export_BB = uimenu(...
         'Parent',h.FitTab_Menu,...
-        'Label','Copy Results to Burst Browser',...
+        'Label','Copy Results to BurstBrowser',...
         'Callback',{@PDAFitMenuCallback,2});
 
     %% Parameters tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6172,11 +6172,13 @@ switch mode
         PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:}));
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
-        UserValues.BurstBrowser.Settings.KineticRates_table3 = cell2mat(h.KineticRates_table.Data(:,1:2:end));
+        if h.SettingsTab.DynamicModel.Value == 1 & (h.SettingsTab.DynamicSystem.Value > 1) % three-state system
+            UserValues.BurstBrowser.Settings.KineticRates_table3 = h.KineticRates_table.Data(:,1:3:end);
+        end
         active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
         params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
         if isempty(findobj('Tag','BurstBrowser'))
-            msgbox('Burst Browser is not open.', 'Error','error');
+            msgbox('BurstBrowser is not open.', 'Error','error');
             return
         end
         hb = guidata(findobj('Tag','BurstBrowser'));
@@ -6211,7 +6213,7 @@ switch mode
                         UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
                         hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
                         hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
-                        hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:2:end);
+                        hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:3:end);
                         hb.Rstate1_edit.String = num2str(params(i,2));
                         hb.Rsigma1_edit.String = num2str(params(i,3));
                         hb.Rstate2_edit.String = num2str(params(i,5));
