@@ -199,7 +199,7 @@ if obj == h.LifetimeMode_Menu
                     h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
                     h.axes_EvsTauGG.XLabel.String = 'FRET Efficiency';
                     h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
-                    h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub>) vs E</html>';
+                    h.lifetime_ind_popupmenu.String{1} = '<html>M<sub>1</sub>-M<sub>2</sub> vs E</html>';
                     h.lifetime_ind_popupmenu.String{2} = '<html>E vs &tau;<sub>A</sub></html>';
             end
         case {3,4}
