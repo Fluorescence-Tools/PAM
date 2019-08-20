@@ -6211,8 +6211,8 @@ switch mode
                         UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
-                        hb.KineticRates_table2.Data(1,2) = num2cell(params(i,1));
-                        hb.KineticRates_table2.Data(2,1) = num2cell(params(i,4));
+                        hb.KineticRates_table2.Data(2,1) = num2cell(params(i,1));
+                        hb.KineticRates_table2.Data(1,2) = num2cell(params(i,4));
                         hb.KineticRates_table3.Data = h.KineticRates_table.Data(:,1:3:end);
                         hb.Rstate1_edit.String = num2str(params(i,2));
                         hb.Rsigma1_edit.String = num2str(params(i,3));
