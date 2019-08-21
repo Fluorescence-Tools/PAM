@@ -5018,9 +5018,9 @@ else
     fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
     %%% write to text file
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
-    fprintf(fID,[repmat('%s\t',1,17),'%s\n'],fitResult{1,:});
+    fprintf(fID,[repmat('%s\t',1,size(fitResult,2)-1),'%s\n'],fitResult{1,:});
     for i = 2:size(fitResult,1)
-        fprintf(fID,['%s' repmat('\t%.3f',1,17) '\n\n'],fitResult{i,:});
+        fprintf(fID,['%s' repmat('\t%.3f',1,size(fitResult,2)-1) '\n\n'],fitResult{i,:});
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
