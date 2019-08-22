@@ -596,7 +596,6 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.HexPlot.E_BtoGRvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1.1],'res',nbinsX);
     end
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
-    try h.axes_EvsTauGG.XLim=[0,maxX]; end
     if ~isempty(YLim)
         ylim(h.axes_E_BtoGRvsTauBB,YLim);
     else
