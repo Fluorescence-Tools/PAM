@@ -6173,7 +6173,10 @@ switch mode
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
         if h.SettingsTab.DynamicModel.Value == 1 & (h.SettingsTab.DynamicSystem.Value > 1) % three-state system
-            UserValues.BurstBrowser.Settings.KineticRates_table3 = h.KineticRates_table.Data(:,1:3:end);
+%             UserValues.BurstBrowser.Settings.KineticRates_table3 = h.KineticRates_table.Data(:,1:3:end);
+            UserValues.BurstBrowser.Settings.KineticRates_table3(2:3,1) = h.KineticRates_table.Data(1,1:3:4);
+            UserValues.BurstBrowser.Settings.KineticRates_table3(1:2:3,2) = h.KineticRates_table.Data(1,7:3:10);
+            UserValues.BurstBrowser.Settings.KineticRates_table3(1:2,3) = h.KineticRates_table.Data(1,13:3:16);
         end
         active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
         params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
