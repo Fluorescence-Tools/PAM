@@ -2298,13 +2298,13 @@ if isempty(hfig)
         'FontSize',12,...
         'Enable','on');
     
-data = cell(size(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2));
-for i = 1:size(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2,2)
+data = cell(2,2);
+for i = 1:2
     data(:,i) = num2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2(:,i));
 end
-data2 = cell(size(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3));
-for i = 1:size(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3,2)
-    data2(:,i) = num2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3(:,i));
+data2 = cell(3,3);
+for i = 1:3
+    data2(:,i) = num2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3(1:3,i));
 end
     columnwidth={50};
     h.KineticRates_table2 = uitable(...
