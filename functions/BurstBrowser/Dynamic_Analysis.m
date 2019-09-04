@@ -6,7 +6,7 @@ global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
-Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData{file})
     Load_Photons();
@@ -28,7 +28,7 @@ switch BurstData{file}.BAMethod
         end
 end
 photons = BurstTCSPCData{file};
-Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating...');
 switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
     case 1 % BVA
         % Remove ALEX photons &  calculate STD per Burst
@@ -150,7 +150,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         % Plots
-        hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
+        hfig = figure('color',[1 1 1]);a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
         hold on;
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
@@ -190,37 +190,38 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
         patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+        
+        % Plot STD per Bin
+        sPerBin(sPerBin == 0) = NaN;
+        plot(BinCenters,sPerBin,'-d','MarkerSize',10,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            
+        % plot of expected STD
+        plot(X_expectedSD,sigm,'k','LineWidth',2);
+        
         if sampling ~=0
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
             % confint2 = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
             p2 = area(BinCenters,confint);
-            p2.FaceColor = [0.5 0.5 0.5];
-            p2.FaceAlpha = 0.5;
+            p2.FaceColor = [0.25 0.25 0.25];
+            p2.FaceAlpha = 0.25;
             p2.LineStyle = 'none';
         end
-        
-        % plot of expected STD
-        plot(X_expectedSD,sigm,'k','LineWidth',1);
-        
-        % Plot STD per Bin
-        sPerBin(sPerBin == 0) = NaN;
-        plot(BinCenters,sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-        
+       
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
-                    legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','CI','Location','northeast')
                 else
-                    legend('Burst SD','Expected SD','Binned SD','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','Location','northeast')
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
-                    legend('Conf. Interval','Expected SD','Binned SD','Location','northeast')
+                    legend('Binned SD','Expected SD','CI','Location','northeast')
                 else
-                    legend('Expected SD','Binned SD','Location','northeast')
+                    legend('Binned SD','Expected SD','Location','northeast')
                 end
                 BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
         end
