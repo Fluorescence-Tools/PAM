@@ -3767,9 +3767,15 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
 end
 usedBins = sum(PDAMeta.hProx{i} ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
-    chi2 = sum((w_res.^2))/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
+    chi2 = sum((w_res.^2));
+    if ~PDAMeta.FittingGlobal % return reduced chi2
+        chi2 = chi2/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
+    end
 else
-    chi2 = sum(((w_res(2:end-1)).^2))/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
+    chi2 = sum(((w_res(2:end-1)).^2));
+    if ~PDAMeta.FittingGlobal % return reduced chi2
+        chi2 = chi2/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
+    end
     w_res(1) = 0;
     w_res(end) = 0;
 end
@@ -3813,7 +3819,7 @@ end
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % model for normal histogram library fitting (global)
-function [mean_chi2] = PDAHistogramFit_Global(fitpar,h)
+function [global_chi2] = PDAHistogramFit_Global(fitpar,h)
 %fitpar is (in this order) the global, halfglobal, nonglobal parameters
 global PDAMeta PDAData UserValues
 
@@ -3826,9 +3832,9 @@ end
 if ~PDAMeta.FitInProgress
     if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
         % chi2 must be an array!
-        mean_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
+        global_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
     else
-        mean_chi2 = 0;
+        global_chi2 = 0;
     end
     return;
 end
@@ -3849,8 +3855,8 @@ if UserValues.PDA.HalfGlobal
     fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
 end
 
+Active = find(PDAMeta.Active)';
 for j=1:sum(PDAMeta.Active)
-    Active = find(PDAMeta.Active)';
     i = Active(j);
     PDAMeta.file = i;
     if UserValues.PDA.HalfGlobal
@@ -3868,18 +3874,31 @@ for j=1:sum(PDAMeta.Active)
     %%% Calculates function for current file
     PDAHistogramFit_Single(P,h);   
 end
-mean_chi2 = mean(PDAMeta.chi2);
-%Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-%Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+global_chi2 = sum(PDAMeta.chi2);
+% normalize to return reduced chi2
+% number of non-zero bins
+usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
+% number of free fit parameters (degrees of freedom)
+% DOF = non-fixed - global*(number_of_datasets-1)
+f = PDAMeta.Fixed(Active,:); g = PDAMeta.Global;
+DOF = sum(f(:) == 0) - sum(g)*(numel(Active)-1);
+if UserValues.PDA.HalfGlobal
+    % half-global parameters account for 
+    % (number_of_datasets/block_size)*(block_size-1)
+    % lost degrees of freedom
+    DOF = DOF - (numel(Active)./PDAMeta.BlockSize)*(PDAMeta.BlockSize-1);
+end
+global_chi2 = global_chi2./(usedBins-DOF-1);
+
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
 if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
-    mean_chi2 = [];
+    global_chi2 = [];
     for i = Active
-        mean_chi2 = [mean_chi2, PDAMeta.w_res{i}];
+        global_chi2 = [global_chi2, PDAMeta.w_res{i}];
     end 
     %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
-    mean_chi2 = sum(PDAMeta.chi2);
+    global_chi2 = sum(PDAMeta.chi2);
 end
 
 if h.SettingsTab.LiveUpdate.Value
