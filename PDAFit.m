@@ -1492,7 +1492,7 @@ switch mode
         PDAMeta.Chi2_All = text('Parent',h.AllTab.Main_Axes,...
             'Units','normalized',...
             'Position',[0.77,0.95],...
-            'String',['avg. \chi^2_{red.} = ' sprintf('%1.2f',randn(1))],...
+            'String',['global \chi^2_{red.} = ' sprintf('%1.2f',randn(1))],...
             'FontWeight','bold',...
             'FontSize',18,...
             'FontSmoothing','on',...
@@ -1952,9 +1952,15 @@ switch mode
                 set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
             end
             
-            set(PDAMeta.Chi2_All,...
-                'Visible','on',...
-                'String', ['\chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+            if ~PDAMeta.FittingGlobal
+                set(PDAMeta.Chi2_All,...
+                    'Visible','on',...
+                    'String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+            else
+                set(PDAMeta.Chi2_All,...
+                    'Visible','on',...
+                    'String', ['global \chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.global_chi2)]);
+            end
             GaussSum = sum(vertcat(Gauss{:}),1);
             minGaussSum = min([minGaussSum, min(GaussSum)]);
             maxGaussSum = max([maxGaussSum, max(GaussSum)]);
@@ -2960,7 +2966,7 @@ if ~do_global
         end
         
         % display final mean chi^2
-        set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+        set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.global_chi2)]);
         
         if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
             % [k12,k13,k21,k23,k31,k32]
@@ -3132,7 +3138,7 @@ else
             %Calculate chi^2
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case 'Histogram Library'
-                    %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
+                    PDAHistogramFit_Global(fitpar,h);
                 case 'MLE'
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMeta.FitInProgress = 1;
@@ -3783,6 +3789,12 @@ end
 PDAMeta.w_res{i} = w_res;
 PDAMeta.hFit{i} = hFit;
 PDAMeta.chi2(i) = chi2;
+% this red. chi2 is for the single dataset,
+% correct when global fitting
+if PDAMeta.FittingGlobal % store reduced chi2
+    PDAMeta.chi2(i) = PDAMeta.chi2(i)/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
+end
+
 comp = PDAMeta.Comp{i};
 if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
     % for three-state model, some rates may be fixed to zero,
@@ -3836,6 +3848,7 @@ if ~PDAMeta.FitInProgress
     else
         global_chi2 = 0;
     end
+    PDAMeta.global_chi2 = 0;
     return;
 end
 
@@ -3856,6 +3869,7 @@ if UserValues.PDA.HalfGlobal
 end
 
 Active = find(PDAMeta.Active)';
+chi2 = zeros(sum(PDAMeta.Active),1);
 for j=1:sum(PDAMeta.Active)
     i = Active(j);
     PDAMeta.file = i;
@@ -3872,25 +3886,32 @@ for j=1:sum(PDAMeta.Active)
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    PDAHistogramFit_Single(P,h);   
+    chi2(j) = PDAHistogramFit_Single(P,h);   
 end
-global_chi2 = sum(PDAMeta.chi2);
+global_chi2 = sum(chi2);
 % normalize to return reduced chi2
 % number of non-zero bins
 usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
 % number of free fit parameters (degrees of freedom)
-% DOF = non-fixed - global*(number_of_datasets-1)
+% DOF = non-fixed
 f = PDAMeta.Fixed(Active,:); g = PDAMeta.Global;
-DOF = sum(f(:) == 0) - sum(g)*(numel(Active)-1);
-if UserValues.PDA.HalfGlobal
+DOF = sum(f(:) == 0); 
+if ~UserValues.PDA.HalfGlobal
+    % DOF = non_fixed - global*(number_of_datasets-1);
+    DOF = DOF - sum(g)*(numel(Active)-1);
+else
+    % separate global and half-global parameters
+    g = g & ~PDAMeta.SampleGlobal;
+    DOF = DOF - sum(g)*(numel(Active)-1);
     % half-global parameters account for 
     % (number_of_datasets/block_size)*(block_size-1)
     % lost degrees of freedom
-    DOF = DOF - (numel(Active)./PDAMeta.BlockSize)*(PDAMeta.BlockSize-1);
+    DOF = DOF - sum(PDAMeta.SampleGlobal & ~sum(f,1)).*(numel(Active)./PDAMeta.BlockSize)*(PDAMeta.BlockSize-1);
 end
 global_chi2 = global_chi2./(usedBins-DOF-1);
+PDAMeta.global_chi2 = global_chi2;
 
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
 if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
     global_chi2 = [];
     for i = Active
@@ -4448,7 +4469,7 @@ else
 end
 
 % model for MLE fitting (global)
-function [mean_logL] = PDAMLEFit_Global(fitpar,h)
+function [sum_logL] = PDAMLEFit_Global(fitpar,h)
 global PDAMeta
 
 %%% iterate the counter
@@ -4458,7 +4479,7 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    mean_logL = 0;
+    sum_logL = 0;
     return;
 end
 
@@ -4483,20 +4504,21 @@ for i=find(PDAMeta.Active)'
     %%% calculate individual likelihoods
     PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P,h);   
 end
-mean_logL = mean(PDAMeta.chi2);
+sum_logL = sum(PDAMeta.chi2);
+PDAMeta.global_chi2 = sum_logL;
 
 %%% if second iteration or more, update Progress Bar
 if isfield(PDAMeta,'Last_logL')
-    progress = exp(mean_logL-PDAMeta.Last_logL);
+    progress = exp(sum_logL-PDAMeta.Last_logL);
     if progress > 1
         progress = 0.99;
     end
     Progress(progress, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
     Progress(progress, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 end
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. logL = ' sprintf('%1.2f',mean_logL)]);
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['sum logL = ' sprintf('%1.2f',sum_logL)]);
 %%% store logL in PDAMeta
-PDAMeta.Last_logL = mean_logL;
+PDAMeta.Last_logL = sum_logL;
 
 % Model for Monte Carlo based fitting (not global) 
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
@@ -4805,6 +4827,8 @@ for i=find(PDAMeta.Active)'
     [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P,h);
 end
 mean_chi2 = mean(PDAMeta.chi2);
+PDAMeta.global_chi2 = mean_chi2;
+
 Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
 Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
