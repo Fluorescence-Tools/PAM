@@ -40,6 +40,7 @@ s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
+warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
 %%% Loads user profile
 Profiles=LSUserValues(0);
 for i = 1:numel(Profiles)
@@ -8293,6 +8294,8 @@ BAMethod = BurstData.BAMethod;
 BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
+% Initialize variables as dummies
+Macrotime = cell(0); Channel = cell(0);
 load(fullfile(Path,[File '.bps']),'-mat');
 %Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
 %Channel = cellfun(@double,Channel,'UniformOutput',false);
