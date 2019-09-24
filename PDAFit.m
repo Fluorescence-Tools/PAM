@@ -4720,10 +4720,16 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
 end
 usedBins = sum(H_meas ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
-    chi2 = sum((w_res.^2))/(usedBins-numel(fitpar)-1);
+    chi2 = sum((w_res.^2));
+    if ~PDAMeta.FittingGlobal % return reduced chi2
+        chi2 = chi2/(usedBins-numel(fitpar)-1);
+    end
 else
     % disregard outer bins
-    chi2 = sum((w_res(2:end-1).^2))/(usedBins-numel(fitpar)-3);
+    chi2 = sum((w_res(2:end-1).^2));
+    if ~PDAMeta.FittingGlobal % return reduced chi2
+        chi2 = chi2/(usedBins-numel(fitpar)-3);
+    end
     w_res(1) = 0;
     w_res(end) = 0;
 end
@@ -4739,6 +4745,11 @@ end
 PDAMeta.w_res{file} = w_res';
 PDAMeta.hFit{file} = hFit';
 PDAMeta.chi2(file) = chi2;
+% this red. chi2 is for the single dataset,
+% correct when global fitting
+if PDAMeta.FittingGlobal % store reduced chi2
+    PDAMeta.chi2(file) = PDAMeta.chi2(file)/(usedBins-numel(fitpar)-1);
+end
 for c = PDAMeta.Comp{file}
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
 end
@@ -4778,7 +4789,7 @@ end
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % Model for Monte Carle based fitting (global) 
-function [mean_chi2] = PDAMonteCarloFit_Global(fitpar,h)
+function [global_chi2] = PDAMonteCarloFit_Global(fitpar,h)
 global PDAMeta UserValues
 % h = guidata(findobj('Tag','GlobalPDAFit'));
 
@@ -4789,7 +4800,7 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    mean_chi2 = 0;
+    global_chi2 = 0;
     return;
 end
 
@@ -4808,7 +4819,7 @@ if UserValues.PDA.HalfGlobal
     % extract out half-global parameters (stored at the end)
     fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
 end
-
+chi2 = [];
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     if UserValues.PDA.HalfGlobal
@@ -4824,14 +4835,35 @@ for i=find(PDAMeta.Active)'
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P,h);
+    chi2(end+1) = PDAMonteCarloFit_Single(P,h);
 end
-mean_chi2 = mean(PDAMeta.chi2);
-PDAMeta.global_chi2 = mean_chi2;
+global_chi2 = sum(chi2);
 
-Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+% normalize to return reduced chi2
+% number of non-zero bins
+usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
+% number of free fit parameters (degrees of freedom)
+% DOF = non-fixed
+f = PDAMeta.Fixed(Active,:); g = PDAMeta.Global;
+DOF = sum(f(:) == 0); 
+if ~UserValues.PDA.HalfGlobal
+    % DOF = non_fixed - global*(number_of_datasets-1);
+    DOF = DOF - sum(g)*(numel(Active)-1);
+else
+    % separate global and half-global parameters
+    g = g & ~PDAMeta.SampleGlobal;
+    DOF = DOF - sum(g)*(numel(Active)-1);
+    % half-global parameters account for 
+    % (number_of_datasets/block_size)*(block_size-1)
+    % lost degrees of freedom
+    DOF = DOF - sum(PDAMeta.SampleGlobal & ~sum(f,1)).*(numel(Active)./PDAMeta.BlockSize)*(PDAMeta.BlockSize-1);
+end
+global_chi2 = global_chi2./(usedBins-DOF-1);
+PDAMeta.global_chi2 = global_chi2;
+
+Progress(1/global_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(1/global_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
 if h.SettingsTab.LiveUpdate.Value
     for i = find(PDAMeta.Active)'
         PDAMeta.file = i;
