@@ -595,7 +595,7 @@ Plot_Particle([],[],0:2,h)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Plot_Particle(~,~,mode,h)
 
-if ~exist('h','var')
+if ~exist('h','var') || ~isstruct(h)
     h = guidata(findobj('Tag','Particle'));
 end
 global ParticleData

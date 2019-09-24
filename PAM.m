@@ -40,6 +40,7 @@ s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
+warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
 %%% Loads user profile
 Profiles=LSUserValues(0);
 for i = 1:numel(Profiles)
@@ -3737,6 +3738,7 @@ if obj == h.MT.Use_Image
     h.Image.Axes.DataAspectRatio = [1,1,1];
     h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
     h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    resetplotview(h.Image.Axes,'SaveCurrentView');
     Update_Display([],[],3);
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
@@ -6971,8 +6973,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     Det=UserValues.Detector.Det(h.MI.Phasor_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI.Phasor_Det.Value);
     %%% Selects filename to save
-    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',UserValues.File.PhasorPath);
-    
+    [~,fn,~] = fileparts(FileInfo.FileName{1});
+    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',[FileInfo.Path filesep fn '.phr']);
+    % Update PhasorPath
+    UserValues.File.PhasorPath = PathName; 
     if ~all(FileName==0)
         Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
         
@@ -8333,6 +8337,8 @@ BAMethod = BurstData.BAMethod;
 BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
+% Initialize variables as dummies
+Macrotime = cell(0); Channel = cell(0);
 load(fullfile(Path,[File '.bps']),'-mat');
 %Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
 %Channel = cellfun(@double,Channel,'UniformOutput',false);
