@@ -3869,7 +3869,7 @@ if UserValues.PDA.HalfGlobal
 end
 
 Active = find(PDAMeta.Active)';
-chi2 = zeros(sum(PDAMeta.Active),1);
+chi2 = cell(1,sum(PDAMeta.Active));
 for j=1:sum(PDAMeta.Active)
     i = Active(j);
     PDAMeta.file = i;
@@ -3886,9 +3886,14 @@ for j=1:sum(PDAMeta.Active)
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    chi2(j) = PDAHistogramFit_Single(P,h);   
+    chi2{j} = PDAHistogramFit_Single(P,h);   
 end
-global_chi2 = sum(chi2);
+chi2 = horzcat(chi2{:});
+if PDAMeta.FitInProgress == 2 % chi2 is actually array of w_res
+    global_chi2 = sum(chi2.^2);
+else
+    global_chi2 = sum(chi2);
+end
 % normalize to return reduced chi2
 % number of non-zero bins
 usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
