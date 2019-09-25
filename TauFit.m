@@ -6189,10 +6189,12 @@ switch obj
                 MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
 
             else % two different channels selected
-                % check if anisotropy model is selected 
-                if isempty(strfind(TauFitData.FitType,'Anisotropy'))
-                    disp('Select an anisotropy model.');
-                    return;
+                if obj == h.Menu.Export_MIPattern_Fit
+                    % check if anisotropy model is selected 
+                    if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                        disp('Select an anisotropy model.');
+                        return;
+                    end
                 end
                 % two PIE channels selected
                 PIEchannel1 = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};

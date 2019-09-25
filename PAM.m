@@ -11613,10 +11613,9 @@ if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
         disp('No file loaded.');
         return;
-    end
-    
+    end    
     [~,FileName,~] = fileparts(FileInfo.FileName{1});
-    FilePath = [FileInfo.Path filesep FileName '.txt'];
+    FilePath = [FileInfo.Path filesep FileName '.txt'];    
     %%% open file
     [fid,err] = fopen(FilePath,'w');
     if fid == -1
