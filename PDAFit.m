@@ -4824,7 +4824,7 @@ if UserValues.PDA.HalfGlobal
     % extract out half-global parameters (stored at the end)
     fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
 end
-chi2 = [];
+chi2 = {};
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     if UserValues.PDA.HalfGlobal
@@ -4840,10 +4840,16 @@ for i=find(PDAMeta.Active)'
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    chi2(end+1) = PDAMonteCarloFit_Single(P,h);
+    chi2{end+1} = PDAMonteCarloFit_Single(P,h);
 end
-global_chi2 = sum(chi2);
+chi2 = vertcat(chi2{:});
+if PDAMeta.FitInProgress == 2 % chi2 is actually array of w_res
+    global_chi2 = sum(chi2.^2);
+else
+    global_chi2 = sum(chi2);
+end
 
+Active = find(PDAMeta.Active);
 % normalize to return reduced chi2
 % number of non-zero bins
 usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
