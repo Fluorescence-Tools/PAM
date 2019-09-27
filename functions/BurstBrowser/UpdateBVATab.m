@@ -88,7 +88,7 @@ if isempty(obj)
         h.Rsigma2st_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma2_static);
         h.Rsigma3st_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma3_static);
         h.KineticRates_table2.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2);
-        h.KineticRates_table3.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3);
+        h.KineticRates_table3.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3(1:3,1:3));
         h.KineticRates_table3.Data(1,1) = {NaN};h.KineticRates_table2.Data(1,1) = {NaN};
         h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
         h.KineticRates_table3.Data(3,3) = {NaN};
