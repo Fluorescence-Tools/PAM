@@ -186,60 +186,120 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         % contour patches
         [H_real,x_real,y_real] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); 
         [H_sim,x_sim,y_sim] = histcounts2(E_sim,sSelected_sim,UserValues.BurstBrowser.Display.NumberOfBinsX);
-        if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
-            Progress(0.7,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
-                rate_matrix_static,R_states_static,sigmaR_states_static);
-            Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
-            [H_static,x_static,y_static] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
-            figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
-            hold on;
-            %X_expectedSD = linspace(0,1,1000);
-            xlabel('Proximity Ratio, E*'); 
-            ylabel('SD of E*, s');
-            plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
-            plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
-            plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
-            %patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
-            patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
-            %%% confidence intervals
-%             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
-%             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-%             p2 = area(BinCenters,confint);
-%             p2.FaceColor = [0.5 0.5 0.5];
-%             p2.FaceAlpha = 0.3;
-%             p2.LineStyle = 'none';
-            %%% Plot STD per Bin
-            sPerBin_static(sPerBin_static == 0) = NaN;
-            %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
-            plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            plot(BinCenters',sPerBin_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
-            %% Calculate sum squared residuals
-            w_res_dyn = (sPerBin-sPerBin_sim);
-            w_res_dyn(isnan(w_res_dyn)) = 0;
-            SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
-            w_res_stat = (sPerBin-sPerBin_static);
-            w_res_stat(isnan(w_res_stat)) = 0;
-            SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
-            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
-        else
-            figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
-            hold on;
-            %X_expectedSD = linspace(0,1,1000);
-            xlabel('Proximity Ratio, E*'); 
-            ylabel('SD of E*, s');
-            plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
-            plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
-            patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
-            plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            legend('Experimental Data','Simulation','Location','northeast');
+        %% Calculate sum squared residuals
+        w_res_dyn = (sPerBin-sPerBin_sim);
+        w_res_dyn(isnan(w_res_dyn)) = 0;
+        SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
+            case 1
+                Progress(0.7,h.Progress_Axes,h.Progress_Text,'Calculating...');
+                [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
+                    rate_matrix_static,R_states_static,sigmaR_states_static);
+                Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
+                [H_static,x_static,y_static] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
+                sPerBin_static(sPerBin_static == 0) = NaN;
+                w_res_stat = (sPerBin-sPerBin_static);
+                w_res_stat(isnan(w_res_stat)) = 0;
+                SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
+                switch UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    case 1
+                        figure('color',[1 1 1],'Position',[100 100 600 500]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                        legend('Binned experimental Data','Location','northeast');
+                        
+                        figure('color',[1 1 1],'Position',[700 100 600 500]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                        legend(SSR_dyn_legend,'Location','northeast');
+                        
+                        figure('color',[1 1 1],'Position',[1300 100 600 500]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        xlabel('Proximity Ratio, E*');
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+                        legend(SSR_stat_legend,'Location','northeast');
+                        
+                    case 0
+                        figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        %X_expectedSD = linspace(0,1,1000);
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                        plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                        plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
+                        %patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        %%% confidence intervals
+            %             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
+            %             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
+            %             p2 = area(BinCenters,confint);
+            %             p2.FaceColor = [0.5 0.5 0.5];
+            %             p2.FaceAlpha = 0.3;
+            %             p2.LineStyle = 'none';
+                        %%% Plot STD per Bin
+                        
+                        %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
+                        plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                        plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                        plot(BinCenters',sPerBin_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+                        
+                        legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
+                end
+            case 0
+                switch UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    case 1
+                        figure('color',[1 1 1],'Position',[100 100 600 500]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                        legend('Binned experimental Data','Location','northeast');
+                        
+                        figure('color',[1 1 1],'Position',[700 100 600 500]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                        legend(SSR_dyn_legend,'Location','northeast');
+                    case 0
+                        figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                        hold on;
+                        %X_expectedSD = linspace(0,1,1000);
+                        xlabel('Proximity Ratio, E*'); 
+                        ylabel('SD of E*, s');
+                        plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                        plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+                                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                        plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+                                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                        legend('Experimental Data','Simulation','Location','northeast');
+                end
         end
         %plot_BVA(E,sSelected,BinCenters,sPerBin)
         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true

@@ -207,6 +207,8 @@ else
             UserValues.BurstBrowser.Settings.BVA_ModelComparison = h.ModelComparison_checkbox.Value;
         case h.DynFRETLine_checkbox
             UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
+        case h.SeperatePlots_checkbox
+            UserValues.BurstBrowser.Settings.BVA_SeperatePlots = h.SeperatePlots_checkbox.Value;
         case h.ConsistencyMethod_Popupmenu
             UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method = h.ConsistencyMethod_Popupmenu.Value;
         case h.ConsistencyAnalysis_Button
