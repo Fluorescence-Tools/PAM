@@ -213,7 +213,7 @@ switch type
         %tauD = tauD(selected)./tauD0;
         threshold = UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
         bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
-        bin_edges = linspace(0,1,bin_number); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+        bin_edges = linspace(0,1,bin_number+1);
         [~,~,bin] = histcounts(E_cor,bin_edges);
         mean_tau = NaN(1,numel(bin_edges)-1);
         N_phot = N_phot';
