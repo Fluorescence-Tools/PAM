@@ -2966,7 +2966,7 @@ if ~do_global
         end
         
         % display final mean chi^2
-        set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.global_chi2)]);
+        set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
         
         if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
             % [k12,k13,k21,k23,k31,k32]
