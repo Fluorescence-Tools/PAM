@@ -1981,7 +1981,7 @@ switch mode
                 set(PDAMeta.Plots.Res_Single,...
                     'Visible', 'on',...
                     'YData', real(ydatares));
-                for c = PDAMeta.Comp{i}
+                for c = comp
                     if h.SettingsTab.OuterBins_Fix.Value
                         % do not display or take into account during fitting, the
                         % outer bins of the histogram.
