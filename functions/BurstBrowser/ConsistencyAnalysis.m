@@ -178,68 +178,212 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             end
         end
         %% Simulate BVA plot based on PDA model
-        Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
+        Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
         [E_sim,sSelected_sim,sPerBin_sim] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_DynamicStates,rate_matrix,R_states,sigmaR_states);
         %% Generate plots
         sPerBin(sPerBin == 0) = NaN;
         sPerBin_sim(sPerBin_sim == 0) = NaN;
+        Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
         % contour patches
         [H_real,x_real,y_real] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); 
         [H_sim,x_sim,y_sim] = histcounts2(E_sim,sSelected_sim,UserValues.BurstBrowser.Display.NumberOfBinsX);
-        if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
-            Progress(0.7,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
-                rate_matrix_static,R_states_static,sigmaR_states_static);
-            Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
-            [H_static,x_static,y_static] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
-            figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
-            hold on;
-            %X_expectedSD = linspace(0,1,1000);
-            xlabel('Proximity Ratio, E*'); 
-            ylabel('SD of E*, s');
-            plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
-            plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
-            plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
-            %patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
-            patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
-            %%% confidence intervals
-%             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
-%             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-%             p2 = area(BinCenters,confint);
-%             p2.FaceColor = [0.5 0.5 0.5];
-%             p2.FaceAlpha = 0.3;
-%             p2.LineStyle = 'none';
-            %%% Plot STD per Bin
-            sPerBin_static(sPerBin_static == 0) = NaN;
-            %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
-            plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            plot(BinCenters',sPerBin_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
-            %% Calculate sum squared residuals
-            w_res_dyn = (sPerBin-sPerBin_sim);
-            w_res_dyn(isnan(w_res_dyn)) = 0;
-            SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
-            w_res_stat = (sPerBin-sPerBin_static);
-            w_res_stat(isnan(w_res_stat)) = 0;
-            SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
-            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
-        else
-            figure('color',[1 1 1]);ax=gca;ax.FontSize=20;ax.LineWidth=2.0;ax.Color =[1 1 1];
-            hold on;
-            %X_expectedSD = linspace(0,1,1000);
-            xlabel('Proximity Ratio, E*'); 
-            ylabel('SD of E*, s');
-            plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
-            plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
-            patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
-            plot(BinCenters',sPerBin,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(BinCenters',sPerBin_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            legend('Experimental Data','Simulation','Location','northeast');
+        %% Calculate sum squared residuals (dynamic)
+        w_res_dyn = (sPerBin-sPerBin_sim);
+        w_res_dyn(isnan(w_res_dyn)) = 0;
+        SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
+            case 1 % compare dynamic and static model to experimental data
+                Progress(0.75,h.Progress_Axes,h.Progress_Text,'Calculating...');
+                [E_static,sSelected_static,sPerBin_static] = kinetic_consistency_check('BVA',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
+                    rate_matrix_static,R_states_static,sigmaR_states_static);
+                Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
+                [H_static,x_static,y_static] = histcounts2(E_static,sSelected_static,UserValues.BurstBrowser.Display.NumberOfBinsX);
+                %% Calculate sum squared residuals (static)
+                sPerBin_static(sPerBin_static == 0) = NaN;
+                w_res_stat = (sPerBin-sPerBin_static);
+                w_res_stat(isnan(w_res_stat)) = 0;
+                SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
+                if UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    legends = {'Binned Exp. Data',SSR_dyn_legend,SSR_stat_legend};
+                    for i=1:3
+                        hfig = figure('color',[1 1 1],'Position',[100+(i-1)*600 100 600 550]);
+                        ax = gca;
+                        ax.FontSize = 24;
+                        ax.LineWidth = 2.0;
+                        ax.Color = [1 1 1];
+                        ax.Box = on;
+                        ax.NextPlot = 'add';
+                        xlabel('Proximity Ratio, E*');
+                        ylabel('SD of E*, s');
+                        switch i
+                            case 1
+                                x_data = x_real;
+                                y_data = y_real;
+                                H_data = H_real;
+                                E_data = E;
+                                sSelected_data = sSelected;
+                                binned_data = sPerBin;
+                                color = UserValues.BurstBrowser.Display.ColorLine1;
+                            case 2
+                                x_data = x_sim; 
+                                y_data = y_sim;
+                                H_data = H_sim;
+                                E_data = E_sim;
+                                sSelected_data = sSelected_sim;
+                                binned_data = sPerBin_sim;
+                                color = UserValues.BurstBrowser.Display.ColorLine2;
+                            case 3
+                                x_data = x_static;
+                                y_data = y_static;
+                                H_data = H_static;
+                                E_data = E_static;
+                                sSelected_data = sSelected_static;
+                                binned_data = sPerBin_static;
+                                color = UserValues.BurstBrowser.Display.ColorLine3;
+                        end
+                        switch UserValues.BurstBrowser.Display.PlotType
+                            case 'Contour'
+                            % contourplot of per-burst STD
+                                contourf(ax,x_data(1:end-1),y_data(1:end-1),H_data', ...
+                                    'LevelList',max(H_data(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100, ...
+                                    1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
+                                axis('xy')
+                                caxis([0 max(H_data(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                            case 'Image'       
+                                Alpha = H_data./max(max(H_data)) > UserValues.BurstBrowser.Display.ImageOffset/100;
+                                imagesc(x_data(1:end-1),y_data(1:end-1),H_data','AlphaData',Alpha');
+                                axis('xy');     
+                                %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
+                                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H_data(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                            case 'Scatter'
+                                scatter(E_data,sSelected_data,'.','CData',color,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
+                            case 'Hex'
+                                hexscatter(E_data,sSelected_data,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],...
+                                    'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
+                        end
+                        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+                            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                                colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+                            else
+                                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                                    colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                                else %%% jet is a special case, use jetvar colormap
+                                    colormap(hfig,jetvar);
+                                end
+                            end
+                        else
+                            colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+                        end
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',binned_data,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',color,'LineWidth',2,'Color',color);
+                        legend(legends{i},'Location','northeast');
+                    end
+                else % plot all in one figure
+                    figure('color',[1 1 1],'Position',[100 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    %X_expectedSD = linspace(0,1,1000);
+                    xlabel('Proximity Ratio, E*'); 
+                    ylabel('SD of E*, s');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
+                    patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                    plot(BinCenters',sPerBin,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    plot(BinCenters',sPerBin_sim,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    plot(BinCenters',sPerBin_static,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+                    legend('Binned Exp. Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
+                end
+            case 0 % compare only dynamic model to experimental data
+                Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
+                if UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    legends = {'Binned Exp. Data',SSR_dyn_legend};
+                   for i=1:2
+                        hfig = figure('color',[1 1 1],'Position',[100+(i-1)*600 100 600 550]);
+                        ax = gca;
+                        ax.FontSize = 24;
+                        ax.LineWidth = 2.0;
+                        ax.Color = [1 1 1];
+                        ax.Box = on;
+                        ax.NextPlot = 'add';
+                        xlabel('Proximity Ratio, E*');
+                        ylabel('SD of E*, s');
+                        switch i
+                            case 1
+                                x_data = x_real;
+                                y_data = y_real;
+                                H_data = H_real;
+                                E_data = E;
+                                sSelected_data = sSelected;
+                                binned_data = sPerBin;
+                                color = UserValues.BurstBrowser.Display.ColorLine1;
+                            case 2
+                                x_data = x_sim; 
+                                y_data = y_sim;
+                                H_data = H_sim;
+                                E_data = E_sim;
+                                sSelected_data = sSelected_sim;
+                                binned_data = sPerBin_sim;
+                                color = UserValues.BurstBrowser.Display.ColorLine2;
+                        end
+                        switch UserValues.BurstBrowser.Display.PlotType
+                            case 'Contour'
+                            % contourplot of per-burst STD
+                                contourf(ax,x_data(1:end-1),y_data(1:end-1),H_data', ...
+                                    'LevelList',max(H_data(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100, ...
+                                    1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
+                                axis('xy')
+                                caxis([0 max(H_data(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                            case 'Image'       
+                                Alpha = H_data./max(max(H_data)) > UserValues.BurstBrowser.Display.ImageOffset/100;
+                                imagesc(x_data(1:end-1),y_data(1:end-1),H_data','AlphaData',Alpha');
+                                axis('xy');     
+                                %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
+                                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H_data(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                            case 'Scatter'
+                                scatter(E_data,sSelected_data,'.','CData',color,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
+                            case 'Hex'
+                                hexscatter(E_data,sSelected_data,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],...
+                                    'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
+                        end
+                        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+                            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                                colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+                            else
+                                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                                    colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                                else %%% jet is a special case, use jetvar colormap
+                                    colormap(hfig,jetvar);
+                                end
+                            end
+                        else
+                            colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+                        end
+                        patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                        plot(BinCenters',binned_data,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',color,'LineWidth',2,'Color',color);
+                        legend(legends{i},'Location','northeast');
+                    end
+                else % plot all in one figure
+                    figure('color',[1 1 1]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    %X_expectedSD = linspace(0,1,1000);
+                    xlabel('Proximity Ratio, E*');
+                    ylabel('SD of E*, s');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+                    plot(BinCenters',sPerBin,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    plot(BinCenters',sPerBin_sim,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    legend('Binned Exp. Data','Simulation','Location','northeast');
+                end
         end
         %plot_BVA(E,sSelected,BinCenters,sPerBin)
         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
@@ -268,66 +412,142 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         N_phot_D = N_phot_D(selected);
         %% average lifetime in FRET efficiency bins
         bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
-        bin_edges = linspace(0,1,bin_number); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+        bin_edges = linspace(0,1,bin_number+1); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
         [~,~,bin] = histcounts(E,bin_edges);
         mean_tauD = NaN(1,numel(bin_edges)-1);  
-        for i = 1:numel(bin_edges)-1
+        for i = 1:numel(bin_centers)
             %%% compute bin-wise intensity-averaged lifetime for donor
             if sum(bin == i) > min_bursts_per_bin
                 mean_tauD(i) = sum(N_phot_D(bin==i).*tauD(bin==i))./sum(N_phot_D(bin==i));
             end
         end
-        %% plot smoothed dynamic FRET line
-        [H,x,y] = histcounts2(tauD,E,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
-        H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-        figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-        ax = gca;
-        ax.FontSize=20;ax.LineWidth=1.0;ax.Color =[1 1 1];
-        ax.YLim = [-0.1 1.1];
-        xlabel('\tau_{D,A}/\tau_{D,0}');
-        ylabel('FRET Efficiency');
-        set(gca,'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
-        plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine1);
+        %% smoothed dynamic FRET line
+        [H_real,x_real,y_real] = histcounts2(tauD,E,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[-0.1,1.1]);
+        H_real = H_real./max(H_real(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
         %% Simulation for PDA comparison
         Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
         [Esim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,rate_matrix,R_states,sigmaR_states);
-        [H,x,y] = histcounts2(tauD_sim,Esim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
-        H = H./max(H(:));
-        plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine2);
-        if UserValues.BurstBrowser.Settings.BVA_ModelComparison == true
-            Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
-            [E_static,tauD_static,mean_tauD_static,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
-                rate_matrix_static,R_states_static,sigmaR_states_static);
-            Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
-            [H,x,y] = histcounts2(tauD_static,E_static,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
-            H = H./max(H(:));
-            plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine3);
-            patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
-            mean_tauD_static(mean_tauD_static == 0) = NaN;
-            %scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine3,'d','filled');
-            plot(mean_tauD,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(mean_tauD_sim,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            plot(mean_tauD_static,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
-            %% Calculate sum squared residuals
-            w_res_dyn = (mean_tauD-mean_tauD_sim);
-            w_res_dyn(isnan(w_res_dyn)) = 0;
-            SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
-            w_res_stat = (mean_tauD-mean_tauD_static);
-            w_res_stat(isnan(w_res_stat)) = 0;
-            SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
-            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
-        else
-            % plot patch to phase contour plot out
-            patch(ax,[0,1.1,1.1,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
-            %%% add static FRET line
-            plot(mean_tauD,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(mean_tauD_sim,bin_centers','-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            legend('Experimental Data','Simulation','Location','northeast');
+        [H_sim,x_sim,y_sim] = histcounts2(tauD_sim,Esim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[-0.1,1.1]);
+        H_sim = H_sim./max(H_sim(:));
+        Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
+        %% Calculate sum squared residuals (dynamic)
+        w_res_dyn = (mean_tauD-mean_tauD_sim);
+        w_res_dyn(isnan(w_res_dyn)) = 0;
+        SSR_dyn_legend = ['Dynamic SSR =' ' ' sprintf('%1.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
+            case 1
+                Progress(0.75,h.Progress_Axes,h.Progress_Text,'Calculating...');
+                [E_static,tauD_static,mean_tauD_static,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_StaticStates,...
+                    rate_matrix_static,R_states_static,sigmaR_states_static);
+                Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
+                [H_static,x_static,y_static] = histcounts2(tauD_static,E_static,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[-0.1,1.1]);
+                H_static = H_static./max(H_static(:));
+                %% Calculate sum squared residuals (static)
+                w_res_stat = (mean_tauD-mean_tauD_static);
+                w_res_stat(isnan(w_res_stat)) = 0;
+                mean_tauD_static(mean_tauD_static == 0) = NaN;
+                SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
+                if UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    figure('color',[1 1 1],'Position',[100 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    legend('Binned Exp. Data','Location','northeast');
+
+                    figure('color',[1 1 1],'Position',[700 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD_sim,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    legend(SSR_dyn_legend,'Location','northeast');
+
+                    figure('color',[1 1 1],'Position',[1300 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3)
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD_static,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+                    legend(SSR_stat_legend,'Location','northeast');
+                else
+                    figure('color',[1 1 1],'Position',[100 100 600 550]);
+                    ax = gca;
+                    ax.Color =[1 1 1];
+                    ax.YLim = [-0.1 1.1];
+                    ax.XLim = [-0.1 1.1];
+                    hold on;
+                    box on;
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    set(gca,'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    plot_ContourPatches(ax,H_static,x_static,y_static,UserValues.BurstBrowser.Display.ColorLine3);
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    plot(mean_tauD_sim,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    plot(mean_tauD_static,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+                    legend('Binned Exp. Data',SSR_dyn_legend,SSR_stat_legend,'Location','best');
+                end
+            case 0
+                if UserValues.BurstBrowser.Settings.BVA_SeperatePlots
+                    figure('color',[1 1 1],'Position',[100 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    ax.YLim = [-0.1 1.1];
+                    ax.XLim = [-0.1 1.1];
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    legend('Binned Exp. Data','Location','best');
+
+                    figure('color',[1 1 1],'Position',[700 100 600 550]);ax=gca;ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    hold on;
+                    box on;
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    plot(mean_tauD_sim,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    legend(SSR_dyn_legend,'Location','best');
+                else
+                    figure('color',[1 1 1],'Position',[100 100 600 550]);
+                    hold on;
+                    box on;
+                    ax = gca;
+                    ax.FontSize=24;ax.LineWidth=2.0;ax.Color =[1 1 1];
+                    ax.YLim = [-0.1 1.1];
+                    ax.XLim = [-0.1 1.1];
+                    xlabel('\tau_{D,A}/\tau_{D,0}'); 
+                    ylabel('FRET Efficiency');
+                    plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
+                    plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
+                    % plot patch to phase contour plot out
+                    patch(ax,[-0.1,1.1,1.1,-0.1],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
+                    %%% add static FRET line
+                    plot(mean_tauD,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                    plot(mean_tauD_sim,bin_centers','-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                        'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+                    legend('Binned Exp. Data','Dynamic Simulation','Location','best');
+                end
         end
 %         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color','k','HandleVisibility','off');
 %         plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2,'HandleVisibility','off');
@@ -392,7 +612,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
 
             xlabel('\tau_{D,A}/\tau_{D,0}');
             ylabel('var(\tau_{D,A})');
-            set(gca,'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+            set(gca,'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
         end
     case 3 
         %% Phasor
@@ -417,7 +637,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         ax = gca;
         xlabel('g');
         ylabel('s');
-        set(ax,'Color',[1,1,1],'FontSize',20,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
+        set(ax,'Color',[1,1,1],'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
         plot_ContourPatches(ax,H',y,x,UserValues.BurstBrowser.Display.ColorLine1);
         ax.XLim = xlim;
         ax.YLim = ylim;
@@ -465,11 +685,11 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             H = H./max(H(:));
             plot_ContourPatches(ax,H,x,y,UserValues.BurstBrowser.Display.ColorLine3)
             patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
-            plot(mean_g,mean_s,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+            plot(mean_g,mean_s,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            plot(mean_g_static,mean_s_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
+            plot(mean_g_static,mean_s_static,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
             %% Calculate sum squared residuals
             w_res_dyn = (mean_s-mean_s_dyn);
@@ -482,9 +702,9 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
         else
             patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
-            plot(mean_g,mean_s,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
+            plot(mean_g,mean_s,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
+            plot(mean_g_dyn,mean_s_dyn,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
             legend('Experimental Data','Simulation','Location','northeast');
         end
@@ -549,12 +769,12 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             ylim = ax.YLim;
             patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
             plot([-0.1,1.1]',[10,10]','Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2);
-            plot(bin_centers',mean_FRET_2CDE_naive,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(bin_centers',mean_FRET_2CDE_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            plot(bin_centers',mean_FRET_2CDE_static,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine3,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine3);
+            plot(bin_centers',mean_FRET_2CDE_naive,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(bin_centers',mean_FRET_2CDE_sim,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            plot(bin_centers',mean_FRET_2CDE_static,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine3);
             %% Calculate sum squared residuals
             w_res_dyn = (mean_FRET_2CDE_naive-mean_FRET_2CDE_sim);
             w_res_dyn(isnan(w_res_dyn)) = 0;
@@ -582,10 +802,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             plot_ContourPatches(ax,H',x,y,UserValues.BurstBrowser.Display.ColorLine1);
             plot_ContourPatches(ax,H_sim',x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2);
             patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
-            plot(bin_centers',mean_FRET_2CDE_naive,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine1,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            plot(bin_centers',mean_FRET_2CDE_sim,'-d','MarkerSize',7,'MarkerEdgeColor',UserValues.BurstBrowser.Display.ColorLine2,...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',1,'Color',UserValues.BurstBrowser.Display.ColorLine2);
+            plot(bin_centers',mean_FRET_2CDE_naive,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+            plot(bin_centers',mean_FRET_2CDE_sim,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
         end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');

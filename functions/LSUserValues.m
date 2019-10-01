@@ -2312,6 +2312,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.BVA_ModelComparison = S.BurstBrowser.Settings.BVA_ModelComparison;
     
+    %%% Check, if BurstBrowser.Settings.BVA_SeperatePlots subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_SeperatePlots')
+        S.BurstBrowser.Settings.BVA_SeperatePlots=0;
+        disp('UserValues.BurstBrowser.Settings.BVA_SeperatePlots was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_SeperatePlots = S.BurstBrowser.Settings.BVA_SeperatePlots;
+    
     %%% Check, if BurstBrowser.Settings.DynFRETLine_Line subfield exists
     if ~isfield(S.BurstBrowser.Settings,'DynFRETLine_Line')
         S.BurstBrowser.Settings.DynFRETLine_Line=1;

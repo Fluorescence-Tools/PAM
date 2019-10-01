@@ -150,7 +150,8 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         % Plots
-        hfig = figure('color',[1 1 1]);a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
+        hfig = figure('color',[1 1 1],'Position',[100 100 600 550]);
+        a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
         hold on;
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
@@ -166,7 +167,6 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 %%% conversion betweeen PR and E
                 PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
-
                 BinCenters = PRtoFRET(BinCenters);
                 X_expectedSD = PRtoFRET(X_expectedSD);
                 E = PRtoFRET(E);
@@ -193,7 +193,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
-        plot(BinCenters,sPerBin,'-d','MarkerSize',10,'MarkerEdgeColor','none',...
+        plot(BinCenters,sPerBin,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
             
         % plot of expected STD
