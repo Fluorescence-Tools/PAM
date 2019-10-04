@@ -243,7 +243,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                                 sSelected_data = sSelected_static;
                                 color = UserValues.BurstBrowser.Display.ColorLine3;
                         end
-                        plot_main(hfig,x_data,y_data,H_data,color)
+                        plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)
                         ax.NextPlot = 'add';
                         ax.XLabel.String = 'Proximity Ratio, E*';
                         ax.YLabel.String = 'STDEV of E*, s';
@@ -277,7 +277,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         axright = gca;
                         subplot('Position',[0.1 0.7 0.6 0.22])
                         axtop = gca;
-                        face_alpha = 0.6;
+                        face_alpha = 1;
                         plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,face_alpha,color,ffontsize)
                         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                             E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
@@ -396,7 +396,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         axright = gca;
                         subplot('Position',[0.1 0.7 0.6 0.22]);
                         axtop = gca;
-                        face_alpha = 0.6;
+                        face_alpha = 1;
                         plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,face_alpha,color,ffontsize);
                         
                         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
@@ -960,7 +960,7 @@ end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 end
 
-function plot_main(hfig,x_data,y_data,H_data,color)
+function plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)
 global UserValues
 switch UserValues.BurstBrowser.Display.PlotType
     case 'Contour'
