@@ -277,7 +277,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         axright = gca;
                         subplot('Position',[0.1 0.7 0.6 0.22])
                         axtop = gca;
-                        plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,1,color,ffontsize)
+                        face_alpha = 0.6;
+                        plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,face_alpha,color,ffontsize)
                         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                             E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
                             E2 = 1./(1+(R_states(1,2)/BurstData{file}.Corrections.FoersterRadius)^6);
@@ -395,7 +396,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         axright = gca;
                         subplot('Position',[0.1 0.7 0.6 0.22]);
                         axtop = gca;
-                        plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,1,color,ffontsize);
+                        face_alpha = 0.6;
+                        plot_marignal_1D_hist(ax,axright,axtop,E_data,sSelected_data,face_alpha,color,ffontsize);
                         
                         if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                             E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
@@ -1013,7 +1015,6 @@ axformat.YTick = axmain.YTick;
 axformat.YTickLabel = axmain.YTickLabel;
 axformat.XTick = [];
 grid(axformat,'off');
-%                         axformat.GridAlpha = 0.15;
 axformat.XLabel.String = 'counts';
 axformat.FontSize = ffontsize;
 axformat.FontName = 'Arial';
@@ -1035,7 +1036,6 @@ axformat.XTick = axmain.XTick;
 axformat.XTickLabel = axmain.XTickLabel;
 axformat.YTick = [];
 grid(axformat,'off');
-%                         axformat.GridAlpha = 0.15;
 axformat.YLabel.String = 'counts';
 axformat.FontSize = ffontsize;
 axformat.FontName = 'Arial';
