@@ -299,6 +299,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLabel.String = 'Proximity Ratio, E*';
                     ax.YLabel.String = 'STDEV of E*, s';
                     ax.XLim = [-0.1 1.1];
+                    ax.GridAlpha = 0.35;
                     
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
@@ -417,6 +418,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLabel.String = 'Proximity Ratio, E*';
                     ax.YLabel.String = 'STDEV of E*, s';
                     ax.XLim = [-0.1 1.1];
+                    ax.GridAlpha = 0.35;
                     
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
@@ -996,7 +998,7 @@ end
 function plot_marignal_1D_hist(axmain,axright,axtop,x_data,y_data,face_alpha,color,ffontsize)
 global UserValues
 histogram(axright,y_data,UserValues.BurstBrowser.Display.NumberOfBinsY,'orientation','horizontal',...
-    'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+    'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 axright.YLim = axmain.YLim;
 axright.XTick = linspace(axright.XLim(1),axright.XLim(2),9);
 axright.XTick(:,[1:2,4:6,8:9]) = [];
@@ -1018,7 +1020,7 @@ axformat.FontName = 'Arial';
 
 % top margin 1D histogram
 histogram(axtop,x_data,UserValues.BurstBrowser.Display.NumberOfBinsX,...
-    'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+    'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 axtop.XLim = axmain.XLim;
 axtop.YTick = linspace(axtop.YLim(1),axtop.YLim(2),9);
 axtop.YTick(:,[1:2,4:6,8:9]) = [];
