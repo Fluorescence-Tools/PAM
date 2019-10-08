@@ -2701,6 +2701,17 @@ if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
     PDAMeta.UB(:,end+1:end+3) = UB_rates(:,[6,2,4]);
     PDAMeta.Fixed(:,end+1:end+3) = Fixed_rates(:,[6,2,4]);
     PDAMeta.Global(:,end+1:end+3) = Global_rates(:,[6,2,4]);
+    
+    % detect if the system is linear 1 <-> 2 <-> 3, i.e. k13=k31=0!
+    % (for now, we only consider this case - i.e. not the general cases
+    %  of 2 <-> 3 <-> 1 etc. - State 2 always is the middle state)
+    if all(PDAMeta.FitParams(:,7)==0) && all(PDAMeta.FitParams(:,end-1)==0)
+        PDAMeta.threestate_analytical = true;
+        disp('Linear three-state model detected. Using analytical solution.');
+    else
+        PDAMeta.threestate_analytical = false;
+        disp('General three-state model detected. Kinetics are evaluated using Monte Carlo simulations.');
+    end
 end
 clear LB UB FitTable
 
@@ -2757,11 +2768,12 @@ else %%% check if fix sigma at fraction of R option is enable
     %end
 end
 PDAMeta.FittingGlobal = do_global;
-% if do_global
-%     disp('Global fit');
-% else
-%     disp('Non-global fit');
-% end
+if do_global
+    disp('Global fit');
+else
+    disp('Non-global fit');
+end
+
 if ~do_global
     %% One-curve-at-a-time fitting
     fit_counter = 0;
@@ -3550,31 +3562,33 @@ else %%% dynamic model
             DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
                         fitpar(3*1-2), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0];
-            % rates in Hz
+            % rates in kHz
             % The DynRates matrix has the form:
             % ( 11 21 31 ... )
             % ( 12 22 32 ... )
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
             n_states = size(DynRates,1);
-            change_prob = cumsum(DynRates);
-            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
-            dwell_mean = 1 ./ sum(DynRates);  
-            for j = 1:n_states
-            DynRates(j,j) = -sum(DynRates(:,j));
+            n_bins_T = 20; % binning for 2d distribution of occupancys
+            if PDAMeta.threestate_analytical % linear three-state scheme
+                % use analytic solution
+                PofT = linear_three_state(DynRates(2,1),DynRates(1,2),DynRates(3,2),DynRates(2,3),T,n_bins_T);
+            else
+                % compute using gillespie algorithm
+                change_prob = cumsum(DynRates);
+                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+                dwell_mean = 1 ./ sum(DynRates);  
+                for j = 1:n_states
+                DynRates(j,j) = -sum(DynRates(:,j));
+                end
+                DynRates(end+1,:) = ones(1,n_states);
+                b = zeros(n_states,1); b(end+1) = 1;
+                p_eq = DynRates\b;
+                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                % PofT describes the joint probability to see T1 and T2                
+                PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+                PofT = PofT./sum(PofT(:));
             end
-            DynRates(end+1,:) = ones(1,n_states);
-            b = zeros(n_states,1); b(end+1) = 1;
-            p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
-            % PofT describes the joint probability to see T1 and T2
-            n_bins_T = 20;
-            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
-            PofT = PofT./sum(PofT(:));
-%             for s = 1:n_states
-%                 PofT(:,s) = histcounts(FracT(:,s),linspace(0,1,102));
-%                 PofT(:,s) = PofT(:,s)./sum(PofT(:,s));
-%             end
     end
     %%% generate P(eps) distribution for both components
     PE = cell(n_states,1);
@@ -4178,20 +4192,25 @@ else
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
             n_states = size(DynRates,1);
-            change_prob = cumsum(DynRates);
-            change_prob = change_prob ./ change_prob(end,:);
-            dwell_mean = 1 ./ sum(DynRates);  
-            for j = 1:n_states
-            DynRates(j,j) = -sum(DynRates(:,j));
+            if PDAMeta.threestate_analytical % linear three-state scheme
+                % use analytic solution
+                PofT = linear_three_state(DynRates(2,1),DynRates(1,2),DynRates(3,2),DynRates(2,3),T,n_bins_T);
+            else
+                change_prob = cumsum(DynRates);
+                change_prob = change_prob ./ change_prob(end,:);
+                dwell_mean = 1 ./ sum(DynRates);  
+                for j = 1:n_states
+                DynRates(j,j) = -sum(DynRates(:,j));
+                end
+                DynRates(end+1,:) = ones(1,n_states);
+                b = zeros(n_states,1); b(end+1) = 1;
+                p_eq = DynRates\b;
+                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                % PofT describes the joint probability to see T1 and T2
+                n_bins_T = 20;
+                PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+                PofT = PofT./sum(PofT(:));
             end
-            DynRates(end+1,:) = ones(1,n_states);
-            b = zeros(n_states,1); b(end+1) = 1;
-            p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
-            % PofT describes the joint probability to see T1 and T2
-            n_bins_T = 20;
-            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
-            PofT = PofT./sum(PofT(:));
     end
     %%% generate P(eps) distribution for both components
     PE = cell(n_states,1);
@@ -6317,3 +6336,98 @@ switch mode
         end
         UpdateBVATab(hb.ConsistencyAnalysis_Button,[],hb);
 end
+
+function [P_analytic, P_gillespie] = linear_three_state(k21,k12,k32,k23,T,res)
+% returns the analytic and gillespie distribution of occupation times in
+% states 1 and 3
+% kij: rates from state i to state j in kHz=ms^(-1)
+% T:   integration time in milliseconds
+% res: resolution of the distribution (number of bins per dimension)
+
+K = [-k21,  k12,        0;
+      k21, -(k12+k32), k23;
+      0,    k32,      -k23];
+  
+% determine equlibrium fractions
+Keq = [K; 1,1,1];
+b = [0;0;0;1];
+% Keq*peq = b
+peq = Keq\b;
+
+
+%% compute analytic solution (Oleg's formula)
+k = -diag(K);
+mu = peq;
+
+P = cell(2,2,2); % store the results
+x1 = linspace(0,1,res);
+x3 = linspace(0,1,res);
+[x1g,x3g] = meshgrid(x1,x3);
+
+% single species
+P{2,1,1} = mu(1)*exp(-T*k(1));
+P{1,2,1} = mu(2)*exp(-T*k(2));
+P{1,1,2} = mu(3)*exp(-T*k(3));
+% binary exchange
+P{2,2,1} = mu(1)*mu(2)*exp(-T*(k(2)+(k(1)-k(2)).*x1));
+P{1,2,2} = mu(2)*mu(3)*exp(-T*(k(2)+(k(3)-k(2)).*x3));
+% ternary exchange
+P{2,2,2} = prod(mu)*exp(-T*(k(2)+(k(1)-k(2)).*x1g + (k(3)-k(2)).*x3g));
+
+% Hypergeometric function
+xm12 = mu(2)+ (mu(1)-mu(2))*x1;
+xm23 = mu(2);
+xm   = mu(2) + (mu(1)-mu(2)*x1g + (mu(3)-mu(2))*x3g);
+xm2  = mu(2)*(1-x1g-x3g);
+
+a12 = T*(K(2,1)+K(1,2))/(mu(1)+mu(2));
+a23 = T*(K(3,2)+K(2,3))/(mu(2)+mu(3));
+xx12_2 = mu(1)*mu(2)*x1.*(1-x1);
+xx23_2 = mu(2)*mu(3)*x3.*(1-x3);
+xx12_3 = mu(1)*mu(2)*x1g.*(1-(x1g+x3g));
+xx23_3 = mu(2)*mu(3)*(1-(x1g+x3g)).*x3g;
+
+F12_2 = F01(a12,xx12_2);
+F23_2 = F01(a23,xx23_2);
+
+F12_3 = F01(a12,xx12_3);
+F23_3 = F01(a23,xx23_3);
+
+% put it all together
+P{2,2,1} = P{2,2,1}.*(2*F12_2{1}+xm12.*F12_2{2});
+P{1,2,2} = P{1,2,2}.*(2*F23_2{1}+xm23.*F23_2{2});
+P{2,2,2} = P{2,2,2}.*(2*F12_3{1}.*F23_3{1} + ...
+                     2*xm2.*(F12_3{1}.*F23_3{2}+F12_3{2}.*F23_3{1}) + ...
+                     xm2.*xm.*F12_3{2}.*F23_3{2} ...
+                     );
+% exclude non-physical values
+P{2,2,2}(x1g+x3g > 1) = 0;
+
+% combine the contributions
+P_analytic = P{2,2,2}./(res^2);
+P_analytic(1,:) = P_analytic(1,:) + P{2,2,1}./res;
+P_analytic(:,1) = P_analytic(:,1) + P{1,2,2}'./res;
+P_analytic(1,1) = P_analytic(1,1) + P{1,2,1};
+P_analytic(end,1) = P_analytic(end,1) + P{1,1,2};
+P_analytic(1,end) = P_analytic(1,end) + P{2,1,1};
+% normalize to 1 (due to binning artifacts)
+P_analytic = P_analytic./sum(P_analytic(:));
+%% Gillespie (for comparison)
+if nargout > 1
+    DynRates = K; DynRates(logical(eye(size(DynRates,1)))) = 0;
+    change_prob = cumsum(DynRates);
+    change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+    dwell_mean = 1 ./ sum(DynRates);
+    FracT = zeros(1E5,size(DynRates,1));
+    FracT = Gillespie_inf_states(T,size(DynRates,1),dwell_mean,1E6,peq,change_prob)./T;
+    % PofT describes the joint probability to see T1 and T2
+    n_bins_T = res;
+    PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+    P_gillespie = PofT./sum(PofT(:));
+end
+
+function vecF0_F1 = F01(a,xx)
+% computes the (regularized) hypergeometric function 0_F_1
+z = a*a*xx;
+vecF0_F1{1} = a*reg_hypergeo(1,z);
+vecF0_F1{2} = a*a*reg_hypergeo(2,z);
