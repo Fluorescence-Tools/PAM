@@ -627,7 +627,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         ax = gca;
                         ax.NextPlot = 'add';
                         ax.XLabel.String = 'Proximity Ratio, E*';
-                        ax.YLabel.String = 'STDEV of E*, s';
+                        ax.YLabel.String = 'FRET Efficiency';
                         ax.YLim = [-0.1 1.1];
                         ax.XLim = [0 1.1];
                         ax.Layer = 'bottom';
