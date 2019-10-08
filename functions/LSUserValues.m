@@ -2451,7 +2451,13 @@ if Mode==0 %%% Loads user values
         S.PDA.GridRes = '100';
     end
     P.PDA.GridRes = S.PDA.GridRes;
-
+    
+    if ~isfield(S.PDA, 'GridRes_PofT')
+        disp('WARNING: UserValues structure incomplete, field "PDA.GridRes_PofT" missing');
+        S.PDA.GridRes_PofT = '100';
+    end
+    P.PDA.GridRes_PofT = S.PDA.GridRes_PofT;
+    
     if ~isfield(S.PDA, 'Smin')
         disp('WARNING: UserValues structure incomplete, field "PDA.Smin" missing');
         S.PDA.Smin = '0';
