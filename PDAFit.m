@@ -15,7 +15,7 @@ function PDAFit(~,~)
 %
 %      The PDAMeta structure contains all metadata generated during program usage
 %
-%   2017 - FAB Lab Munich - Don C. Lamb
+%   2019 - FAB Lab Munich - Don C. Lamb
 
 %%% TO DO:
 %%% Implement donor only for MLE and MC fitting
@@ -32,6 +32,7 @@ Look=UserValues.Look;
 if isempty(h.GlobalPDAFit)
     %% Disables uitabgroup warning
     warning('off','MATLAB:uitabgroup:OldVersion');
+    warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
     %% Define main window
     h.GlobalPDAFit = figure(...
         'Units','normalized',...
@@ -737,7 +738,7 @@ if isempty(h.GlobalPDAFit)
         'Units','normalized',...
         'FontSize',12,...
         'String','Grid resolution for E',...
-        'TooltipString','Higher increases fit accuracy, but makes it slower.',...
+        'TooltipString','Higher increases fit accuracy, but makes fitting slower.',...
         'Position',[0.02 0.175 0.175 0.2],...
         'HorizontalAlignment','right',...
         'Tag','NumberOfBinsE_Text');
@@ -748,11 +749,35 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'String',UserValues.PDA.GridRes,...
-        'TooltipString','Higher increases fit accuracy, but makes it slower.',...
+        'TooltipString','Higher increases fit accuracy, but makes fitting slower.',...
         'FontSize',12,...
         'Callback',{@Update_Plots,0,1},...
         'Position',[0.2 0.225 0.05 0.15],...
         'Tag','NumberOfBinsE_Edit');
+    h.SettingsTab.NumberOfBinsT_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String','Grid res. for dynamics',...
+        'TooltipString','<html>Resolution of the state occupancy distribution for the evaluation of dynamics.<br>Higher increases fit accuracy, but makes fitting slower.',...
+        'Position',[0.255 0.175 0.1 0.2],...
+        'HorizontalAlignment','left',...
+        'Tag','NumberOfBinsT_Text');
+    h.SettingsTab.NumberOfBinsT_Edit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'String',UserValues.PDA.GridRes_PofT,...
+        'TooltipString','<html>Resolution of the state occupancy distribution for the evaluation of dynamics.<br>Higher increases fit accuracy, but makes fitting slower.',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,0,1},...
+        'Position',[0.355 0.225 0.04 0.15],...
+        'Tag','NumberOfBinsT_Edit');
     h.SettingsTab.StoichiometryThreshold_Text = uicontrol(...
         'Style','text',...
         'Parent',h.SettingsTab.Panel,...
@@ -760,7 +785,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'String','Stoichiometry threshold:',...
+        'String','Stoichiometry threshold',...
         'Position',[0.02 -0.025 0.175 0.2],...
         'HorizontalAlignment','right',...
         'Tag','StoichiometryThreshold_Text');
@@ -2218,6 +2243,7 @@ UserValues.PDA.NoBins = h.SettingsTab.NumberOfBins_Edit.String;
 UserValues.PDA.MinPhotons = h.SettingsTab.NumberOfPhotMin_Edit.String;
 UserValues.PDA.MaxPhotons = h.SettingsTab.NumberOfPhotMax_Edit.String;
 UserValues.PDA.GridRes = h.SettingsTab.NumberOfBinsE_Edit.String;
+UserValues.PDA.GridRes_PofT = h.SettingsTab.NumberOfBinsT_Edit.String;
 UserValues.PDA.Smin = h.SettingsTab.StoichiometryThresholdLow_Edit.String;
 UserValues.PDA.Smax = h.SettingsTab.StoichiometryThresholdHigh_Edit.String;
 UserValues.PDA.Dynamic = h.SettingsTab.DynamicModel.Value;
@@ -2263,7 +2289,7 @@ if h.SettingsTab.Use_Lifetime.Value == 1
 else
     PDAMeta.lifetime_PDA = false;
 end
-
+PDAMeta.GridRes_PofT = str2double(UserValues.PDA.GridRes_PofT);
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');
@@ -2680,6 +2706,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     PDAMeta.LB(:,end+1) = 0;
     PDAMeta.UB(:,end+1) = 1;
 end
+
 %%% if three state dynamic system, read out and append the rates
 if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
     FitTable = h.KineticRates_table.Data;
@@ -2701,6 +2728,17 @@ if h.SettingsTab.DynamicModel.Value &&  h.SettingsTab.DynamicSystem.Value == 2
     PDAMeta.UB(:,end+1:end+3) = UB_rates(:,[6,2,4]);
     PDAMeta.Fixed(:,end+1:end+3) = Fixed_rates(:,[6,2,4]);
     PDAMeta.Global(:,end+1:end+3) = Global_rates(:,[6,2,4]);
+    
+    % detect if the system is linear 1 <-> 2 <-> 3, i.e. k13=k31=0!
+    % (for now, we only consider this case - i.e. not the general cases
+    %  of 2 <-> 3 <-> 1 etc. - State 2 always is the middle state)
+    if all(PDAMeta.FitParams(:,7)==0) && all(PDAMeta.FitParams(:,end-1)==0)
+        PDAMeta.threestate_analytical = true;
+        disp('Linear three-state model detected. Using analytical solution.');
+    else
+        PDAMeta.threestate_analytical = false;
+        disp('General three-state model detected. Kinetics are evaluated using Monte Carlo simulations.');
+    end
 end
 clear LB UB FitTable
 
@@ -2757,11 +2795,12 @@ else %%% check if fix sigma at fraction of R option is enable
     %end
 end
 PDAMeta.FittingGlobal = do_global;
-% if do_global
-%     disp('Global fit');
-% else
-%     disp('Non-global fit');
-% end
+if do_global
+    disp('Global fit');
+else
+    disp('Non-global fit');
+end
+
 if ~do_global
     %% One-curve-at-a-time fitting
     fit_counter = 0;
@@ -3550,31 +3589,39 @@ else %%% dynamic model
             DynRates = [0, fitpar(3*2-2),fitpar(3*3-2); ...
                         fitpar(3*1-2), 0,rates_state3(1);... 
                         rates_state3(2),rates_state3(3),0];
-            % rates in Hz
+            % rates in kHz
             % The DynRates matrix has the form:
             % ( 11 21 31 ... )
             % ( 12 22 32 ... )
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
             n_states = size(DynRates,1);
-            change_prob = cumsum(DynRates);
-            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
-            dwell_mean = 1 ./ sum(DynRates);  
-            for j = 1:n_states
-            DynRates(j,j) = -sum(DynRates(:,j));
+            n_bins_T = PDAMeta.GridRes_PofT; % binning for 2d distribution of occupancys
+            if PDAMeta.threestate_analytical % linear three-state scheme
+                % use analytic solution
+                PofT = linear_three_state(DynRates(2,1),DynRates(1,2),DynRates(3,2),DynRates(2,3),dT,n_bins_T);
+                % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)
+                % T2 ------- T1
+                %  | . . . /
+                %  | .  /
+                %  | /
+                % T3
+            else
+                % compute using gillespie algorithm
+                change_prob = cumsum(DynRates);
+                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+                dwell_mean = 1 ./ sum(DynRates);  
+                for j = 1:n_states
+                    DynRates(j,j) = -sum(DynRates(:,j));
+                end
+                DynRates(end+1,:) = ones(1,n_states);
+                b = zeros(n_states,1); b(end+1) = 1;
+                p_eq = DynRates\b;
+                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)         
+                PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+                PofT = PofT./sum(PofT(:));
             end
-            DynRates(end+1,:) = ones(1,n_states);
-            b = zeros(n_states,1); b(end+1) = 1;
-            p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
-            % PofT describes the joint probability to see T1 and T2
-            n_bins_T = 20;
-            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
-            PofT = PofT./sum(PofT(:));
-%             for s = 1:n_states
-%                 PofT(:,s) = histcounts(FracT(:,s),linspace(0,1,102));
-%                 PofT(:,s) = PofT(:,s)./sum(PofT(:,s));
-%             end
     end
     %%% generate P(eps) distribution for both components
     PE = cell(n_states,1);
@@ -3634,12 +3681,17 @@ else %%% dynamic model
         %%% combination)
         %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
         hFit_Dyn = zeros(numel(PDAMeta.P{i,1}),1);
-        for t1 = 1:size(PofT,1)
-            for t2 = 1:size(PofT,1)
-                for k =1:numel(PDAMeta.eps_grid{i})
-                    %%% construct sum of histograms
-                    hFit_Dyn = hFit_Dyn + PofT(t1,t2)*Peps(k,t2,t1).*PDAMeta.P{i,k};
-                    % note the indexing of Peps as described above
+        nT = size(PofT,1);
+        for t1 = 1:nT
+            for t2 = 1:nT
+                if (t1+t2) <= (nT+1) % maximum allowed value (in terms of indices): one is 1 (T=0), other is 100 (T=1)
+                    t3 = nT-(t1-1)-(t2-1);
+                    for k =1:numel(PDAMeta.eps_grid{i})
+                        %%% construct sum of histograms
+                        hFit_Dyn = hFit_Dyn + PofT(t3,t1)*Peps(k,t2,t1).*PDAMeta.P{i,k};
+                        % note the indexing of Peps as described above
+                        % Indexing of PofT is PofT(T3,T1) = PofT(T-T1-T2,T1)
+                    end
                 end
             end
         end
@@ -3650,27 +3702,31 @@ else %%% dynamic model
         % only state 1
         t1 = size(PofT,1);
         t2 = 1;
+        t3 = 1;
         for k = 1:numel(PDAMeta.eps_grid{i})
            hFit_Ind{1} = hFit_Ind{1} + Peps(k,t2,t1).*PDAMeta.P{i,k};       
         end
-        hFit_Ind{1} = hFit_Ind{1} * PofT(t1,t2);   
+        hFit_Ind{1} = hFit_Ind{1} * PofT(t3,t1);   
         % only state 2
         t1 = 1;
         t2 = size(PofT,2);
+        t3 = 1;
         for k = 1:numel(PDAMeta.eps_grid{i})
             hFit_Ind{2} = hFit_Ind{2} + Peps(k,t2,t1).*PDAMeta.P{i,k};        
         end
-        hFit_Ind{2} = hFit_Ind{2} * PofT(t1,t2);
-        % only state 2
+        hFit_Ind{2} = hFit_Ind{2} * PofT(t3,t1);
+        % only state 3
         t1 = 1;
         t2 = 1;
+        t3 = size(PofT,1);
         for k = 1:numel(PDAMeta.eps_grid{i})
             hFit_Ind{3} = hFit_Ind{3} + Peps(k,t2,t1).*PDAMeta.P{i,k};     
         end
-        hFit_Ind{3} = hFit_Ind{3} * PofT(t1,t2);     
+        hFit_Ind{3} = hFit_Ind{3} * PofT(t3,t1);     
         hFit_Ind_dyn = cell(size(PofT,1),1);
         
         % also get the pure two-state dynamic exchange histograms
+        % needs to be updated (10-2019)
         two_state_dynamics = false;
         if two_state_dynamics
             % only exchange between states 1-2
@@ -4178,20 +4234,31 @@ else
             % ( 13 23 33 ... )
             % ( .. .. .. ... )
             n_states = size(DynRates,1);
-            change_prob = cumsum(DynRates);
-            change_prob = change_prob ./ change_prob(end,:);
-            dwell_mean = 1 ./ sum(DynRates);  
-            for j = 1:n_states
-            DynRates(j,j) = -sum(DynRates(:,j));
+            n_bins_T = PDAMeta.GridRes_PofT;
+            if PDAMeta.threestate_analytical % linear three-state scheme
+                % use analytic solution
+                PofT = linear_three_state(DynRates(2,1),DynRates(1,2),DynRates(3,2),DynRates(2,3),dT,n_bins_T);
+                % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)
+                % T2 ------- T1
+                %  | . . . /
+                %  | .  /
+                %  | /
+                % T3
+            else
+                change_prob = cumsum(DynRates);
+                change_prob = change_prob ./ change_prob(end,:);
+                dwell_mean = 1 ./ sum(DynRates);  
+                for j = 1:n_states
+                DynRates(j,j) = -sum(DynRates(:,j));
+                end
+                DynRates(end+1,:) = ones(1,n_states);
+                b = zeros(n_states,1); b(end+1) = 1;
+                p_eq = DynRates\b;
+                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)               
+                PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+                PofT = PofT./sum(PofT(:));
             end
-            DynRates(end+1,:) = ones(1,n_states);
-            b = zeros(n_states,1); b(end+1) = 1;
-            p_eq = DynRates\b;
-            FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
-            % PofT describes the joint probability to see T1 and T2
-            n_bins_T = 20;
-            PofT = histcounts2(FracT(:,1),FracT(:,2),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
-            PofT = PofT./sum(PofT(:));
     end
     %%% generate P(eps) distribution for both components
     PE = cell(n_states,1);
@@ -4296,25 +4363,28 @@ else
             log_P_grid = PDAMeta.P_grid{file};
             log_Peps = log(Peps);
             parallel = false;
+            nT = size(PofT,1);
             if ~parallel
-                for t1 = 1:size(PofT,1)
-                    for t2 = 1:(size(PofT,2)-t1+1)
+                for t1 = 1:nT
+                    for t2 = 1:(nT-t1+1)
+                        t3 = nT - (t1-1) - (t2-1);
                         P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
                         Lmax = max(P,[],2);
                         P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
-                        L(:,t1,t2) = P;
+                        L(:,t3,t1) = P; % analogy to definition of PofT = PofT(t3,t1)
                     end
                 end
             else
-                parfor t1 = 1:size(PofT,1)
-                    L_dummy = NaN(numel(NG),size(PofT,2));
-                    for t2 = 1:(size(PofT,2)-t1+1)
+                parfor t3 = 1:nT
+                    L_dummy = NaN(numel(NG),nT);
+                    for t1 = 1:(nT-t3+1)
+                        t2 = nT - (t3-1) - (t1-1);
                         P =  log_P_grid + repmat(log_Peps(:,t2,t1)',numel(NG),1);
                         Lmax = max(P,[],2);
                         P = Lmax + log(sum(exp(P-repmat(Lmax,1,size(P,2))),2));
-                        L_dummy(:,t2) = P;
+                        L_dummy(:,t1) = P;
                     end
-                    L(:,t1,:) = L_dummy;
+                    L(:,t3,:) = L_dummy; % analogy to definition of PofT = PofT(t3,t1)
                 end
             end
         end
@@ -4326,8 +4396,7 @@ else
         % Lmax = max(L,[],2);
         % L = Lmax + log(sum(exp(L-repmat(Lmax,[1,size(L,2),1,1])),2));
         % L = squeeze(L);        
-        %%% lifetime-based likelihood
-        PDAMeta.lifetime_PDA = true;
+        %%% lifetime-based likelihood        
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin; %in ns, i.e. 8 ps
@@ -4337,13 +4406,14 @@ else
             tau3 = tau0*(1+(R0./fitpar(3,2)).^6).^(-1);            
             % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
             % (corresponding to number of donor photons)
-            [T2,T1] = meshgrid(linspace(0,1,size(PofT,1)),linspace(0,1,size(PofT,2)));
+            [T1,T3] = meshgrid(linspace(0,1,size(PofT,1)),linspace(0,1,size(PofT,2)));
+            % T3 in y-direction (down), T1 in x-direction (right) in PofT
             % remove invalid time combinations
-            invalid = T1+T2 > 1;
+            invalid = T1+T3 > 1;
             T1(invalid) = NaN;
-            T2(invalid) = NaN;
-            F1 = T1.*tau1./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
-            F2 = T2.*tau2./(T1.*tau1+T2.*tau2+(1-T1-T2).*tau3);
+            T3(invalid) = NaN;
+            F1 = T1.*tau1./(T1.*tau1+(1-T1-T3).*tau2+T3.*tau3);
+            F3 = T3.*tau3./(T1.*tau1+(1-T1-T3).*tau2+T3.*tau3);
             if anisotropy_correction
                 % correct for anisotropy
                 tau1 = lifetime_correction_anisotropy(tau1,r0,rho/TACbin); % r0 and rho in TACbins
@@ -4365,8 +4435,8 @@ else
             %dt2_2 = 2*tau2.^2+PDAMeta.IRF_moments{file}(2)+2*tau2*PDAMeta.IRF_moments{file}(1);
             %dt2_3 = 2*tau3.^2+PDAMeta.IRF_moments{file}(2)+2*tau3*PDAMeta.IRF_moments{file}(1);
             % calculate mean and variance
-            mean_t = F1.*dt1_1+F2.*dt1_2+(1-F1-F2).*dt1_3;
-            v = (F1.*dt2_1+F2.*dt2_2+(1-F1-F2).*dt2_3-mean_t.^2);
+            mean_t = F1.*dt1_1+(1-F1-F3).*dt1_2+F3.*dt1_3;
+            v = (F1.*dt2_1+(1-F1-F3).*dt2_2+F3.*dt2_3-mean_t.^2);
             mean_t = reshape(mean_t,[1,size(mean_t,1),size(mean_t,2)]);
             v = reshape(v,[1,size(v,1),size(v,2)]);
             var_t = repmat(v,numel(NG),1,1)./repmat(NG,[1,size(F1,1),size(F1,2)]); % variance scales with number of photons
@@ -4377,7 +4447,7 @@ else
             L = L + log(gampdf(tauG,alpha,beta_inv));        
         end
         %L = reshape(L,size(L,1),size(L,2)*size(L,3));
-        %PofT = PofT(:)';
+        % PofT(t3,t1) => PofT(n_burst,t3,t1)
         L = L + repmat(reshape(log(PofT),1,size(PofT,1),size(PofT,2)),numel(NG),1,1);
         L(isnan(L)) = -Inf; %%% NaNs produced for "impossible" combinations of T1 and T2 (i.e. T1+T2 > 1)
         L = reshape(L,size(L,1),size(L,2)*size(L,3));
@@ -6317,3 +6387,107 @@ switch mode
         end
         UpdateBVATab(hb.ConsistencyAnalysis_Button,[],hb);
 end
+
+function [P_analytic, P_gillespie] = linear_three_state(k21,k12,k32,k23,T,res)
+% returns the analytic and gillespie distribution of occupation times in
+% states 1 and 3
+% kij: rates from state i to state j in kHz=ms^(-1)
+% T:   integration time in milliseconds
+% res: resolution of the distribution (number of bins per dimension)
+
+K = [-k21,  k12,        0;
+      k21, -(k12+k32), k23;
+      0,    k32,      -k23];
+  
+% determine equlibrium fractions
+Keq = [K; 1,1,1];
+b = [0;0;0;1];
+% Keq*peq = b
+peq = Keq\b;
+
+
+%% compute analytic solution (Oleg's formula)
+k = -diag(K);
+mu = peq;
+
+P = cell(2,2,2); % store the results
+x1 = linspace(0,1,res);
+x3 = linspace(0,1,res);
+[x1g,x3g] = meshgrid(x1,x3);
+
+% single species
+P{2,1,1} = mu(1)*exp(-T*k(1));
+P{1,2,1} = mu(2)*exp(-T*k(2));
+P{1,1,2} = mu(3)*exp(-T*k(3));
+% binary exchange
+P{2,2,1} = mu(1)*mu(2)*exp(-T*(k(2)+(k(1)-k(2)).*x1));
+P{1,2,2} = mu(2)*mu(3)*exp(-T*(k(2)+(k(3)-k(2)).*x3));
+% ternary exchange
+P{2,2,2} = prod(mu)*exp(-T*(k(2)+(k(1)-k(2)).*x1g + (k(3)-k(2)).*x3g));
+
+% Hypergeometric function
+xm12 = mu(2)+ (mu(1)-mu(2))*x1;
+xm23 = mu(2);
+xm   = mu(2) + (mu(1)-mu(2)*x1g + (mu(3)-mu(2))*x3g);
+xm2  = mu(2)*(1-x1g-x3g);
+
+a12 = T*(K(2,1)+K(1,2))/(mu(1)+mu(2));
+a23 = T*(K(3,2)+K(2,3))/(mu(2)+mu(3));
+xx12_2 = mu(1)*mu(2)*x1.*(1-x1);
+xx23_2 = mu(2)*mu(3)*x3.*(1-x3);
+xx12_3 = mu(1)*mu(2)*x1g.*(1-(x1g+x3g));
+xx23_3 = mu(2)*mu(3)*(1-(x1g+x3g)).*x3g;
+
+F12_2 = F01(a12,xx12_2);
+F23_2 = F01(a23,xx23_2);
+
+F12_3 = F01(a12,xx12_3);
+F23_3 = F01(a23,xx23_3);
+
+% put it all together
+P{2,2,1} = P{2,2,1}.*(2*F12_2{1}+xm12.*F12_2{2});
+P{1,2,2} = P{1,2,2}.*(2*F23_2{1}+xm23.*F23_2{2});
+P{2,2,2} = P{2,2,2}.*(2*F12_3{1}.*F23_3{1} + ...
+                     2*xm2.*(F12_3{1}.*F23_3{2}+F12_3{2}.*F23_3{1}) + ...
+                     xm2.*xm.*F12_3{2}.*F23_3{2} ...
+                     );
+% exclude non-physical values
+P{2,2,2}(x1g+x3g > 1) = 0;
+
+% combine the contributions
+P_analytic = P{2,2,2}./(res^2);
+P_analytic(1,:) = P_analytic(1,:) + P{2,2,1}./res;
+P_analytic(:,1) = P_analytic(:,1) + P{1,2,2}'./res;
+P_analytic(1,1) = P_analytic(1,1) + P{1,2,1};
+P_analytic(end,1) = P_analytic(end,1) + P{1,1,2};
+P_analytic(1,end) = P_analytic(1,end) + P{2,1,1};
+% normalize to 1 (due to binning artifacts)
+P_analytic = P_analytic./sum(P_analytic(:));
+%% Gillespie (for comparison)
+if nargout > 1
+    DynRates = K; DynRates(logical(eye(size(DynRates,1)))) = 0;
+    change_prob = cumsum(DynRates);
+    change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+    dwell_mean = 1 ./ sum(DynRates);
+    FracT = zeros(1E5,size(DynRates,1));
+    FracT = Gillespie_inf_states(T,size(DynRates,1),dwell_mean,1E6,peq,change_prob)./T;
+    % PofT describes the joint probability to see T1 and T2
+    n_bins_T = res;
+    PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
+    P_gillespie = PofT./sum(PofT(:));
+end
+
+function vecF0_F1 = F01(a,xx)
+% computes the product of an amplitude and the (regularized) hypergeometric function 0_F_1
+z = a*a*xx;
+vecF0_F1{1} = a*reg_hypergeo(1,z);
+vecF0_F1{2} = a*a*reg_hypergeo(2,z);
+
+function res = reg_hypergeo(nu,z)
+% regularized hypergeometric function of degree nu of argument z
+% evaluated based on modfified bessel function of first kind
+nu = nu-1;
+res = z.^(-nu/2).*besseli(nu,2*sqrt(z));
+
+% treat edge cases
+res(z==0) = 1;
