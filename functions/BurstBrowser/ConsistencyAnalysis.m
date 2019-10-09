@@ -44,7 +44,11 @@ rate_matrix(isnan(rate_matrix)) = 0;
 fwidth = 700;
 fheight = 700;
 ffontsize = 24;
+if ~ismac
+    ffontsize = ffontsize*0.8;
+end
 fcenterPlotPos = [0.1 0.11 0.6 0.6];
+faculty = get(0,'default');
 set(0,'defaultaxesfontsize',24,'defaultaxesfontname','Arial','defaultaxeslinewidth',2.0,...
     'defaultaxesygrid','on','defaultaxesxgrid','on','defaultaxesbox','on','defaultaxescolor',[1 1 1],...
     'defaultlinelinewidth',2,'defaultaxesxcolor',[0 0 0],'defaultaxesycolor',[0 0 0])
@@ -889,6 +893,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
+set(0,faculty);
 end
 
 function plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)
