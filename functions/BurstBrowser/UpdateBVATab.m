@@ -107,7 +107,7 @@ else
             UserValues.BurstBrowser.Settings.BVA_R1 = str2double(h.Rstate1_edit.String);
             BurstData{file}.AdditionalParameters.BVA_R1 = UserValues.BurstBrowser.Settings.BVA_R1;
         case h.Rstate2_edit
-            UserValues.BurstBrowser.Settings.BVA_R2
+            UserValues.BurstBrowser.Settings.BVA_R2 = str2double(h.Rstate2_edit.String);
             BurstData{file}.AdditionalParameters.BVA_R2 = UserValues.BurstBrowser.Settings.BVA_R2;
         case h.Rstate3_edit
             UserValues.BurstBrowser.Settings.BVA_R3 = str2double(h.Rstate3_edit.String);
