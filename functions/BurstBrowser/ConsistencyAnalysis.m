@@ -45,7 +45,7 @@ fwidth = 700;
 fheight = 700;
 ffontsize = 24;
 if ~ismac
-    ffontsize = ffontsize*0.8;
+    ffontsize = ffontsize*0.72;
 end
 fcenterPlotPos = [0.1 0.11 0.6 0.6];
 faculty = get(0,'default');
