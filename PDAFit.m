@@ -4055,7 +4055,7 @@ Pe = Pe./sum(Pe); %area-normalized Pe
 % model for MLE fitting (not global)
 function logL = PDA_MLE_Fit_Single(fitpar,h)
 global PDAMeta PDAData
-
+tic;
 %%% iterate the counter
 PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
@@ -4169,7 +4169,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
             alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
             beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
             tauG = PDAMeta.TauG{file}(PDAMeta.valid{file}); % donor average delay time
-            P = P + log(gampdf(tauG,alpha,beta_inv));        
+            P = P + log_gampdf(tauG,alpha,beta_inv);%log(gampdf(tauG,alpha,beta_inv));        
         end
         
         P = P + repmat(log(PR'),numel(NG),1);
@@ -4335,7 +4335,7 @@ else
             alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
             beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
             tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),1,numel(PofT)); % donor average delay time
-            L = L + log(gampdf(tauG,alpha,beta_inv));        
+            L = L + log_gampdf(tauG,alpha,beta_inv);%log(gampdf(tauG,alpha,beta_inv));        
         end
 
         L = L + repmat(log(PofT),numel(NG),1);
@@ -4444,7 +4444,7 @@ else
             alpha = repmat(mean_t,numel(NG),1,1).^2./var_t;
             beta_inv = (repmat(mean_t,numel(NG),1,1)./var_t).^(-1);
             tauG = repmat(PDAMeta.TauG{file}(PDAMeta.valid{file}),[1,size(F1,1),size(F1,2)]); % donor average delay time
-            L = L + log(gampdf(tauG,alpha,beta_inv));        
+            L = L + log_gampdf(tauG,alpha,beta_inv);%log(gampdf(tauG,alpha,beta_inv));
         end
         %L = reshape(L,size(L,1),size(L,2)*size(L,3));
         % PofT(t3,t1) => PofT(n_burst,t3,t1)
@@ -4506,7 +4506,7 @@ else
                 alpha = repmat(mean_t.^2,numel(NG),1)./var_t;
                 beta_inv = (repmat(mean_t,numel(NG),1)./var_t).^(-1);
                 tauG = PDAMeta.TauG{file}(PDAMeta.valid{file}); % donor average delay time
-                P = P + log(gampdf(tauG,alpha,beta_inv));        
+                P = P + log_gampdf(tauG,alpha,beta_inv);%log(gampdf(tauG,alpha,beta_inv));        
             end
             P = P + repmat(log(PR'),numel(NG),1);
             Lmax = max(P,[],2);
@@ -4542,6 +4542,17 @@ else
         logL = Inf;
     end
 end
+fprintf('Likelihood calculation took %.2f s.\n',toc);
+
+function L = log_gampdf(t,alpha,beta)
+% returns the logarithm of the gamma distribution
+% custom implementation that is faster than the MATLAB internal routine
+%
+% t, alpha, beta can be arrays of equal dimensions
+L = -(alpha.*log(beta)+gammaln(alpha)) + (alpha-1).*log(t) - t./beta;
+
+% MATLAB equivalent
+% L = log(gampdf(tauG,alpha,beta));
 
 % model for MLE fitting (global)
 function [sum_logL] = PDAMLEFit_Global(fitpar,h)
