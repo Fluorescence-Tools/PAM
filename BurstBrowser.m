@@ -3134,7 +3134,7 @@ end
         'ForegroundColor', Look.Fore,...
         'HorizontalAlignment','left');
     
-    Colormaps_String = {'jet','parula','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
+    Colormaps_String = {'jet','parula','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv','seidel'};
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         try
             colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
