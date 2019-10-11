@@ -2835,11 +2835,13 @@ else
 end
 
 %%% Saves user values
-if ~isempty(Current) %% Saves loaded profile
-    Profile=Current;
-    save(fullfile(Profiledir,'Profile.mat'),'Profile');
-    save(fullfile(Profiledir,Profile),'-struct','UserValues');
-else
-    load([Profiledir filesep 'Profile.mat']); %% Saves current profile
-    save(fullfile(Profiledir,Profile),'-struct','UserValues');
+if ~isempty(UserValues) % prevent overwriting of UserValues with empty struct
+    if ~isempty(Current) %% Saves loaded profile
+        Profile=Current;
+        save(fullfile(Profiledir,'Profile.mat'),'Profile');
+        save(fullfile(Profiledir,Profile),'-struct','UserValues');
+    else
+        load([Profiledir filesep 'Profile.mat']); %% Saves current profile
+        save(fullfile(Profiledir,Profile),'-struct','UserValues');
+    end
 end
