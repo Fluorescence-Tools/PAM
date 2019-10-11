@@ -328,7 +328,7 @@ Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str
 MT = cell(10,1);
 MI = cell(10,1);
 for i=unique(channel)'
-    MT{i+1} = TimeTag(channel==i)';
+    MT{i+1} = TimeTag(channel==i);
     MI{i+1} = dtime(channel==i);
 end
 
