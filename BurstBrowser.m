@@ -14,6 +14,7 @@ end
 if isempty(hfig)
     warning('off','MATLAB:uigridcontainer:MigratingFunction');
     warning('off','MATLAB:uiflowcontainer:MigratingFunction');
+    warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
     
     %%% start splash screen
     s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'BurstBrowser' filesep 'splash.jpg'], ...
