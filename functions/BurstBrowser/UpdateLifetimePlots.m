@@ -108,7 +108,7 @@ if(get(h.Hist_log10, 'Value'))
         H = real(H);
     end
 end
-H = H/max(max(H));
+%H = H/max(max(H));
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -216,7 +216,7 @@ if(get(h.Hist_log10, 'Value'))
         H = real(H);
     end
 end
-H = H/max(max(H));
+%H = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -325,7 +325,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
             H = real(H);
         end
     end
-    H = H/max(max(H));
+    %H = H/max(max(H));
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
     BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -422,7 +422,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
             H = real(H);
         end
     end
-    H = H/max(max(H));
+    %H = H/max(max(H));
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
     BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -552,7 +552,7 @@ if any(BurstData{file}.BAMethod == [3,4])
             H = real(H);
         end
     end
-    H = H/max(max(H));
+    %H = H/max(max(H));
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -619,7 +619,7 @@ if any(BurstData{file}.BAMethod == [3,4])
             H = real(H);
         end
     end
-    H = H/max(max(H));
+    %H = H/max(max(H));
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
