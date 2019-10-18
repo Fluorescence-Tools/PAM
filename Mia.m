@@ -6218,7 +6218,7 @@ for i=Auto
             TotalInt(j)=sum(sum((Image)));
             TotalPx(j)=numel(Image);
             MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(size(Image,1)*size(Image,2));
-            if h.Mia_Image.Calculations.Cor_ICS_norm %do intensity-normalized correlation
+            if h.Mia_Image.Calculations.Cor_ICS_norm.Value %do intensity-normalized correlation
                 MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/mean2(Image)^2;
             end
             MIAData.Cor{floor(i*1.5)}(:,:,j) = MIAData.Cor{floor(i*1.5)}(:,:,j)-1;
@@ -6257,7 +6257,7 @@ if Cross
         else
             %%% Actual correlation
             MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(size(Image{1},1)*size(Image{1},2));
-            if h.Mia_Image.Calculations.Cor_ICS_norm %do intensity-normalized correlation
+            if h.Mia_Image.Calculations.Cor_ICS_norm.Value %do intensity-normalized correlation
                 MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2}));
             end
             MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j) - 1;
