@@ -6133,8 +6133,7 @@ end
 
 %%% Determins, which correlations to perform
 if mode == 2 %Van Steensel type colocalization
-    Auto = [];
-    Cross = 1;
+    Auto = 1:2; Cross = 1;
     channel=2; %the CCF is stored at channe 2
 elseif h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto=1:2; Cross=1;
@@ -6245,7 +6244,12 @@ if Cross
             %%% Corrects for shape of selected region
             ImageCor = ImageCor./Norm;
             ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(2)/4):round(Size(2)*3/4));
-            MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+            switch mode
+                case 1 %normal cc(R)ICS
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+                case 2 %Van Steensel type colocalization, but then in 2D
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(std(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*std(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+            end
         else
             ImageFluct{1} = Image{1}-mean2(Image{1});
             ImageFluct{2} = Image{2}-mean2(Image{2});
@@ -6442,12 +6446,8 @@ if savedata > 1
                     InfoAll(3).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
                     InfoAll(3).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
             end
-            if mode == 1 %normal RICS
-                %%% Mean intensity
-                InfoAll(3).Counts = sum(MeanInt);
-            else %Van steensel
-                InfoAll(3).Counts = [];
-            end
+            %%% Mean intensity
+            InfoAll(3).Counts = sum(MeanInt);
             %%% Averaged correlation
             DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,(1:numel(frames))+(b-1)*Offset),3);
             %%% Error of correlation
