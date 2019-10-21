@@ -1674,7 +1674,7 @@ h.Mia_Image.Calculations.Cor_Do_ICS = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.82, 0.47 0.06],...
-    'Callback',@Do_2D_XCor,...
+    'Callback',{@Do_2D_XCor,1},...
     'String','Do (R)ICS');
 %%% Selects data saving procedure
 h.Mia_Image.Calculations.Cor_Save_ICS = uicontrol(...
@@ -1795,18 +1795,6 @@ h.Mia_Image.Calculations.Save_Name = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.36, 0.7 0.06],...
     'String','Use automatic filename');
-%%% Checkbox to switch between automatic\manual filenames
-h.Mia_Image.Calculations.Cor_ICS_norm= uicontrol(...
-    'Parent', h.Mia_Image.Calculations.Cor_Panel,...
-    'Style','checkbox',...
-    'Units','normalized',...
-    'FontSize',12,...
-    'Value',1,...
-    'BackgroundColor', Look.Back,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.26, 0.7 0.06],...
-    'String','/I^2',...
-    'Tooltipstring','Calculate intensity-normalized correlation (standard for RICS and ICS)');
 %% Perform N&B calculation tab
 %%% Tab and panel for perform correlation UIs
 h.Mia_Image.Calculations.NB_Tab= uitab(...
@@ -2078,7 +2066,7 @@ h.Mia_Image.Calculations.Save_Coloc = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.35 0.62, 0.47 0.06],...
-    'String',{'Do not save','Save'});
+    'String',{'Do not save','Save as .miacor'});
 %% mean Pearson's coefficient
 h.Mia_Image.Calculations.Coloc_Pearsons = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
@@ -6103,8 +6091,12 @@ Update_Plots([],[],1,1:size(MIAData.Data,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_2D_XCor(~,~)
+function Do_2D_XCor(~,~,mode)
+% mode = 1 % RICS
+% mode = 2 % Van steensel type co-localization
+
 h = guidata(findobj('Tag','Mia'));
+
 global MIAData UserValues
 
 %%% Stops, if no data was loaded
@@ -6140,7 +6132,10 @@ if size(MIAData.Data,1)<2
 end
 
 %%% Determins, which correlations to perform
-if h.Mia_Image.Calculations.Cor_Type.Value==3
+if mode == 2 %Van Steensel type colocalization
+    Auto = 1:2; Cross = 1;
+    channel=2; %the CCF is stored at channe 2
+elseif h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto=1:2; Cross=1;
     channel=1:3;
 else
@@ -6217,11 +6212,7 @@ for i=Auto
             %%% Used to calculate total mean
             TotalInt(j)=sum(sum((Image)));
             TotalPx(j)=numel(Image);
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(size(Image,1)*size(Image,2));
-            if h.Mia_Image.Calculations.Cor_ICS_norm.Value %do intensity-normalized correlation
-                MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/mean2(Image)^2;
-            end
-            MIAData.Cor{floor(i*1.5)}(:,:,j) = MIAData.Cor{floor(i*1.5)}(:,:,j)-1;
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(size(Image,1)*size(Image,2)*(mean2(Image))^2)-1;
         end
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
@@ -6234,7 +6225,7 @@ end
 %%% Performs crosscorrelation
 if Cross
     MIAData.Cor{2}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
-    for j=i:numel(Frames)
+    for j=1:numel(Frames)
         Image{1}=double(MIAData.Data{1,2}(:,:,Frames(j)));
         Image{2}=double(MIAData.Data{2,2}(:,:,Frames(j)));
         Size = [2*size(Image{1},1)-1, 2*size(Image{1},2)-1];
@@ -6253,15 +6244,23 @@ if Cross
             %%% Corrects for shape of selected region
             ImageCor = ImageCor./Norm;
             ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(2)/4):round(Size(2)*3/4));
-            MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
-        else
-            %%% Actual correlation
-            MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(size(Image{1},1)*size(Image{1},2));
-            if h.Mia_Image.Calculations.Cor_ICS_norm.Value %do intensity-normalized correlation
-                MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2}));
+            switch mode
+                case 1 %normal cc(R)ICS
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+                case 2 %Van Steensel type colocalization, but then in 2D
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(std(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*std(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
             end
-            MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j) - 1;
-            
+        else
+            ImageFluct{1} = Image{1}-mean2(Image{1});
+            ImageFluct{2} = Image{2}-mean2(Image{2});
+            %%% Actual correlation
+            MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(ImageFluct{1}).*conj(fft2(ImageFluct{2})))))/(size(Image{1},1)*size(Image{1},2));
+            switch mode
+                case 1 %normal cc(R)ICS
+                    MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(mean2(Image{1})*mean2(Image{2}));
+                case 2 %Van Steensel type colocalization, but then in 2D
+                    MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(std2(Image{1})*std2(Image{2}));
+            end
         end
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
@@ -6298,13 +6297,20 @@ for i=1:size(MIAData.Cor)
     end
 end
 
+switch mode
+    case 1 %normal RICS
+        savedata = h.Mia_Image.Calculations.Cor_Save_ICS.Value;
+    case 2 %Van Steensel type colocalization
+        savedata = h.Mia_Image.Calculations.Save_Coloc.Value;
+end
+
 %%% Saves correlation files
-if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
+if savedata > 1
     if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
         mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
     end
     
-    if h.Mia_Image.Calculations.Cor_Save_ICS.Value ~= 4 %% normal saving
+    if savedata ~= 4 %% normal saving
         Window = numel(Frames);
         Offset = numel(Frames);
         Blocks = 1;
@@ -6448,7 +6454,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,1:numel(frames)),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,(1:numel(frames))+(b-1)*Offset),3));
         end
         %% Saves correlations
-        switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
+        switch savedata
             case {2,4} %%% .miacor filetype
                 
                 %% Creates new filename
@@ -8294,20 +8300,18 @@ h = guidata(findobj('Tag','Mia'));
 %are background corrected, and thus the Pearson's calculation also.
 
 if size(MIAData.Data,1) > 1
-    Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
-    if iscell(MIAData.AR)
-        AROI = MIAData.AR{1,2}; %for now top right AROI
-    else
-        AROI = true(size(Image));
-    end
-    Image = Image(AROI); %linear array of only the included pixels
-    Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
-    Image2 = Image2(AROI); %linear array of only the included pixels
-    
     switch h.Mia_Image.Calculations.Coloc_Type.Value
         case 1 %Pearson's correlation coefficient
-            % Calculate a Pearson's correlation coefficient for the corrected images within the AROI
-            
+            % Calculate a Pearson's correlation coefficient for the corrected images within the AROI           
+            Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
+            if iscell(MIAData.AR)
+                AROI = MIAData.AR{1,2}; %for now top right AROI
+            else
+                AROI = true(size(Image));
+            end
+            Image = Image(AROI); %linear array of only the included pixels
+            Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
+            Image2 = Image2(AROI); %linear array of only the included pixels
             if ~h.Mia_Image.Calculations.Coloc_weighting.Value
                 %% Calculations without intensity weighting
                 %% Mean Pearson's coefficient
@@ -8375,34 +8379,36 @@ if size(MIAData.Data,1) > 1
             else
                 %plak hier de corresponderende berekening als wél intensity weighting wordt gedaan
             end
+            %% plotting everything
+            f = figure;
+            ax1 = axes(f);
+            errorbar(ax1,IntG,ccG,ErrorG,'g');
+            hold on
+            errorbar(ax1,IntR,ccR,ErrorR,'r');
+            xlabel(ax1,'Intensity (a.u.)');
+            ylabel(ax1,'Correlation coefficient');
+            ax1.YLim = [-0.05,1.05];
+            ax2 = axes('Position',ax1.Position,'Color','none');
+            errorbar(ax2, GR,ccGR,ErrorGR, 'Color','k');
+            ax2.Color = 'none';
+            ax2.XAxisLocation = 'top';
+            ax2.YAxisLocation = 'right';
+            ax2.XLim = [0,ax2.XLim(2)];
+            ax2.YLim = [-0.05,1.05];
+            xlabel(ax2, 'Intensity ratio G/R');
             
-    %     case 2 %Manders
-    %     case 3 %Costes
-    %     case 4 %Van Steensel
-    %     case 5 %Li
-    %     case 6 %object based (particle localization)
+            %     case 2 %Manders
+            %     case 3 %Costes
+        case 4 %Van Steensel
+            Do_2D_XCor([],[],2)
+            %     case 5 %Li
+            %     case 6 %object based (particle localization)
         otherwise
             msgbox('not implemented yet')
             h.Mia_Image.Calculations.Coloc_Type.Value = 1;
     end
     
-    %% plotting everything
-    f = figure;
-    ax1 = axes(f);
-    errorbar(ax1,IntG,ccG,ErrorG,'g');
-    hold on
-    errorbar(ax1,IntR,ccR,ErrorR,'r');
-    xlabel(ax1,'Intensity (a.u.)');
-    ylabel(ax1,'Correlation coefficient');
-    ax1.YLim = [-0.05,1.05];
-    ax2 = axes('Position',ax1.Position,'Color','none');
-    errorbar(ax2, GR,ccGR,ErrorGR, 'Color','k');
-    ax2.Color = 'none';
-    ax2.XAxisLocation = 'top';
-    ax2.YAxisLocation = 'right';
-    ax2.XLim = [0,ax2.XLim(2)];
-    ax2.YLim = [-0.05,1.05];
-    xlabel(ax2, 'Intensity ratio G/R');
+
     
 else
     msgbox('load 2-color data!')
