@@ -9,8 +9,8 @@ if isempty(BurstData)
 end
 
 h = guidata(hListbox);
-%file = BurstMeta.SelectedFile;
-%species = BurstData{file}.SelectedSpecies;
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
 [file_n,species_n,subspecies_n] = get_multiselection(h);
 
 if eventData.isMetaDown % right-click is like a Meta-button
