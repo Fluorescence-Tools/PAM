@@ -1864,6 +1864,8 @@ UserValues.FCSFit.Conf_Interval = Conv_Interval;
 UserValues.FCSFit.Hide_Legend = h.Hide_Legend.Value;
 LSUserValues(1);
 
+cellfun(@delete,FCSMeta.Plots(:,5:end)); FCSMeta.Plots(:,5:end) = [];
+
 YMax=0; YMin=0; RMax=0; RMin=0;
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
 for i=1:size(FCSMeta.Plots,1)
@@ -1949,6 +1951,22 @@ for i=1:size(FCSMeta.Plots,1)
             else
                 FCSMeta.Plots{i,2}.YData=(OUT-P(offset_idx))/B;
             end
+        end
+        if strcmp(FCSMeta.DataType,'FRET') %%% individual populations as dashed lines
+            hold(h.FCS_Axes,'on');
+            active = find(P(1:3:end)); % find the active plots with nonzero amplitude
+            color= FCSMeta.Plots{i,2}.Color;
+            linewidth = FCSMeta.Plots{i,2}.LineWidth;
+            ax = FCSMeta.Plots{i,2}.Parent;
+            p = P; p(1:3:end) = 0;
+            for a = active'
+                param = p;
+                param(3*(a-1)+1) = P(3*(a-1)+1);
+                OUT = real(feval(FCSMeta.Model.Function,param,x));
+                FCSMeta.Plots{i,4+a} = plot(ax,x,OUT/B,'LineStyle','--','Color',color,'LineWidth',linewidth);
+            end
+        else
+            cellfun(@delete,FCSMeta.Plots(i,5:end));
         end
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
@@ -2175,14 +2193,28 @@ switch mode
             
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
-        if h.Fit_Errorbars.Value
-            UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
-        else
-            UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
-        end
-        %UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        % if h.Fit_Errorbars.Value
+        %     UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
+        % else
+        %    UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
+        % end
+        % UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        % H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
         
-        H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
+        if h.Fit_Errorbars.Value
+            UseCurves = [1,2];
+        else
+            UseCurves = [4,2];
+        end
+
+        CopyCurves = FCSMeta.Plots(Active,UseCurves);
+        H.FCS_Plots = [];
+        for i = Active'
+            for j = UseCurves
+                H.FCS_Plots(i,j) = copyobj(FCSMeta.Plots{i,j},H.FCS);
+            end
+        end
+
         if h.Export_FitsLegend.Value
                H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none'); 
         else
@@ -2193,13 +2225,24 @@ switch mode
                         LegendString{i} = LegendString{i}(7:end);
                     end
                     if h.Fit_Errorbars.Value
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end-1:-2:1),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     else
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:1),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     end
 
                 end
             end
+        end
+        if strcmp(FCSMeta.DataType,'FRET')
+            %%% add invidividual plots
+            UseCurves = [5:size(FCSMeta.Plots,2)];
+            N = numel(H.FCS_Legend.String);
+            for i = Active'
+                for j = UseCurves
+                    copyobj(FCSMeta.Plots{i,j},H.FCS);
+                end
+            end
+            H.FCS_Legend.String = H.FCS_Legend.String(1:N);
         end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
@@ -2253,7 +2296,7 @@ switch mode
                 H.Residuals.Box = 'off';
             end
         end
-      
+        
         H.Fig.Color = [1 1 1];
         %%% Copies figure handles to workspace
         assignin('base','H',H);
