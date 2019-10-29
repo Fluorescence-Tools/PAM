@@ -692,7 +692,6 @@ if isempty(hfig)
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
-    h.DynamicMenuItem = javax.swing.JMenuItem('Dynamic Analyses (BVA, E vs. Tau, FRET-2CDE)');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
     %h.DoBurstVarianceAnalysis = javax.swing.JMenuItem('Burst Variance Analysis');
     %h.EvsTauConfInt = javax.swing.JMenuItem('E vs. Tau (Conf. Int.)');
