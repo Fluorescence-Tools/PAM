@@ -1,10 +1,11 @@
-function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure,plot_interval)
-%%% Performs Metropolis-Hastings-Sampling of posterior distribution
+function [samples,prob,acceptance] =  MWGsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure)
+%%% Performs Metropolis-Within-Gibbs-Sampling of posterior distribution
+%%% (also called block-wise Metropolis and similar things)
 %%% Input parameters:
 %%% nsamples    -   Number of Samples to draw
-%%% probfun     -   function handle to the logarithm of posterior density function,
+%%% probfun     -   funtion handle to the posterior density function,
 %%%                 only a funtion of the parameter vector, 
-%%%                 defined with the data! 
+%%%                 defined with the data!
 %%%                 i.e. probfun = @(par) prob(data_x,data_y,model_param,par)
 %%% priorfun    -   function handle to the prior density function, also
 %%%                 a function of the parameter vector
@@ -13,6 +14,11 @@ function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_p
 %%%                 (1 x n)
 %%% lb          -   Lower Boundaries (1 x n)
 %%% ub          -   Upper Boundaries (1 x n)
+%%% model_type  -   The type of the model in a string:
+%%%                 'SR'        (Single Ratio)
+%%%                 '1Gauss'    (Single Gauss)
+%%%                 '2Gauss'    (Two Gaussian)
+%%%                 If left empty, no plot will be displayed.
 %%% initial_parameters - Vector of start parameters.
 %%% fixed       -   logical array specifying which parameters to vary
 %%% plot_param  -   logical array of parameter values to plot each
@@ -28,30 +34,32 @@ function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_p
 %%% acceptance  -   The total acceptance rate of the proposed steps.
 
 %%% check whether to display plots or not
-if nargin > 8
-    Display = 1;
+if nargin < 8
+    Display = 0;
     if nargin < 11 %%% no parent figure specified
         parent_figure = [];
     end
-    if nargin < 12
-        plot_interval = 10;
-    end
 else
-    Display = 0;
+    Display = 1;
 end
 
 %%% define global Stop variable to interrupt the algorithm by button press
-global Stop Pause 
+global Stop Pause
 Stop = 0;
 Pause = 0;
 %%% randomize the seed for the random number generator
 rng('shuffle')
 
+%%% read out number of parameters
+nparam = numel(initial_parameters);
+%%% convert fixed array to indices of free parameters
+free_param = find(~fixed);
+
 %%% initialize output variables
 samples = zeros(nsamples,size(initial_parameters,1));
 samples(1,:) = initial_parameters;
 prob = zeros(nsamples,1);
-acceptance = 0;
+param = initial_parameters;
 
 %%% evaluate the prior and the posterior at the initial position
 Posterior_old = probfun(initial_parameters);
@@ -59,13 +67,17 @@ Prior_old = priorfun(initial_parameters);
 prob(1) = Posterior_old;
 
 %%% initialize loop variables and parameters
-count = 1; %%% the number of attempted steps
-acc = 0;   %%% the number of successfull steps
+count = 1; %%% the number of sattempted teps
+acc = zeros(nparam,1);   %%% the number of successfull steps
 
 %%% Initalize plots
 if Display ~= 0
     parent_figure = UpdatePlot(samples,prob,acc,count,plot_params,param_names,parent_figure);
 end
+
+%%% Parameter order will be randomized in every step of the Gibbs sampler
+order = free_param;%order = [1:nparam];
+n_free_param = numel(free_param);
 %%% Start while loop
 %%% Loop stops if the number of samples was drawn or STOP was pressed
 while count < (nsamples) && (Stop == 0)
@@ -73,66 +85,66 @@ while count < (nsamples) && (Stop == 0)
         handles = guidata(gcf);
         waitfor(handles.bayesian.button_pause,'UserData',0);
     end
-    %%% draw new parameters
-    param = samples(count,:);
-    param(~fixed) = normrnd(samples(count,(~fixed)),sigma_prop(~fixed));
     %%% increase count variable
     count = count + 1;
-    %%% Apply boundaries but recycle random numbers (reflecting boundary)
-    param(param < lb) = 2*lb(param < lb) - param(param < lb);
-    param(param > ub) = 2*ub(param > ub) - param(param > ub);
-    
-    %%% First evaluate the prior ratio#
-    prior_accepted = 0;
-    Prior_new = priorfun(param);
-    ratio_prior = exp(Prior_new-Prior_old);
-    if ratio_prior >= 1
-        %%% step accepted by priors
-        prior_accepted = 1;
-    elseif ratio_prior > 0
-        %%% evaluate binomial
-        prior_accepted = binornd(1,ratio_prior);
+    %%% randomize the order
+    order = order(randperm(n_free_param));
+    %%% copy the samples vector to the new chain position
+    samples(count,:) = samples(count-1,:);
+    for k = order' %%% loop through parameters, sample them one by one
+        %%% draw new value for one parameter
+        param = samples(count,:); %%% this contains already all the changes made to the other parameters
+        param(k) = normrnd(samples(count,k),sigma_prop(k)); %%% here, a new value is drawn
+        %%% Apply boundaries but recycle random numbers (reflecting boundary)
+        param(param < lb) = 2*lb(param < lb) - param(param < lb);
+        param(param > ub) = 2*ub(param > ub) - param(param > ub);
+
+        %%% First evaluate the prior ratio#
+        prior_accepted = 0;
+        Prior_new = priorfun(param);
+        ratio_prior = exp(Prior_new-Prior_old);
+        if ratio_prior >= 1
+            %%% step accepted by priors
+            prior_accepted = 1;
+        elseif ratio_prior > 0
+            %%% evaluate binomial
+            prior_accepted = binornd(1,ratio_prior);
+        end
+
+        %%% continue if the markov step was accepted according to the priors
+        if prior_accepted == 1
+            %%% only now evaluate the actual posterior density
+            post_accepted = 0;
+            Posterior_new = probfun(param);
+            ratio_post = exp(Posterior_new-Posterior_old);
+            if ratio_post >= 1
+                %%% accept the step
+                post_accepted = 1;
+            elseif ratio_post > 0
+                post_accepted = binornd(1,ratio_post);
+            end
+
+            %%% update parameter value if the step was accepted
+            %%% (Don't update the total vector of samples yet!)
+            if post_accepted == 1
+                Prior_old = Prior_new;
+                Posterior_old = Posterior_new;
+                acc(k) = acc(k) +1;
+                %%% update samples vector
+                samples(count,k) = param(k);
+                prob(count) = Posterior_new;
+            end
+        end
     end
-    
-    %%% continue if the markov step was accepted according to the priors
-    if prior_accepted == 1
-        %%% only now evaluate the actual posterior density
-        post_accepted = 0;
-        Posterior_new = probfun(param);
-        ratio_post = exp(Posterior_new-Posterior_old);
-        if ratio_post >= 1
-            %%% accept the step
-            post_accepted = 1;
-        elseif ratio_post > 0
-            post_accepted = binornd(1,ratio_post);
-        end
-        
-        %%% update values if the step was accepted
-        if post_accepted == 1
-            Prior_old = Prior_new;
-            Posterior_old = Posterior_new;
-            acc = acc +1;
-            samples(count,:) = param;
-            prob(count) = Posterior_new;
-            acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,plot_interval) == 0)
-                UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
-            end
-        else %%% value not accepted based on posterior, keep old value
-            samples(count,:) = samples(count-1,:);
-            prob(count) = prob(count-1);
-            acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,plot_interval) == 0)
-                UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
-            end
-        end
-    else %%% value not accepted based on prior, keep old value
+    %%% if no value was accepted, keep the old values
+    if prob(count) == 0
+        prob(count) = Posterior_old;
         samples(count,:) = samples(count-1,:);
-        prob(count) = prob(count-1);
-        acceptance = acc/count;
-        if (Display ~= 0) && (mod(count,plot_interval) == 0)
-            UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
-        end
+    end
+    %%% Now update the Display
+    acceptance = acc./count;
+    if (Display ~= 0) && (mod(count,100) == 0)
+        UpdatePlot(samples,prob,mean(acceptance),count,plot_params,param_names,parent_figure);
     end
 end
 
@@ -154,7 +166,7 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     if isempty(parent_figure)
         %%% create a figure
         parent_figure = figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8],'Color',UserValues.Look.Back);
-        whitebg(parent_figure, UserValues.Look.Back);
+        whitebg(parent_figure, UserValues.Look.Axes);
     else
         handles = guidata(parent_figure);
         delete(parent_figure.Children);
@@ -231,4 +243,3 @@ else
     obj.String = 'Pause';
 end
 drawnow;
-
