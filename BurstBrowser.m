@@ -929,15 +929,22 @@ if isempty(hfig)
         zscale_image = ['<html><img src="file:/' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
         zscale_image = strrep(zscale_image,'\','/');
     else
-        trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
-        circle_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
-        zscale_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
+        if verLessThan('MATLAB','9.7')
+            trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
+            circle_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+            zscale_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
+        else % on mac, from 2019b no images can be rendered in the table
+            trash_image = '<html><font size=4><font color="red"><b>D</b></font></html>';
+            circle_image = '<html><font size=4><font color="green"><b>A</b></font></html>';
+            zscale_image = '<html><font size=4><font color="blue"><b>Z</b></font></html>';
+        end
     end
     cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'char','numeric','numeric','logical','logical','logical'};
     ceditable = [false,true true true true true];
     table_dat = {'','','',false,false,false};
     cwidth = {225,80,80,25,25,25};
+    tooltip = '<html>A: Toggle active status of cut.<br>D: Delete cut.<br>Z: Display false-color image of parameter.</html>';
     
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -955,7 +962,8 @@ if isempty(hfig)
         'ColumnWidth',cwidth,...
         'FontSize',12,...
         'CellEditCallback',@CutTableChange,...
-        'UIContextMenu',h.CutTable_Menu);
+        'UIContextMenu',h.CutTable_Menu,...
+        'ToolTipString',tooltip);
     h.CutTable.Units = 'pixels';
     h.CutTable.ColumnWidth{1} = h.CutTable.Position(3)-2*80-2*25-56;
     h.CutTable.Units = 'normalized';
