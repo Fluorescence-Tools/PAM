@@ -59,8 +59,7 @@ if isempty(param_index) %%% add parameter
     param_index = numel(BurstData{file}.Cut{species(1),species(2)});
 end
 index(1)  = param_index; % update the index for this particular species
-%%% store previous data in case the update is invalid
-PreviousData = BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1};
+
 switch index(2)
     case {1} %min boundary was changed
         %%% if upper boundary is lower than new min boundary -> reject
@@ -86,7 +85,7 @@ switch index(2)
     case {2} %max boundary was changed
         %%% if lower boundary is higher than new upper boundary --> reject
         if BurstData{file}.Cut{species(1),species(2)}{index(1)}{2} > NewData
-            NewData = PreviousData;
+            NewData = eventdata.PreviousData;
         end
         if species(2) ~= 1
             %%% if new upper boundary is higher than global upper boundary -->
@@ -108,6 +107,7 @@ switch index(2)
         % unchanged
     case {5} % ZScale was changed
         %%% disable all other active components
+        hObject = gco;
         for i = 1:size(hObject.Data)
             if i ~= index(1)
                 hObject.Data{i,6} = false;
