@@ -69,7 +69,7 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     h.axes_E_BtoGRvsTauBB.UIContextMenu = []; set(h.axes_E_BtoGRvsTauBB.Children,'UIContextMenu',[]);
                 end
                 %%% Query Lifetimes using ginput
-                if verLessThan('MATLAB','9.5')
+%                 if verLessThan('MATLAB','9.8')
                     switch h.LifetimeTabgroup.SelectedTab.Title
                         case 'All'                            
                             [x,y,button] = ginputax(h.axes_EvsTauGG,2,h);
@@ -77,9 +77,9 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                             [x,y,button] = ginputax(h.axes_lifetime_ind_2d,2,h);
                     end
                     h.PlotDynamicFRETButton.String = 'Dynamic FRET line';
-                else % 2018b onwards
-                    [x,y,button] = my_ginput(2);                    
-                end
+%                 else % 2018b onwards
+%                     [x,y,button] = my_ginput(2);                    
+%                 end
                 if strcmp(h.LifetimeTabgroup.SelectedTab.Title,'All')
                     switch BurstData{file}.BAMethod
                         case {1,2,5}

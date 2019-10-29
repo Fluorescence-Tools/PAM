@@ -1443,8 +1443,6 @@ if Mode==0 %%% Loads user values
     if numel(S.TauFit.FitParams) < 5
         params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2];
         fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0]);
-        params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1];
-        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0]);
         S.TauFit.FitParams{end+1} = params;
         S.TauFit.FitFix{end+1} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
@@ -2314,6 +2312,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.BVA_ModelComparison = S.BurstBrowser.Settings.BVA_ModelComparison;
     
+    %%% Check, if BurstBrowser.Settings.BVA_SeperatePlots subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_SeperatePlots')
+        S.BurstBrowser.Settings.BVA_SeperatePlots=0;
+        disp('UserValues.BurstBrowser.Settings.BVA_SeperatePlots was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_SeperatePlots = S.BurstBrowser.Settings.BVA_SeperatePlots;
+    
     %%% Check, if BurstBrowser.Settings.DynFRETLine_Line subfield exists
     if ~isfield(S.BurstBrowser.Settings,'DynFRETLine_Line')
         S.BurstBrowser.Settings.DynFRETLine_Line=1;
@@ -2374,7 +2379,13 @@ if Mode==0 %%% Loads user values
         S.PDA.Dynamic = 0;
     end
     P.PDA.Dynamic = S.PDA.Dynamic;
-
+    
+    if ~isfield(S.PDA, 'DynamicSystem')
+        disp('WARNING: UserValues structure incomplete, field "PDA.DynamicSystem" missing');
+        S.PDA.DynamicSystem = 1;
+    end
+    P.PDA.DynamicSystem = S.PDA.DynamicSystem;
+    
     if ~isfield(S.PDA, 'IgnoreOuterBins')
         disp('WARNING: UserValues structure incomplete, field "PDA.IgnoreOuterBins" missing');
         S.PDA.IgnoreOuterBins = 0;
@@ -2429,12 +2440,24 @@ if Mode==0 %%% Loads user values
     end
     P.PDA.MaxPhotons = S.PDA.MaxPhotons;
 
+    if ~isfield(S.PDA, 'ScaleNumberOfPhotons')
+        disp('WARNING: UserValues structure incomplete, field "PDA.ScaleNumberOfPhotons" missing');
+        S.PDA.ScaleNumberOfPhotons = false;
+    end
+    P.PDA.ScaleNumberOfPhotons = S.PDA.ScaleNumberOfPhotons;
+    
     if ~isfield(S.PDA, 'GridRes')
         disp('WARNING: UserValues structure incomplete, field "PDA.GridRes" missing');
         S.PDA.GridRes = '100';
     end
     P.PDA.GridRes = S.PDA.GridRes;
-
+    
+    if ~isfield(S.PDA, 'GridRes_PofT')
+        disp('WARNING: UserValues structure incomplete, field "PDA.GridRes_PofT" missing');
+        S.PDA.GridRes_PofT = '100';
+    end
+    P.PDA.GridRes_PofT = S.PDA.GridRes_PofT;
+    
     if ~isfield(S.PDA, 'Smin')
         disp('WARNING: UserValues structure incomplete, field "PDA.Smin" missing');
         S.PDA.Smin = '0';

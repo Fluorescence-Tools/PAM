@@ -88,7 +88,7 @@ if isempty(obj)
         h.Rsigma2st_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma2_static);
         h.Rsigma3st_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma3_static);
         h.KineticRates_table2.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2);
-        h.KineticRates_table3.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3);
+        h.KineticRates_table3.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3(1:3,1:3));
         h.KineticRates_table3.Data(1,1) = {NaN};h.KineticRates_table2.Data(1,1) = {NaN};
         h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
         h.KineticRates_table3.Data(3,3) = {NaN};
@@ -107,7 +107,7 @@ else
             UserValues.BurstBrowser.Settings.BVA_R1 = str2double(h.Rstate1_edit.String);
             BurstData{file}.AdditionalParameters.BVA_R1 = UserValues.BurstBrowser.Settings.BVA_R1;
         case h.Rstate2_edit
-            UserValues.BurstBrowser.Settings.BVA_R2
+            UserValues.BurstBrowser.Settings.BVA_R2 = str2double(h.Rstate2_edit.String);
             BurstData{file}.AdditionalParameters.BVA_R2 = UserValues.BurstBrowser.Settings.BVA_R2;
         case h.Rstate3_edit
             UserValues.BurstBrowser.Settings.BVA_R3 = str2double(h.Rstate3_edit.String);
@@ -207,6 +207,8 @@ else
             UserValues.BurstBrowser.Settings.BVA_ModelComparison = h.ModelComparison_checkbox.Value;
         case h.DynFRETLine_checkbox
             UserValues.BurstBrowser.Settings.BVAdynFRETline = h.DynFRETLine_checkbox.Value;
+        case h.SeperatePlots_checkbox
+            UserValues.BurstBrowser.Settings.BVA_SeperatePlots = h.SeperatePlots_checkbox.Value;
         case h.ConsistencyMethod_Popupmenu
             UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method = h.ConsistencyMethod_Popupmenu.Value;
         case h.ConsistencyAnalysis_Button
