@@ -692,9 +692,7 @@ if isempty(hfig)
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
-    h.DynamicMenuItem = javax.swing.JMenuItem('Dynamic Analyses (BVA, E vs. Tau, FRET-2CDE)');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
-    %h.DoBurstVarianceAnalysis = javax.swing.JMenuItem('Burst Variance Analysis');
     %h.EvsTauConfInt = javax.swing.JMenuItem('E vs. Tau (Conf. Int.)');
     %h.FRET2CDEConfInt = javax.swing.JMenuItem('FRET-2CDE Filter (Conf. Int.)');
     h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram');
@@ -709,7 +707,6 @@ if isempty(hfig)
     set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
-    set(h.DynamicMenuItem,'ActionPerformedCallback',@Dynamic_Analysis);
     %set(h.EvsTauConfInt,'ActionPerformedCallback',@Burst_Variance_Analysis);
     %set(h.FRET2CDEConfInt,'ActionPerformedCallback',@Burst_Variance_Analysis);
     set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
@@ -731,7 +728,6 @@ if isempty(hfig)
     h.ExportMenuItem.add(h.Export_FRET_Hist_Timeseries_Menu);
     h.SpeciesListMenu.add(h.ExportMenuItem);
     h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
-    h.SpeciesListMenu.add(h.DynamicMenuItem);
     h.SpeciesListMenu.addSeparator;
     h.SpeciesListMenu.add(h.DisplayFileInfo);
     %%% Define Species List
