@@ -62,5 +62,7 @@ out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3)
 %out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
 %out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
 if nargout > 1
-    func = @(x) 1-interp1(tauf,taux,x)./tauD;
+    func = @(x) 1- ( coefficients(1).*x.^3 + coefficients(2).*x.^2 + coefficients(3).*x + coefficients(4) )./tauD;;
+    % interp1 does not work due to the ambiguity of values
+    %func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end

@@ -1,0 +1,5 @@
+# List of the custom read ins embedded in the compiled application.
+# State the function names here.
+
+Read_CZI
+Zeiss_CZI

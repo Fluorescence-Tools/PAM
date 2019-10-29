@@ -95,7 +95,7 @@ upper_bound = mean(FRET_2CDE_static,1) + std(FRET_2CDE_static,0,1)*norminv(1-alp
 [H,x,y] = histcounts2(FRET_2CDE,E,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[0,75],'YBinLimits',[-0.1,1.1]);
 H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
 f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
+contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
 colormap(f,colormap(h.BurstBrowser));
 ax = gca;
 ax.CLimMode = 'auto';
@@ -107,18 +107,39 @@ ax.YLim = [0,75];
 % plot patch to phase contour plot out
 xlim = ax.XLim;
 ylim = ax.YLim;
-patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
+patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
 
 xlabel('FRET Efficiency');
 ylabel('FRET 2CDE');
 set(gca,'Color',[1,1,1],'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
 
 %%% plot averaged FRET-2CDE
-plot([-0.1,1.1]',[10,10]','Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2);
-scatter(bin_centers,mean_FRET_2CDE,100,'^','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
-scatter(bin_centers,static_line,100,'^','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+plot([-0.1,1.1]',[10,10]','Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'HandleVisibility','off');
+plot(bin_centers,mean_FRET_2CDE,'-d','MarkerSize',10,'MarkerEdgeColor','none',...
+    'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+if sampling ~= 0
+    patch([min(bin_centers(isfinite(upper_bound))),bin_centers(isfinite(upper_bound)),max(bin_centers(isfinite(upper_bound)))],[0,upper_bound(isfinite(upper_bound)),0],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+end
+scatter(bin_centers,static_line,100,'d','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
 %scatter(bin_centers,mean_FRET_2CDE_naive,100,'^','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3);
-patch([min(bin_centers(isfinite(upper_bound))),bin_centers(isfinite(upper_bound)),max(bin_centers(isfinite(upper_bound)))],[0,upper_bound(isfinite(upper_bound)),0],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
 
+switch UserValues.BurstBrowser.Display.PlotType
+            case {'Contour','Scatter'}
+                if sampling ~= 0
+                    [~,icons] = legend('Binned FRET 2CDE','CI','Binned CI','Location','northeast');
+                    icons(6).FaceAlpha = 0.25;
+                    icons(7).Children.MarkerSize = 10;
+                else
+                    legend('Binned FRET 2CDE','Location','northeast')
+                end
+            case {'Image','Hex'}
+                if sampling ~= 0
+                    [~,icons] = legend('Binned FRET 2CDE','CI','Binned CI','Location','northeast');
+                    icons(6).FaceAlpha = 0.25;
+                    icons(7).Children.MarkerSize = 10;
+                else
+                    legend('Binned FRET 2CDE','Location','northeast')
+                end
+end
 ax.Units = 'pixel';
 ax.Position(4) = ax.Position(3);

@@ -9,17 +9,58 @@ global BurstData BurstMeta
 %check which cell was changed
 index = eventdata.Indices;
 index(2) = index(2)-1; %%% lower by one since we changed the parameter name to be in first column
-file = BurstMeta.SelectedFile;
-species = BurstData{file}.SelectedSpecies; % in the DataTree
+[file_n,species_n,subspecies_n] = get_multiselection(h);
 
 %read out the parameter name
-ChangedParameterName = BurstData{file}.Cut{species(1),species(2)}{index(1)}{1};
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+ChangedParameterName = BurstData{BurstMeta.SelectedFile}.Cut{species(1),species(2)}{index(1)}{1};
 %change value in structure
 NewData = eventdata.NewData;
 if isnan(NewData)
     hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
     return;
 end
+%%% Update Cuts of all selected species
+for i = 1:numel(file_n)
+    UpdateCutState(NewData,index,ChangedParameterName,file_n(i),[species_n(i),subspecies_n(i)]);
+end
+
+%%% Update GUI elements
+UpdateCutTable(h);
+UpdateCuts();
+
+%%% Update Plots
+%%% To speed up, find out which tab is visible and only update the respective tab
+switch h.Main_Tab.SelectedTab
+    case h.Main_Tab_General
+        %%% we switched to the general tab
+        UpdatePlot([],[],h);
+    case h.Main_Tab_Lifetime
+        %%% we switched to the lifetime tab
+        %%% figure out what subtab is selected
+        UpdateLifetimePlots([],[],h);
+        switch h.LifetimeTabgroup.SelectedTab
+            case h.LifetimeTabAll
+            case h.LifetimeTabInd
+                PlotLifetimeInd([],[],h);
+        end     
+end
+
+function UpdateCutState(NewData,index,ChangedParameterName,file,species)
+global BurstData
+
+%%% check if the parameter exists
+params_in_species = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
+param_index = find(strcmp(params_in_species(:,1),ChangedParameterName));
+if isempty(param_index) %%% add parameter
+    param = find(strcmp(BurstData{file}.NameArray,ChangedParameterName));
+    AddCutToSpecies(param,file,species);
+    param_index = numel(BurstData{file}.Cut{species(1),species(2)});
+end
+index(1)  = param_index; % update the index for this particular species
+%%% store previous data in case the update is invalid
+PreviousData = BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1};
 switch index(2)
     case {1} %min boundary was changed
         %%% if upper boundary is lower than new min boundary -> reject
@@ -45,7 +86,7 @@ switch index(2)
     case {2} %max boundary was changed
         %%% if lower boundary is higher than new upper boundary --> reject
         if BurstData{file}.Cut{species(1),species(2)}{index(1)}{2} > NewData
-            NewData = eventdata.PreviousData;
+            NewData = PreviousData;
         end
         if species(2) ~= 1
             %%% if new upper boundary is higher than global upper boundary -->
@@ -141,25 +182,4 @@ if species(2) == 1
             end
         end
     end
-end
-
-%%% Update GUI elements
-UpdateCutTable(h);
-UpdateCuts();
-
-%%% Update Plots
-%%% To speed up, find out which tab is visible and only update the respective tab
-switch h.Main_Tab.SelectedTab
-    case h.Main_Tab_General
-        %%% we switched to the general tab
-        UpdatePlot([],[],h);
-    case h.Main_Tab_Lifetime
-        %%% we switched to the lifetime tab
-        %%% figure out what subtab is selected
-        UpdateLifetimePlots([],[],h);
-        switch h.LifetimeTabgroup.SelectedTab
-            case h.LifetimeTabAll
-            case h.LifetimeTabInd
-                PlotLifetimeInd([],[],h);
-        end     
 end

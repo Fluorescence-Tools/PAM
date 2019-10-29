@@ -560,7 +560,7 @@ switch (Type)
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, SyncRate, Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),1);
+            [MT, MI, SyncRate, Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),1,h.MT.Use_Chunkwise_Read_In.Value);
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/SyncRate;
@@ -759,7 +759,8 @@ switch (Type)
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
+            
+            [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),5E8,h.Progress.Axes,h.Progress.Text,i,numel(FileName),h.MT.Use_Chunkwise_Read_In.Value);
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/Header.SyncRate;
@@ -935,7 +936,7 @@ switch (Type)
             end
             
         end
-        FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        FileInfo.MeasurementTime = double(PhotonHDF5_Data.acquisiton_duration); %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')

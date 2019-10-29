@@ -389,7 +389,7 @@ for i = 1:numel(FileName)
     if ~isfield(S.BurstData,'Cut') %%% no cuts existed
         %initialize Cut Cell Array with standard cuts
         switch S.BurstData.BAMethod
-            case {1,2,5}
+            case {1,2,5,6}
                 %%% FRET efficiency and stoichiometry basic cuts
                 Cut = {{'FRET Efficiency',-0.1,1.1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
             case {3,4}

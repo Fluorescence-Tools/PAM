@@ -259,8 +259,9 @@ for i=1:NumChans
                     end
 
                     Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-                    %Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
-                    Counts = [0 ,0];
+                    counts_per_channel = [sum(cellfun(@numel,MT1)) sum(cellfun(@numel,MT2))];
+                    duration = sum((cellfun(@(x,y) max(x(end),y(end)),MT1,MT2) - cellfun(@(x,y) min(x(1),y(1)),MT1,MT2))).*BurstData{file}.ClockPeriod;
+                    Counts = counts_per_channel./duration/1000; % average countrate in kHz
                     Valid = 1:size(Cor_Array,2);
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
                     count = count+1;
