@@ -55,14 +55,14 @@ pTrans(isnan(pTrans)) = 0;
 % calculate diagonal elements from off-diagonal elements
 % diagonal elements are 1-sum(p_else)
 for i = 1:size(pTrans,1)
-    pTrans(i,i) = 1-sum(pTrans(i,:));
+    pTrans(i,i) = 1-sum(pTrans(:,i));
 end
 
 %%% For input to the mex file, the rates must have the following structure:
 %%% p = [p11,p12,13,...p21,p22,p23,...p31,p32,p33,...]
 p=[];
 for i = 1:size(pTrans,1)
-    p = [p,pTrans(i,:)];
+    p = [p,pTrans(:,i)'];
 end
 
 % get number of states

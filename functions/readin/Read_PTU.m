@@ -1,9 +1,17 @@
-function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,Chunkwise)
 
 %%% Input parameters:
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
+%%% Chunkwise: Data read-in in consecutive chunks and maximum Data limit
+if nargin < 7 % Chunkwise not specified
+    Chunkwise = false;
+end
+
 fid=fopen(FileName,'r');
+fseek(fid,0,1);
+filesize = ftell(fid);
+fseek(fid,0,-1);
 
 Progress(0/NumFiles,ProgressAxes,ProgressText,['Processing Header of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
@@ -125,7 +133,7 @@ while 1
                 %%% Catch case where length of TagString exceeds length of
                 %%% UsrHeadName character array
                 if eval(['size(' TagIdent ',2) < numel(TagString)'])
-                    eval([TagIdent '(:,end:numel(TagString)) = '' '''])
+                    eval([TagIdent '(:,end:numel(TagString)) = '' '';']);
                 end
             end
             try;eval([EvalName '=TagString;']);end;
@@ -280,8 +288,26 @@ switch TTResultFormat_TTTRRecType
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                fileChunks = ceil(filesize/NoE);
+                T3Record = zeros(NoE/4*(fileChunks-1),1);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record = [T3Record;fread(fid, NoE/4, 'ubit32')];
+            end
+        else
+            T3Record = fread(fid, Inf, 'ubit32');     % all 32 bits
+        end
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
@@ -307,7 +333,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection = zeros(1,length(nsync));
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );

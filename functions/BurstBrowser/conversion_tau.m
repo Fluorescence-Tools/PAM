@@ -73,3 +73,12 @@ end
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
+
+
+function [p] = normal_dist(xR,Rmp,sigma)
+p = exp(-((xR-Rmp)).^2)./(2*sigma^2);
+p = p./sum(p);
+
+function [p] = chi_dist(xR,Rmp,sigma)
+p = (xR./Rmp).*(normal_dist(xR,Rmp,sigma)-normal_dist(xR,-Rmp,sigma));
+p = p./sum(p);

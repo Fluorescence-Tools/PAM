@@ -29,7 +29,6 @@ start = zeros(n,3);
 if all( c == 0 | c == 1) %%% we start with a pure color
     start(:,c ~= 1) = repmat((n:-1:1)'/(n+1), [1 sum(c ~=1)]);
     start(:,c == 1) = repmat(c(c==1), [n 1]);
-    disp('case 1')
 else
     if any(c == 0)
         c(c == 0) = min(c(c>0)); %%% fill zeros with smallest value

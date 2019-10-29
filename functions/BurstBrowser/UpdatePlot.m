@@ -22,6 +22,9 @@ if ~verLessThan('matlab','8.5')
     drawnow nocallbacks
 end
 %% Update Main Plot
+if strcmp(h.axes_general.YDir,'reverse')
+    set(h.axes_general,'YDir','normal');
+end
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 x_name = h.ParameterListX.String{x};
@@ -353,7 +356,8 @@ if ~advanced
         h.colorbar.Visible = 'off';
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') %%% update contour plots for multiselection
-        if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+        if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 && UserValues.BurstBrowser.Display.Multiplot_Contour
+            %%% multiple species selected, color automatically
             %%% hide contour plot
             BurstMeta.Plots.Main_Plot(2).Visible = 'off';
             %%% plot contours

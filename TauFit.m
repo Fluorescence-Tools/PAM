@@ -18,7 +18,7 @@ end
 
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
-    Close_TauFit
+    CloseWindow(h.TauFit);
 end
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
@@ -76,7 +76,11 @@ h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
 h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
     'Callback',@Export,...
     'Separator','on');
-h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted microtime pattern',...
+h.Menu.Export_for_fFCS = uimenu(h.Menu.Export_Menu,'Label','Export for fFCS...',...
+    'Callback',[]);
+h.Menu.Export_MIPattern_Fit = uimenu(h.Menu.Export_for_fFCS,'Label','... fitted microtime pattern',...
+    'Callback',@Export);
+h.Menu.Export_MIPattern_Data = uimenu(h.Menu.Export_for_fFCS,'Label','... raw microtime pattern',...
     'Callback',@Export);
 h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
     'Callback',@Export,'Separator','on');
@@ -867,7 +871,7 @@ if strcmp(method,'ensemble')
     end
     %%% Popup Menu for Fit Method Selection
     h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-    'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
     'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
     %%% Button for loading the selected PIE Channels
@@ -1046,7 +1050,7 @@ if exist('bh','var')
             'FontSize',10);
         %%% Popup Menu for Fit Method Selection
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-            'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
@@ -1254,6 +1258,11 @@ h.FitResultToClip = uimenu(...
     'Label','Copy Fit Result to Clipboard',...
     'Callback',@Export);
 h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
+%%% Get tau values and plot dynamic FRET line in Burst Browser
+h.PlotDynamicFRETLine = uimenu(...
+    'Parent',h.FitPar_Table.UIContextMenu,...
+    'Label','Plot dynamic FRET line',...
+    'Callback',@Export);
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -2517,7 +2526,7 @@ else
         return;
     end
 end
-if gcbo == h.Menu.Export_MIPattern
+if gcbo == h.Menu.Export_MIPattern_Fit
     save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
 else
     save_fix = true;
@@ -3300,6 +3309,105 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{6};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+            case 'Two Distributions plus Donor only'
+                %%% Parameter:
+                %%% Center R1
+                %%% sigmaR1
+                %%% Center R2
+                %%% sigmaR2
+                %%% Fraction 1
+                %%% Fraction D only
+                %%% Scatter
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime
+                
+                %%% Convert Lifetimes
+                x0(10) = x0(10)/TauFitData.TACChannelWidth;
+                lb(10) = lb(10)/TauFitData.TACChannelWidth;
+                ub(10) = ub(10)/TauFitData.TACChannelWidth;
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
+                end
+                
+                FitFun = fitfun_2dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(26) = fix(3);
+                UserValues.TauFit.FitFix{chan}(27) = fix(4);
+                UserValues.TauFit.FitFix{chan}(5) = fix(5);
+                UserValues.TauFit.FitFix{chan}(23) = fix(6);
+                UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(13) = fix(9);
+                UserValues.TauFit.FitFix{chan}(14) = fix(10);
+                UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                end
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(26) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(27) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
+                UserValues.TauFit.IRFShift{chan} = FitResult{11};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -4245,15 +4353,15 @@ switch obj
         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
         
         % get fit parameters (scatter,background, irfshift)
-        x0 = [ UserValues.TauFit.FitParams{chan}([6,8]) UserValues.TauFit.IRFShift{chan}];
+        x0 = [ UserValues.TauFit.FitParams{chan}([8,10]) UserValues.TauFit.IRFShift{chan}];
         switch obj
             case h.Fit_Button_MEM_tau
                 mode = 'tau';
             case h.Fit_Button_MEM_dist
                 mode = 'dist';
                 %%% append F?rster distance and donor-only lifetime
-                x0(end+1) = UserValues.TauFit.FitParams{chan}(11);
-                x0(end+1) = UserValues.TauFit.FitParams{chan}(12);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(13);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(14);
         end
         [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata,mode);
         
@@ -4400,7 +4508,7 @@ switch obj
             %%% ask to fix the lifetimes
             lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
             [lifetimes,order] = sort(lifetimes);
-            fraction = UserValues.TauFit.FitParams{chan}(4);
+            fraction = UserValues.TauFit.FitParams{chan}(5);
             if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
                 fraction = 1-fraction;
             end
@@ -5190,7 +5298,7 @@ switch TauFitData.BAMethod
                 %%% for phasor, read reference for the respective channels
                 if do_phasor
                     if use_irf_as_phasor_reference
-                        PhasorRef{chan} = IRF{chan};
+                        PhasorRef{chan} = IRF{chan};                        
                         PhasorReferenceLifetime(chan) = 0;
                         %%% update the values in BurstData
                         BurstData.Phasor.PhasorReference{chan} = PhasorRef{chan};
@@ -5203,6 +5311,7 @@ switch TauFitData.BAMethod
                         PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
                         PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
                     end
+                    PhasorScat{chan} = SCATTER{chan};
                     %%% store the length of the microtime range used for
                     %%% fitting (needed to obtain the frequency omegae at a
                     %%% later stage)
@@ -5338,7 +5447,10 @@ switch TauFitData.BAMethod
             
             %% Fitting...
             %%% Prepare the fit inputs
-            lt = zeros(numel(MI),2);            
+            lt = zeros(numel(MI),2);
+            if do_phasor
+                ph = zeros(numel(MI),10);
+            end
             for chan = 1:2
                 if UserValues.TauFit.IncludeChannel(chan)
                     %%% Calculate Background fraction
@@ -5361,6 +5473,14 @@ switch TauFitData.BAMethod
                     %%% set lifetime to NaN if no signal was present
                     lt(fraction_bg == 1,chan) = NaN;
                     
+                    if do_phasor
+                        if ~use_bg % no background correction
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan));
+                        else
+                            ph(:,5*(chan-1)+1:5*chan) = BurstWise_Phasor(Mic_Phasor{chan},PhasorRef{chan},PhasorReferenceLifetime(chan),fraction_bg,PhasorScat{chan});
+                        end
+                        phasor{j} = ph;
+                    end
                     %parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
                     %    
                     %    if fraction_bg(i) == 1
@@ -5381,16 +5501,7 @@ switch TauFitData.BAMethod
                 end
             end
             lifetime{j} = lt;
-            if do_phasor; 
-                ph = zeros(numel(MI),10);
-                if UserValues.TauFit.IncludeChannel(1)
-                    ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
-                end
-                if UserValues.TauFit.IncludeChannel(2)
-                    ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
-                end
-                phasor{j} = ph;
-            end
+            
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
@@ -5709,7 +5820,7 @@ handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Burstwise Phasor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
+function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT,fraction_bg,Scat)
 %%% Calculates the burstwise phasor components g and s,
 %%% as well as the lifetimes from phase (TauP) and modulation (TauM)
 %%% The average lifetime TauMean = (TauP+TauM)/2 is also returned.
@@ -5719,7 +5830,18 @@ function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
 %%%              Can be the IRF (Ref_LT = 0) or a reference sample such as
 %%%              donor only.
 %%%        Ref_LT - Lifetime of the reference sample in nanoseconds
+%%%        fraction_bg - The background intensity fraction estimated from
+%%%                      the background count rate and the measured 
+%%%                      signal.
+%%%        Scat - the backgorund microtime pattern (i.e. buffer
+%%%               measurement)
 global TauFitData
+
+if nargin == 3 % no bg correction
+    correct_background = false;
+else
+    correct_background = true;
+end
 
 MI_Bins = size(Mic,2); % Total number of MI bins of file
 From=1; % First MI bin to used
@@ -5766,6 +5888,16 @@ s = sum(Mic.*repmat(S,size(Mic,1),1),2)./sum(Mic,2);
 neg=find(g<0 & s<0);
 g(neg)=-g(neg);
 s(neg)=-s(neg);
+
+%%% correct background
+if correct_background
+    %%% calculate the phasor of the background microtime pattern
+    g_background = sum(Scat.*G)./sum(Scat);
+    s_background = sum(Scat.*S)./sum(Scat);
+    %%% correct g and s for background
+    g = (g - fraction_bg.*g_background)./(1-fraction_bg);
+    s = (s - fraction_bg.*s_background)./(1-fraction_bg);
+end
 
 %%% calculate lifetime values
 Fi=atan(s./g); Fi(isnan(Fi))=0;
@@ -5841,11 +5973,12 @@ Parameters{4} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Tau4 [ns]','Fraction 1','F
 Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{8} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{10} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{9} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -5874,6 +6007,8 @@ sigR = UserValues.TauFit.FitParams{chan}(22);
 FD0 = UserValues.TauFit.FitParams{chan}(23);
 rinf2 = UserValues.TauFit.FitParams{chan}(24);
 beta = UserValues.TauFit.FitParams{chan}(25);
+R2 = UserValues.TauFit.FitParams{chan}(26);
+sigR2 = UserValues.TauFit.FitParams{chan}(27);
 
 tau1f = UserValues.TauFit.FitFix{chan}(1);
 tau2f = UserValues.TauFit.FitFix{chan}(2);
@@ -5900,6 +6035,8 @@ sigRf = UserValues.TauFit.FitFix{chan}(22);
 FD0f = UserValues.TauFit.FitFix{chan}(23);
 rinf2f = UserValues.TauFit.FitFix{chan}(24);
 betaf = UserValues.TauFit.FitFix{chan}(25);
+R2f = UserValues.TauFit.FitFix{chan}(26);
+sigR2f = UserValues.TauFit.FitFix{chan}(27);
 
 StartPar = cell(7,1);
 StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
@@ -5909,15 +6046,16 @@ StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau
 StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
 StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
 StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
-StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
+StartPar{9} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{11} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 startpar = StartPar{model};
 names = Parameters{model};
@@ -6004,10 +6142,10 @@ LSUserValues(1);
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export(obj,~)
-global UserValues TauFitData FileInfo BurstData
+global UserValues TauFitData FileInfo BurstData BurstMeta
 h = guidata(findobj('Tag','TauFit'));
 switch obj
-    case h.Menu.Export_MIPattern
+    case {h.Menu.Export_MIPattern_Fit, h.Menu.Export_MIPattern_Data}
         %%% export the fitted microtime pattern for use in fFCS filter
         %%% generation
         
@@ -6040,17 +6178,23 @@ switch obj
 
                 % reconstruct mi pattern
                 mi_pattern = zeros(FileInfo.MI_Bins,1);
-                mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
 
             else % two different channels selected
-                % check if anisotropy model is selected 
-                if isempty(strfind(TauFitData.FitType,'Anisotropy'))
-                    disp('Select an anisotropy model.');
-                    return;
+                if obj == h.Menu.Export_MIPattern_Fit
+                    % check if anisotropy model is selected 
+                    if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                        disp('Select an anisotropy model.');
+                        return;
+                    end
                 end
                 % two PIE channels selected
                 PIEchannel1 = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
@@ -6060,18 +6204,46 @@ switch obj
 
                 % reconstruct mi patterns
                 mi_pattern1 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
                 mi_pattern2 = zeros(FileInfo.MI_Bins,1);
-                mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
-
+                switch obj
+                    case h.Menu.Export_MIPattern_Fit
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+                    case h.Menu.Export_MIPattern_Data
+                        mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Par;
+                        mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitData.Decay_Per;
+                end
                 % define output
                 MIPattern = cell(0);
                 MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
                 MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
+                
+                PIEchannel = PIEchannel1;
             end
             FileName = FileInfo.FileName{1};
             [~, FileName, ~] = fileparts(FileName);
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
             Path = FileInfo.Path;
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel));
+            if exist('PIEchannel2','var')
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
             
@@ -6118,10 +6290,19 @@ switch obj
             
             % reconstruct mi pattern
             mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
-            mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            if TauFitData.BAMethod ~= 5
-                mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
-                mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            switch obj
+                case h.Menu.Export_MIPattern_Fit
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+                    end
+                case h.Menu.Export_MIPattern_Data
+                    mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Par;
+                    if TauFitData.BAMethod ~= 5
+                        mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+                        mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitData.Decay_Per;
+                    end
             end
             % define output
             MIPattern = cell(0);
@@ -6130,27 +6311,30 @@ switch obj
                 MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             end
             
-            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
+            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);            
             Path = TauFitData.Path;
-        end
-        % save  
-        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
-        if all(File==0)
-            return
-        end
-        %%% previously, the microtime pattern was stored as MATLAB file
-        % save(fullfile(Path,File),'MIPattern');
-        %%% Now,it is saved as a text file for easier readability
-        %%% write header
-        fid = fopen(fullfile(Path,File),'w');
-        fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
-        %%% write detector - routing assigment        
-        fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
-        if TauFitData.BAMethod ~= 5
-            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
-        end     
-        fclose(fid);
-        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+            if obj == h.Menu.Export_MIPattern_Fit
+                FileName = [FileName '_fit'];
+            end
+            % save  
+            [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+            if all(File==0)
+                return
+            end
+            %%% previously, the microtime pattern was stored as MATLAB file
+            % save(fullfile(Path,File),'MIPattern');
+            %%% Now,it is saved as a text file for easier readability
+            %%% write header
+            fid = fopen(fullfile(Path,File),'w');
+            fprintf(fid,'Microtime patterns of measurement: %s\n',FileName);
+            %%% write detector - routing assigment        
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',1,TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par));
+            if TauFitData.BAMethod ~= 5
+                fprintf(fid,'Channel %i: Detector %i and Routing %i\n',2,TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per));
+            end     
+            fclose(fid);
+            dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
+        end        
     case h.Menu.Export_To_Clipboard
         %%% Copy current plot data to clipboard
         if strcmp(h.Result_Plot.Visible, 'on')
@@ -6471,9 +6655,59 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, [num2cell(TauFitData.ConfInt);{'NaN','NaN'}]];
+            res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
         end
         Mat2clip(res);
+    case h.PlotDynamicFRETLine
+        %%% get tau values and plot dynamic FRET line in Burst Browser
+        BBgui = guidata(findobj('Tag','BurstBrowser'));
+        file = BurstMeta.SelectedFile;
+        %%% Query using edit box
+        %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+        data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
+            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(cell2mat(h.FitPar_Table.Data(1,1))),num2str(cell2mat(h.FitPar_Table.Data(2,1)))});
+        data = cellfun(@str2double,data);
+        if any(isnan(data)) || isempty(data)
+            return;
+        end
+        x = data(2:end);
+        line = data(1);
+        if line < 1 || line > 3
+            return;
+        end
+        % Update UserValues
+        UserValues.BurstBrowser.Settings.DynFRETLine_Line = line;
+        UserValues.BurstBrowser.Settings.DynFRETLineTau1 = x(1);
+        UserValues.BurstBrowser.Settings.DynFRETLineTau2 = x(2);
+        %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+        %    x);
+        switch BBgui.lifetime_ind_popupmenu.Value
+            case {5,6} % Phasor plots
+                % get channel (donor or acceptor)
+                chan = h.lifetime_ind_popupmenu.Value-4;
+                % Calculate frequency
+                Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+                % convert lifetimes to phasor coordinates
+                g = 1./(1+(2*pi*Freq*x).^2);
+                s = (2*pi*Freq*x).*g;
+                x = g; y = s;
+                % draw a line through the universal circles
+                m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
+                % use p-q formula
+                p = (2*m*b-1)/(m^2+1); q = b^2/(m^2+1);
+                xp1 = -p/2 - sqrt(p^2/4-q); xp2 =  -p/2 + sqrt(p^2/4-q);
+                xp = xp1:0.01:xp2; yp = m*xp+b;
+                plot(xp,yp,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine2,'Parent',BBgui.axes_lifetime_ind_2d);
+                BBgui.axes_lifetime_ind_2d.UIContextMenu = BBgui.axes_lifetime_ind_1d_x.UIContextMenu; set(BBgui.axes_lifetime_ind_2d.Children,'UIContextMenu',BBgui.axes_lifetime_ind_1d_x.UIContextMenu);
+                return;
+        end
+    [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+        x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
+    PlotLifetimeInd(BBgui.BurstBrowser,[],BBgui);
 end
 
 
@@ -6603,5 +6837,7 @@ valid = valid & (data ~= 0) & (model ~= 0);
 
 log_summand = zeros(size(data));
 log_summand(valid) = data(valid).*log(model(valid)./data(valid));
-
-w_res_MLE = sqrt(2*(model - data) - 2*log_summand);
+w_res_MLE = 2*(model - data) - 2*log_summand; %squared residuals
+% avoid complex numbers
+w_res_MLE(w_res_MLE < 0) = 0;
+w_res_MLE = sqrt(w_res_MLE);
