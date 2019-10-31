@@ -61,8 +61,26 @@ switch mode
             'String', 'Show spectrum histogram',...
             'Callback', {@Zeiss_CZI,3},...
             'Position',[0.02 0.40, 0.9 0.05] );
-        
-         
+        Out{3}(4) = uicontrol(...
+            'Parent',findobj('Tag','Mia_Orientation_Settings_Panel'),...
+            'Style','edit',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'BackgroundColor', UserValues.Look.Control,...
+            'ForegroundColor', UserValues.Look.Fore,...
+            'String', '1',...
+            'Callback', {@Zeiss_CZI,3},...
+            'Position',[0.45 0.3, 0.25 0.05] );
+        Out{3}(5) = uicontrol(...
+            'Parent',findobj('Tag','Mia_Orientation_Settings_Panel'),...
+            'Style','text',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'HorizontalAlignment','left',...
+            'BackgroundColor', UserValues.Look.Back,...
+            'ForegroundColor', UserValues.Look.Fore,...
+            'Position',[0.02 0.3, 0.25 0.05],...
+            'String','Z-plane to load');
     case 2 %%% Load Data
         h = guidata(findobj('Tag','Mia'));
         
@@ -77,8 +95,10 @@ switch mode
         Channel2 = str2num(h.Mia_Image.Settings.Custom(2).String);
         Channel2 = Channel2(~isnan(Channel2) & Channel2~=0); %% Removes zeros and nans
         
+        Zplane = str2num(h.Mia_Image.Settings.Custom(4).String);
+        
         if isempty(Channel1) %%% No valid bins were set for channel 1
-            magbox('No valid bins selected for channel 1')
+            msgbox('No valid bins selected for channel 1')
             return;
         end
         
@@ -103,9 +123,9 @@ switch mode
         MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
-        MIAData.TICS_MS = [];
         MIAData.TICS = [];
-        MIAData.TICS_Int = [];
+        MIAData.TICS.Int = [];
+        MIAData.TICS.MS = [];
         MIAData.STICS = [];
         MIAData.STICS_SEM = [];
         MIAData.RLICS = [];
@@ -207,8 +227,20 @@ switch mode
             %%% Finds positions of plane/channel/time seperators
             Sep = strfind(Data{1,1}{1,2},';');
             
+            if numel(Sep) == 4 %%% Z stack with channels and > 1 frame
+                %%% Determines number of frames
+                F_Sep = strfind(Data{1,1}{1,2}(Sep(4):end),'/');
+                N_F = str2double(Data{1,1}{1,2}(Sep(4)+F_Sep:end));
+                
+                %%% Determines number of channels
+                C_Sep = strfind(Data{1,1}{1,2}(Sep(3):(Sep(4)-1)),'/');
+                N_C = str2double(Data{1,1}{1,2}(Sep(3)+C_Sep:(Sep(4)-1)));
+                
+                %%% Determines number of Z planes
+                Z_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
+                N_Z = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
             
-            if numel(Sep) == 3 %%% Normal mode
+            elseif numel(Sep) == 3 %%% Normal mode
                 %%% Determines number of frames
                 F_Sep = strfind(Data{1,1}{1,2}(Sep(3):end),'/');
                 N_F = str2double(Data{1,1}{1,2}(Sep(3)+F_Sep:end));
@@ -216,21 +248,31 @@ switch mode
                 %%% Determines number of channels
                 C_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
                 N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
-            elseif numel(Sep) == 2 %%% Single Frame or SIngle Channel
+                
+                N_Z = 1;
+            elseif numel(Sep) == 2 %%% Single Frame or Single Channel
                 
                 if isempty(strfind(Data{1,1}{1,2}(Sep(2):end),'C')) %%% Single Color
                     %%% Determines number of channels
                     F_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
                     N_F = str2double(Data{1,1}{1,2}(Sep(2)+F_Sep:end));
                     N_C  = 1;
+                    N_Z = 1;
                 else %%% Single Frame
                     N_F = 1;
                     %%% Determines number of channels
                     C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
                     N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
+                    N_Z = 1;
                 end
+            elseif isempty(Sep)  %%% This is a transmisson-only image
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = 1;
+                    N_C = 1;
+                    N_Z = 1;
             else
-                msgbox('Inavalid data type')
+                msgbox('Invalid data type')
                 return;
             end
             
@@ -255,19 +297,38 @@ switch mode
             end
             
             Spectrum{i} = zeros(N_C,1);
+            Z = 0;
             for j=1:size(Data{1,1},1)
-                %%% Current channel
+                %%% the order of the data (frame-channel-z) is 
+                %%% 111 121 ... 1c1 112 ... 1c2 ... ... 1nz 211 ... ... fnz
+                %%% the code currently only loads 1 particular z plane
+                %%% because Mia has no option for displaying different Z
+                %%% planes. Also the data format on Mia is not compatible
+                %%% with it yet.
+                
+                %%% Current channel     
                 C = mod(j-1,N_C)+1;
                 %%% Current frame
-                F = floor((j-1)/N_C)+1;
+                F = floor((j-1)/(N_C*N_Z))+1;
+                %%% current Z position
+                if C == 1
+                    Z = Z+1;
+                    if Z > N_Z
+                        Z = 1;
+                    end
+                end
                 
                 %%% Adds data to channel 1
                 if ~isempty(intersect(Channel1,C))
-                    MIAData.Data{1,1}(:,:,F) = MIAData.Data{1,1}(:,:,F)+uint16(Data{1,1}{j,1});
+                    if ~isempty(intersect(Zplane,Z))
+                        MIAData.Data{1,1}(:,:,F) = MIAData.Data{1,1}(:,:,F)+uint16(Data{1,1}{j,1});
+                    end
                 end
                 %%% Adds data to channel 2
                 if ~isempty(intersect(Channel2,C))
-                    MIAData.Data{2,1}(:,:,F) = MIAData.Data{2,1}(:,:,F)+uint16(Data{1,1}{j,1});
+                    if ~isempty(intersect(Zplane,Z))
+                        MIAData.Data{2,1}(:,:,F) = MIAData.Data{2,1}(:,:,F)+uint16(Data{1,1}{j,1});
+                    end
                 end
                 
                 %%% Calculates averaged spectrum for displaying

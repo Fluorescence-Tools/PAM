@@ -159,6 +159,13 @@ BurstData{file}.DataArray(:,indS) = S;
 %BurstData{file}.DataArray(:,indEPR) = EPR;
 if any(BurstData{file}.BAMethod == [1,2,5])
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = beta_gr*NGR./NRR;
+    FDFA = gamma_gr.*NGG./NGR; FDFA(FDFA<=0) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'log(FD/FA)')) = log(FDFA);
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'M1-M2')) = (1-E).*(1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'))./BurstData{file}.Corrections.DonorLifetime);   
+elseif any(BurstData{file}.BAMethod == [3,4])
+    FDFA = gamma_gr.*NGG./NGR; FDFA(FDFA<=0) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'log(FGG/FGR)')) = log(FDFA);
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'M1-M2 GR')) = (1-E).*(1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'))./BurstData{file}.Corrections.DonorLifetime);   
 end
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
@@ -282,7 +289,8 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstData{file}.DataArray(:,indPrGR) = PrGR;
     BurstData{file}.DataArray(:,indPrBG) = PrBG;
     BurstData{file}.DataArray(:,indPrBR) = PrBR;
-    BurstData{file}.DataArray(:,indPrBtoGR) = PrBtoGR;
+    BurstData{file}.DataArray(:,indPrBtoGR) = PrBtoGR;  
+   
     %% Anisotropy Correction of blue channel
     %%% Read out indices of parameters
     ind_rBB = strcmp(BurstData{file}.NameArray,'Anisotropy BB');
@@ -307,6 +315,11 @@ if any(BurstData{file}.BAMethod == [3,4])
     
     %%% Update Value in the DataArray
     BurstData{file}.DataArray(:,ind_rBB) = rBB;
+    
+    %% Update derived parameters
+    FBB_to_FBGFBR = gamma_br.*NBB./(gamma_gr.*NBG+NBR); FBB_to_FBGFBR(FBB_to_FBGFBR<=0) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'log(FBB/(FBG+FBR))')) = log(FBB_to_FBGFBR);
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'M1-M2 B->G+R')) = (1-E1A).*(1-BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'))./BurstData{file}.Corrections.DonorLifetimeBlue);   
 end
 
 %% Update to derived distances from intensity and lifetime

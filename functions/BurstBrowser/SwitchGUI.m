@@ -117,14 +117,21 @@ if BAMethod == 3
     %%% Unhide TauBB Export Option
     h.ExportEvsTauBB_Menu.Visible = 'on';
     %%% Update Popupmenu in LifetimeInd Tab
-    h.lifetime_ind_popupmenu.String = {'E vs tauGG', 'E vs tauRR', 'E(B->G+R) vs tauBB',...
-        'rGG vs tauGG','rRR vs tauRR','rBB vs tauBB'};
+    h.lifetime_ind_popupmenu.String = {'<html>E vs &tau;<sub>GG</sub></html>',...
+        '<html>E vs &tau;<sub>RR</sub></html>',...
+        '<html>E<sub>B->G+R</sub> vs &tau;<sub>BB</sub></html>',...
+        '<html>r<sub>GG</sub> vs &tau;<sub>GG</sub></html>',...
+        '<html>r<sub>RR</sub> vs &tau;<sub>RR</sub></html>',...
+        '<html>r<sub>BB</sub> vs &tau;<sub>BB</sub></html>'};   
     %% Change Correlation Table
     Names = {'BB1','BB2','BG1','BG2','BR1','BR2','GG1','GG2','GR1','GR2','RR1','RR2','BX1','BX2','GX1','GX2','BB','BG','BR','GG','GR','RR','BX','GX'};
     h.Correlation_Table.RowName = Names;
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'off';
+    %% Change BVA Tab
+    h.FRETpair_text.Visible = 'on';
+    h.FRETpair_Popupmenu.Visible = 'on';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
     if (numel(UserValues.BurstBrowser.CutDatabase) > 1) && ~isempty(UserValues.BurstBrowser.CutDatabase{2})
@@ -204,6 +211,9 @@ elseif BAMethod == 2
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'on';
+    %% Change BVA Tab
+    h.FRETpair_text.Visible = 'off';
+    h.FRETpair_Popupmenu.Visible = 'off';
     %% lifetime ind
     h.lifetime_ind_popupmenu.String = {'<html>E vs &tau;<sub>D(A)</sub></html>','<html>E vs &tau;<sub>A</sub></html>','<html>r<sub>D</sub> vs &tau;<sub>D(A)</sub></html>','<html>r<sub>A</sub> vs &tau;<sub>A</sub></html>'};
     %% Change CutDatabase

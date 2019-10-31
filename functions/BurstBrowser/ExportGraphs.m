@@ -13,6 +13,29 @@ if ispc
     fontsize = fontsize/1.3;
 end
 
+% just export data, no plot
+if any(obj==[h.Export1DX_Data_Menu,h.Export1DY_Data_Menu,h.Export2D_Data_Menu])
+    switch obj
+        case {h.Export1DX_Data_Menu, h.Export1DY_Data_Menu}
+            switch obj
+                case h.Export1DX_Data_Menu
+                    ax = h.axes_1d_x;
+                case h.Export1DY_Data_Menu
+                    ax = h.axes_1d_y;
+            end
+            Data = [get(ax.Children(end-1),'XData')', get(ax.Children(end-1),'YData')'];
+        case h.Export2D_Data_Menu
+            ax = h.axes_general;
+            Data = zeros(numel(ax.Children(end).XData)+1);
+            Data(2:end,1) = ax.Children(end).YData;
+            Data(1,2:end) = ax.Children(end).XData;
+            Data(2:end,2:end) = ax.Children(end).CData;
+    end
+    %%% copy Data to clipboard
+    Mat2clip(Data);
+    return;
+end
+
 size_pixels = 500;
 switch obj
     case h.Export1DX_Menu
@@ -248,6 +271,7 @@ switch obj
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
                     end
                 case 'Axes_1D_X'
+                    drawnow;
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     lim = 0;
@@ -605,7 +629,8 @@ switch obj
         delete(panel_copy.Children(logical(del)));
         for i = 1:numel(panel_copy.Children)
             if strcmp(panel_copy.Children(i).Type,'legend')
-                continue;
+                pause(1e-100) % for some reason, matlab needs an infinitesimal break here for the correct positioning of the x axes
+                continue
             end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
@@ -721,11 +746,11 @@ switch obj
                         end
                     end
                 end
-                if maxZ > 1 %%% ensure that the plot is not normalized
-                    for i = 1:numel(labels)
-                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
-                    end
-                end
+                %if maxZ > 1 %%% ensure that the plot is not normalized
+                %    for i = 1:numel(labels)
+                %        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                %    end
+                %end
             end
             cbar.Units = 'pixels';drawnow;
         end

@@ -2,7 +2,7 @@ function write_photonHDF5(~,~)
 global FileInfo UserValues TcspcData
 
 % check if phforge is installed
-[status,cmdout] = system('phforge');
+[status,cmdout] = system('phforge -h');
 if status ~= 0
     disp(cmdout);
     disp('Adding conda path to system path...');
@@ -24,7 +24,7 @@ if status ~= 0
     
     success = false;
     %%% try again
-    [status,cmdout] = system('phforge');
+    [status,cmdout] = system('phforge -h');
     if status == 0
         disp('phforge is installed.');
         success = true;
@@ -42,7 +42,7 @@ if status ~= 0
             %%% add env path to system path
             setenv('PATH', [getenv('PATH') ':' [envs{idx} filesep 'bin']]);
             %%% try again
-            [status,cmdout] = system('phforge');
+            [status,cmdout] = system('phforge -h');
             if status == 0
                 success = true;
                 disp('phforge is installed.');
