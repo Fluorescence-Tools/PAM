@@ -494,8 +494,8 @@ if Mode==0 %%% Loads user values
     P.Settings.Pam.Cor_Aggregate_TimewindowAdd = S.Settings.Pam.Cor_Aggregate_TimewindowAdd;
     
     %%% Checks if Pam.Phasor_Selection subfield exists
-    if ~isfield(S.Settings.Pam, 'Phasor_Selection')
-        S.Settings.Pam.Phasor_Selection=false(numel(S.PIE.Name)+1);
+    if ~isfield(S.Settings.Pam, 'Phasor_Selection') || (size(S.Settings.Pam.Phasor_Selection,2) < 9)
+        S.Settings.Pam.Phasor_Selection=[S.PIE.Name', repmat({4,0,0,0,0,1,1,false},numel(S.PIE.Name),1)];
         disp('UserValues.Settings.Pam.Phasor_Selection was incomplete');
     end
     P.Settings.Pam.Phasor_Selection = S.Settings.Pam.Phasor_Selection;

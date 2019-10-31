@@ -1612,7 +1612,7 @@ h.Phasor.Table = uitable(...
     'G_factor for Parallel, i.e., PIE chanel 1;\n'...
     'Per_coeff is for Perpendicular, i.e., PIE chanel 2']),...
     'UIContextMenu',h.MI.Menu,...
-    'CellEditCallback',@Update_Phaosr_Table);
+    'CellEditCallback',@Update_Phasor_Table);
 
 %%% Phasor reference selection
 h.MI.Phasor_UseRef = uicontrol(...
@@ -3348,7 +3348,7 @@ if nargin < 5
         mode = [mode, 2];
     end
     if UserValues.Settings.Pam.Use_Image == 1
-            mode = [mode, 3];
+        mode = [mode, 3];
     end
 end
 
@@ -3435,7 +3435,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             if ~isempty(PIE_MT)
                                 PamMeta.TracePCH{i} = histc(PIE_MT,TimeBinsPCH);
                                 PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
-                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i}); 
+                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
                             end
                         end
                     end
@@ -3453,7 +3453,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                         else
                             PamMeta.Image{i} = im;
                             h.Image.Colorbar.YLabel.String = 'Counts';
-                        end                        
+                        end
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3586,7 +3586,7 @@ if obj == h.MT.Use_Image
     % define axis limits for image plot
     h.Image.Axes.DataAspectRatio = [1,1,1];
     h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
-    h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];
     resetplotview(h.Image.Axes,'SaveCurrentView');
     Update_Display([],[],3);
     %%% If use_lifetime was clicked
@@ -3822,7 +3822,7 @@ elseif obj == h.Cor.AggregateCorrection
     if obj.Value == 1
         h.Cor.AfterPulsingCorrection.Value = 0;
     end
-
+    
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -4016,15 +4016,15 @@ if any(mode==2)
                     pie_chan_selection = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method};
                     switch UserValues.BurstSearch.Method
                         case {1,2} % 2color MFD
-                           donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1})),...
-                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,2}))];
-                           fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1})),...
-                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,2}))];
+                            donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1})),...
+                                find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,2}))];
+                            fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1})),...
+                                find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,2}))];
                         case {3,4} % 3color MFD, take 2color sub-channels
                             donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,1})),...
-                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,2}))];
+                                find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,2}))];
                             fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,1})),...
-                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,2}))];
+                                find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,2}))];
                         case {5,6} % 2color no-MFD
                             donor = find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1}));
                             fret = find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1}));
@@ -4055,7 +4055,7 @@ if any(mode==2)
                     ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
                     legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
                 case h.Trace.Trace_ExportFRETTrace_Menu
-                    ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';                
+                    ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';
                     ax.YLim = [0,1];
             end
         end
@@ -4143,15 +4143,15 @@ end
 %%% Updates image
 if any(mode==3)
     h.Image.Axes.DataAspectRatio=[1 1 1];
-    switch h.Image.Type.Value        
-        %%% Intensity image        
-        case 1            
+    switch h.Image.Type.Value
+        %%% Intensity image
+        case 1
             h.Plots.Image.CData=PamMeta.Image{Sel};
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
-        %%% Mean arrival time image
+            %%% Mean arrival time image
         case 2
             h.Plots.Image.CData = PamMeta.Lifetime{Sel};
             %%% Autoscales between min-max of pixels with at least 10% intensity;
@@ -4189,7 +4189,7 @@ if any(mode==3)
                 h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int_PIE{Sel}>Min))), max(max(phas(PamMeta.Phasor_Int_PIE{Sel}>Min)))+1];
             end
             %%% s from phasor calculation
-        phas = medfilt2(PamMeta.s_PIE{Sel});
+            phas = medfilt2(PamMeta.s_PIE{Sel});
             h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
@@ -4211,10 +4211,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
-%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
-%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
-%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
+    %     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
+    %     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
+    %     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
+    %     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4228,7 +4228,7 @@ if any(mode==4)
         h.Plots.MI_All(numel(PamMeta.MI_Hist)+1:end)=[];
         cellfun(@delete,Unused)
     end
-    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];       
+    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
         if ~isempty(h.Plots.MI_All{i}) && isvalid(h.Plots.MI_All{i})
@@ -4429,7 +4429,6 @@ end
 
 %%% Phasor microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==6) || any(mode==1) %%%
-    % hold on
     %%% Finds currently selected PIE channel
     Sel=h.PIE.List.Value(1); %%% delected PIE channels
     h.Phasor.Table.Data=UserValues.Settings.Pam.Phasor_Selection;
@@ -4438,7 +4437,7 @@ if any(mode==6) || any(mode==1) %%%
         %[row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
         Rout=UserValues.PIE.Router(Sel);
         To=UserValues.PIE.To(Sel);
-        From=UserValues.PIE.From(Sel);        
+        From=UserValues.PIE.From(Sel);
         Shift=h.Phasor.Table.Data{Sel, 3};
         
         %% Plots Reference histogram
@@ -4457,9 +4456,9 @@ if any(mode==6) || any(mode==1) %%%
         %     hold off
     else
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%% Usage of combined PIE channels for Phasor is currently only 
+        %%% Usage of combined PIE channels for Phasor is currently only
         %%% implemented for parallel and perpendicular polarizations.
-        %%% Specify the parallel channel as the first PIE channel, 
+        %%% Specify the parallel channel as the first PIE channel,
         %%% and the perpendicular channel as the second.
         %%% If the combined PIE channel contains more that two
         %%% PIE channels, any channels after the second are ignored.
@@ -4472,7 +4471,7 @@ if any(mode==6) || any(mode==1) %%%
         % % %        Pha1=PamMeta.MI_Hist{Det1, :}; Pha1=Pha1*h.Phasor.Table.Data{Sel, 7}; %%Parallel channel
         % % %        Pha2=PamMeta.MI_Hist{Det2, :}; Pha2= Pha2*2; %%% perpendicular channel
         % % %        Pha=Pha1+Pha2;
-        Rout=UserValues.PIE.Router(UserValues.PIE.Combined{Sel});        
+        Rout=UserValues.PIE.Router(UserValues.PIE.Combined{Sel});
         %Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{Sel}));
         To=max(UserValues.PIE.To(UserValues.PIE.Combined{Sel}));
         From=min(UserValues.PIE.From(UserValues.PIE.Combined{Sel}));
@@ -4492,7 +4491,7 @@ if any(mode==6) || any(mode==1) %%%
             Pha = Pha(From:To);
             h.Plots.Phasor.YData=Pha/max(Pha);
         end
-       
+        
         % old code
         %         if any(TcspcData.MI{Det1, :}) && any(TcspcData.MI{Det2, :})
         %             Pha1=TcspcData.MI{Det1, :}; %%Parallel channel
@@ -4526,16 +4525,16 @@ if any(mode==6) || any(mode==1) %%%
         %       h.Plots.Phasor.YData=Pha/max(Pha);
         %   end
     end
-obj = gcbo;
-if obj == h.MI.Phasor_Export_Menu
+    obj = gcbo;
+    if obj == h.MI.Phasor_Export_Menu
         hfig = figure('Visible','on',...
-               'Position',[100,100,500*h.MI.Phasor_Axes.Position(3),500*h.MI.Phasor_Axes.Position(4)],...
-                'Name',FileInfo.FileName{1});
+            'Position',[100,100,500*h.MI.Phasor_Axes.Position(3),500*h.MI.Phasor_Axes.Position(4)],...
+            'Name',FileInfo.FileName{1});
         ax = copyobj(h.MI.Phasor_Axes, hfig);
         hfig.Color = [1,1,1];
         set(ax,'Position', get(0, 'DefaultAxesPosition'),'Color',[1 1 1],'XColor',[0 0 0],'YColor',[0 0 0],'LineWidth',2);
-end
     end
+end
 
 %% Detector Calibration plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==7)
@@ -4563,7 +4562,7 @@ if any(mode==7)
             % uncorrected MI histogram (blue)
             h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
             h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
-
+            
             % corrected MI histogram (red)
             Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
             maxtick = str2double(h.MI.Calib_Single_Max.String);
@@ -4573,17 +4572,17 @@ if any(mode==7)
             end
             h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
             h.Plots.Calib.XData=1:FileInfo.MI_Bins;
-
+            
             % slider
             h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
             MIN=max([1 h.MI.Calib_Single.Value]);
             MAX=min([maxtick, MIN]);%+str2double(h.MI.Calib_Single_Range.String)-1]);
             h.MI.Calib_Single_Text.String=num2str(MIN);
-
+            
             % interphoton time selected MI histogram (green)
             h.Plots.Calib_Sel.YData=sum(PamMeta.Det_Calib.Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
             h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
-
+            
             % smoothing
             smoothing = str2double(h.MI.Calib_Single_Range.String);
             if smoothing > 1
@@ -4626,7 +4625,7 @@ end
 if any(mode==11)
     if strcmp(h.Trace.Log.Checked, 'on')
         h.Trace.Axes.YScale='Log';
-        h.Trace.Axes.YLim=[1 h.Trace.Axes.YLim(1,2)];       
+        h.Trace.Axes.YLim=[1 h.Trace.Axes.YLim(1,2)];
     else
         h.Trace.Axes.YScale='Linear';
     end
@@ -4818,7 +4817,7 @@ switch e.Key
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
-        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);        
+        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
         %%Update the Phasor.reference with PIE_List
         UserValues.Phasor.Reference(end+1, :)=0;
         UserValues.Phasor.Combined_Reference(end+1, :)=0;
@@ -4899,7 +4898,7 @@ switch e.Key
         elseif isdeployed %%% uisetcolor dialog does not work in compiled application
             color = color_setter(mean(UserValues.PIE.Color(Sel,:),1)); % open dialog to input color
         end
-         %%% Checks, if color was selected
+        %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
                 UserValues.PIE.Color(i,:)=color;
@@ -5216,18 +5215,18 @@ if obj == h.MI.Channels_List
             case 2 %%% Detector was changed
                 UserValues.Detector.Det(Sel) = ed.NewData;
                 for i=1:numel(UserValues.PIE.Detector)
-                   if UserValues.PIE.Detector(i)==ed.PreviousData && UserValues.PIE.Router(i)==ed.Source.Data{Sel,3}
-                       UserValues.PIE.Detector(i)=ed.NewData;
-                   end
+                    if UserValues.PIE.Detector(i)==ed.PreviousData && UserValues.PIE.Router(i)==ed.Source.Data{Sel,3}
+                        UserValues.PIE.Detector(i)=ed.NewData;
+                    end
                 end
                 
                 action = 'detector';
             case 3 %%% Rout was changed
                 UserValues.Detector.Rout(Sel) = ed.NewData;
                 for i=1:numel(UserValues.PIE.Detector)
-                   if UserValues.PIE.Router(i)==ed.PreviousData && UserValues.PIE.Detector(i)==ed.Source.Data{Sel,2}
-                       UserValues.PIE.Router(i)=ed.NewData;
-                   end
+                    if UserValues.PIE.Router(i)==ed.PreviousData && UserValues.PIE.Detector(i)==ed.Source.Data{Sel,2}
+                        UserValues.PIE.Router(i)=ed.NewData;
+                    end
                 end
                 action = 'detector';
             case 5 %%% Filter was changed
@@ -5548,14 +5547,14 @@ if any(mode==2)
         Data{i,8} = UserValues.Detector.enabled{i};
     end
     h.MI.Channels_List.Data = Data;
-%     h.MI.Phasor_Det.String = {Data{:,1}};
-%     if h.MI.Phasor_Det.Value>numel(h.MI.Phasor_Det.String)
-%             h.MI.Phasor_Det.Value=1;
-%     end
-%     h.MI.Calib_Det.String = {Data{:,1}};
-%     if h.MI.Calib_Det.Value > numel(h.MI.Calib_Det.String)
-%         h.MI.Calib_Det.Value=1;
-%     end
+    %     h.MI.Phasor_Det.String = {Data{:,1}};
+    %     if h.MI.Phasor_Det.Value>numel(h.MI.Phasor_Det.String)
+    %             h.MI.Phasor_Det.Value=1;
+    %     end
+    %     h.MI.Calib_Det.String = {Data{:,1}};
+    %     if h.MI.Calib_Det.Value > numel(h.MI.Calib_Det.String)
+    %         h.MI.Calib_Det.Value=1;
+    %     end
     %%% Updates plot selection lists
     for i=1:NTabs
         for j=1:NPlots
@@ -5730,7 +5729,7 @@ switch e.Key
             Profile= [h.Profiles.List.String{Sel} '.mat'];
             save([PathToApp filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
-            LSUserValues(0);          
+            LSUserValues(0);
             %%% Changes color to indicate current profile
             h.Profiles.List.String{Sel}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{Sel} '</Font></html>'];
             
@@ -5793,26 +5792,26 @@ h.Cor.Divider_Menu.Label=['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divide
 
 %% Sets Phasor PIE table to UserValues%%
 %%% Updates Detector calibration and Phasor channel lists
-h.Phasor.Table.CellEditCallback=[];  
+h.Phasor.Table.CellEditCallback=[];
 h.Phasor.Table.RowName=[];
 coulumnames={'PIE channel','Ref_LT (ns)', 'Shift (TCSPC)', 'BG (KHz)', 'Ref_BG (KHz)', 'AP (%)', 'G-factor', 'Per_Coeff', 'Select'};
 h.Phasor.Table.ColumnName = coulumnames;
 h.Phasor.Table.ColumnEditable=[false, true, true, true, true, true, true, true, true];
 PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
-Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT); 
+Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT);
 Shift=(repelem(0, numel(UserValues.PIE.Name))).'; Shift=num2cell(Shift);
 Background=(repelem(0, numel(UserValues.PIE.Name))).'; Background=num2cell(Background);
 Background_ref=(repelem(0, numel(UserValues.PIE.Name))).'; Background_ref=num2cell(Background_ref);
-Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing); 
-Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor); 
-Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff); 
+Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing);
+Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor);
+Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff);
 Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
 Phasor.Table_Format = cell(1,size(Phasor.Table_Data,2));
 h.Phasor.Table.Data = Phasor.Table_Data;
 h.Phasor.Table.CellEditCallback={@Update_Phasor_Table};
 h.Phaor.Table.Data = UserValues.Settings.Pam.Phasor_Selection;
 
-%%% Updates Detector calibration 
+%%% Updates Detector calibration
 List=UserValues.Detector.Name;
 h.MI.Calib_Det.String=List;
 h.MI.Calib_Det.Value=1;
@@ -5888,16 +5887,16 @@ global UserValues
 h=guidata(findobj('Tag','Pam'));
 % % %%% called to reset the table
 if obj == h.Phasor.Reset_Menu
-PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
-Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT); 
-Shift=(repelem(0, numel(UserValues.PIE.Name))).'; Shift=num2cell(Shift);
-Background=(repelem(0, numel(UserValues.PIE.Name))).'; Background=num2cell(Background);
-Background_ref=(repelem(0, numel(UserValues.PIE.Name))).'; Background_ref=num2cell(Background_ref);
-Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing); 
-Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor); 
-Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff); 
-Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
-
+    PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
+    Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT);
+    Shift=(repelem(0, numel(UserValues.PIE.Name))).'; Shift=num2cell(Shift);
+    Background=(repelem(0, numel(UserValues.PIE.Name))).'; Background=num2cell(Background);
+    Background_ref=(repelem(0, numel(UserValues.PIE.Name))).'; Background_ref=num2cell(Background_ref);
+    Afterpulsing=(repelem(0, numel(UserValues.PIE.Name))).'; Afterpulsing=num2cell(Afterpulsing);
+    Gfactor=(repelem(1, numel(UserValues.PIE.Name))).'; Gfactor=num2cell(Gfactor);
+    Per_Coeff=(repelem(1, numel(UserValues.PIE.Name))).'; Per_Coeff=num2cell(Per_Coeff);
+    Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
+    
     h.Phasor.Table.Data = Phasor.Table_Data;
     UserValues.Settings.Pam.Phasor_Selection = h.Phasor.Table.Data;
     return;
@@ -6054,7 +6053,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
             To2=UserValues.PIE.To(Cor_B(i));
             From2=UserValues.PIE.From(Cor_B(i));
         end
-
+        
         Cor_Type = h.Cor.Type.Value;
         switch Cor_Type %%% Assigns photons and does correlation
             case {1,4,5} %%% Point correlation
@@ -6079,11 +6078,11 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
                                 if (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
                                     MI1{k}=[MI1{k};...
-                                    TcspcData.MI{Det1(l),Rout1(l)}(...
-                                    TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
-                                    TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
-                                    TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
-                                    TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
+                                        TcspcData.MI{Det1(l),Rout1(l)}(...
+                                        TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                                        TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
+                                        TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
+                                        TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
                                 end
                             elseif any(Cor_Type == [4,5]) %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
@@ -6120,11 +6119,11 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
                                     if (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
                                         MI2{k}=[MI2{k};...
-                                        TcspcData.MI{Det1(l),Rout1(l)}(...
-                                        TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
-                                        TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
-                                        TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
-                                        TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
+                                            TcspcData.MI{Det1(l),Rout1(l)}(...
+                                            TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                                            TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
+                                            TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
+                                            TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
                                     end
                                 elseif any(Cor_Type == [4,5]) %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
@@ -6172,7 +6171,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     case 1
                         if ~(h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) && ~(h.Cor.AggregateCorrection.Value)
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                        elseif (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) 
+                        elseif (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i)))
                             %%% do after pulse correction if same detector is selected
                             %%% suppress afterpulsing by FLCS
                             %%% get microtime hist of PIE channel
@@ -6385,7 +6384,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     
                     %%% Writes data as columns: Time    Averaged    SEM     Individual bins
                     fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
-                    fclose(FileID);                    
+                    fclose(FileID);
                 end
                 %% Plots Data
                 %%% Creates new Tab with axes
@@ -6934,44 +6933,44 @@ end
 drawnow;
 %%% Finds currently selected PIE channel
 Sel=h.PIE.List.Value(1);
-    if UserValues.PIE.Detector(Sel)~=0
-        Det=UserValues.PIE.Detector(Sel);
-        [row, Det]=find(UserValues.Detector.Det==Det); %%Det is Index of selected PIE channel detector from teh Detector list
-        %%% Assigns current MI histogram as reference
-        Ref=PamMeta.MI_Hist{Det}; %%%
-        PamMeta.Reference(Sel, 1:numel(Ref))=Ref; 
-   %%% Sets reference to 0 in case of shorter MI length, essential for PIE refernce concatenation
-        UserValues.Phasor.Reference(Sel,:)=0;
-        %%%Concatenate the refrences
-        UserValues.Phasor.Reference(Sel,1:numel(Ref))=PamMeta.Reference(Sel, 1:numel(Ref)); %%%
-        UserValues.Phasor.Reference_Time(Sel) = FileInfo.MeasurementTime;
-        UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
-        UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
-    else
-        %%Refrence for combined channel
-        Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined cahnnel
-        [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
-        [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
-% %%% Assigns current MI histogram as reference
-     Ref1=TcspcData.MI{Det1, :}; %%Parallel channel
-     Ref2=TcspcData.MI{Det2, :}; %%% perpendicular channel
-     numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Ref1));% determine how many elements is to taken into account of G_factor percent
-     indices = randperm(length(Ref1),numelements); % get the randomly-selected indices
-     Ref_par=Ref1(indices);%%%Par according of G_factor
-     Ref_per=repelem(Ref2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
-     Ref_comb=[Ref_par; Ref_per]; 
-     %%%Creating combined MI histogram like MI_hist per detector
-     Ref=histc(Ref_comb,1:FileInfo.MI_Bins);
-     PamMeta.Combined(Sel, 1:numel(Ref))=Ref; 
-     %%% Sets reference to 0 in case of shorter MI length
-     UserValues.Phasor.Reference_Combined(Sel,:)=0;    
-     UserValues.Phasor.Combined_Reference(Sel, 1:numel(Ref))=PamMeta.Combined(Sel, 1:numel(Ref));
-     UserValues.Phasor.Combined_Reference_Time(Sel) = FileInfo.MeasurementTime;
-     UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
-     UserValues.Phasor.Reference_TAC = FileInfo.TACRange; 
-     LSUserValues(1)
-%      end
-    end
+if UserValues.PIE.Detector(Sel)~=0
+    Det=UserValues.PIE.Detector(Sel);
+    [row, Det]=find(UserValues.Detector.Det==Det); %%Det is Index of selected PIE channel detector from teh Detector list
+    %%% Assigns current MI histogram as reference
+    Ref=PamMeta.MI_Hist{Det}; %%%
+    PamMeta.Reference(Sel, 1:numel(Ref))=Ref;
+    %%% Sets reference to 0 in case of shorter MI length, essential for PIE refernce concatenation
+    UserValues.Phasor.Reference(Sel,:)=0;
+    %%%Concatenate the refrences
+    UserValues.Phasor.Reference(Sel,1:numel(Ref))=PamMeta.Reference(Sel, 1:numel(Ref)); %%%
+    UserValues.Phasor.Reference_Time(Sel) = FileInfo.MeasurementTime;
+    UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+    UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
+else
+    %%Refrence for combined channel
+    Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined cahnnel
+    [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
+    [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
+    % %%% Assigns current MI histogram as reference
+    Ref1=TcspcData.MI{Det1, :}; %%Parallel channel
+    Ref2=TcspcData.MI{Det2, :}; %%% perpendicular channel
+    numelements = round(h.Phasor.Table.Data{Sel, 7}*length(Ref1));% determine how many elements is to taken into account of G_factor percent
+    indices = randperm(length(Ref1),numelements); % get the randomly-selected indices
+    Ref_par=Ref1(indices);%%%Par according of G_factor
+    Ref_per=repelem(Ref2, h.Phasor.Table.Data{Sel, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+    Ref_comb=[Ref_par; Ref_per];
+    %%%Creating combined MI histogram like MI_hist per detector
+    Ref=histc(Ref_comb,1:FileInfo.MI_Bins);
+    PamMeta.Combined(Sel, 1:numel(Ref))=Ref;
+    %%% Sets reference to 0 in case of shorter MI length
+    UserValues.Phasor.Reference_Combined(Sel,:)=0;
+    UserValues.Phasor.Combined_Reference(Sel, 1:numel(Ref))=PamMeta.Combined(Sel, 1:numel(Ref));
+    UserValues.Phasor.Combined_Reference_Time(Sel) = FileInfo.MeasurementTime;
+    UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+    UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
+    LSUserValues(1)
+    %      end
+end
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6986,294 +6985,294 @@ if isempty(FileInfo.LineTimes)
     close(m)
     return
 end
-  TauP_PIE={};
-  TauM_PIE={};
-  g_PIE={};
-  s_PIE={};
-  Phasor_Int_PIE={};  
+TauP_PIE={};
+TauM_PIE={};
+g_PIE={};
+s_PIE={};
+Phasor_Int_PIE={};
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
-     for i=1:size(h.Phasor.Table.Data, 1)
-     if h.Phasor.Table.Data{i,end}==1 
-         %%Parameters same for both single combined PIE channel
-    Ref_LT=h.Phasor.Table.Data{i, 2};
-    Shift=h.Phasor.Table.Data{i, 3};
-    Background=h.Phasor.Table.Data{i, 4}; %%%Image background
-    Background_ref=h.Phasor.Table.Data{i, 5};
-    Afterpulsing=(h.Phasor.Table.Data{i, 6})/100;
-   
-    Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
-    MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
-    Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
-    TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
-    
-    if h.MI.Phasor_FramePopup.Value == 1
-        Frames = size(FileInfo.LineTimes,1);
-    else
-        Frames = 1;
-    end
-    %%Phase and modulation calculation from Reference
-    Background = Background*(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels)*size(FileInfo.LineTimes,1);%%% Background is used differently and does not need to be divided by MI_Bins
-    %%% Calculates theoretical phase and modulation for reference
-    Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
-    M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
-    
-    %     if ~all(FileName==0)
-    Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
-    LSUserValues(1);
-    
-    if UserValues.PIE.Detector(i)~=0
-        
-        %%Filename of single channel
-        FileName = FileInfo.FileName{1}(1:end-4);
-        Ref_LT_n=num2str(Ref_LT, 2);
-        PIE_Name=h.Phasor.Table.Data{i, 1};
-        Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
-        Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);
-        
-        Det=UserValues.PIE.Detector(i);%%Actual Detector value required to extract the Tcspc MI and MT data
-        Rout=UserValues.PIE.Router(i);
-        To=UserValues.PIE.To(i);
-        From=UserValues.PIE.From(i);
-        
-        %%%Calculate reference for single PIE channel
-        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(i)/Ref_MI_Bins;  %% Here i is equal to Sel in Phasor_ref and Update dispaly
-        
-        %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(i,:),[0 round(Shift)]);%%%Here i is equal to Sel in Phasor_ref and Update dispaly
-        Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
-        
-        if From>1
-            Ref(1:(From-1))=0;
-        end
-        if To<Ref_MI_Bins
-            Ref(To+1:end)=0;
-        end
-        Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
-        Ref = Ref./sum(Ref);
-        
-        %%% Calculates phase and modulation of the instrument
-        G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
-        S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
-        s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
-        Fi_inst=atan(s_inst/g_inst);
-        M_inst=sqrt(s_inst^2+g_inst^2);
-        if (g_inst<0 || s_inst<0)
-            Fi_inst=Fi_inst+pi;
-        end
-        
-        %% Pre-Calculations
-        Progress(0.01,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Extracting Photons):');
-        PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-        %%% Creates image and generates photon to pixel index
-        Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        if h.MI.Phasor_FramePopup.Value == 1
-            [Intensity, Bin] = CalculateImage(PIE_MT, 4);
-        else
-            [Intensity, Bin] = CalculateImage(PIE_MT, 2);
-        end
-        clear PIE_MT;
-        Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
-        %%% Extracts microtimes
-        PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-        %%% Removes invalid photons (usually laser retraction)
-        PIE_MI=PIE_MI(Bin~=0);
-        Bin=Bin(Bin~=0);
-        Pixel= cumsum(Intensity(:));
-        
-        Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
-        Intensity=flip(permute(Intensity,[2 1 3]),1);
-        
-        G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
-        S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
-        
-        Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
-        %% Actual Calculation
-        %%% Actual calculation in C++
-        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
-        %%% Reshapes data to images
-        g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
-        s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
-        Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
-        g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
-        
-        %%% Background and Afterpulsing correction
-        Use = zeros(1,MI_Bins);
-        Use(From:To) = 1/MI_Bins;
-        G = sum(G.*Use);
-        S = sum(S.*Use);
-        g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
-        g(isnan(g))=0;
-        s = (s - S*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
-        s(isnan(s))=0;
-        
-    else
-        %%%For combined channel file name
-        FileName = FileInfo.FileName{1}(1:end-4);
-        Ref_LT_n=num2str(Ref_LT, 2);
-        PIE_Name=h.Phasor.Table.Data{i, 1};
-        PIE_Name=PIE_Name(8:end);
-        Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
-        Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);
-        
-        Sel=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';%%Actual Dtector of the combined channels for Tcspcs MI and MT
-        Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{i}));%%%Keep one Rout value
-        To=max(UserValues.PIE.To(UserValues.PIE.Combined{i}));%%%Keep on From
-        From=min(UserValues.PIE.From(UserValues.PIE.Combined{i}));%%%Keep either min or max To
-        Background_ref = Background_ref* UserValues.Phasor.Combined_Reference_Time(i)/Ref_MI_Bins;
-        G_factor=h.Phasor.Table.Data{i, 7};
-        
-        Ref=circshift(UserValues.Phasor.Combined_Reference(i,:),[0 round(Shift)]);
-        Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
-        if From>1
-            Ref(1:(From-1))=0;
-        end
-        if To<Ref_MI_Bins
-            Ref(To+1:end)=0;
-        end
-        Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
-        Ref = Ref./sum(Ref);
-        
-        %%% Calculates phase and modulation of the instrument
-        G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
-        S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
-        s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
-        Fi_inst=atan(s_inst/g_inst);
-        M_inst=sqrt(s_inst^2+g_inst^2);
-        if (g_inst<0 || s_inst<0)
-            Fi_inst=Fi_inst+pi;
-        end
-        %% Pre-Calculations for combined channel
-        Det1=Sel(1, :); %%%%Parallel Detector
-        Det2=Sel(2, :); %%%Perpendicular detectctor
-        ParMT=TcspcData.MT{Det1,Rout}(TcspcData.MI{Det1,Rout}>=From & TcspcData.MI{Det1,Rout}<=To)*FileInfo.ClockPeriod;%%Parallel
-        PerMT=TcspcData.MT{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To)*FileInfo.ClockPeriod;%%Perpendicular
-        ParMI=TcspcData.MI{Det1,Rout}(TcspcData.MI{Det1,Rout}>=From & TcspcData.MI{Det1,Rout}<=To);%%Parallel MI
-        PerMI=TcspcData.MI{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To);%%Perpendicular MI
-        
-        %%%calculate combined MT
-        numelements_MT = round(h.Phasor.Table.Data{i, 7}*length(ParMT));% determine how many elements is to be considered according to G_factor
-        indices_MT = randperm(length(ParMT),numelements_MT); % get the randomly-selected indices
-        ParMT=ParMT(indices_MT);%%%Par according of G_factor
-        PerMT=repelem(PerMT, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
-        Comb_MT=[ParMT; PerMT];
-        [PIE_MT, ind] = sort(Comb_MT);
-        
-        %%% Creates image and generates photon to pixel index
-        Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        if h.MI.Phasor_FramePopup.Value == 1
-            [Intensity, Bin] = CalculateImage(PIE_MT, 4);
-        else
-            [Intensity, Bin] = CalculateImage(PIE_MT, 2);
-        end
-        clear PIE_MT;
-        Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
-        
-        %%% Removes invalid photons (usually laser retraction)
-        %%%calculate combined MI
-        numelements_MI = round(h.Phasor.Table.Data{i, 7}*length(ParMI));% determine how many elements is of G_factor percent
-        indices_MI = randperm(length(ParMI),numelements_MI); % get the randomly-selected indices
-        ParMI=ParMI(indices_MI);%%%Par according of G_factor
-        PerMI=repelem(PerMI, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
-        Comb_MI=[ParMI; PerMI];
-        PIE_MI = Comb_MI(ind); %%%ind of sorted PIE_MT
-        
-        
-        PIE_MI=PIE_MI(Bin~=0);
-        Bin=Bin(Bin~=0);
-        Pixel= cumsum(Intensity(:));
-        
-        Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
-        Intensity=flip(permute(Intensity,[2 1 3]),1);
-        
-        
-        G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
-        S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
-        
-        Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
-        %% Actual Calculation
-        %%% Actual calculation in C++
-        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
-        %%% Reshapes data to images
-        g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
-        s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
-        Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
-        g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
-                   
-        %%% Background and Afterpulsing correction
-        Use = zeros(1,MI_Bins);
-        Use(From:To) = 1/MI_Bins;
-        G = sum(G.*Use);
-        S = sum(S.*Use);
-        g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
-        g(isnan(g))=0;
-        s = (s - S*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
-        s(isnan(s))=0;
-              end
-                       
-        %% Data Formating
-        neg=find(g<0 & s<0);
-        g(neg)=-g(neg);
-        s(neg)=-s(neg);
-        Progress(0.90,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Saving Data):');
-        %% Saves data
-        %%% Calculates additional data
-        PamMeta.g=squeeze(sum(g.*Intensity,3)./sum(Intensity,3));
-        PamMeta.s=squeeze(sum(s.*Intensity,3)./sum(Intensity,3));
-        PamMeta.Fi=atan(PamMeta.s./PamMeta.g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
-        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
-        PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
-        PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
-        PamMeta.Phasor_Int = mean(Intensity,3); %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
-        
-        %%% Creates data to save and saves referenced file
-        Freq=1/TAC*10^9;
-        FileNames=FileInfo.FileName;
-        Path=FileInfo.Path;
-        Imagetime=mean(diff(FileInfo.ImageTimes));
-        Frames=numel(FileInfo.ImageTimes)-1;
-        Lines=FileInfo.Lines;
-        Pixels=FileInfo.Pixels;
-        Fi=PamMeta.Fi;
-        M=PamMeta.M;
-        TauP=PamMeta.TauP;
-        TauM=PamMeta.TauM;
-        Detector=h.Phasor.Table.Data{i,1};
-        Background=h.Phasor.Table.Data{i, 4}; %%%Image background in the table
-        Background_ref=h.Phasor.Table.Data{i, 5};
-        Afterpulsing=(h.Phasor.Table.Data{i, 6});
-        Type = FileInfo.Type;
-        Phasor_Int= PamMeta.Phasor_Int;
-        
-            if h.MI.Phasor_FramePopup.Value == 2
-            g=squeeze(g); s=squeeze(s); Intensity=squeeze(Intensity);
-           save(Current_FileName, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref', 'Afterpulsing', 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+    for i=1:size(h.Phasor.Table.Data, 1)
+        if h.Phasor.Table.Data{i,end}==1
+            %%Parameters same for both single combined PIE channel
+            Ref_LT=h.Phasor.Table.Data{i, 2};
+            Shift=h.Phasor.Table.Data{i, 3};
+            Background=h.Phasor.Table.Data{i, 4}; %%%Image background
+            Background_ref=h.Phasor.Table.Data{i, 5};
+            Afterpulsing=(h.Phasor.Table.Data{i, 6})/100;
+            
+            Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
+            MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
+            Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
+            TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
+            
+            if h.MI.Phasor_FramePopup.Value == 1
+                Frames = size(FileInfo.LineTimes,1);
             else
-            save(Current_FileName_phf, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref','Afterpulsing','g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
-            g = PamMeta.g; s= PamMeta.s; Intensity=squeeze(sum(Intensity,3));
-            save(Current_FileName, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref','Afterpulsing','g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+                Frames = 1;
             end
-          h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
-%     end
-
-    else
-      %%% Creates data to save and saves referenced file
-        PamMeta.g=0;
-        PamMeta.s=0;
-        PamMeta.Fi=0;
-        PamMeta.M=0;
-        PamMeta.TauP=0;
-        PamMeta.TauM=0;
-        PamMeta.Phasor_Int = 0; %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
-        %%% Creates data to save and saves referenced file
-        Fi=PamMeta.Fi;
-        M=PamMeta.M;
-        TauP=PamMeta.TauP;
-        TauM=PamMeta.TauM;
-        Type = FileInfo.Type;
-        Phasor_Int= PamMeta.Phasor_Int;
-     end
+            %%Phase and modulation calculation from Reference
+            Background = Background*(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels)*size(FileInfo.LineTimes,1);%%% Background is used differently and does not need to be divided by MI_Bins
+            %%% Calculates theoretical phase and modulation for reference
+            Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+            M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
+            
+            %     if ~all(FileName==0)
+            Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
+            LSUserValues(1);
+            
+            if UserValues.PIE.Detector(i)~=0
+                
+                %%Filename of single channel
+                FileName = FileInfo.FileName{1}(1:end-4);
+                Ref_LT_n=num2str(Ref_LT, 2);
+                PIE_Name=h.Phasor.Table.Data{i, 1};
+                Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
+                Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);
+                
+                Det=UserValues.PIE.Detector(i);%%Actual Detector value required to extract the Tcspc MI and MT data
+                Rout=UserValues.PIE.Router(i);
+                To=UserValues.PIE.To(i);
+                From=UserValues.PIE.From(i);
+                
+                %%%Calculate reference for single PIE channel
+                Background_ref = Background_ref*UserValues.Phasor.Reference_Time(i)/Ref_MI_Bins;  %% Here i is equal to Sel in Phasor_ref and Update dispaly
+                
+                %%% Normalizes reference data
+                Ref=circshift(UserValues.Phasor.Reference(i,:),[0 round(Shift)]);%%%Here i is equal to Sel in Phasor_ref and Update dispaly
+                Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
+                
+                if From>1
+                    Ref(1:(From-1))=0;
+                end
+                if To<Ref_MI_Bins
+                    Ref(To+1:end)=0;
+                end
+                Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
+                Ref = Ref./sum(Ref);
+                
+                %%% Calculates phase and modulation of the instrument
+                G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+                S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+                g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+                s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
+                Fi_inst=atan(s_inst/g_inst);
+                M_inst=sqrt(s_inst^2+g_inst^2);
+                if (g_inst<0 || s_inst<0)
+                    Fi_inst=Fi_inst+pi;
+                end
+                
+                %% Pre-Calculations
+                Progress(0.01,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Extracting Photons):');
+                PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+                %%% Creates image and generates photon to pixel index
+                Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
+                if h.MI.Phasor_FramePopup.Value == 1
+                    [Intensity, Bin] = CalculateImage(PIE_MT, 4);
+                else
+                    [Intensity, Bin] = CalculateImage(PIE_MT, 2);
+                end
+                clear PIE_MT;
+                Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
+                %%% Extracts microtimes
+                PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+                %%% Removes invalid photons (usually laser retraction)
+                PIE_MI=PIE_MI(Bin~=0);
+                Bin=Bin(Bin~=0);
+                Pixel= cumsum(Intensity(:));
+                
+                Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
+                Intensity=flip(permute(Intensity,[2 1 3]),1);
+                
+                G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+                S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+                
+                Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
+                %% Actual Calculation
+                %%% Actual calculation in C++
+                [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
+                %%% Reshapes data to images
+                g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
+                s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
+                Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
+                g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
+                
+                %%% Background and Afterpulsing correction
+                Use = zeros(1,MI_Bins);
+                Use(From:To) = 1/MI_Bins;
+                G = sum(G.*Use);
+                S = sum(S.*Use);
+                g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
+                g(isnan(g))=0;
+                s = (s - S*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
+                s(isnan(s))=0;
+                
+            else
+                %%%For combined channel file name
+                FileName = FileInfo.FileName{1}(1:end-4);
+                Ref_LT_n=num2str(Ref_LT, 2);
+                PIE_Name=h.Phasor.Table.Data{i, 1};
+                PIE_Name=PIE_Name(8:end);
+                Current_FileName=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phr']);%%%The names can be optimized
+                Current_FileName_phf=fullfile(FileInfo.Path,[PIE_Name '_' Ref_LT_n 'ns' '_' FileName '.phf']);
+                
+                Sel=UserValues.PIE.Detector(UserValues.PIE.Combined{i})';%%Actual Dtector of the combined channels for Tcspcs MI and MT
+                Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{i}));%%%Keep one Rout value
+                To=max(UserValues.PIE.To(UserValues.PIE.Combined{i}));%%%Keep on From
+                From=min(UserValues.PIE.From(UserValues.PIE.Combined{i}));%%%Keep either min or max To
+                Background_ref = Background_ref* UserValues.Phasor.Combined_Reference_Time(i)/Ref_MI_Bins;
+                G_factor=h.Phasor.Table.Data{i, 7};
+                
+                Ref=circshift(UserValues.Phasor.Combined_Reference(i,:),[0 round(Shift)]);
+                Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
+                if From>1
+                    Ref(1:(From-1))=0;
+                end
+                if To<Ref_MI_Bins
+                    Ref(To+1:end)=0;
+                end
+                Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
+                Ref = Ref./sum(Ref);
+                
+                %%% Calculates phase and modulation of the instrument
+                G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+                S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+                g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+                s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
+                Fi_inst=atan(s_inst/g_inst);
+                M_inst=sqrt(s_inst^2+g_inst^2);
+                if (g_inst<0 || s_inst<0)
+                    Fi_inst=Fi_inst+pi;
+                end
+                %% Pre-Calculations for combined channel
+                Det1=Sel(1, :); %%%%Parallel Detector
+                Det2=Sel(2, :); %%%Perpendicular detectctor
+                ParMT=TcspcData.MT{Det1,Rout}(TcspcData.MI{Det1,Rout}>=From & TcspcData.MI{Det1,Rout}<=To)*FileInfo.ClockPeriod;%%Parallel
+                PerMT=TcspcData.MT{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To)*FileInfo.ClockPeriod;%%Perpendicular
+                ParMI=TcspcData.MI{Det1,Rout}(TcspcData.MI{Det1,Rout}>=From & TcspcData.MI{Det1,Rout}<=To);%%Parallel MI
+                PerMI=TcspcData.MI{Det2,Rout}(TcspcData.MI{Det2,Rout}>=From & TcspcData.MI{Det2,Rout}<=To);%%Perpendicular MI
+                
+                %%%calculate combined MT
+                numelements_MT = round(h.Phasor.Table.Data{i, 7}*length(ParMT));% determine how many elements is to be considered according to G_factor
+                indices_MT = randperm(length(ParMT),numelements_MT); % get the randomly-selected indices
+                ParMT=ParMT(indices_MT);%%%Par according of G_factor
+                PerMT=repelem(PerMT, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+                Comb_MT=[ParMT; PerMT];
+                [PIE_MT, ind] = sort(Comb_MT);
+                
+                %%% Creates image and generates photon to pixel index
+                Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
+                if h.MI.Phasor_FramePopup.Value == 1
+                    [Intensity, Bin] = CalculateImage(PIE_MT, 4);
+                else
+                    [Intensity, Bin] = CalculateImage(PIE_MT, 2);
+                end
+                clear PIE_MT;
+                Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
+                
+                %%% Removes invalid photons (usually laser retraction)
+                %%%calculate combined MI
+                numelements_MI = round(h.Phasor.Table.Data{i, 7}*length(ParMI));% determine how many elements is of G_factor percent
+                indices_MI = randperm(length(ParMI),numelements_MI); % get the randomly-selected indices
+                ParMI=ParMI(indices_MI);%%%Par according of G_factor
+                PerMI=repelem(PerMI, h.Phasor.Table.Data{i, 8}); %%%Per according to repelem, in case of anisotropy it is 2
+                Comb_MI=[ParMI; PerMI];
+                PIE_MI = Comb_MI(ind); %%%ind of sorted PIE_MT
+                
+                
+                PIE_MI=PIE_MI(Bin~=0);
+                Bin=Bin(Bin~=0);
+                Pixel= cumsum(Intensity(:));
+                
+                Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
+                Intensity=flip(permute(Intensity,[2 1 3]),1);
+                
+                
+                G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+                S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+                
+                Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
+                %% Actual Calculation
+                %%% Actual calculation in C++
+                [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
+                %%% Reshapes data to images
+                g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
+                s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
+                Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
+                g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
+                
+                %%% Background and Afterpulsing correction
+                Use = zeros(1,MI_Bins);
+                Use(From:To) = 1/MI_Bins;
+                G = sum(G.*Use);
+                S = sum(S.*Use);
+                g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
+                g(isnan(g))=0;
+                s = (s - S*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
+                s(isnan(s))=0;
+            end
+            
+            %% Data Formating
+            neg=find(g<0 & s<0);
+            g(neg)=-g(neg);
+            s(neg)=-s(neg);
+            Progress(0.90,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Saving Data):');
+            %% Saves data
+            %%% Calculates additional data
+            PamMeta.g=squeeze(sum(g.*Intensity,3)./sum(Intensity,3));
+            PamMeta.s=squeeze(sum(s.*Intensity,3)./sum(Intensity,3));
+            PamMeta.Fi=atan(PamMeta.s./PamMeta.g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
+            PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
+            PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
+            PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
+            PamMeta.Phasor_Int = mean(Intensity,3); %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
+            
+            %%% Creates data to save and saves referenced file
+            Freq=1/TAC*10^9;
+            FileNames=FileInfo.FileName;
+            Path=FileInfo.Path;
+            Imagetime=mean(diff(FileInfo.ImageTimes));
+            Frames=numel(FileInfo.ImageTimes)-1;
+            Lines=FileInfo.Lines;
+            Pixels=FileInfo.Pixels;
+            Fi=PamMeta.Fi;
+            M=PamMeta.M;
+            TauP=PamMeta.TauP;
+            TauM=PamMeta.TauM;
+            Detector=h.Phasor.Table.Data{i,1};
+            Background=h.Phasor.Table.Data{i, 4}; %%%Image background in the table
+            Background_ref=h.Phasor.Table.Data{i, 5};
+            Afterpulsing=(h.Phasor.Table.Data{i, 6});
+            Type = FileInfo.Type;
+            Phasor_Int= PamMeta.Phasor_Int;
+            
+            if h.MI.Phasor_FramePopup.Value == 2
+                g=squeeze(g); s=squeeze(s); Intensity=squeeze(Intensity);
+                save(Current_FileName, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref', 'Afterpulsing', 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+            else
+                save(Current_FileName_phf, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref','Afterpulsing','g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+                g = PamMeta.g; s= PamMeta.s; Intensity=squeeze(sum(Intensity,3));
+                save(Current_FileName, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref','Afterpulsing','g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+            end
+            h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
+            %     end
+            
+        else
+            %%% Creates data to save and saves referenced file
+            PamMeta.g=0;
+            PamMeta.s=0;
+            PamMeta.Fi=0;
+            PamMeta.M=0;
+            PamMeta.TauP=0;
+            PamMeta.TauM=0;
+            PamMeta.Phasor_Int = 0; %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
+            %%% Creates data to save and saves referenced file
+            Fi=PamMeta.Fi;
+            M=PamMeta.M;
+            TauP=PamMeta.TauP;
+            TauM=PamMeta.TauM;
+            Type = FileInfo.Type;
+            Phasor_Int= PamMeta.Phasor_Int;
+        end
         TauP_PIE={TauP_PIE; TauP};
         TauP_PIE=vertcat(TauP_PIE{:});
         PamMeta.TauP_PIE=TauP_PIE;
@@ -7285,12 +7284,12 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.g_PIE=g_PIE;
         s_PIE={s_PIE; PamMeta.s};
         s_PIE=vertcat(s_PIE{:});
-        PamMeta.s_PIE=s_PIE;  
-        Phasor_Int_PIE={Phasor_Int_PIE; Phasor_Int}; 
+        PamMeta.s_PIE=s_PIE;
+        Phasor_Int_PIE={Phasor_Int_PIE; Phasor_Int};
         Phasor_Int_PIE=vertcat(Phasor_Int_PIE{:});
         PamMeta.Phasor_Int_PIE=Phasor_Int_PIE;
-     end
- end
+    end
+end
 
 Progress(1,h.Progress.Axes, h.Progress.Text,FileInfo.FileName{1});
 h.Progress.Text.String = FileInfo.FileName{1};
@@ -10027,7 +10026,7 @@ if any(mode==2)
             BurstData.Phasor.PhasorReferenceLifetime = [...
                 UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})),...
                 UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
-                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))];      
+                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))];
     end
 end
 
@@ -10113,7 +10112,7 @@ function [FRET_2CDE, ALEX_2CDE,E_D,E_A] = KDE(Trace,Chan_Trace,tau,BAMethod)
 %%% These quantities are used to calculate FRET_2CDE by:
 %%% FRET_2CDE = 110 - 100 x ( (E)_D + (1-E)_A )
 %%%
-%%% They are needed in BurstBrowser to perform correct averaging of the 
+%%% They are needed in BurstBrowser to perform correct averaging of the
 %%% FRET-2CDE filter over a set of bursts.
 switch BAMethod
     case {1,2} %MFD
@@ -10723,7 +10722,7 @@ switch mode
             h.Export.MicrotimePattern.String = 'Stop';
         elseif h.Export.MicrotimePattern.UserData == 1
             h.Export.MicrotimePattern.UserData = 0;
-        end        
+        end
         event.Key = 'Export_MicrotimePattern';
         for i = h.Export.List.Value
             pause(0.01)
@@ -10733,7 +10732,7 @@ switch mode
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 return
             end
-
+            
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
             UserValues.File.Path = PamMeta.Export{i,2};
@@ -10749,7 +10748,7 @@ switch mode
                 num_files = numel(PamMeta.Export{i,1}{1});
             end
             h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
-
+            
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
         end
@@ -10981,22 +10980,22 @@ switch e.Key
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
             end
-                  %%% Exports TauP image                 
+            %%% Exports TauP image
             if h.MT.Image_Export.Value == 4
                 assignin('base',[matlab.lang.makeValidName(Name) '_TauP'],PamMeta.TauP_PIE{i});
                 figure('Name',[UserValues.PIE.Name{i} '_TauP']);
-                 phas = medfilt2(PamMeta.TauP_PIE{Sel});
-            %%% Autoscales between min-max of pixels with at least 10% intensity;
+                phas = medfilt2(PamMeta.TauP_PIE{Sel});
+                %%% Autoscales between min-max of pixels with at least 10% intensity;
                 Min=0.1*max(max(PamMeta.Phasor_Int_PIE{Sel}))-1; %%% -1 is for 0 intensity images
                 CLim=[min(min(phas(PamMeta.Phasor_Int_PIE{Sel}>Min))), max(max(phas(PamMeta.Phasor_Int_PIE{Sel}>Min)))+1];
                 imagesc(phas, CLim);
             end
-                         %%% Exports TauM image                 
+            %%% Exports TauM image
             if h.MT.Image_Export.Value == 5
                 assignin('base',[matlab.lang.makeValidName(Name) '_TauM'],PamMeta.TauP_PIE{i});
                 figure('Name',[UserValues.PIE.Name{i} '_TauM']);
-                 phas = medfilt2(PamMeta.TauM_PIE{Sel});
-            %%% Autoscales between min-max of pixels with at least 10% intensity;
+                phas = medfilt2(PamMeta.TauM_PIE{Sel});
+                %%% Autoscales between min-max of pixels with at least 10% intensity;
                 Min=0.1*max(max(PamMeta.Phasor_Int_PIE{Sel}))-1; %%% -1 is for 0 intensity images
                 CLim=[min(min(phas(PamMeta.Phasor_Int_PIE{Sel}>Min))), max(max(phas(PamMeta.Phasor_Int_PIE{Sel}>Min)))+1];
                 imagesc(phas, CLim);
@@ -11184,7 +11183,7 @@ switch e.Key
         %%% store in format:
         %%% channel1 channel2 ...
         %%% PCH1     PCH2     ...
-
+        
         PCH = zeros(max(cellfun(@numel,PamMeta.PCH(Sel))),numel(Sel)+1);
         PCH(:,1) = 0:1:size(PCH,1)-1;
         for i = 1:numel(Sel)
@@ -11378,7 +11377,7 @@ switch obj
             end
             [~,PamMeta.fFCS.MIPattern_Name{i},~] = fileparts(filename{1}{1});
             PamMeta.fFCS.MIPattern{i} = MIPattern;
-                
+            
             % BurstBrowser exports mat files, use this code instead
             % dummy = load(fullfile(Path,File{i}),'-mat');
             % [~, FileName, ~] = fileparts(File{i});
@@ -11656,7 +11655,7 @@ switch obj
             reconstruction{u} = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),1);
             reconstruction{u}(valid) = reconstruction_temp;
             %%% rescale filters back to total microtime range (no cut with valid)
-            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));            
+            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));
             for i = 1:numel(active)
                 filters(valid,i) = filters_temp(:,i);
             end
@@ -11710,7 +11709,7 @@ switch obj
         %%% plot reconstruction against data for quality evaluation
         f = figure('Color',[1,1,1]);f.Position(1) = 100;
         subplot(4,1,2:4);hold on;
-        plot(PamMeta.fFCS.Decay_Hist{1},'LineWidth',2); plot(reconstruction{1},'LineWidth',2);        
+        plot(PamMeta.fFCS.Decay_Hist{1},'LineWidth',2); plot(reconstruction{1},'LineWidth',2);
         set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'YScale','lin','Box','on');
         ylabel('Counts');
         xlabel('TCSPC channel');
@@ -11801,9 +11800,9 @@ if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
         disp('No file loaded.');
         return;
-    end    
+    end
     [~,FileName,~] = fileparts(FileInfo.FileName{1});
-    FilePath = [FileInfo.Path filesep FileName '.txt'];    
+    FilePath = [FileInfo.Path filesep FileName '.txt'];
     %%% open file
     [fid,err] = fopen(FilePath,'w');
     if fid == -1
@@ -11914,15 +11913,15 @@ switch obj
         Current_Exists = 0;
         %%% Checks position of the "Current" profile in the list
         for i=1:numel(h.Profiles.List.String)
-                if~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
-                    Line = h.Profiles.List.String{i}(26:(end-14));
-                else
-                    Line = h.Profiles.List.String{i};
-                end
-                if strcmp(Line,'Current.mat')
-                    Current_Exists = 1;
-                    break;
-                end
+            if~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
+                Line = h.Profiles.List.String{i}(26:(end-14));
+            else
+                Line = h.Profiles.List.String{i};
+            end
+            if strcmp(Line,'Current.mat')
+                Current_Exists = 1;
+                break;
+            end
         end
         %%% Sets selected profile to "Current" or creates the "Current"
         %%% profile entry and selects it
@@ -11936,7 +11935,7 @@ switch obj
         ed.Key='return';
         Update_Profiles(h.Profiles.List,ed)
 end
-        
+
 function Open_Doc(~,~)
 global PathToApp
 % if isunix
@@ -11990,7 +11989,7 @@ if nargin <3
                 end
                 h.Image.Colorbar.YLabel.String = 'Counts';
                 h.Plots.Image.CData = h.Plots.Image.CData*Pixeltime*1000;
-            end  
+            end
             h.Image.Axes.CLimMode = 'auto';
     end
     
@@ -12066,10 +12065,10 @@ Name1 = UserValues.PIE.Name{Cor_A};
 j = round(str2double(h.Cor.Remove_Aggregate_Block_Edit.String));
 
 Data1=[TcspcData.MT{Det1,Rout1}(...
-TcspcData.MI{Det1,Rout1}>=From1 &...
-TcspcData.MI{Det1,Rout1}<=To1 &...
-TcspcData.MT{Det1,Rout1}>=Times(j) &...
-TcspcData.MT{Det1,Rout1}<Times(j+1))-Times(j)];
+    TcspcData.MI{Det1,Rout1}>=From1 &...
+    TcspcData.MI{Det1,Rout1}<=To1 &...
+    TcspcData.MT{Det1,Rout1}>=Times(j) &...
+    TcspcData.MT{Det1,Rout1}<Times(j+1))-Times(j)];
 
 if Cor_B ~= Cor_A
     Det2=UserValues.PIE.Detector(Cor_B);
@@ -12079,10 +12078,10 @@ if Cor_B ~= Cor_A
     Name2 = UserValues.PIE.Name{Cor_B};
     
     Data2=[TcspcData.MT{Det2,Rout2}(...
-    TcspcData.MI{Det2,Rout2}>=From2 &...
-    TcspcData.MI{Det2,Rout2}<=To2 &...
-    TcspcData.MT{Det2,Rout2}>=Times(j) &...
-    TcspcData.MT{Det2,Rout2}<Times(j+1))-Times(j)];
+        TcspcData.MI{Det2,Rout2}>=From2 &...
+        TcspcData.MI{Det2,Rout2}<=To2 &...
+        TcspcData.MT{Det2,Rout2}>=Times(j) &...
+        TcspcData.MT{Det2,Rout2}<Times(j+1))-Times(j)];
 end
 
 T = str2double(h.Cor.Remove_Aggregate_Timewindow_Edit.String)*1000;%in mus
@@ -12093,7 +12092,7 @@ Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String);
 cr = numel(Data1)./Data1(end)./FileInfo.ClockPeriod;
 M = T*1E-6*cr;% minimum number of photons in time window
 M = round(M + Nsigma*sqrt(M)); %%% add N sigma
-                                
+
 [start1, stop1] = find_aggregates(Data1,T,M,timebin_add);
 start_times1 = Data1(start1);
 stop_times1 = Data1(stop1);
@@ -12115,7 +12114,7 @@ for i = 1:numel(start_times1)
 end
 %%% add threshold to plot
 plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),(M./(1E-3*T)).*ones(size(x(1:end-1))),'--','Color',[0.3020 0.7490 0.9294]);
-    
+
 %%% plot second channel
 if Cor_B ~= Cor_A
     % get the average countrate of the block
@@ -12163,7 +12162,7 @@ if h.Cor.Preview_Correlation_Checkbox.Value
     
     %%% do correlation before correction
     MaxTime = max([Data1(end),Data2(end)]);
-    [Cor_Before,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                                        
+    [Cor_Before,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);
     
     %%% correct for aggregates
     inval = [];
@@ -12217,9 +12216,9 @@ if h.Cor.Preview_Correlation_Checkbox.Value
     end
     %%% do correlation after correction
     MaxTime = max([Data1(end),Data2(end)]);
-    [Cor_After,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                 
+    [Cor_After,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);
     Cor_Times = Cor_Times*FileInfo.ClockPeriod;
-    average_window = find(Cor_Times > 1e-6,1,'first'); 
+    average_window = find(Cor_Times > 1e-6,1,'first');
     average_window = max([1,(average_window-5)]):min([(average_window+10),numel(Cor_Times)]);
     semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_Before./mean(Cor_Before(average_window)),'r');
     semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_After./mean(Cor_After(average_window)),'b');
