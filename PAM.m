@@ -4450,10 +4450,10 @@ if any(mode==6) || any(mode==1) %%%
         end
         
         %%% Plots Phasor microtime
-        h.Plots.Phasor.XData=From:To;
-        Pha=PamMeta.MI_Hist{Det,Rout}(From:To);
+        FromTo = From:min([To, numel(PamMeta.MI_Hist{Det,Rout})]);
+        Pha=PamMeta.MI_Hist{Det,Rout}(FromTo);
+        h.Plots.Phasor.XData = FromTo;
         h.Plots.Phasor.YData=Pha/max(Pha);
-        %     hold off
     else
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%% Usage of combined PIE channels for Phasor is currently only
