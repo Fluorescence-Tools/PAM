@@ -878,14 +878,14 @@ if Mode==0 %%% Loads user values
         S.Phasor.Reference(numel(S.PIE.Name),end) = 0;
     end
     P.Phasor.Reference = S.Phasor.Reference;
-     %%% Checks, if Phasor.Combined_Reference subfield exists
-    if ~isfield(S.Phasor,'Combined_Reference')
-          S.Phasor.Combined_Reference=zeros(numel(S.PIE.Name),4096);
-        disp('UserValues.Phasor.Combined_Reference was incomplete');
-    elseif size( S.Phasor.Combined_Reference,1)<numel(S.PIE.Name)
-        S.Phasor.Combined_Reference(numel(S.PIE.Name),end) = 0;
+     %%% Checks, if Phasor.Reference_Combined subfield exists
+    if ~isfield(S.Phasor,'Reference_Combined')
+          S.Phasor.Reference_Combined=zeros(numel(S.PIE.Name),4096);
+        disp('UserValues.Phasor.Reference_Combined was incomplete');
+    elseif size( S.Phasor.Reference_Combined,1)<numel(S.PIE.Name)
+        S.Phasor.Reference_Combined(numel(S.PIE.Name),end) = 0;
     end
-    P.Phasor.Combined_Reference =  S.Phasor.Combined_Reference;
+    P.Phasor.Reference_Combined =  S.Phasor.Reference_Combined;
     
     %%% Checks, if Phasor.Reference_Time subfield exists
     if ~isfield(S.Phasor,'Reference_Time')
@@ -896,14 +896,14 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Reference_Time = S.Phasor.Reference_Time;
     
-    %%% Checks, if Phasor.Combined_Reference_Time subfield exists
-    if ~isfield(S.Phasor,'Combined_Reference_Time')
-        S.Phasor.Combined_Reference_Time=zeros(numel(S.PIE.Name),1);
-        disp('UserValues.Phasor.Combined_Reference_Time was incomplete');
-    elseif size(S.Phasor.Combined_Reference_Time,1)<numel(S.PIE.Name)
-        S.Phasor.Combined_Reference_Time(numel(S.PIE.Name),end) = 0;
+    %%% Checks, if Phasor.Reference_Combined_Time subfield exists
+    if ~isfield(S.Phasor,'Reference_Combined_Time')
+        S.Phasor.Reference_Combined_Time=zeros(numel(S.PIE.Name),1);
+        disp('UserValues.Phasor.Reference_Combined_Time was incomplete');
+    elseif size(S.Phasor.Reference_Combined_Time,1)<numel(S.PIE.Name)
+        S.Phasor.Reference_Combined_Time(numel(S.PIE.Name),end) = 0;
     end
-    P.Phasor.Combined_Reference_Time = S.Phasor.Combined_Reference_Time;
+    P.Phasor.Reference_Combined_Time = S.Phasor.Reference_Combined_Time;
     
     %%% Checks, if Phasor.Reference_MI_Bins subfields exist
     if ~isfield(S.Phasor,'Reference_MI_Bins')

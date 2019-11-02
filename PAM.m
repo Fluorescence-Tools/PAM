@@ -4510,9 +4510,9 @@ if any(mode==6) || any(mode==1) %%%
         %         end
         
         %% Plots Reference histogram of Combine Channel
-        %        if any(UserValues.Phasor.Combined_Reference(Sel,:))
-        if Sel<= size(UserValues.Phasor.Combined_Reference,1) || any(UserValues.Phasor.Combined_Reference(Sel,:))
-            Ref=circshift(UserValues.Phasor.Combined_Reference(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
+        %        if any(UserValues.Phasor.Reference_Combined(Sel,:))
+        if Sel<= size(UserValues.Phasor.Reference_Combined,1) || any(UserValues.Phasor.Reference_Combined(Sel,:))
+            Ref=circshift(UserValues.Phasor.Reference_Combined(Sel,:),[0 round(Shift)]);Ref=Ref(From:To);
             h.Plots.PhasorRef.XData=From:To;
             h.Plots.PhasorRef.YData=Ref/max(Ref);
             %   else
@@ -4820,7 +4820,7 @@ switch e.Key
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
         %%% Update the Phasor.reference with PIE_List
         UserValues.Phasor.Reference(end+1, :)=0;
-        UserValues.Phasor.Combined_Reference(end+1, :)=0;
+        UserValues.Phasor.Reference_Combined(end+1, :)=0;
         %%% Update the PIE Phasor table
         UserValues.Phasor.Phasor_Table(end+1,:) = {'PIE Channel',4,0,0,0,0,1,1,false};
         %%% Updates Pam meta data; input 3 should be empty to improve speed
@@ -4830,8 +4830,8 @@ switch e.Key
         Update_Display([],[],0);
         %%% Updates correlation table
         Update_Cor_Table(obj);
-        %%% Update Phasor table
-        Update_Phasor_Table(obj);
+        %%% Updates Phasor table
+        h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
         %%% Add channel to Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);
@@ -4857,7 +4857,7 @@ switch e.Key
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
         %%% Reset the Phasor table and references
         UserValues.Phasor.Reference(Sel,:)=[];
-        UserValues.Phasor.Combined_Reference(Sel,:)=[];
+        UserValues.Phasor.Reference_Combined(Sel,:)=[];
         UserValues.Phasor.Phasor_Table(Sel,:) = [];
         %%% in Pam meta data
         PamMeta.Trace(Sel)=[];
@@ -4898,7 +4898,8 @@ switch e.Key
         Update_Display([],[],1:5)
         %%% Updates correlation table
         Update_Cor_Table(obj);
-        Update_Phasor_Table(obj);
+        %%% Updates Phasor table
+        h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
         %%% Remove channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(Sel) = [];
@@ -5034,7 +5035,7 @@ switch e.Key
             UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
             %%Update the Phasor.reference with PIE_List
             UserValues.Phasor.Reference(end+1, :)=0;
-            UserValues.Phasor.Combined_Reference(end+1, :)=0;
+            UserValues.Phasor.Reference_Combined(end+1, :)=0;
             UserValues.Phasor.Phasor_Table(end+1,:) = {UserValues.PIE.Name{end},4,0,0,0,0,1,1,false};
             %%% Reset Correlation Table Data Matrix
             cor_sel = UserValues.Settings.Pam.Cor_Selection;
@@ -5046,7 +5047,7 @@ switch e.Key
             %%% Updates correlation table
             Update_Cor_Table(obj);
             %%% Updates Phasor table
-            Update_Phasor_Table(obj);
+            h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
             %%% Add channel to Export table
             h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
             h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);
@@ -5902,10 +5903,6 @@ LSUserValues(1);
 function Update_Phasor_Table(obj, e)
 global UserValues
 h=guidata(findobj('Tag','Pam'));
-
-%%% populate the table with the current data
-h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
-
 %%% called to reset the table
 if obj == h.Phasor.Reset_Menu
     PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
@@ -6965,7 +6962,7 @@ if UserValues.PIE.Detector(Sel)~=0
     UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
     UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
 else
-    %%Refrence for combined channel
+    %%Reference for combined channel
     Det=UserValues.PIE.Detector(UserValues.PIE.Combined{Sel})';%%Actual detectors of teh combined cahnnel
     [row, Det1]=find(UserValues.Detector.Det==Det(1, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
     [row, Det2]=find(UserValues.Detector.Det==Det(2, :)); %%Det1 is Index of selected PIE channel 1 detector from teh Detector list
@@ -6982,12 +6979,11 @@ else
     PamMeta.Combined(Sel, 1:numel(Ref))=Ref;
     %%% Sets reference to 0 in case of shorter MI length
     UserValues.Phasor.Reference_Combined(Sel,:)=0;
-    UserValues.Phasor.Combined_Reference(Sel, 1:numel(Ref))=PamMeta.Combined(Sel, 1:numel(Ref));
-    UserValues.Phasor.Combined_Reference_Time(Sel) = FileInfo.MeasurementTime;
+    UserValues.Phasor.Reference_Combined(Sel, 1:numel(Ref))=PamMeta.Combined(Sel, 1:numel(Ref));
+    UserValues.Phasor.Reference_Combined_Time(Sel) = FileInfo.MeasurementTime;
     UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
     UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
     LSUserValues(1)
-    %      end
 end
 LSUserValues(1);
 
@@ -7137,10 +7133,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                 Rout=max(UserValues.PIE.Router(UserValues.PIE.Combined{i}));%%%Keep one Rout value
                 To=max(UserValues.PIE.To(UserValues.PIE.Combined{i}));%%%Keep on From
                 From=min(UserValues.PIE.From(UserValues.PIE.Combined{i}));%%%Keep either min or max To
-                Background_ref = Background_ref* UserValues.Phasor.Combined_Reference_Time(i)/Ref_MI_Bins;
+                Background_ref = Background_ref* UserValues.Phasor.Reference_Combined_Time(i)/Ref_MI_Bins;
                 G_factor=h.Phasor.Table.Data{i, 7};
                 
-                Ref=circshift(UserValues.Phasor.Combined_Reference(i,:),[0 round(Shift)]);
+                Ref=circshift(UserValues.Phasor.Reference_Combined(i,:),[0 round(Shift)]);
                 Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
                 if From>1
                     Ref(1:(From-1))=0;
@@ -7272,7 +7268,6 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                 save(Current_FileName, 'Detector', 'Ref_LT', 'Shift', 'Background', 'Background_ref','Afterpulsing','g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
             end
             h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
-            %     end
             
         else
             %%% Creates data to save and saves referenced file
