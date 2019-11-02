@@ -4431,7 +4431,7 @@ end
 if any(mode==6) || any(mode==1) %%%
     %%% Finds currently selected PIE channel
     Sel=h.PIE.List.Value(1); %%% delected PIE channels
-    h.Phasor.Table.Data=UserValues.Settings.Pam.Phasor_Selection;
+    h.Phasor.Table.Data=UserValues.Phasor.Phasor_Table;
     if UserValues.PIE.Detector(Sel) ~=0
         Det=UserValues.PIE.Detector(Sel);
         %[row, Det]=find(UserValues.Detector.Det==Det); %%Column index of the Detector is Det here for PamMeta data extraction
@@ -4818,9 +4818,11 @@ switch e.Key
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
-        %%Update the Phasor.reference with PIE_List
+        %%% Update the Phasor.reference with PIE_List
         UserValues.Phasor.Reference(end+1, :)=0;
         UserValues.Phasor.Combined_Reference(end+1, :)=0;
+        %%% Update the PIE Phasor table
+        UserValues.Phasor.Phasor_Table(end+1,:) = {'PIE Channel',4,0,0,0,0,1,1,false};
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
@@ -4828,6 +4830,8 @@ switch e.Key
         Update_Display([],[],0);
         %%% Updates correlation table
         Update_Cor_Table(obj);
+        %%% Update Phasor table
+        Update_Phasor_Table(obj);
         %%% Add channel to Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);
@@ -4845,10 +4849,16 @@ switch e.Key
         UserValues.PIE.IRF(Sel) = [];
         UserValues.PIE.ScatterPattern(Sel) = [];
         UserValues.PIE.Background(Sel) = [];
+        UserValues.PIE.PhasorReference(Sel) = [];
+        UserValues.PIE.PhasorReferenceLifetime(Sel) = [];
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(:,Sel) = []; cor_sel(Sel,:) = [];
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
+        %%% Reset the Phasor table and references
+        UserValues.Phasor.Reference(Sel,:)=[];
+        UserValues.Phasor.Combined_Reference(Sel,:)=[];
+        UserValues.Phasor.Phasor_Table(Sel,:) = [];
         %%% in Pam meta data
         PamMeta.Trace(Sel)=[];
         PamMeta.Image(Sel)=[];
@@ -4888,6 +4898,7 @@ switch e.Key
         Update_Display([],[],1:5)
         %%% Updates correlation table
         Update_Cor_Table(obj);
+        Update_Phasor_Table(obj);
         %%% Remove channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(Sel) = [];
@@ -5019,8 +5030,12 @@ switch e.Key
             end
             UserValues.PIE.Name{end}(end)=[];
             UserValues.PIE.Duty_Cycle(end+1)=0;
+            UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
+            UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
             %%Update the Phasor.reference with PIE_List
+            UserValues.Phasor.Reference(end+1, :)=0;
             UserValues.Phasor.Combined_Reference(end+1, :)=0;
+            UserValues.Phasor.Phasor_Table(end+1,:) = {UserValues.PIE.Name{end},4,0,0,0,0,1,1,false};
             %%% Reset Correlation Table Data Matrix
             cor_sel = UserValues.Settings.Pam.Cor_Selection;
             cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
@@ -5030,6 +5045,8 @@ switch e.Key
             Update_Display([],[],0);
             %%% Updates correlation table
             Update_Cor_Table(obj);
+            %%% Updates Phasor table
+            Update_Phasor_Table(obj);
             %%% Add channel to Export table
             h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
             h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);
@@ -5809,7 +5826,7 @@ Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_
 Phasor.Table_Format = cell(1,size(Phasor.Table_Data,2));
 h.Phasor.Table.Data = Phasor.Table_Data;
 h.Phasor.Table.CellEditCallback={@Update_Phasor_Table};
-h.Phaor.Table.Data = UserValues.Settings.Pam.Phasor_Selection;
+h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
 
 %%% Updates Detector calibration
 List=UserValues.Detector.Name;
@@ -5885,7 +5902,11 @@ LSUserValues(1);
 function Update_Phasor_Table(obj, e)
 global UserValues
 h=guidata(findobj('Tag','Pam'));
-% % %%% called to reset the table
+
+%%% populate the table with the current data
+h.Phasor.Table.Data = UserValues.Phasor.Phasor_Table;
+
+%%% called to reset the table
 if obj == h.Phasor.Reset_Menu
     PIE_checkbox=num2cell(logical(zeros(length(UserValues.PIE.Name),1)));
     Ref_LT=(repelem(4, numel(UserValues.PIE.Name))).'; Ref_LT=num2cell(Ref_LT);
@@ -5898,7 +5919,7 @@ if obj == h.Phasor.Reset_Menu
     Phasor.Table_Data = [[UserValues.PIE.Name.'] Ref_LT Shift Background Background_ref Afterpulsing Gfactor Per_Coeff PIE_checkbox];
     
     h.Phasor.Table.Data = Phasor.Table_Data;
-    UserValues.Settings.Pam.Phasor_Selection = h.Phasor.Table.Data;
+    UserValues.Phasor.Phasor_Table = h.Phasor.Table.Data;
     return;
 end
 
@@ -5908,11 +5929,8 @@ if obj == h.Phasor.Table
     if e.Indices(2) == 9 && e.Indices(1) < size(h.Phasor.Table.Data,1) %%9th column of phasor table
         h.Phasor.Table.Data{e.Indices(1),end}=e.NewData;
     end
-end
-
-if obj == h.Phasor.Table
     %%% Store Selection Change in UserValues
-    UserValues.Settings.Pam.Phasor_Selection = h.Phasor.Table.Data;
+    UserValues.Phasor.Phasor_Table = h.Phasor.Table.Data;
 end
 LSUserValues(1);
 

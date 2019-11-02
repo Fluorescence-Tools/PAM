@@ -493,13 +493,6 @@ if Mode==0 %%% Loads user values
     end
     P.Settings.Pam.Cor_Aggregate_TimewindowAdd = S.Settings.Pam.Cor_Aggregate_TimewindowAdd;
     
-    %%% Checks if Pam.Phasor_Selection subfield exists
-    if ~isfield(S.Settings.Pam, 'Phasor_Selection') || (size(S.Settings.Pam.Phasor_Selection,2) < 9)
-        S.Settings.Pam.Phasor_Selection=[S.PIE.Name', repmat({4,0,0,0,0,1,1,false},numel(S.PIE.Name),1)];
-        disp('UserValues.Settings.Pam.Phasor_Selection was incomplete');
-    end
-    P.Settings.Pam.Phasor_Selection = S.Settings.Pam.Phasor_Selection;
-
     %%% Checks if Pam.PlotIRF subfield exists
     if ~isfield(S.Settings.Pam, 'PlotIRF')
         S.Settings.Pam.PlotIRF='off';
@@ -933,6 +926,13 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Settings_THMin = S.Phasor.Settings_THMin;
     
+    %%% Checks, if Phasor.Phasor_Table subfield exists
+    if ~isfield(S.Phasor, 'Phasor_Table') || (size(S.Phasor.Phasor_Table,2) < 9)
+        S.Phasor.Phasor_Table=[S.PIE.Name', repmat({4,0,0,0,0,1,1,false},numel(S.PIE.Name),1)];
+        disp('UserValues.Phasor.Phasor_Table was incomplete');
+    end
+    P.Phasor.Phasor_Table = S.Phasor.Phasor_Table;
+
     if ~isfield(S.Phasor,'Settings_THMax')
         S.Phasor.Settings_THMax='5000';
         disp('UserValues.Phasor.Settings_THMax was incomplete');
