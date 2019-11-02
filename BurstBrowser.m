@@ -692,9 +692,7 @@ if isempty(hfig)
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
-    h.DynamicMenuItem = javax.swing.JMenuItem('Dynamic Analyses (BVA, E vs. Tau, FRET-2CDE)');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
-    %h.DoBurstVarianceAnalysis = javax.swing.JMenuItem('Burst Variance Analysis');
     %h.EvsTauConfInt = javax.swing.JMenuItem('E vs. Tau (Conf. Int.)');
     %h.FRET2CDEConfInt = javax.swing.JMenuItem('FRET-2CDE Filter (Conf. Int.)');
     h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram');
@@ -709,7 +707,6 @@ if isempty(hfig)
     set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
-    set(h.DynamicMenuItem,'ActionPerformedCallback',@Dynamic_Analysis);
     %set(h.EvsTauConfInt,'ActionPerformedCallback',@Burst_Variance_Analysis);
     %set(h.FRET2CDEConfInt,'ActionPerformedCallback',@Burst_Variance_Analysis);
     set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
@@ -731,7 +728,6 @@ if isempty(hfig)
     h.ExportMenuItem.add(h.Export_FRET_Hist_Timeseries_Menu);
     h.SpeciesListMenu.add(h.ExportMenuItem);
     h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
-    h.SpeciesListMenu.add(h.DynamicMenuItem);
     h.SpeciesListMenu.addSeparator;
     h.SpeciesListMenu.add(h.DisplayFileInfo);
     %%% Define Species List
@@ -929,15 +925,22 @@ if isempty(hfig)
         zscale_image = ['<html><img src="file:/' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
         zscale_image = strrep(zscale_image,'\','/');
     else
-        trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
-        circle_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
-        zscale_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
+        if verLessThan('MATLAB','9.7')
+            trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
+            circle_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+            zscale_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
+        else % on mac, from 2019b no images can be rendered in the table
+            trash_image = '<html><font size=4><font color="red"><b>D</b></font></html>';
+            circle_image = '<html><font size=4><font color="green"><b>A</b></font></html>';
+            zscale_image = '<html><font size=4><font color="blue"><b>Z</b></font></html>';
+        end
     end
     cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'char','numeric','numeric','logical','logical','logical'};
     ceditable = [false,true true true true true];
     table_dat = {'','','',false,false,false};
     cwidth = {225,80,80,25,25,25};
+    tooltip = '<html>A: Toggle active status of cut.<br>D: Delete cut.<br>Z: Display false-color image of parameter.</html>';
     
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -955,7 +958,8 @@ if isempty(hfig)
         'ColumnWidth',cwidth,...
         'FontSize',12,...
         'CellEditCallback',@CutTableChange,...
-        'UIContextMenu',h.CutTable_Menu);
+        'UIContextMenu',h.CutTable_Menu,...
+        'ToolTipString',tooltip);
     h.CutTable.Units = 'pixels';
     h.CutTable.ColumnWidth{1} = h.CutTable.Position(3)-2*80-2*25-56;
     h.CutTable.Units = 'normalized';
