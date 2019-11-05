@@ -5705,11 +5705,8 @@ switch mode
             h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
             return;
         end
-<<<<<<< HEAD
-        
-=======
+
         NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
->>>>>>> 9aafedcf3f19834094516c928683154be3956b2c
         if isprop(e,'NewData')
             if e.Indices(2) ~= 7
                 NewData = e.NewData;
