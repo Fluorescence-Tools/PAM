@@ -4,7 +4,7 @@ IRFPattern = xdata{2};
 Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
-c = xdata{6};
+c = param(14);%xdata{6}; %IRF shift
 ignore = xdata{7};
 G = xdata{8};
 conv_type = xdata{end}; %%% linear or circular convolution
@@ -39,7 +39,7 @@ sc_par = param(8);
 sc_per = param(9);
 bg_par = param(10);
 bg_per = param(11);
-I0 = param(14);
+I0 = param(15);
 %%% Calculate the parallel Intensity Decay
 rt = 1+(2-3*l1).*(((r0-r_inf).*exp(-(1:n)./rho1) + r_inf).*exp(-(1:n)./rho2));
 x_par1 = exp(-(1:n)./tau(1));

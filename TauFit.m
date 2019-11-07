@@ -2700,35 +2700,26 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                if fit             
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_2exp(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
@@ -2747,7 +2738,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -2799,34 +2790,25 @@ switch obj
                 end
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_3exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_3exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_3exp(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
@@ -2846,7 +2828,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -2917,34 +2899,25 @@ switch obj
                 end
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_4exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_4exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_4exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_4exp(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
@@ -2964,7 +2937,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -3043,34 +3016,25 @@ switch obj
                 end
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_stretched_exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_stretched_exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_stretched_exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_stretched_exp(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
@@ -3088,7 +3052,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(1,:) = TauFitData.ConfInt(1,:).*TauFitData.TACChannelWidth;
@@ -3133,34 +3097,25 @@ switch obj
                 end
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_dist(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
@@ -3179,7 +3134,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{6} = FitResult{6}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(6,:) = TauFitData.ConfInt(6,:).*TauFitData.TACChannelWidth;
@@ -3222,34 +3177,25 @@ switch obj
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_dist_donly(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
@@ -3267,7 +3213,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(7,:) = TauFitData.ConfInt(7,:).*TauFitData.TACChannelWidth;
@@ -3314,35 +3260,26 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                if fit                    
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
-                FitFun = fitfun_2dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_2dist_donly(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
@@ -3360,7 +3297,7 @@ switch obj
                 Decay = Decay(ignore:end);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
@@ -3437,38 +3374,29 @@ switch obj
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
                 
-                if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                if fit                    
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                FitFun = fitfun_aniso(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
                 Decay = Decay_stacked;
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun); 
@@ -3485,13 +3413,13 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
-                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                FitResult = num2cell(x');
+                disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt([1,2],:) = TauFitData.ConfInt([1,2],:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3570,37 +3498,28 @@ switch obj
                 fixed(end+1) = false;
 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                FitFun = fitfun_2lt_aniso(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
                 Decay = Decay_stacked;
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun);
@@ -3617,8 +3536,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
-                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                FitResult = num2cell(x');
+                disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -3638,7 +3557,7 @@ switch obj
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3721,37 +3640,29 @@ switch obj
                 fixed(end+1) = false;
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                FitFun = fitfun_aniso_2rot(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
                 Decay = Decay_stacked;
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun);
@@ -3769,14 +3680,14 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
-                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                FitResult = num2cell(x');
+                disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt([1,2,3],:) = TauFitData.ConfInt([1,2,3],:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3857,37 +3768,27 @@ switch obj
                 fixed(end+1) = false;
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2lt_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                FitFun = fitfun_2lt_aniso_2rot(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
                 Decay = Decay_stacked;
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun); 
@@ -3905,8 +3806,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
-                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                FitResult = num2cell(x');
+                disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -3927,7 +3828,7 @@ switch obj
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -4013,37 +3914,28 @@ switch obj
                 fixed(end+1) = false;
                 
                 if fit
-                    %%% fit for different IRF offsets and compare the results
-                    x = cell(numel(shift_range,1));
-                    residuals = cell(numel(shift_range,1));
-                    count = 1;
-                    for i = shift_range
-                        %%% Update Progressbar
-                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        if ~poissonian_chi2
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
-                        else
-                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                                x0(~fixed),lb(~fixed),ub(~fixed));
-                        end
-                        x{count} = interlace(x0,x{count},fixed);
-                        count = count +1;
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed));
                     end
-                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                    [~,best_fit] = min(chi2);
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x{best_fit}(~fixed),residuals{best_fit},'jacobian',jacobian{best_fit},'alpha',alpha);
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
-                    best_fit = 1;
-                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2lt_2aniso_independent(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                FitFun = fitfun_2lt_2aniso_independent(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
                 Decay = Decay_stacked;
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun);
@@ -4061,8 +3953,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
-                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                FitResult = num2cell(x');
+                disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -4083,7 +3975,7 @@ switch obj
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -6442,7 +6334,7 @@ switch obj
         if strcmp(TauFitData.Who,'BurstBrowser')
             switch TauFitData.BAMethod
                 case {1,2,3,4}
-                    count = 1;
+                    
                     switch TauFitData.BAMethod
                         case {1,2}
                             from = TauFitData.PIE.From([1,2,5,6,3,4]);
@@ -6453,13 +6345,13 @@ switch obj
                     end
                     for i = 1:2:5
                         range = from(i):to(i);
-                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{count};
-                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{count};
-                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par{count};
+                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par;
+                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par;
+                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par;
                         range = from(i+1):to(i+1);
-                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per{count};
-                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per{count};
-                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per{count};
+                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per;
+                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per;
+                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per;
                         count = count + 1;
                     end
                 case 5

@@ -4,7 +4,7 @@ IRFPattern = xdata{2};
 Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
-c = xdata{6};
+c = param(end);%xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
