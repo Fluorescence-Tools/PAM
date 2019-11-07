@@ -884,7 +884,7 @@ switch Type
     case {5}   %% 2color FRET data from BurstBrowser
         FCSMeta.DataType = 'FRET';
         bin = UserValues.FCSFit.FRETbin;
-        x = (-0.1:bin:ceil(1.1/bin)*bin)';
+        x = (-0.25:bin:ceil(1.25/bin)*bin)';
         for i=1:numel(FileName)
             %%% Reads files
             E = load(fullfile(PathName{i},FileName{i}),'-mat'); 
@@ -1820,8 +1820,11 @@ if ~strcmp(FCSMeta.DataType,'FRET')
         Min = 0;
     end
 else
-    if (Min < -0.1)
-        Min = -0.1;
+    if (Min < -0.25)
+        Min = -0.25;
+    end
+    if (Max > 1.25)
+        Max = 1.25;
     end
 end
 if (Max < 0)
