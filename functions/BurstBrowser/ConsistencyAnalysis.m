@@ -48,10 +48,6 @@ if ~ismac
     ffontsize = ffontsize*0.72;
 end
 fcenterPlotPos = [0.1 0.11 0.6 0.6];
-faculty = get(0,'default');
-set(0,'defaultaxesfontsize',ffontsize,'defaultaxesfontname','Arial','defaultaxeslinewidth',2.0,...
-    'defaultaxesygrid','on','defaultaxesxgrid','on','defaultaxesbox','on','defaultaxescolor',[1 1 1],...
-    'defaultlinelinewidth',2,'defaultaxesxcolor',[0 0 0],'defaultaxesycolor',[0 0 0])
 switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
     case 1
         switch BurstData{file}.BAMethod
@@ -257,6 +253,12 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         ax.YLim = [0 0.55];
                         ax.Layer = 'bottom';
                         grid(ax,'on');
+                        ax.FontSize = ffontsize;
+                        ax.Box = on;
+                        ax.FontName = 'Arial';
+                        ax.LineWidth = 2;
+                        ax.YColor = [0 0 0];
+                        ax.XColor = [0 0 0];
                         
                         % plot of expected STD
                         X_expectedSD = linspace(0,1,1000);
@@ -303,6 +305,15 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLim = [0 1];
                     ax.YLim = [0 0.55];
                     ax.GridAlpha = 0.35;
+                    grid(ax,'on');
+                    ax.FontSize = ffontsize;
+                    ax.Box = on;
+                    ax.FontName = 'Arial';
+                    ax.Color = [1 1 1];
+                    ax.LineWidth = 2;
+                    ax.YColor = [0 0 0];
+                    ax.XColor = [0 0 0];
+                    
                     
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
@@ -317,10 +328,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     
                     lgd = legend(ax,'EXP Data',SSR_dyn_legend,SSR_stat_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize*0.95;
-                    
-                    plot_marignal_1D_hist(ax,E,sSelected,0.6,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
-                    plot_marignal_1D_hist(ax,E_sim,sSelected_sim,0.6,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
-                    plot_marignal_1D_hist(ax,E_static,sSelected_static,0.6,UserValues.BurstBrowser.Display.ColorLine3,ffontsize)
+                    face_alpha = 0.8;
+                    plot_marignal_1D_hist(ax,E,sSelected,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
+                    plot_marignal_1D_hist(ax,E_sim,sSelected_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
+                    plot_marignal_1D_hist(ax,E_static,sSelected_static,face_alpha,UserValues.BurstBrowser.Display.ColorLine3,ffontsize)
                     
                     if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                         E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
@@ -368,6 +379,12 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         ax.YLim = [0 0.55];
                         ax.Layer = 'bottom';
                         grid(ax,'on');
+                        ax.FontSize = ffontsize;
+                        ax.Box = on;
+                        ax.FontName = 'Arial';
+                        ax.LineWidth = 2;
+                        ax.YColor = [0 0 0];
+                        ax.XColor = [0 0 0];
                         
                         % plot of expected STD
                         X_expectedSD = linspace(0,1,1000);
@@ -414,7 +431,15 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLim = [0 1];
                     ax.YLim = [0 0.55];
                     ax.GridAlpha = 0.35;
-                    
+                    grid(ax,'on');
+                    ax.FontSize = ffontsize;
+                    ax.Box = on;
+                    ax.FontName = 'Arial';
+                    ax.Color = [1 1 1];
+                    ax.LineWidth = 2;
+                    ax.YColor = [0 0 0];
+                    ax.XColor = [0 0 0];
+
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
                     patch(ax,[-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
@@ -425,9 +450,9 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     
                     lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_dyn_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize*0.95;
-                   
-                    plot_marignal_1D_hist(ax,E,sSelected,0.6,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
-                    plot_marignal_1D_hist(ax,E_sim,sSelected_sim,0.6,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
+                    face_alpha = 0.8;
+                    plot_marignal_1D_hist(ax,E,sSelected,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
+                    plot_marignal_1D_hist(ax,E_sim,sSelected_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
                     
                     %plot_BVA(E,sSelected,BinCenters,sPerBin)
                     if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
@@ -537,6 +562,11 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         ax.XLim = [0 1.1];
                         ax.Layer = 'bottom';
                         grid(ax,'on');
+                        ax.FontSize = ffontsize;
+                        ax.Box = on;
+                        ax.FontName = 'Arial';
+                        ax.Color = [1 1 1];
+                        ax.LineWidth = 2;
                         
                         %%% add FRET lines
                         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',3,'Color','k','HandleVisibility','on');
@@ -578,6 +608,14 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLim = [0 1.1];
                     ax.YLim = [-0.1 1.1];
                     ax.GridAlpha = 0.35;
+                    grid(ax,'on');
+                    ax.FontSize = ffontsize;
+                    ax.Box = on;
+                    ax.FontName = 'Arial';
+                    ax.Color = [1 1 1];
+                    ax.LineWidth = 2;
+                    ax.YColor = [0 0 0];
+                    ax.XColor = [0 0 0];
                     
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
@@ -597,10 +635,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     end
                     lgd = legend(ax,'EXP Data',SSR_dyn_legend,SSR_stat_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize * 0.95;
-                    
-                    plot_marignal_1D_hist(ax,tauD,E,0.6,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
-                    plot_marignal_1D_hist(ax,tauD_sim,E_sim,0.6,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
-                    plot_marignal_1D_hist(ax,tauD_static,E_static,0.6,UserValues.BurstBrowser.Display.ColorLine3,ffontsize)
+                    face_alpha = 1;
+                    plot_marignal_1D_hist(ax,tauD,E,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
+                    plot_marignal_1D_hist(ax,tauD_sim,E_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
+                    plot_marignal_1D_hist(ax,tauD_static,E_static,face_alpha,UserValues.BurstBrowser.Display.ColorLine3,ffontsize)
                 end
             case 0 % compare only dynamic model to experimental data
                 Progress(0.9,h.Progress_Axes,h.Progress_Text,'Plotting...');
@@ -636,6 +674,12 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                         ax.XLim = [0 1.1];
                         ax.Layer = 'bottom';
                         grid(ax,'on');
+                        ax.FontSize = ffontsize;
+                        ax.Box = on;
+                        ax.FontName = 'Arial';
+                        ax.LineWidth = 2;
+                        ax.YColor = [0 0 0];
+                        ax.XColor = [0 0 0];
                         
                         %%% add FRET lines
                         plot(ax,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',3,'Color','k','HandleVisibility','on');
@@ -676,6 +720,14 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLim = [0 1.1];
                     ax.YLim = [-0.1 1.1];
                     ax.GridAlpha = 0.35;
+                    grid(ax,'on');
+                    ax.FontSize = ffontsize;
+                    ax.Box = on;
+                    ax.FontName = 'Arial';
+                    ax.Color = [1 1 1];
+                    ax.LineWidth = 2;
+                    ax.YColor = [0 0 0];
+                    ax.XColor = [0 0 0];
                     
                     plot_ContourPatches(ax,H_real,x_real,y_real,UserValues.BurstBrowser.Display.ColorLine1)
                     plot_ContourPatches(ax,H_sim,x_sim,y_sim,UserValues.BurstBrowser.Display.ColorLine2)
@@ -693,9 +745,9 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     
                     lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_dyn_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize*0.95;
-                    
-                    plot_marignal_1D_hist(ax,tauD,E,0.6,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
-                    plot_marignal_1D_hist(ax,tauD_sim,E_sim,0.6,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
+                    face_alpha = 1;
+                    plot_marignal_1D_hist(ax,tauD,E,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
+                    plot_marignal_1D_hist(ax,tauD_sim,E_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
                 end
         end
     case 3 
@@ -893,7 +945,6 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
-set(0,faculty);
 end
 
 function plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)
@@ -963,6 +1014,11 @@ axright.XTick = linspace(axright.XLim(1),axright.XLim(2),9);
 axright.XTick(:,[1:2,4:6,8:9]) = [];
 axright.XTickLabel = [];
 axright.YTickLabel = [];
+axright.LineWidth = 2;
+axright.Box = 'on';
+axright.Layer = 'top';
+% axright.Color = [1 1 1];
+grid(axright,'on');
 
 axformat = axes('Position',axright.Position,'Color','none');
 axformat.XLim = axright.XLim;
@@ -975,6 +1031,10 @@ grid(axformat,'off');
 axformat.XLabel.String = 'counts';
 axformat.FontSize = ffontsize;
 axformat.FontName = 'Arial';
+axformat.LineWidth = 2;
+axformat.YColor = [0 0 0];
+axformat.XColor = [0 0 0];
+axformat.Layer = 'top';
 
 % top margin 1D histogram
 if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 1
@@ -988,7 +1048,15 @@ axtop.XLim = axmain.XLim;
 axtop.YTick = linspace(axtop.YLim(1),axtop.YLim(2),9);
 axtop.YTick(:,[1:2,4:6,8:9]) = [];
 axtop.YTickLabel = [];
+if length(axtop.XTick) > 10
+    axtop.XTick(:,[2,4,6,8,10]) = [];
+end
 axtop.XTickLabel = [];
+axtop.LineWidth = 2;
+axtop.Box = 'on';
+axtop.Layer = 'top';
+% axtop.Color = [1 1 1];
+grid(axtop,'on')
 
 axformat = axes('Position',axtop.Position,'Color','none');
 axformat.YLim = axright.YLim;
@@ -1001,4 +1069,7 @@ grid(axformat,'off');
 axformat.YLabel.String = 'counts';
 axformat.FontSize = ffontsize;
 axformat.FontName = 'Arial';
+axformat.LineWidth = 2;
+axformat.YColor = [0 0 0];
+axformat.XColor = [0 0 0];
 end
