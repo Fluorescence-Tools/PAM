@@ -1017,7 +1017,7 @@ axright.YTickLabel = [];
 axright.LineWidth = 2;
 axright.Box = 'on';
 axright.Layer = 'top';
-% axright.Color = [1 1 1];
+axright.Color = [1 1 1];
 grid(axright,'on');
 
 axformat = axes('Position',axright.Position,'Color','none');
@@ -1055,7 +1055,7 @@ axtop.XTickLabel = [];
 axtop.LineWidth = 2;
 axtop.Box = 'on';
 axtop.Layer = 'top';
-% axtop.Color = [1 1 1];
+axtop.Color = [1 1 1];
 grid(axtop,'on')
 
 axformat = axes('Position',axtop.Position,'Color','none');
