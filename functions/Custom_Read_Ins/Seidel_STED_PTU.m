@@ -3,7 +3,7 @@ function [Suffix, Description] = Seidel_STED_PTU(FileName, Path, Type,h)
 %%% Outputs Suffix and Description for file selection querry
 if nargin == 0
     Suffix ='*.ptu';
-    Description ='PQ Hydraharp PTU Seidel-STED custom scanning format';
+    Description ='PQ Hydraharp PTU Seidel-STED custom scanning format (*.ptu)';
     return;
 end
 
@@ -153,8 +153,18 @@ for i=1:numel(FileName)
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Converting File ' num2str(i) ' of ' num2str(numel(FileName))]);
             % ask the user for the excitation period.
             % Assuming only the last scan is red.
-            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'2'}));
-            lines = FileInfo.Pixels*period;
+            input_prompt = false;
+            if input_prompt
+                period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'2'}));                
+            else
+                %%% if we assume a square ROI, we can get the period length
+                %%% from the apparent number of lines
+                period = size(lstart,2)./FileInfo.Pixels;
+                % lstart contains the apparent number of lines
+                % FileInfo.Pixels is the "true" number of lines assuming a
+                % square ROI.
+            end      
+            lines = FileInfo.Pixels*period; % lines per period. FileInfo.Pixels corresponds to the lines per image (assuming a square ROI)
             % transform the raw MT data to split up into duty cycle periods.
             % Currently, for each line the setup performs 3 scans with green
             % excitation and one scan with red excitation.
