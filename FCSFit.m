@@ -110,7 +110,6 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Tag','Fit',...
         'Label','...Fit',...
         'Callback',@Do_FCSFit);
-    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -719,7 +718,7 @@ if nargin > 3 %%% called from file history
     end
 else
     %%% Choose files to load
-    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
+    [FileName,path,Type] = uigetfile({'*.cor','Averaged correlation based on matlab filetype (*.mcor)';...
                                       '*.cor','Averaged correlation based on text filetype (*.cor)';...
                                       '*.mcor','Individual correlation curves based on matlab filetype (*.mcor)';...
                                       '*.cor','Individual correlation curves based on text filetype (*.cor)';...
@@ -730,6 +729,7 @@ else
                                       'Choose FCS data files',...
                                       UserValues.File.FCSPath,... 
                                       'MultiSelect', 'on');
+                                  Type = 8;
     %%% Tranforms to cell array, if only one file was selected
     if ~iscell(FileName)
         FileName = {FileName};
@@ -1799,6 +1799,15 @@ function Update_Plots(~,~)
 h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData UserValues
 
+%%% if use weights is changed, change axis label on residuals
+if gcbo == h.Fit_Weights
+    if h.Fit_Weights.Value == 0
+        h.Residuals_Axes.YLabel.String = 'residuals';
+    else
+        h.Residuals_Axes.YLabel.String = {'weighted'; 'residuals'};
+    end
+end
+
 Min=str2double(h.Fit_Min.String);
 Max=str2double(h.Fit_Max.String);
 %%% input check
@@ -2261,7 +2270,12 @@ switch mode
         end
         if h.Export_Residuals.Value
             H.Residuals.YLim=h.Residuals_Axes.YLim;
-            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
+            switch h.Fit_Weights.Value
+                case 1
+                    H.Residuals.YLabel.String = {'weighted'; 'residuals'};
+                case 0
+                    H.Residuals.YLabel.String = {'residuals'};
+            end
         end
         %% Toggles box and grid
         if h.Export_Grid.Value
@@ -2423,8 +2437,13 @@ if sum(Global)==0
                 if method == 1
                     ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                 elseif method == 2
+                    disp('Running MCMC... This could take a minute.');tic;
                     confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                     proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+                    if any(isnan(proposal))
+                        %%% nlparci may return NaN values. Set to 1% of the fit value
+                        proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
+                    end
                     %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
                     loglikelihood = @(x) (-1/2)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
                     %%% Sample
@@ -2433,8 +2452,12 @@ if sum(Global)==0
                     v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
                     perc = tinv(1-alpha/2,v);
                     ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+                    disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
+                    % print variables to workspace
+                    assignin('base','Samples',samples);
+                    assignin('base','acceptance',acceptance);
                 end
-                FCSMeta.Confidence_Intervals{i} = ConfInt;
+                FCSMeta.Confidence_Intervals{i} = ConfInt;                
             end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
@@ -2484,8 +2507,13 @@ else
         if method == 1
             ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
         elseif method == 2
+            disp('Running MCMC... This could take a minute.');tic;
             confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
             proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+            if any(isnan(proposal))
+                %%% nlparci may return NaN values. Set to 1% of the fit value
+                proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
+            end
             %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
             loglikelihood = @(x) (-1/2)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
             %%% Sample
@@ -2493,10 +2521,15 @@ else
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
             %v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom is equal to the number of samples
             perc = 1.96;%tinv(1-alpha/2,v);
-            ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*(samples(1:spacing:end,:)))'];
+            ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+            disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
+            % print variables to workspace
+            assignin('base','GlobalSamples',samples(:,1:sum(Global)));
+            assignin('base','LocalSamples',samples(:,sum(Global)+1:end));        
+            assignin('base','acceptance',acceptance);
         end
         GlobConfInt = ConfInt(1:sum(Global),:);
-        ConfInt(1:sum(Global),:) = [];
+        ConfInt(1:sum(Global),:) = [];        
         for i = find(Active)'
             FCSMeta.Confidence_Intervals{i} = zeros(size(FCSMeta.Params,1),2);
             FCSMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
