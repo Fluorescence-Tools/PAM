@@ -2457,7 +2457,11 @@ if sum(Global)==0
                     assignin('base',['Samples' num2str(i)],samples);
                     assignin('base',['acceptance' num2str(i)],acceptance);
                 end
-                FCSMeta.Confidence_Intervals{i} = ConfInt;                
+                FCSMeta.Confidence_Intervals{i} = ConfInt;  
+                %%% we can also make a prediction for the curve based on
+                %%% the confidence intervals, using the following code:
+                % [y,delta] = nlpredci(@(x,xdat) Fit_Single(x,{xdat,EData,i,Fixed(i,:)}).*EData,XData,Fitted_Params,weighted_residuals,'jacobian',full(jacobian));
+                % figure;semilogx(XData,y-delta);hold on;semilogx(XData,y+delta);
             end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
