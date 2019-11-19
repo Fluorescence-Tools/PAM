@@ -689,7 +689,7 @@ end
     FCSMeta.Fits=[];
     FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
     FCSMeta.FitInProgress = 0;    
-    FCSMeta.DataType = 'FCS';
+    FCSMeta.DataType = 'FCS averaged';
     
     h.CurrentGui = 'FCS';
     guidata(h.FCSFit,h); 
@@ -1047,12 +1047,7 @@ switch Type
         %%% change the gui
         SwitchGUI(h,'FCS');
     case {8} % Kristine files from Seidel lab
-        switch Type
-            case 6
-                FCSMeta.DataType = 'FCS averaged';
-            case 5
-                FCSMeta.DataType = 'FCS individual';
-        end
+        FCSMeta.DataType = 'FCS averaged';
         for i=1:numel(FileName)
             %%% Reads file (file contains all sub-measurements)
             [C, mCountRate, Duration] = read_kristine_fcs_file(fullfile(PathName{i},FileName{i}));
@@ -2691,7 +2686,7 @@ switch obj
     case h.LoadSession
         %%% get file
         [FileName,PathName] = uigetfile({'*.fcs','FCSFit Session (*.fcs)'},'Load FCSFit Session',UserValues.File.FCSPath,'MultiSelect','off');
-        if FileName == 0
+        if numel(FileName) == 1 && FileName == 0
             return;
         end
         %%% Saves pathname to uservalues
@@ -2781,7 +2776,7 @@ function Create_Plots(~,~)
 global UserValues FCSMeta FCSData
 h = guidata(findobj('Tag','FCSFit'));
 switch FCSMeta.DataType
-    case {'FCS averaged','FCS individual'} %%% Correlation files
+    case {'FCS averaged','FCS individual','FCS'} %%% Correlation files
         for i=1:numel(FCSData.FileName)
             %%% Creates new plots
             FCSMeta.Plots{end+1,1} = errorbar(...
