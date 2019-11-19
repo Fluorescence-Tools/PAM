@@ -2454,8 +2454,8 @@ if sum(Global)==0
                     ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
                     disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
                     % print variables to workspace
-                    assignin('base','Samples',samples);
-                    assignin('base','acceptance',acceptance);
+                    assignin('base',['Samples' num2str(i)],samples);
+                    assignin('base',['acceptance' num2str(i)],acceptance);
                 end
                 FCSMeta.Confidence_Intervals{i} = ConfInt;                
             end
