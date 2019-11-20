@@ -718,7 +718,7 @@ if nargin > 3 %%% called from file history
     end
 else
     %%% Choose files to load
-    [FileName,path,Type] = uigetfile({'*.cor','Averaged correlation based on matlab filetype (*.mcor)';...
+    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
                                       '*.cor','Averaged correlation based on text filetype (*.cor)';...
                                       '*.mcor','Individual correlation curves based on matlab filetype (*.mcor)';...
                                       '*.cor','Individual correlation curves based on text filetype (*.cor)';...
@@ -729,7 +729,6 @@ else
                                       'Choose FCS data files',...
                                       UserValues.File.FCSPath,... 
                                       'MultiSelect', 'on');
-                                  Type = 8;
     %%% Tranforms to cell array, if only one file was selected
     if ~iscell(FileName)
         FileName = {FileName};
@@ -2439,7 +2438,7 @@ if sum(Global)==0
                 elseif method == 2
                     disp('Running MCMC... This could take a minute.');tic;
                     confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
-                    proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+                    proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/100)';
                     if any(isnan(proposal))
                         %%% nlparci may return NaN values. Set to 1% of the fit value
                         proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
@@ -2456,6 +2455,9 @@ if sum(Global)==0
                     % print variables to workspace
                     assignin('base',['Samples' num2str(i)],samples);
                     assignin('base',['acceptance' num2str(i)],acceptance);
+                    if acceptance < 0.01
+                        disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+                    end
                 end
                 FCSMeta.Confidence_Intervals{i} = ConfInt;  
                 %%% we can also make a prediction for the curve based on
@@ -2531,6 +2533,9 @@ else
             assignin('base','GlobalSamples',samples(:,1:sum(Global)));
             assignin('base','LocalSamples',samples(:,sum(Global)+1:end));        
             assignin('base','acceptance',acceptance);
+            if acceptance < 0.01
+                disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+            end
         end
         GlobConfInt = ConfInt(1:sum(Global),:);
         ConfInt(1:sum(Global),:) = [];        
