@@ -369,7 +369,7 @@ switch mode
             T3Record = fread(fid, Inf, 'ubit32');
             % end
             SyncRate = 1E10/T3Record(1);T3Record(1) = [];
-            % nRecords = numel(T3Record);
+%             nRecords = numel(T3Record);
             
             Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
             
@@ -414,6 +414,9 @@ Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str
 
 MT = cell(10,1);
 MI = cell(10,1);
+if isrow(TimeTag)
+    TimeTag = TimeTag';
+end
 for i=unique(channel)'
     MT{i+1} = TimeTag(channel==i);
     MI{i+1} = dtime(channel==i);
