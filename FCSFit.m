@@ -2434,6 +2434,14 @@ if sum(Global)==0
                 method = h.Conf_Interval_Method.Value;
                 alpha = 0.05; %95% confidence interval
                 if method == 1
+                    %%% NOTE: nlparci confidence intervals are always
+                    %%% symmetric, which can lead to non-sensical values
+                    %%% for the error estimate (i.e. 10 +- 20).
+                    %%% 
+                    %%% One could also use nlinfit here to get access to
+                    %%% the covariance matrix directly (instead of relying
+                    %%% on the jacobian), but I found the two methods to be
+                    %%% consistent.
                     ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                 elseif method == 2
                     disp('Running MCMC... This could take a minute.');tic;
@@ -2448,9 +2456,22 @@ if sum(Global)==0
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-                    v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
-                    perc = tinv(1-alpha/2,v);
-                    ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+                    
+                    %%% MCMC samples the posterior distribution, which can
+                    %%% be asymmetric. In this case, the standard deviation
+                    %%% is the wrong quantity, instead asymmetric
+                    %%% confidence intervals can be reported based on the
+                    %%% percentiles of the distribution!
+                    
+                    %%% New asymmetric confidence interval estimate
+                    ConfInt(~Fixed(i,:),:) = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+                    
+                    %%% This was the error estimate based on the standard
+                    %%% deviation:
+                    % v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
+                    % perc = tinv(1-alpha/2,v);
+                    % ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+                    
                     disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
                     % print variables to workspace
                     assignin('base',['Samples' num2str(i)],samples);
@@ -2525,9 +2546,14 @@ else
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+            
+            %%% New asymmetric confidence interval estimate
+            ConfInt = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+            
             %v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom is equal to the number of samples
-            perc = 1.96;%tinv(1-alpha/2,v);
-            ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+            % perc = 1.96;%tinv(1-alpha/2,v);
+            % ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+            
             disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
             % print variables to workspace
             assignin('base','GlobalSamples',samples(:,1:sum(Global)));
