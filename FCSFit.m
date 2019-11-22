@@ -2456,7 +2456,12 @@ if sum(Global)==0
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-                    
+                    if acceptance < 0.01
+                        disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+                        disp('Running again with more narrow proposal distribution.');
+                        proposal = proposal/10;
+                        [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+                    end
                     %%% MCMC samples the posterior distribution, which can
                     %%% be asymmetric. In this case, the standard deviation
                     %%% is the wrong quantity, instead asymmetric
@@ -2474,11 +2479,8 @@ if sum(Global)==0
                     
                     disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
                     % print variables to workspace
-                    assignin('base',['Samples' num2str(i)],samples);
-                    assignin('base',['acceptance' num2str(i)],acceptance);
-                    if acceptance < 0.01
-                        disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
-                    end
+                    assignin('base',['Samples' num2str(i)],samples(1:spacing:end,:));
+                    assignin('base',['acceptance' num2str(i)],acceptance);                    
                 end
                 FCSMeta.Confidence_Intervals{i} = ConfInt;  
                 %%% we can also make a prediction for the curve based on
@@ -2546,7 +2548,12 @@ else
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            
+            if acceptance < 0.01
+                    disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+                    disp('Running again with more narrow proposal distribution.');
+                    proposal = proposal/10;
+                    [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+            end
             %%% New asymmetric confidence interval estimate
             ConfInt = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
             
@@ -2556,8 +2563,8 @@ else
             
             disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
             % print variables to workspace
-            assignin('base','GlobalSamples',samples(:,1:sum(Global)));
-            assignin('base','LocalSamples',samples(:,sum(Global)+1:end));        
+            assignin('base','GlobalSamples',samples(1:spacing:end,1:sum(Global)));
+            assignin('base','LocalSamples',samples(1:spacing:end,sum(Global)+1:end));        
             assignin('base','acceptance',acceptance);
             if acceptance < 0.01
                 disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
