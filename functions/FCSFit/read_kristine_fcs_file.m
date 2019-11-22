@@ -56,5 +56,5 @@ C_res(1,3) = sum(t);
 C_res(2,3) = sum(t.*cr)./sum(t);
 
 % save as new file
-[~,file,~] = fileparts(fn{i});
+[~,file,~] = fileparts(fn{1});
 dlmwrite(fullfile(pn,[file '_merged.cor']),C_res);
