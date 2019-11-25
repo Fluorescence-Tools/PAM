@@ -6354,7 +6354,6 @@ switch obj
                         microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per;
                         microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per;
                         microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per;
-                        count = count + 1;
                     end
                 case 5
             end
