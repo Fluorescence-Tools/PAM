@@ -7508,12 +7508,20 @@ function Save_TICS(~,~, data)
 global UserValues MIAData
 h = guidata(findobj('Tag','Mia'));
 
+if ~h.Mia_Image.Calculations.Save_Name.Value
+    switch MIAData.Type
+        case {1,1.5, 2}
+            FileName=MIAData.FileName{1}{1}(1:end-4);
+    end
+    [FileName,PathName] = uiputfile([FileName '.mcor'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+    FileName = FileName(1:end-5);
+end
+
 for i = 1:3
     if any(MIAData.TICS.Auto==i) || (i==3 && MIAData.TICS.Cross)
         if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
             mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
         end
-        
         %%% Generates filename
         if h.Mia_Image.Calculations.Save_Name.Value
             if i == 1 %ACF1
@@ -7523,16 +7531,23 @@ for i = 1:3
             elseif i == 3 %CCF
                 FileName = MIAData.FileName{2}{1}(1:end-4);
             end
+            if i==1
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
+            elseif i==2
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
+            else
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
+            end
         else
-            [FileName,PathName] = uiputfile(Current_FileName, 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+            if i==1
+                Current_FileName=fullfile(PathName,[FileName '_ACF1.mcor']);
+            elseif i==2
+                Current_FileName=fullfile(PathName,[FileName '_ACF2.mcor']);
+            else
+                Current_FileName=fullfile(PathName,[FileName '_CCF.mcor']);
+            end
         end
-        if i==1
-            Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
-        elseif i==2
-            Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
-        else
-            Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
-        end
+        
         k=0;
         %%% Checks, if file already exists
         if  exist(Current_FileName,'file')
@@ -7609,7 +7624,7 @@ switch h.Mia_Image.Settings.ROI_FramesUse.Value
         Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
 end
 %% Saves info file
-FileName = MIAData.FileName{1}{1}(1:end-4);
+%FileName = MIAData.FileName{1}{1}(1:end-4);
 Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
 k=0;
 %%% Checks, if file already exists
