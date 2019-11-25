@@ -1484,9 +1484,11 @@ h.Cleanup_IRF_Menu = uicontrol(...
 
 h.Cleanup_IRF_axes = axes('Parent',h.IRF_Cleanup_Panel,...
     'Position',[0.125,0.2,0.83,0.77],'Units','normalized','FontSize',10,'XColor',Look.Fore,'YColor',Look.Fore);
-h.Plots.IRF_cleanup.IRF_data = plot(h.Cleanup_IRF_axes,1:1:100,normpdf(1:100,20,2),'LineStyle','none','Marker','.','MarkerSize',10);
+normaldist = 1./(sqrt(2*pi)*2).*exp(-((1:100)-20).^2./(2*2^2));
+h.Plots.IRF_cleanup.IRF_data = plot(h.Cleanup_IRF_axes,1:1:100,normaldist,'LineStyle','none','Marker','.','MarkerSize',10);
 hold on;
-h.Plots.IRF_cleanup.IRF_fit = plot(h.Cleanup_IRF_axes,1:0.1:100,normpdf(1:0.1:100,20,2),'LineStyle','-','Marker','none','MarkerSize',10,'LineWidth',2);
+normaldist = 1./(sqrt(2*pi)*2).*exp(-((1:0.1:100)-20).^2./(2*2^2));
+h.Plots.IRF_cleanup.IRF_fit = plot(h.Cleanup_IRF_axes,1:0.1:100,normaldist,'LineStyle','-','Marker','none','MarkerSize',10,'LineWidth',2);
 h.Cleanup_IRF_axes.XLabel.String = 'Time [ns]';
 h.Cleanup_IRF_axes.YLabel.String = 'PDF';
 h.Cleanup_IRF_axes.XColor = Look.Fore;
