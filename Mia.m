@@ -7518,9 +7518,9 @@ for i = 1:3
         if h.Mia_Image.Calculations.Save_Name.Value
             if i == 1 %ACF1
                 FileName = MIAData.FileName{i}{1}(1:end-4);
-            elseif i == 2 %CCF
+            elseif i == 2 %ACF2
                 FileName = MIAData.FileName{1}{1}(1:end-4);
-            elseif i == 3 %ACF2
+            elseif i == 3 %CCF
                 FileName = MIAData.FileName{2}{1}(1:end-4);
             end
         else
@@ -7529,9 +7529,9 @@ for i = 1:3
         if i==1
             Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
         elseif i==2
-            Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
-        else
             Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
+        else
+            Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
         end
         k=0;
         %%% Checks, if file already exists
