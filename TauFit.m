@@ -2580,12 +2580,18 @@ end
 
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
-%%% anders, please update the above statements to what they really is
 %%% ShiftParams(1)  :   StartPar
 %%% ShiftParams(2)  :   IRFShift
 %%% ShiftParams(3)  :   IRFLength
+%%%
+%%% Update 11/2019!
+%%% The IRFShift stored in ShiftParams is not used anymore and is ignored
+%%% in the following. Instead, the IRFshift is always the last parameter in
+%%% the parameter array and optimized as all other parameters by the fit
+%%% routine.
+%%% This should be cleaned up in the future.
 ShiftParams(1) = TauFitData.StartPar{chan};
-ShiftParams(2) = TauFitData.IRFShift{chan};
+ShiftParams(2) = TauFitData.IRFShift{chan}; % not used anymore
 ShiftParams(3) = TauFitData.Length{chan};
 if ~cleanup_IRF
     ShiftParams(4) = TauFitData.IRFLength{chan};
@@ -4226,7 +4232,7 @@ switch obj
         TauFitData.FitType = 'MEM';
         TauFitData.WeightedResidualsType = h.WeightedResidualsType_Menu.String{h.WeightedResidualsType_Menu.Value};
         % initialize fit parameters
-        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
+        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
         
         % get fit parameters (scatter,background, irfshift)
         x0 = [ UserValues.TauFit.FitParams{chan}([8,10]) UserValues.TauFit.IRFShift{chan}];
