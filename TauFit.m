@@ -6618,6 +6618,7 @@ h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannel
 
 function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,mode,resolution, v)
 global TauFitData
+h = guidata(gcbo);
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 5
     resolution = 300;
@@ -6651,7 +6652,7 @@ switch mode
         R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
         R = R(2:end-1);
         %%% calculate respective lifetime vector
-        tau = tauD.*(1+(R0./R).^6).^(-1);      
+        tau = tauD.*(1+(R0./R).^6).^(-1);
 end
 
 %%% Establish library of single exponential decays, convoluted with IRF
@@ -6660,11 +6661,22 @@ for i = 1:numel(tau)
     decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
 end
 
+
+%%% generate linear combination decay
+decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
+
+if strcmp(mode,'dist') && contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
+    %%% consider donor only fraction in model
+    decay_donly = fitfun_1exp([tauD,params],static_fit_params);
+    fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
+    decay_lincomb = @(p) (1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly;
+end
+
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
-        mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-sum(decay_ind.*repmat(p,1,numel(decay),1))).^2./error.^2)./(numel(decay)));
+        mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-decay_lincomb(p)).^2./error.^2)./(numel(decay)));
     case 'Poissonian'
-        mem = @(p) -(v*sum(p-p.*log(p)) - sum(MLE_w_res(sum(decay_ind.*repmat(p,1,numel(decay),1)),decay).^2)./(numel(decay)));
+        mem = @(p) -(v*sum(p-p.*log(p)) - sum(MLE_w_res(decay_lincomb(p),decay).^2)./(numel(decay)));
 end
 
 %%% initialize p
@@ -6679,7 +6691,7 @@ lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
 opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
 tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
 
-model = sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
+model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
         chi2 = sum( (decay-model).^2./error.^2)./(numel(decay));
