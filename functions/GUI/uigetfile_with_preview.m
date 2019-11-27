@@ -132,7 +132,9 @@ function [filename,path,type] = uigetfile_with_preview(filterSpec, prompt, folde
       type = find(sum(strcmp(filterSpec,type),2));
       close(hFig);
   else  % figure was deleted/closed
-      filename = '';
+      filename = [];
+      path = [];
+      type = [];
   end
 end  % uigetfile_with_preview
 
