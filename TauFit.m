@@ -1996,6 +1996,7 @@ end
 if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
+    TauFitData.chan = chan;
 else
     if isfield(TauFitData,'chan')
         chan = TauFitData.chan;
