@@ -37,6 +37,8 @@ tauD01(tauD01==0) = 1; %%% set minimum lifetime to TACbin width
 tauD02 = param(11);
 tauD02(tauD02==0) = 1; %%% set minimum lifetime to TACbin width
 f1_donly = param(12);
+sc_donly = param(13);
+bg_donly = param(14);
 %%% Determine distribution of lifetimes
 range_lower = min([meanR1-5*sigmaR1,meanR2-5*sigmaR2]);
 range_upper = max([meanR1+5*sigmaR1,meanR2+5*sigmaR2]);
@@ -58,7 +60,7 @@ for j = 1:2
     pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
     c_gauss = zeros(numel(xR),n);
     for i = 1:numel(xR)
-        c_gauss(i,:) = c_gauss(i,:) + pR(i).*...
+        c_gauss(i,:) = pR(i).*...
             (f1_donly*exp(-((0:n-1)./tauD01).*(1+(R0./xR(i)).^6))+...
              (1-f1_donly)*exp(-((0:n-1)./tauD02).*(1+(R0./xR(i)).^6)));
     end    
@@ -84,10 +86,10 @@ z=z';
 
 % TODO: Separate scatter for donor only
 zDonly = zDonly./sum(zDonly);
-zDonly = (1-sc).*zDonly + sc*Scatter;
+zDonly = (1-sc_donly).*zDonly + sc_donly*Scatter;
 zDonly = zDonly(ignore:end);
 zDonly = zDonly./sum(zDonly);
-zDonly = zDonly.*(1-bg)+bg./numel(zDonly);
+zDonly = zDonly.*(1-bg_donly)+bg_donly./numel(zDonly);
 zDonly = zDonly.*sum(y(2,:));
 
 z = [z zDonly'];

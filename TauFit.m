@@ -2394,6 +2394,7 @@ end
 h.Plots.Scat_Per.YData = tmp;
 h.Ignore_Plot.Visible = 'off';
 %%% check if anisotropy plot is selected
+legend(h.Microtime_Plot,'off');
 if h.ShowAniso_radiobutton.Value == 1
     %%% hide all IRF and Scatter plots
     set([h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Par,h.Plots.Decay_Per],'Visible','off');
@@ -2414,6 +2415,9 @@ elseif h.ShowDecay_radiobutton.Value == 1
     h.Microtime_Plot.YLimMode = 'auto';
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
+    %%% show legend
+    l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
+    l.Box = 'off';
 elseif h.ShowDecaySum_radiobutton.Value == 1
     %%% unihde all IRF and Scatter plots
     set([h.Plots.Aniso_Preview,h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Per,h.Plots.Decay_Par],'Visible','off');
@@ -3440,8 +3444,12 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(8) = fix(7);
                 UserValues.TauFit.FitFix{chan}(10) = fix(8);
                 UserValues.TauFit.FitFix{chan}(13) = fix(9);
-                UserValues.TauFit.FitFix{chan}(14) = fix(10);
-                UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                UserValues.TauFit.FitFix{chan}(14) = fix(10);                
+                UserValues.TauFit.FitFix{chan}(2) = fix(11); %TauD02->Tau2
+                UserValues.TauFit.FitFix{chan}(6) = fix(12); %F_TauD01->F2
+                UserValues.TauFit.FitFix{chan}(9) = fix(13); %Sc_Donly->Sc_Per
+                UserValues.TauFit.FitFix{chan}(11) = fix(14); %BG_Donly->Bg_Per                
+                UserValues.TauFit.FitFix{chan}(12) = fix(15);
                 end
                 UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
@@ -3453,7 +3461,11 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
-                UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(2) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{13};
+                UserValues.TauFit.FitParams{chan}(11) = FitResult{14};
+                UserValues.TauFit.IRFShift{chan} = FitResult{15};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -4214,12 +4226,20 @@ switch obj
                 h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
                 h.Plots.IRFResult_Perp.YData = IRFPat_Perp;
             else %%% global fit of DO and DA, only one IRF
+                %%% normalize decays for better joint display
+                max_par = max(Fit_par); max_per = max(Fit_per);
+                mean_int = mean([max_par,max_per]);
+                Decay_par = mean_int*Decay_par./max_par;
+                Fit_par = mean_int*Fit_par./max_par;                
+                Decay_per = mean_int*Decay_per./max_per;
+                Fit_per = mean_int*Fit_per./max_per;
+                
                 IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
                 IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
                 IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
                 h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
                 h.Plots.IRFResult.YData = IRFPat;
-                
+                h.Plots.IRFResult.Color = [0,0,0];
                 h.Plots.IRFResult_Perp.Visible = 'off';
             end
             
@@ -4251,6 +4271,10 @@ switch obj
                 % change axis labels
                 h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
                 h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+                h.Plots.FitAnisoResult.Color = [1,0,0];
+                h.Plots.AnisoResult.Visible = 'on';
+                h.Plots.AnisoResult_ignore.Visible = 'on';
+                h.Plots.FitAnisoResult_ignore.Visible = 'on';
             else %% global fit of DO and DA, show distance distribution
                 xR = 0:0.01:150;
                 Gauss1 = 1./(sqrt(2*pi())*x(2)).*exp(-(xR-x(1)).^2./(2*x(2).^2));
@@ -4264,6 +4288,7 @@ switch obj
                 h.Plots.AnisoResult_ignore.Visible = 'off';
                 h.Plots.FitAnisoResult.XData = xR;
                 h.Plots.FitAnisoResult.YData = pR;
+                h.Plots.FitAnisoResult.Color = [0,0,0];
                 h.Plots.FitAnisoResult_ignore.Visible = 'off';
                 axis(h.Result_Plot_Aniso,'tight');
                 % change axis labels
@@ -4315,7 +4340,15 @@ switch obj
             h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
             
             h.Residuals_Plot.YLim = [min([min(wres_par(ignore:end)) min(wres_per(ignore:end))]) max([max(wres_par(ignore:end)) max(wres_per(ignore:end))])];
-       else
+            % add legend
+            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                legend_str = {'I_{||}','I_\perp'};
+            else
+                legend_str = {'I_{DA}','I_{D0}'};
+            end
+            l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
+            l.Box = 'off';
+        else
             % hide plots
             h.Plots.IRFResult_Perp.Visible = 'off';
             h.Plots.FitResult_Perp.Visible = 'off';
@@ -4368,6 +4401,7 @@ switch obj
             h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
             h.Plots.Residuals_ignore.YData = wres_ignore;
             h.Residuals_Plot.YLim = [min(wres) max(wres)];
+            legend(h.Result_Plot,'off');
         end
 
         h.Result_Plot.XLim(1) = 0;
@@ -4998,7 +5032,9 @@ panel_copy.ShadowColor = [1 1 1];
 panel_copy.BackgroundColor = [1 1 1];
 panel_copy.HighlightColor = [1 1 1];
 ax = panel_copy.Children;
-delete(ax(1));ax = ax(2:end);
+delete(ax(1));ax = ax(2:end); % remove buttongroup
+ax = ax(strcmp(get(ax,'Type'),'axes')); % remove legend
+
 
 for i = 1:numel(ax)
     ax(i).Color = [1 1 1];
@@ -5011,12 +5047,12 @@ for i = 1:numel(ax)
     ax(i).Layer = 'top';
     for j = 1:numel(ax(i).Children)
         if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 1.5;
+            ax(i).Children(j).LineWidth = 2
         end
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','MEM'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','MEM','Distribution Fit - Global Model'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -5067,6 +5103,10 @@ else
                 end
                 ax(i).YTickLabelMode = 'auto';
                 ax(i).YTickLabels{1} = '';
+                %%% move text so it does not overlap with legend
+                txt = ax(i).Children(strcmp('text',get(ax(i).Children,'Type')));
+                txt.Position(1) = 0.75;
+                txt.Position(2) = 0.93;
             case 'Residuals_Plot'
                 ax(i).Position = [0.125 0.86 0.845 .13];
                 ax(i).YTickLabelMode = 'auto';
@@ -6013,7 +6053,7 @@ Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infini
 Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{14} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','IRF Shift'};
+Parameters{14} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
 
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
@@ -6093,7 +6133,7 @@ StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rh
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
 StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{14} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;IRF,-Inf,Inf,IRFf};
+StartPar{14} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,1,ScatPerf;BackPer,0,1,BackPerf;IRF,-Inf,Inf,IRFf};
 
 startpar = StartPar{model};
 names = Parameters{model};
