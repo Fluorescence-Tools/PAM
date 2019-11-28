@@ -6732,7 +6732,11 @@ switch obj
         %%% copy to clipboard using Mat2clip function
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         if ~all(isnan(TauFitData.ConfInt(:)))
-            res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
+            if size(TauFitData.ConfInt,1) == size(res,1)
+                res = [res, num2cell(TauFitData.ConfInt)];
+            else                
+                res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
+            end
         end
         Mat2clip(res);
     case h.PlotDynamicFRETLine
