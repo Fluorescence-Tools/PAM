@@ -14,7 +14,7 @@ irf = shift_by_fraction(IRFPattern,c);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
 irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+irf = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
 %A shift in the scatter is not needed in the model
 %Scatter = circshift(ScatterPattern,[ShiftParams(5), 0]);
 %Scatter = Scatter((ShiftParams(1)+1):ShiftParams(3) );
@@ -36,14 +36,11 @@ tauD01 = param(10);
 tauD01(tauD01==0) = 1; %%% set minimum lifetime to TACbin width
 tauD02 = param(11);
 tauD02(tauD02==0) = 1; %%% set minimum lifetime to TACbin width
-
+f1_donly = param(12);
 %%% Determine distribution of lifetimes
 range_lower = min([meanR1-5*sigmaR1,meanR2-5*sigmaR2]);
 range_upper = max([meanR1+5*sigmaR1,meanR2+5*sigmaR2]);
-dR = 0.1;
-xR = floor(range_lower):dR:ceil(range_upper);
-xR = xR(xR > 0);
-c_gauss = zeros(numel(xR),n);
+dR = .25;
 xdist = zeros(2,n);
 for j = 1:2
     switch j
@@ -56,29 +53,41 @@ for j = 1:2
             sigmaR = sigmaR2;
             tauD0 = tauD02;
     end
+    xR = (meanR-4*sigmaR):dR:(meanR+4*sigmaR);
+    xR = xR(xR > 0);
+    pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
+    c_gauss = zeros(numel(xR),n);
     for i = 1:numel(xR)
-        c_gauss(i,:) = c_gauss(i,:) + (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*...
+        c_gauss(i,:) = c_gauss(i,:) + pR(i).*...
             (f1_donly*exp(-((0:n-1)./tauD01).*(1+(R0./xR(i)).^6))+...
              (1-f1_donly)*exp(-((0:n-1)./tauD02).*(1+(R0./xR(i)).^6)));
-    end
-    pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
-    xdist(j,:) = sum(c_gauss,1);xdist(j,:) = xdist(j,:)./sum(pR);
+    end    
+    xdist(j,:) = sum(c_gauss,1);
+    xdist(j,:) = xdist(j,:)./sum(pR);
 end
 xDonly = f1_donly*exp(-(0:n-1)./tauD01)+(1-f1_donly)*exp(-(0:n-1)./tauD02);    
 x = fraction_donly.*xDonly + (1-fraction_donly).*(fraction1*xdist(1,:)+(1-fraction1)*xdist(2,:));
 switch conv_type
     case 'linear'
         z = conv(irf, x); z = z(1:n)';
+        zDonly = conv(irf,xDonly); zDonly = zDonly(1:n)';
     case 'circular'
         z = convol(irf,x(1:n));
+        zDonly = convol(irf,xDonly(1:n));
 end
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
 z = z(ignore:end);
 z = z./sum(z);
-z = z.*(1-bg)+bg./numel(z);z = z.*sum(y);
+z = z.*(1-bg)+bg./numel(z);z = z.*sum(y(1,:));
 z=z';
 
-zDonly = xDonly./sum(xDonly).*sum(yDonly);
-z = [z zDonly];
+% TODO: Separate scatter for donor only
+zDonly = zDonly./sum(zDonly);
+zDonly = (1-sc).*zDonly + sc*Scatter;
+zDonly = zDonly(ignore:end);
+zDonly = zDonly./sum(zDonly);
+zDonly = zDonly.*(1-bg)+bg./numel(zDonly);
+zDonly = zDonly.*sum(y(2,:));
+
+z = [z zDonly'];

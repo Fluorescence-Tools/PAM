@@ -871,8 +871,8 @@ if strcmp(method,'ensemble')
     end
     %%% Popup Menu for Fit Method Selection
     h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
-    'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only',...
+    'Fit Anisotropy','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
     %%% Button for loading the selected PIE Channels
     h.LoadData_Button = uicontrol(...
@@ -1052,10 +1052,12 @@ if exist('bh','var')
             'FontSize',10);
         %%% Popup Menu for Fit Method Selection
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Fit Anisotropy',...
+            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only',...
+            'Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
-            'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
+            'Fit Anisotropy (2 exp lifetime with independent anisotropy)',...
+            'Distribution Fit - Global Model'};
         %%% Button to start fitting
         h.Fit_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -2539,6 +2541,7 @@ end
 h.Result_Plot_Text.Visible = 'off';
 h.Output_Text.String = '';
 h.Plots.Residuals.Visible = 'on';
+
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -2608,12 +2611,14 @@ Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Deca
 Length = numel(Decay);
 
 ignore = TauFitData.Ignore{chan};
+
 %% Start Fit
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';drawnow;
 MI_Bins = TauFitData.MI_Bins;
 poissonian_chi2 = UserValues.TauFit.use_weighted_residuals && (h.WeightedResidualsType_Menu.Value == 2); % 1 for Gaussian error, 2 for Poissonian statistics
-%opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
+opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
+opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
 switch obj
     case {h.Fit_Button}
         %%% get fit type
@@ -2652,9 +2657,9 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed));
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -2717,10 +2722,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -2806,10 +2811,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_3exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -2915,10 +2920,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_4exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -3032,10 +3037,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_stretched_exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -3113,10 +3118,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -3193,10 +3198,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -3277,10 +3282,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
@@ -3312,6 +3317,117 @@ switch obj
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(21) = fix(1);
+                UserValues.TauFit.FitFix{chan}(22) = fix(2);
+                UserValues.TauFit.FitFix{chan}(26) = fix(3);
+                UserValues.TauFit.FitFix{chan}(27) = fix(4);
+                UserValues.TauFit.FitFix{chan}(5) = fix(5);
+                UserValues.TauFit.FitFix{chan}(23) = fix(6);
+                UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                UserValues.TauFit.FitFix{chan}(13) = fix(9);
+                UserValues.TauFit.FitFix{chan}(14) = fix(10);
+                UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                end
+                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(26) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(27) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
+                UserValues.TauFit.IRFShift{chan} = FitResult{11};
+            case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data                
+                %%% also read out the donor-only pattern, which should be chan == 4
+                donly_par = TauFitData.hMI_Par{4}; donly_per = TauFitData.hMI_Per{4};
+                %%% since we can't just read the plots, we have to shift the data here
+                %%% using the shift applied to the DA sample
+                donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
+                donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                %%% combine to summed decay
+                Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
+                
+                %%% Parameter:
+                %%% Center R1
+                %%% sigmaR1
+                %%% Center R2
+                %%% sigmaR2
+                %%% Fraction 1
+                %%% Fraction D only
+                %%% Scatter
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime1
+                %%% Donor only lifetime2
+                %%% Fraction Donor only lifetime1
+                %%% Convert Lifetimes
+                x0([10,11]) = x0([10,11])/TauFitData.TACChannelWidth;
+                lb([10,11]) = lb([10,11])/TauFitData.TACChannelWidth;
+                ub([10,11]) = ub([10,11])/TauFitData.TACChannelWidth;
+                
+                
+                %%% Prepare data as vector
+                Decay_DA = Decay;
+                Decay =  [Decay_DA(ignore:end); Decay_donly(ignore:end)];
+                Decay_stacked = [Decay_DA(ignore:end) Decay_donly(ignore:end)];
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay_stacked));
+                end
+                if fit                    
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
+                    end
+                    x = interlace(x0,x,fixed);
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                end
+                               
+                %%% remove ignore range from decay
+                Decay = [Decay_DA; Decay_donly];
+                Decay_stacked = [Decay_DA Decay_donly];
+                FitFun = fitfun_2dist_donly_global(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun); 
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
+                end
+                %%% ignore plotting is not implemented here yet!
+                FitFun_ignore = FitFun;
+                wres_ignore = wres;
+                Decay_ignore = Decay;
+                Length = numel(Decay);
+                
+                %%% Update FitResult
+                FitResult = num2cell(x');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
+                FitResult{11} = FitResult{11}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(11,:) = TauFitData.ConfInt(11,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3391,10 +3507,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
@@ -3514,10 +3630,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
@@ -3656,10 +3772,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     
@@ -3784,10 +3900,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));                    
@@ -3930,10 +4046,10 @@ switch obj
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,G,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed));
+                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
@@ -4060,7 +4176,7 @@ switch obj
             h.Plots.Residuals_ignore.Visible = 'off';
             h.Plots.FitResult_ignore.Visible = 'off';
         end
-        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
+        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','Distribution Fit - Global Model'}))
             % Unhide plots
             h.Plots.IRFResult_Perp.Visible = 'on';
             h.Plots.FitResult_Perp.Visible = 'on';
@@ -4084,19 +4200,28 @@ switch obj
             wres_par = wres(1:numel(Decay)/2);
             wres_per = wres(numel(Decay)/2+1:end);
             
-            %IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
-            IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
-            IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
-            IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
-            h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
-            h.Plots.IRFResult.YData = IRFPat_Par;
-            
-            %IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
-            IRFPat_Perp = shift_by_fraction(IRFPattern{2},UserValues.TauFit.IRFShift{chan});
-            IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
-            IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
-            h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
-            h.Plots.IRFResult_Perp.YData = IRFPat_Perp;
+            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
+                IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
+                IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
+                IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
+                h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
+                h.Plots.IRFResult.YData = IRFPat_Par;
+
+                %IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+                IRFPat_Perp = shift_by_fraction(IRFPattern{2},UserValues.TauFit.IRFShift{chan});
+                IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
+                IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
+                h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
+                h.Plots.IRFResult_Perp.YData = IRFPat_Perp;
+            else %%% global fit of DO and DA, only one IRF
+                IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
+                IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+                IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
+                h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+                h.Plots.IRFResult.YData = IRFPat;
+                
+                h.Plots.IRFResult_Perp.Visible = 'off';
+            end
             
             %%% plot anisotropy data also
             % unhide Result Aniso Plot
@@ -4105,27 +4230,49 @@ switch obj
             h.Result_Plot.Position = [0.075 0.3 0.9 0.55];
             h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
             
-            r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
-            r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
-            x = (1:numel(Decay)/2).*TACtoTime;
-            % update plots
-            h.Plots.AnisoResult.XData = x(ignore:end);
-            h.Plots.AnisoResult.YData = r_meas(ignore:end);
-            h.Plots.AnisoResult_ignore.XData = x(1:ignore);
-            h.Plots.AnisoResult_ignore.YData = r_meas(1:ignore);
-            h.Plots.FitAnisoResult.XData = x(ignore:end);
-            h.Plots.FitAnisoResult.YData = r_fit(ignore:end);
-            h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
-            h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
-            axis(h.Result_Plot_Aniso,'tight');
-            h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
-            h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
-            h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
+            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
+                r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
+                r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
+                x = (1:numel(Decay)/2).*TACtoTime;
+                
+                % update plots
+                h.Plots.AnisoResult.XData = x(ignore:end);
+                h.Plots.AnisoResult.YData = r_meas(ignore:end);
+                h.Plots.AnisoResult_ignore.XData = x(1:ignore);
+                h.Plots.AnisoResult_ignore.YData = r_meas(1:ignore);
+                h.Plots.FitAnisoResult.XData = x(ignore:end);
+                h.Plots.FitAnisoResult.YData = r_fit(ignore:end);
+                h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
+                h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
+                axis(h.Result_Plot_Aniso,'tight');
+                h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
+                h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
+                h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
+                % change axis labels
+                h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
+                h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+            else %% global fit of DO and DA, show distance distribution
+                xR = 0:0.01:150;
+                Gauss1 = 1./(sqrt(2*pi())*x(2)).*exp(-(xR-x(1)).^2./(2*x(2).^2));
+                Gauss1 = Gauss1./sum(Gauss1);
+                Gauss2 = 1./(sqrt(2*pi())*x(4)).*exp(-(xR-x(3)).^2./(2*x(4).^2));
+                Gauss2 = Gauss2./sum(Gauss2);
+                pR = x(5)*Gauss1 + (1-x(5))*Gauss2;
+                
+                % update plots
+                h.Plots.AnisoResult.Visible = 'off';
+                h.Plots.AnisoResult_ignore.Visible = 'off';
+                h.Plots.FitAnisoResult.XData = xR;
+                h.Plots.FitAnisoResult.YData = pR;
+                h.Plots.FitAnisoResult_ignore.Visible = 'off';
+                axis(h.Result_Plot_Aniso,'tight');
+                % change axis labels
+                h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
+                h.Result_Plot_Aniso.YLabel.String = 'Prob.';
+            end
+            
             % store FitResult TauFitData also for use in export
-            TauFitData.FitResult = [Fit_par; Fit_per];
-            % change axis labels
-            h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
-            h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+            TauFitData.FitResult = [Fit_par; Fit_per];           
             
             h.Plots.DecayResult.XData = (ignore:numel(Decay_par))*TACtoTime;
             h.Plots.DecayResult.YData = Decay_par(ignore:end);
@@ -4150,7 +4297,9 @@ switch obj
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(1:end)) min(Decay_per(1:end))]);
             h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
-            h.Result_Plot_Aniso.XLim = [0, h.Result_Plot.XLim(2)];
+            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                h.Result_Plot_Aniso.XLim = [0, h.Result_Plot.XLim(2)];
+            end
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -5864,6 +6013,8 @@ Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infini
 Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{14} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','IRF Shift'};
+
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -5942,6 +6093,8 @@ StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rh
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
 StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{14} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;IRF,-Inf,Inf,IRFf};
+
 startpar = StartPar{model};
 names = Parameters{model};
 
