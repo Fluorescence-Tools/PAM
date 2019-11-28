@@ -4354,7 +4354,7 @@ switch obj
             case h.Fit_Button_MEM_tau
                 h.Result_Plot_Aniso.XLabel.String = 'Lifetime [ns]';
             case h.Fit_Button_MEM_dist
-                h.Result_Plot_Aniso.XLabel.String = 'Distance [?]';
+                h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
         end
         h.Result_Plot_Aniso.YLabel.String = 'Probability';
         
