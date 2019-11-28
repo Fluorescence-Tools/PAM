@@ -1012,10 +1012,12 @@ if exist('bh','var')
             'String','Select Channel',...
             'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
         switch BurstData{BurstMeta.SelectedFile}.BAMethod
-            case {1,2,5}
-                Channel_String = {'DD','AA','DA'};
+            case {1,2}
+                Channel_String = {'DD','AA','DA','Donor only'};
             case {3,4}
                 Channel_String = {'BB','GG','RR'};
+            case {5}
+                Channel_String = {'DD','AA','DA'};
         end
         h.ChannelSelect_Popupmenu = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
