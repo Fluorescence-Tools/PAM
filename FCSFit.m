@@ -722,7 +722,7 @@ else
     %%% can be selected.
     %%% As a workaround, we avoid using the system file selection for now.
     %%% 11/2019    
-    if ~ismac | ~(ismac & strcmp(get_macos_version(),'10.15'))
+    if ~ismac | ~(ismac & strcmp(get_macos_version(),'10.15')))
         %%% Choose files to load
         [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
                                           '*.cor','Averaged correlation based on text filetype (*.cor)';...
