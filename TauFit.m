@@ -67,6 +67,12 @@ end
 h.Menu.File = uimenu(h.TauFit,'Label','File');
 h.Menu.OpenDecayData = uimenu(h.Menu.File,'Label','Load decay data (*.dec)',...
     'Callback',@Load_Data);
+h.Menu.OpenDecayData_PQ = uimenu(h.Menu.File,'Label','Load PQ decay data (*.dat)',...
+    'Callback',@Load_Data,'Separator','on');
+h.Menu.OpenIRFData_PQ = uimenu(h.Menu.File,'Label','Load PQ IRF data (*.dat)',...
+    'Callback',@Load_Data,'Enable','off');
+h.Menu.OpenDecayDOnlyData_PQ = uimenu(h.Menu.File,'Label','Load PQ DOnly data (*.dat)',...
+    'Callback',@Load_Data,'Enable','off');
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
 h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
     'Callback',@Export);
@@ -645,6 +651,15 @@ h.Determine_GFactor_Button = uicontrol(...
     'Position',[0.65 0.05 0.29 0.12],...
     'String','Determine G factor',...
     'Callback',@DetermineGFactor);
+
+%%% Popup Menu for Fit Method Selection
+h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
+    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only','Distribution Fit - Global Model'...
+    'Fit Anisotropy',...
+    'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+    'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
+    'Fit Anisotropy (2 exp lifetime with independent anisotropy)'...
+    };
 if exist('ph','var')
     if isobject(obj)
         switch obj
@@ -687,7 +702,7 @@ if exist('ph','var')
                     'Value', 1,...
                     'Callback',@Update_Plots);
                 %%% Popup Menu for Fit Method Selection
-                h.FitMethods = {'Single Exponential','Biexponential'};
+                %h.FitMethods = {'Single Exponential','Biexponential'};
                 %%% checkbox for background estimate inclusion
                 h.BackgroundInclusion_checkbox = uicontrol(...
                     'Parent',h.PIEChannel_Panel,...
@@ -870,10 +885,10 @@ if strcmp(method,'ensemble')
         h.PIEChannelPer_Popupmenu.Value = 1;
     end
     %%% Popup Menu for Fit Method Selection
-    h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-    'Distribution','Distribution plus Donor only','Two Distributions plus Donor only',...
-    'Fit Anisotropy','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
-    'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
+    % = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
+    %'Distribution','Distribution plus Donor only','Two Distributions plus Donor only',...
+    %'Fit Anisotropy','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+    %'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
     %%% Button for loading the selected PIE Channels
     h.LoadData_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -1050,14 +1065,6 @@ if exist('bh','var')
             'BackgroundColor',Look.Back,...
             'ForegroundColor',Look.Fore,...
             'FontSize',10);
-        %%% Popup Menu for Fit Method Selection
-        h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four Exponentials','Stretched Exponential',...
-            'Distribution','Distribution plus Donor only','Two Distributions plus Donor only',...
-            'Fit Anisotropy',...
-            'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
-            'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
-            'Fit Anisotropy (2 exp lifetime with independent anisotropy)',...
-            'Distribution Fit - Global Model'};
         %%% Button to start fitting
         h.Fit_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -1664,84 +1671,152 @@ h = guidata(findobj('Tag','TauFit'));
 
 %%% check how we got here
 if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
-    if obj == h.Menu.OpenDecayData
-        %%% called upon loading of text-based *.dec file
-        %%% load file
-        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','on');
-        if FilterIndex == 0
-            return;
-        end
-        UserValues.File.TauFitPath = PathName;
-        if ~iscell(FileName)
-            FileName = {FileName};
-        end
-        TauFitData.External = struct;
-        TauFitData.External.MI_Hist = {};
-        TauFitData.External.IRF = {};
-        TauFitData.External.Scat = {};
-        for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range etc)
-            decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
-            %%% read other data
-            fid = fopen(fullfile(PathName,FileName{j}),'r');
-            TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
-            MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
-            TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
-            fid = fopen(fullfile(PathName,FileName{j}),'r');
-            for i = 1:5
-                line = fgetl(fid);
-            end
-            PIEchans{j} = strsplit(line,'\t');
-            PIEchans{j}(cellfun(@isempty,PIEchans{j})) = [];
-            if numel(FileName) > 1 %%% multiple files loaded, append the file name to avoid confusion of identically named PIE channels
-                for i = 1:numel(PIEchans{j})
-                    PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
-                end
-            end
-            %%% sort data into TauFitData structure (MI,IRF,Scat)
-            for i = 1:(size(decay_data,2)/3)
-                TauFitData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
-                TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
-                TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
-            end
-        end
-        PIEchans = horzcat(PIEchans{:});
-        %%% update PIE channel selection with available PIE channels
-        h.PIEChannelPar_Popupmenu.String = PIEchans;
-        h.PIEChannelPer_Popupmenu.String = PIEchans;
-        %%% mark TauFit mode as external
-        TauFitData.Who = 'External';
-        TauFitData.FileName = fullfile(PathName,FileName{1});
-        if numel(PIEchans) == 1
-            PIEChannel_Par = 1; PIEChannel_Per = 1;
-        else
-            PIEChannel_Par = 1; PIEChannel_Per = 2;
-        end
-        h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
-        h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
-    elseif obj == h.LoadData_Button
-        PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
-        PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
+    switch obj
+        case {h.Menu.OpenDecayData,h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
+            switch obj
+                case h.Menu.OpenDecayData
+                    %%% called upon loading of text-based *.dec file
+                    %%% load file
+                    [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','on');
+                    if FilterIndex == 0
+                        return;
+                    end
+                    UserValues.File.TauFitPath = PathName;
+                    if ~iscell(FileName)
+                        FileName = {FileName};
+                    end
+                    TauFitData.External = struct;
+                    TauFitData.External.MI_Hist = {};
+                    TauFitData.External.IRF = {};
+                    TauFitData.External.Scat = {};
+                    for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range etc)
+                        decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
+                        %%% read other data
+                        fid = fopen(fullfile(PathName,FileName{j}),'r');
+                        TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
+                        MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
+                        TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+                        fid = fopen(fullfile(PathName,FileName{j}),'r');
+                        for i = 1:5
+                            line = fgetl(fid);
+                        end
+                        PIEchans{j} = strsplit(line,'\t');
+                        PIEchans{j}(cellfun(@isempty,PIEchans{j})) = [];
+                        if numel(FileName) > 1 %%% multiple files loaded, append the file name to avoid confusion of identically named PIE channels
+                            for i = 1:numel(PIEchans{j})
+                                PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
+                            end
+                        end
+                        %%% sort data into TauFitData structure (MI,IRF,Scat)
+                        for i = 1:(size(decay_data,2)/3)
+                            TauFitData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
+                            TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
+                            TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
+                        end
+                    end
+                    PIEchans = horzcat(PIEchans{:});
+                    %%% update PIE channel selection with available PIE channels
+                    h.PIEChannelPar_Popupmenu.String = PIEchans;
+                    h.PIEChannelPer_Popupmenu.String = PIEchans;
+                    %%% mark TauFit mode as external
+                    TauFitData.Who = 'External';
+                    TauFitData.FileName = fullfile(PathName,FileName{1});
+                    if numel(PIEchans) == 1
+                        PIEChannel_Par = 1; PIEChannel_Per = 1;
+                    else
+                        PIEChannel_Par = 1; PIEChannel_Per = 2;
+                    end
+                    h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
+                    h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
+                case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
+                    %%% loading PQ data
+                    [FileName, PathName, FilterIndex] = uigetfile({'*.dat','PQ decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','off');
+                    if FilterIndex == 0
+                        return;
+                    end
+                    UserValues.File.TauFitPath = PathName;
+                    if ~iscell(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% only load one file for now
+                    [time,decay,header] = load_PQ_decay(FileName{1});
+                    
+                    switch obj
+                        case h.Menu.OpenDecayData_PQ
+                            set([h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ],'Enable','on');
+                            
+                            % read data from header
+                            TAC = textscan(header.Sync_Frequency,'%d Hz');
+                            TauFitData.TACRange = (1./double(TAC{1}))*1E9;
+                            MI_Bins = numel(time); TauFitData.MI_Bins = MI_Bins;
+                            TACChannelWidth = textscan(header.Meas_BinWidth,'%d ps');
+                            TauFitData.TACChannelWidth = double(TACChannelWidth{1})*1E-3;
+                            
+                            if ~isfield(TauFitData,'External') % first time
+                                TauFitData.External = struct;
+                                TauFitData.External.MI_Hist = {};
+                                TauFitData.External.IRF = {};
+                                TauFitData.External.Scat = {};
+                                TauFitData.External.Donly = {};
+                                PIEchans = [];
+                            else
+                                PIEchans = h.PIEChannelPar_Popupmenu.String;
+                            end
+                            TauFitData.External.MI_Hist{end+1} = decay;
+                            if numel(TauFitData.External.MI_Hist) == 1 % first data, there is no IRF
+                                TauFitData.External.IRF{end+1} = zeros(size(decay));
+                                TauFitData.External.Scat{end+1} = zeros(size(decay));
+                                TauFitData.External.Donly{end+1} = zeros(size(decay));
+                            else %%% take previous datasets IRF
+                                TauFitData.External.IRF{end+1} = TauFitData.External.IRF{end};
+                                TauFitData.External.Scat{end+1} =TauFitData.External.Scat{end};
+                                TauFitData.External.Donly{end+1} = TauFitData.External.Donly{end}
+                            end
+                            PIEchans{end+1} = FileName{1};
+                            h.PIEChannelPar_Popupmenu.String = PIEchans;
+                            h.PIEChannelPer_Popupmenu.String = PIEchans;
+                            TauFitData.Who = 'External';
+                            TauFitData.FileName = fullfile(PathName,FileName{1});
+                            PIEChannel_Par = 1; PIEChannel_Per = 1;
+                            h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
+                            h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
+                        case h.Menu.OpenIRFData_PQ
+                            %%% only update the IRF information
+                            for i = 1:numel(TauFitData.External.IRF)
+                                TauFitData.External.IRF{i} = decay;
+                                TauFitData.External.Scat{i} = decay;
+                            end
+                            PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
+                            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
+                        case h.Menu.OpenDecayDOnlyData_PQ
+                            for i = 1:numel(TauFitData.External.Donly)
+                                TauFitData.External.Donly{i} = decay;
+                            end
+                            PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
+                            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
+                    end                    
+            end            
+        case h.LoadData_Button
+            PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
+            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
     end
-    %%% set the channel variable
-    chan = 4; TauFitData.chan = chan;
     
+    %%% set the channel variable
+    chan = 4; TauFitData.chan = chan; 
+             
     %%% Microtime Histograms
     TauFitData.hMI_Par{chan} = TauFitData.External.MI_Hist{PIEChannel_Par};
     TauFitData.hMI_Per{chan} = TauFitData.External.MI_Hist{PIEChannel_Per};
-    
-    ToFromPar = find(TauFitData.hMI_Par{chan}>0,1,'first'):find(TauFitData.hMI_Par{chan}>0,1,'last');
-    ToFromPer = find(TauFitData.hMI_Per{chan}>0,1,'first'):find(TauFitData.hMI_Per{chan}>0,1,'last');
-    TauFitData.hMI_Par{chan} = TauFitData.hMI_Par{chan}(ToFromPar);
-    TauFitData.hMI_Per{chan} = TauFitData.hMI_Per{chan}(ToFromPer);
+
     %%% Read out the Microtime Histograms of the IRF for the two channels
-    TauFitData.hIRF_Par{chan} = TauFitData.External.IRF{PIEChannel_Par}(ToFromPar)';
-    TauFitData.hIRF_Per{chan} = TauFitData.External.IRF{PIEChannel_Per}(ToFromPer)';
+    TauFitData.hIRF_Par{chan} = TauFitData.External.IRF{PIEChannel_Par}';
+    TauFitData.hIRF_Per{chan} = TauFitData.External.IRF{PIEChannel_Per}';
     %%% Normalize IRF for better Visibility
     TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
     TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
     %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar)';
-    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer)';
+    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}';
+    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}';
     %%% Normalize Scatter for better Visibility
     if ~(sum(TauFitData.hScat_Par{chan})==0)
         TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
@@ -1750,8 +1825,8 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
         TauFitData.hScat_Per{chan} = (TauFitData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
     end
     %%% Generate XData
-    TauFitData.XData_Par{chan} = ToFromPar - ToFromPar(1);
-    TauFitData.XData_Per{chan} = ToFromPer - ToFromPer(1);
+    TauFitData.XData_Par{chan} = 1:numel(TauFitData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
+    TauFitData.XData_Per{chan} = 1:numel(TauFitData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
     
     %%% Update PIEchannelSelection
     UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
@@ -1951,7 +2026,7 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
     if h.FitMethod_Popupmenu.Value > 5
         h.FitMethod_Popupmenu.Value = 1;
     end
-    h.FitMethod_Popupmenu.String = h.FitMethods(1:7);
+    h.FitMethod_Popupmenu.String = h.FitMethods(1:9);
 else
     set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
         h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
@@ -2415,9 +2490,11 @@ elseif h.ShowDecay_radiobutton.Value == 1
     h.Microtime_Plot.YLimMode = 'auto';
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
-    %%% show legend
-    l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
-    l.Box = 'off';
+    if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
+        %%% show legend
+        l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
+        l.Box = 'off';
+    end
 elseif h.ShowDecaySum_radiobutton.Value == 1
     %%% unihde all IRF and Scatter plots
     set([h.Plots.Aniso_Preview,h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Per,h.Plots.Decay_Par],'Visible','off');
@@ -2611,7 +2688,11 @@ end
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
-Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
+    Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+else
+    Decay = TauFitData.FitData.Decay_Par;
+end
 Length = numel(Decay);
 
 ignore = TauFitData.Ignore{chan};
@@ -3347,17 +3428,32 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
-            case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data                
-                %%% also read out the donor-only pattern, which should be chan == 4
-                donly_par = TauFitData.hMI_Par{4}; donly_per = TauFitData.hMI_Per{4};
-                %%% since we can't just read the plots, we have to shift the data here
-                %%% using the shift applied to the DA sample
-                donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
-                tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
-                donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
-                %%% combine to summed decay
-                Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
-                
+            case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data      
+                switch TauFitData.Who
+                    case {'BurstBrowser','Burstwise'}          
+                        %%% also read out the donor-only pattern, which should be chan == 4
+                        donly_par = TauFitData.hMI_Par{4}; donly_per = TauFitData.hMI_Per{4};
+                        %%% since we can't just read the plots, we have to shift the data here
+                        %%% using the shift applied to the DA sample
+                        donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
+                        donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                        %%% combine to summed decay
+                        Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
+                    case 'External'
+                        %%% check if donly is defined
+                        if ~isempty(TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value})
+                            Decay_donly = TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value};
+                            Decay_donly = Decay_donly((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
+                        else
+                            disp('No Donor only sample loaded.');
+                            return;
+                        end
+                    case 'TauFit'
+                        disp('Not implemented for this mode.');
+                        return;
+                end
+                        
                 %%% Parameter:
                 %%% Center R1
                 %%% sigmaR1
@@ -6048,12 +6144,12 @@ Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{9} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{11} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{12} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{14} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
+Parameters{9} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
+Parameters{10} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{12} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{14} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
@@ -6123,17 +6219,17 @@ StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,
 StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
 StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
 StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
-StartPar{9} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{9} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,1,ScatPerf;BackPer,0,1,BackPerf;IRF,-Inf,Inf,IRFf};
+StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{11} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{12} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{12} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{14} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{14} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,1,ScatPerf;BackPer,0,1,BackPerf;IRF,-Inf,Inf,IRFf};
 
 startpar = StartPar{model};
 names = Parameters{model};

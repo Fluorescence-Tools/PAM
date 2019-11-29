@@ -42,7 +42,7 @@ bg_donly = param(14);
 %%% Determine distribution of lifetimes
 range_lower = min([meanR1-5*sigmaR1,meanR2-5*sigmaR2]);
 range_upper = max([meanR1+5*sigmaR1,meanR2+5*sigmaR2]);
-dR = .25;
+dR = 0.25;
 xdist = zeros(2,n);
 for j = 1:2
     switch j
@@ -58,13 +58,13 @@ for j = 1:2
     xR = (meanR-4*sigmaR):dR:(meanR+4*sigmaR);
     xR = xR(xR > 0);
     pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
-    c_gauss = zeros(numel(xR),n);
+
+    xdist(j,:) = zeros(1,n);
     for i = 1:numel(xR)
-        c_gauss(i,:) = pR(i).*...
+        xdist(j,:) = xdist(j,:) + pR(i).*...
             (f1_donly*exp(-((0:n-1)./tauD01).*(1+(R0./xR(i)).^6))+...
              (1-f1_donly)*exp(-((0:n-1)./tauD02).*(1+(R0./xR(i)).^6)));
-    end    
-    xdist(j,:) = sum(c_gauss,1);
+    end
     xdist(j,:) = xdist(j,:)./sum(pR);
 end
 xDonly = f1_donly*exp(-(0:n-1)./tauD01)+(1-f1_donly)*exp(-(0:n-1)./tauD02);    
