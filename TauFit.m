@@ -2413,6 +2413,32 @@ if isprop(obj,'Style')
     UserValues.TauFit.Ignore{chan} = TauFitData.Ignore{chan};
     LSUserValues(1);
 end
+
+%%% if BurstData
+if strcmp(TauFitData.Who,'BurstBrowser')
+    %%% if two-color MFD data is loaded
+    if any(TauFitData.BAMethod == [1,2])
+        %%% if Donor only is available
+        if numel(TauFitData.hMI_Par) == 4 % DD, AA, DA, DOnly            
+            if chan == 1
+                %%% if DD is modified, copy settings to DOnly
+                chan_copy = 4;
+            elseif chan == 4
+                %%% if DONLY is modified, copy settings to DD
+                chan_copy = 1;
+            end
+            UserValues.TauFit.StartPar{chan_copy} = TauFitData.StartPar{chan};
+            UserValues.TauFit.Length{chan_copy} = TauFitData.Length{chan};
+            UserValues.TauFit.ShiftPer{chan_copy} = TauFitData.ShiftPer{chan};
+            UserValues.TauFit.IRFLength{chan_copy} = TauFitData.IRFLength{chan};
+            UserValues.TauFit.IRFShift{chan_copy} = TauFitData.IRFShift{chan};
+            UserValues.TauFit.IRFrelShift{chan_copy} = TauFitData.IRFrelShift{chan};
+            UserValues.TauFit.ScatShift{chan_copy} = TauFitData.ScatShift{chan};
+            UserValues.TauFit.ScatrelShift{chan_copy} = TauFitData.ScatrelShift{chan};
+            UserValues.TauFit.Ignore{chan_copy} = TauFitData.Ignore{chan};
+        end
+    end
+end
 %%% Update Plot
 %%% Make the Microtime Adjustment Plot Visible, hide Result
 h.Microtime_Plot.Parent = h.TauFit_Panel;
@@ -2490,7 +2516,13 @@ elseif h.ShowDecay_radiobutton.Value == 1
     h.Microtime_Plot.YLimMode = 'auto';
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
-    if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
+    if ~strcmp(TauFitData.Who,'BurstBrowser')
+        if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
+            %%% show legend
+            l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
+            l.Box = 'off';
+        end
+    else
         %%% show legend
         l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
         l.Box = 'off';
@@ -2688,10 +2720,19 @@ end
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
-if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
-    Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+if ~strcmp(TauFitData.Who,'BurstBrowser')
+    if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
+        Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+    else
+        Decay = TauFitData.FitData.Decay_Par;
+    end    
 else
-    Decay = TauFitData.FitData.Decay_Par;
+    switch TauFitData.BAMethod
+        case {1,2,3,4}
+            Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+        case {5}
+            Decay = TauFitData.FitData.Decay_Par;
+    end
 end
 Length = numel(Decay);
 
@@ -4387,9 +4428,11 @@ switch obj
                 h.Plots.FitAnisoResult.Color = [0,0,0];
                 h.Plots.FitAnisoResult_ignore.Visible = 'off';
                 axis(h.Result_Plot_Aniso,'tight');
+                h.Result_Plot_Aniso.YLim(2) = 1.05*h.Result_Plot_Aniso.YLim(2);
                 % change axis labels
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
-                h.Result_Plot_Aniso.YLabel.String = 'Prob.';
+                h.Result_Plot_Aniso.YLabel.String = 'Probability';
+                h.Result_Plot_Aniso.YTickLabels = [];
             end
             
             % store FitResult TauFitData also for use in export
@@ -4645,6 +4688,7 @@ switch obj
         end
         
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
+        legend(h.Result_Plot,'off');
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
         if obj == h.Fit_Aniso_2exp
             number_of_exponentials = 2;
@@ -5143,7 +5187,7 @@ for i = 1:numel(ax)
     ax(i).Layer = 'top';
     for j = 1:numel(ax(i).Children)
         if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 2
+            ax(i).Children(j).LineWidth = 2;
         end
     end
 end
@@ -6949,12 +6993,26 @@ switch mode
         R = R(2:end-1);
         %%% calculate respective lifetime vector
         tau = tauD.*(1+(R0./R).^6).^(-1);
+        
+        if strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
+            %%% fitting with two donor lifetimes
+            tauD2 = h.FitPar_Table.Data{11,1}/TauFitData.TACChannelWidth;
+            fraction_tauD1 = h.FitPar_Table.Data{12,1};
+            tau2 = tauD2.*(1+(R0./R).^6).^(-1);
+        end
 end
 
 %%% Establish library of single exponential decays, convoluted with IRF
 decay_ind = zeros(numel(tau),numel(x));
-for i = 1:numel(tau)
-    decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
+if ~(strcmp(mode,'dist') && strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'))
+    for i = 1:numel(tau)
+        decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
+    end
+else
+    for i = 1:numel(tau)
+        %%% add second donor only lifetime component
+        decay_ind(i,:) = fitfun_2exp([tau(i), tau2(i), fraction_tauD1,params],static_fit_params);
+    end
 end
 
 
