@@ -10,7 +10,7 @@ global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
-if isfield(BurstData{file},'Phasor')
+if isfield(BurstData{file},'Phasor') && any(strcmp(BurstData{file}.NameArray,'Phasor: gD'))
     do_phasor = true;
 else
     do_phasor = false;
@@ -264,7 +264,7 @@ switch UserValues.BurstBrowser.Display.PlotType
                 end
 end
 %% "transformed" FRET line so that static is horizontal
-transformed = true;
+transformed = false;
 if transformed    
     %%% transform quantities
     % species-weighted tau, normalized to tauD0
