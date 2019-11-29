@@ -214,9 +214,9 @@ end
 %% plot smoothed dynamic FRET line
 [H,x,y] = histcounts2(E,tauD,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
 H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+hfig = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
 contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
-colormap(f,colormap(h.BurstBrowser));
+colormap(hfig,colormap(h.BurstBrowser));
 ax = gca;
 ax.CLimMode = 'auto';
 ax.CLim(1) = 0;
@@ -290,7 +290,7 @@ if transformed
     %%% plot
     [H,x,y] = histcounts2(var_tauDA,tauDA,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-.15,.5],'YBinLimits',[-0.1,1.1]);
     H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-    f2 = figure('Color',[1,1,1],'Position',[f.Position(1)+f.Position(3),100,600,600]); hold on;
+    f2 = figure('Color',[1,1,1],'Position',[hfig.Position(1)+hfig.Position(3),100,600,600]); hold on;
     contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
     colormap(f2,colormap(h.BurstBrowser));
     ax = gca;
@@ -350,9 +350,9 @@ if do_phasor
     ylim = [max([0,min(s_phasor)-0.1*min_max]),min([0.75,max(s_phasor)+0.1*min_max])];
     [H,x,y] = histcounts2(s_phasor,g_phasor,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',ylim,'YBinLimits',xlim);
     H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-    f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+    hfig = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
     contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
-    colormap(f,colormap(h.BurstBrowser));
+    colormap(hfig,colormap(h.BurstBrowser));
     ax = gca;
     ax.CLimMode = 'auto';
     ax.CLim(1) = 0;
@@ -388,10 +388,34 @@ if do_phasor
     ylabel('s');
     set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top','Units','pixel'); 
     %%% add a second axis for the colorbar of the FRET efficiency
-    ax_cbar = axes('Parent',f,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
+    ax_cbar = axes('Parent',hfig,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
         'Visible','off');
     colormap(ax_cbar,autumn);
     cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',18);
     cbar.Position = [ax.Position(1)*5.2   ax.Position(2)*6.4   109    18];
     cbar.Label.String = 'E';
 end
+
+%%% Combine the Original FileName and the parameter names
+if isfield(BurstData{file},'FileNameSPC')
+    if strcmp(BurstData{file}.FileNameSPC,'_m1')
+        FileName = BurstData{file}.FileNameSPC(1:end-3);
+    else
+        FileName = BurstData{file}.FileNameSPC;
+    end
+else
+    FileName = BurstData{file}.FileName(1:end-4);
+end
+
+if BurstData{file}.SelectedSpecies(1) ~= 0
+    SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+    if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+        SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    end
+else
+    SpeciesName = '';
+end
+FigureName = [FileName SpeciesName '_E-tau'];
+%%% remove spaces
+FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};

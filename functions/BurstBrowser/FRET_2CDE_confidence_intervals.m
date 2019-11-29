@@ -94,9 +94,9 @@ upper_bound = mean(FRET_2CDE_static,1) + std(FRET_2CDE_static,0,1)*norminv(1-alp
 %% plot smoothed dynamic FRET line
 [H,x,y] = histcounts2(FRET_2CDE,E,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[0,75],'YBinLimits',[-0.1,1.1]);
 H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+hfig = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
 contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
-colormap(f,colormap(h.BurstBrowser));
+colormap(hfig,colormap(h.BurstBrowser));
 ax = gca;
 ax.CLimMode = 'auto';
 ax.CLim(1) = 0;
@@ -143,3 +143,27 @@ switch UserValues.BurstBrowser.Display.PlotType
 end
 ax.Units = 'pixel';
 ax.Position(4) = ax.Position(3);
+
+%%% Combine the Original FileName and the parameter names
+if isfield(BurstData{file},'FileNameSPC')
+    if strcmp(BurstData{file}.FileNameSPC,'_m1')
+        FileName = BurstData{file}.FileNameSPC(1:end-3);
+    else
+        FileName = BurstData{file}.FileNameSPC;
+    end
+else
+    FileName = BurstData{file}.FileName(1:end-4);
+end
+
+if BurstData{file}.SelectedSpecies(1) ~= 0
+    SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+    if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+        SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    end
+else
+    SpeciesName = '';
+end
+FigureName = [FileName SpeciesName '_FRET-2CDE'];
+%%% remove spaces
+FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
