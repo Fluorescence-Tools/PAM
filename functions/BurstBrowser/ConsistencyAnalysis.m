@@ -745,7 +745,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     
                     lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_dyn_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize*0.95;
-                    face_alpha = 1;
+                    face_alpha = .5;
                     plot_marignal_1D_hist(ax,tauD,E,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
                     plot_marignal_1D_hist(ax,tauD_sim,E_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
                 end
@@ -1001,10 +1001,10 @@ axtop = gca;
 
 if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 1
     histogram(axright,y_data,linspace(0,0.55,UserValues.BurstBrowser.Display.NumberOfBinsY+1),'orientation','horizontal',...
-        'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+        'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 else
     histogram(axright,y_data,linspace(-0.1,1.1,UserValues.BurstBrowser.Display.NumberOfBinsY+1),'orientation','horizontal',...
-        'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+        'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 end
 axright.NextPlot = 'add';
 axtop.NextPlot = 'add';
@@ -1039,10 +1039,10 @@ axformat.Layer = 'top';
 % top margin 1D histogram
 if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 1
     histogram(axtop,x_data,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
-        'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+        'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 else
     histogram(axtop,x_data,linspace(0,1.1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
-        'EdgeColor',color,'FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
+        'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
 end
 axtop.XLim = axmain.XLim;
 axtop.YTick = linspace(axtop.YLim(1),axtop.YLim(2),9);
