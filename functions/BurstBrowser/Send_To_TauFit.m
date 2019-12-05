@@ -100,7 +100,11 @@ if ~isfield(BurstData{file}.FileInfo,'Resolution')
 elseif isfield(BurstData{file}.FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData{file}.FileInfo.Resolution/1000;
 end
-TauFitData.DonorOnlyReference = BurstData{file}.DonorOnlyReference;
+if isfield(BurstData,'DonorOnlyReference')
+    TauFitData.DonorOnlyReference = BurstData{file}.DonorOnlyReference;
+else
+    TauFitData.DonorOnlyReference = cell(size(BurstData{file}.IRF));
+end
 TauFit(obj,[]);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 

@@ -31,7 +31,7 @@ fraction1 = param(5);
 fraction_donly = param(6);
 sc = param(7);
 bg = param(8);
-R0 = param(9);
+R0_unquenched = param(9);
 tauD01 = param(10);
 tauD01(tauD01==0) = 1; %%% set minimum lifetime to TACbin width
 tauD02 = param(11);
@@ -39,6 +39,15 @@ tauD02(tauD02==0) = 1; %%% set minimum lifetime to TACbin width
 f1_donly = param(12);
 sc_donly = param(13);
 bg_donly = param(14);
+
+%%% correct Förster radius for quenching
+%%% assume, that the longer donor-only lifetime belongs to the unquenched species
+tauD0 = [tauD01;tauD02];
+R0 = R0_unquenched*ones(2,1);
+quenched = 1 + (tauD01 > tauD02);
+unquenched = 3-quenched;
+R0(quenched) = R0_unquenched*(tauD0(quenched)./tauD0(unquenched)).^(1/6);
+
 %%% Determine distribution of lifetimes
 range_lower = min([meanR1-5*sigmaR1,meanR2-5*sigmaR2]);
 range_upper = max([meanR1+5*sigmaR1,meanR2+5*sigmaR2]);
@@ -62,8 +71,8 @@ for j = 1:2
     xdist(j,:) = zeros(1,n);
     for i = 1:numel(xR)
         xdist(j,:) = xdist(j,:) + pR(i).*...
-            (f1_donly*exp(-((0:n-1)./tauD01).*(1+(R0./xR(i)).^6))+...
-             (1-f1_donly)*exp(-((0:n-1)./tauD02).*(1+(R0./xR(i)).^6)));
+            (f1_donly*exp(-((0:n-1)./tauD01).*(1+(R0(1)./xR(i)).^6))+...
+             (1-f1_donly)*exp(-((0:n-1)./tauD02).*(1+(R0(2)./xR(i)).^6)));
     end
     xdist(j,:) = xdist(j,:)./sum(pR);
 end

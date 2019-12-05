@@ -3528,6 +3528,10 @@ switch obj
                                 donor_chan = [1,2];
                                 donly_par = TauFitData.DonorOnlyReference{donor_chan(1)}';
                                 donly_per = TauFitData.DonorOnlyReference{donor_chan(2)}';
+                                if isempty(donly_par) || isempty(donly_per)
+                                    disp('No donor-only reference found.');
+                                    return;
+                                end
                         end
                         %%% since we can't just read the plots, we have to shift the data here
                         %%% using the shift applied to the DA sample
@@ -6262,7 +6266,7 @@ Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{9} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
+Parameters{9} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fracion 1','Fraction Donly','Scatter','Background','R0 (red.) [A]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
 Parameters{10} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{12} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
