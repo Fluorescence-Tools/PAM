@@ -1405,7 +1405,13 @@ if Mode==0 %%% Loads user values
         S.TauFit.XScaleLog='off';
         disp('UserValues.TauFit.XScaleLog was incomplete');
     end
-    P.TauFit.XScaleLog = S.TauFit.XScaleLog;
+    P.TauFit.XScaleLog = S.TauFit.XScaleLog;    
+    %%% Checks, if TauFit.DonorOnlyReferenceSource exists
+    if ~isfield(S.TauFit,'DonorOnlyReferenceSource')
+        S.TauFit.DonorOnlyReferenceSource=1;
+        disp('UserValues.TauFit.DonorOnlyReferenceSource was incomplete');
+    end
+    P.TauFit.DonorOnlyReferenceSource = S.TauFit.DonorOnlyReferenceSource;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2

@@ -1117,7 +1117,7 @@ if exist('bh','var')
             'Units','normalized',...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.35 0.05 0.35 0.12],...
+            'Position',[0.35 0.05 0.29 0.12],...
             'String','Fit anisotropy',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Menu = uicontextmenu;
@@ -1130,6 +1130,31 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+        
+        %%% Dropdown menu to select source of donor-only reference
+        %%% (either from stored reference or taken from the burst data)
+        h.DonorOnlyReference_Text = uicontrol('Style','text',...
+            'Tag','TauFit_SpeciesSelect_text',...
+            'Parent',h.PIEChannel_Panel,...
+            'Units','normalized',...
+            'Position',[0.65 0.15 0.35 0.1],...
+            'HorizontalAlignment','left',...
+            'String','Donor-only reference:',...
+            'BackgroundColor',Look.Back,...
+            'ForegroundColor',Look.Fore,...
+            'Visible','off',...
+            'FontSize',8);
+        h.DonorOnlyReference_Popupmenu = uicontrol(...
+            'Parent',h.PIEChannel_Panel,...
+            'Style','Popupmenu',...
+            'Tag','DonorOnlyReference_Popupmenu',...
+            'Units','normalized',...
+            'Position',[0.65 0.1 0.35 0.05],...
+            'String',{'DOnly population','Stored reference'},...
+            'Value', UserValues.TauFit.DonorOnlyReferenceSource,...
+            'Visible','off',...
+            'FontSize',8,...
+            'Callback',@UpdateOptions);
         
         %%% radio buttons to select the plotted data (decay or
         %%% anisotropy)
@@ -2192,12 +2217,18 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFShift_Slider.Max-h.IRFShift_Slider.Min));
-    if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
-            && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
-        tmp = UserValues.TauFit.IRFShift{chan};
-    else
-        tmp = 0;
+    tmp = UserValues.TauFit.IRFShift{chan};
+    
+    limit_IRF_range = false; % reset to 0 if IRFshift does not make sense
+    if limit_IRF_range
+        if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+                && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
+            tmp = UserValues.TauFit.IRFShift{chan};
+        else
+            tmp = 0;
+        end
     end
+    
     h.IRFShift_Slider.Value = tmp;
     TauFitData.IRFShift{chan} = tmp;
     h.IRFShift_Edit.String = num2str(tmp);
@@ -2625,6 +2656,16 @@ else
     end 
 end
 [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(obj.Value, chan);
+
+if strcmp(TauFitData.Who, 'BurstBrowser')
+    if strcmp(obj.String{obj.Value},'Distribution Fit - Global Model')
+        %%% show donor only reference selection
+        set([h.DonorOnlyReference_Text,h.DonorOnlyReference_Popupmenu],'Visible','on');
+    else
+        %%% hide donor only reference selection
+        set([h.DonorOnlyReference_Text,h.DonorOnlyReference_Popupmenu],'Visible','off');
+    end
+end
 
 %%% Update UserValues
 if ~strcmp(TauFitData.Who,'Burstwise')
@@ -3471,9 +3512,23 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data      
                 switch TauFitData.Who
-                    case {'BurstBrowser','Burstwise'}          
-                        %%% also read out the donor-only pattern, which should be chan == 4
-                        donly_par = TauFitData.hMI_Par{4}; donly_per = TauFitData.hMI_Per{4};
+                    case {'BurstBrowser','Burstwise'}
+                        switch TauFitData.BAMethod
+                            case {3,4,5}
+                                disp('Not implemented for this data type yet.');
+                                return;
+                        end
+                        switch h.DonorOnlyReference_Popupmenu.Value
+                            %%% origin of donor-only reference
+                            case 1 %%% from donor-only population of burst data                                
+                                %%% read out the donor-only pattern, which should be chan == 4
+                                donly_par = TauFitData.hMI_Par{4};
+                                donly_per = TauFitData.hMI_Per{4};
+                            case 2 %%% use stored reference from BurstData
+                                donor_chan = [1,2];
+                                donly_par = TauFitData.DonorOnlyReference{donor_chan(1)}';
+                                donly_per = TauFitData.DonorOnlyReference{donor_chan(2)}';
+                        end
                         %%% since we can't just read the plots, we have to shift the data here
                         %%% using the shift applied to the DA sample
                         donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
@@ -3491,10 +3546,27 @@ switch obj
                             return;
                         end
                     case 'TauFit'
+                        PIE_1 = h.PIEChannelPar_Popupmenu.Value;
+                        PIE_2 = h.PIEChannelPer_Popupmenu.Value;
                         %%% read donor only from UserValues
+                        donly_par = UserValues.PIE.DonorOnlyReference{PIE_1}';
+                        donly_per = UserValues.PIE.DonorOnlyReference{PIE_2}';
+                        if isempty(donly_par) || isempty(donly_per)
+                            disp('No donor only reference defined.');
+                            return;
+                        end
+                        %%% since we can't just read the plots, we have to shift the data here
+                        %%% using the shift applied to the DA sample
+                        donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
+                        donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
                         
-                        disp('Not implemented for this mode.');
-                        return;
+                        if PIE_1 == PIE_2
+                            Decay_donly = donly_par;
+                        else
+                            %%% combine to summed decay
+                            Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
+                        end
                 end
                         
                 %%% Parameter:
@@ -6337,6 +6409,8 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
+    case h.DonorOnlyReference_Popupmenu
+        UserValues.TauFit.DonorOnlyReferenceSource = obj.Value;
 end
 LSUserValues(1);
 
