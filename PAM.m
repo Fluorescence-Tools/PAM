@@ -955,6 +955,9 @@ h.Burst.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.Burst.BurstLifetime_Bu
 h.Burst.BurstLifetime_Button_Menu_StorePhasorReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
     'Label','Store current Phasor Reference in *.bur file',...
     'Callback',{@Store_IRF_Scat_inBur,2});
+h.Burst.BurstLifetime_Button_Menu_StoreDonorOnlyReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
+    'Label','Store current Donor-only Reference in *.bur file',...
+    'Callback',{@Store_IRF_Scat_inBur,3});
 
 %%% Button to start burstwise Lifetime Fitting
 h.Burst.BurstLifetime_Button = uicontrol(...
@@ -2687,6 +2690,12 @@ h.PIE.PhasorReference = uimenu(...
     'Parent',h.PIE.List_Menu,...
     'Label','Save Phasor Reference for selected PIE Channel',...
     'Tag','PIE_Phasor_Ref',...
+    'Callback',@SaveLoadIrfScat);
+%%% Saves the current Measurement as Donor-only reference for the Channel
+h.PIE.DonorOnlyReference = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save Donor-only Reference for selected PIE Channel',...
+    'Tag','PIE_DonorOnly_Ref',...
     'Callback',@SaveLoadIrfScat);
 %%% PIE Channel list
 h.PIE.List = uicontrol(...
@@ -4888,6 +4897,7 @@ switch e.Key
         UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
         UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
+        UserValues.PIE.DonorOnlyReference{end+1} = zeros(1,4096);
         UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
@@ -9248,12 +9258,35 @@ switch obj
         
         for i = 1:numel(Sel)
             if isempty(UserValues.PIE.Combined{Sel(i)})
-                %%% Update IRF of selected channel
+                %%% Update Phasor Reference of selected channel
                 det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
                 UserValues.PIE.PhasorReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
                 UserValues.PIE.PhasorReferenceLifetime(Sel(i)) = lt;
             else
                 uiwait(msgbox('Phasor Reference cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
+        end
+        LSUserValues(1);
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.PIE.DonorOnlyReference
+        % Saves the current PIE channel as IRF pattern
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving Donor-Only Reference';
+        h.Progress.Axes.Color=[1 0 0];
+        %%% Find selected channels
+        Sel=h.PIE.List.Value;       
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update Donor-Only reference of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.DonorOnlyReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+            else
+                uiwait(msgbox('Donor-Only Reference cannot be saved for combined channels!', 'Important', 'modal'))
                 return
             end
         end
@@ -9534,6 +9567,13 @@ switch BurstData.BAMethod
                 TauFitData.PhasorReferenceLifetime(1) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_GGpar,idx_GGperp]));
                 TauFitData.PhasorReferenceLifetime(2) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_RRpar,idx_RRperp]));
             end
+        end
+        
+        %%% Read Out the Donor-Only Reference
+        TauFitData.DonorOnlyReference_Par = cell(1); TauFitData.DonorOnlyReference_Per = cell(1);
+        try
+            TauFitData.DonorOnlyReference_Par{1} = BurstData.DonorOnlyReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+            TauFitData.DonorOnlyReference_Per{1} = BurstData.DonorOnlyReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
         end
         
         %%% Generate XData
@@ -9861,6 +9901,22 @@ if any(mode==2)
                 UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
                 UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))];      
     end
+end
+
+if any(mode==3)
+    %% Save the Donor-Only Reference
+    %%% Read out the Microtime Histograms of the Donor-Only References for the donor channels
+    switch BurstData.BAMethod
+        case {1,2}
+            DonorOnlyReference_GGpar = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            DonorOnlyReference_GGperp = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+             try
+                BurstData.DonorOnlyReference = {DonorOnlyReference_GGpar; DonorOnlyReference_GGperp};
+             end
+        case {5}
+            DonorOnlyReference = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            BurstData.DonorOnlyReference = {DonorOnlyReference_GG};
+        end
 end
 
 if ~strcmp(obj,'nothing')

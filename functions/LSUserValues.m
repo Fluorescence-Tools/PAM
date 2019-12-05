@@ -79,6 +79,7 @@ if Mode==0 %%% Loads user values
         S.PIE.IRF = {zeros(1,4096)};
         S.PIE.ScatterPattern = {zeros(1,4096)};
         S.PIE.PhasorReference = {zeros(1,4096)};
+        S.PIE.DonorOnlyReference = {zeros(1,4096)};
         S.PIE.PhasorReferenceLifetime = 4;
         disp('UserValues.PIE was incomplete');
     end
@@ -111,6 +112,11 @@ if Mode==0 %%% Loads user values
         disp('UserValues.PIE.PhasorReference was incomplete');
     end
     P.PIE.PhasorReference = S.PIE.PhasorReference;
+    if ~isfield(S.PIE,'DonorOnlyReference')
+        S.PIE.DonorOnlyReference = cell(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.DonorOnlyReference was incomplete');
+    end
+    P.PIE.DonorOnlyReference = S.PIE.DonorOnlyReference;
     if ~isfield(S.PIE,'PhasorReferenceLifetime')
         S.PIE.PhasorReferenceLifetime = 4*ones(1,numel(S.PIE.Name));
         disp('UserValues.PIE.PhasorReferenceLifetime was incomplete');
@@ -1177,12 +1183,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.CalculateBurstwisePhasor was incomplete');
     end
     P.BurstSearch.CalculateBurstwisePhasor = S.BurstSearch.CalculateBurstwisePhasor;
-    %%% Checks if BurstSearch.CalculateBurstwisePhasor subfield exists
+    %%% Checks if BurstSearch.PhasorReference subfield exists
     if ~isfield(S.BurstSearch, 'PhasorReference')
         S.BurstSearch.PhasorReference=1;
         disp('UserValues.BurstSearch.PhasorReference was incomplete');
     end
     P.BurstSearch.PhasorReference = S.BurstSearch.PhasorReference;
+    %%% Checks if BurstSearch.DonorOnlyReference subfield exists
+    if ~isfield(S.BurstSearch, 'DonorOnlyReference')
+        S.BurstSearch.DonorOnlyReference=1;
+        disp('UserValues.BurstSearch.DonorOnlyReference was incomplete');
+    end
+    P.BurstSearch.DonorOnlyReference = S.BurstSearch.DonorOnlyReference;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield(S,'TauFit')

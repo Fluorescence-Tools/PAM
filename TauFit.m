@@ -3491,6 +3491,8 @@ switch obj
                             return;
                         end
                     case 'TauFit'
+                        %%% read donor only from UserValues
+                        
                         disp('Not implemented for this mode.');
                         return;
                 end
