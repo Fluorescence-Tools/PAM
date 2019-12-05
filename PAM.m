@@ -9921,7 +9921,7 @@ end
 
 if ~strcmp(obj,'nothing')
     % function is called from right clicking the Burstwise lifetime button
-    save(BurstData.FileName,'BurstData');
+    save(BurstData.FileName,'BurstData','-append');
     Progress(1,h.Progress.Axes,h.Progress.Text);
     h.Progress.Text.String = FileInfo.FileName{1};
 end
