@@ -2516,7 +2516,7 @@ elseif h.ShowDecay_radiobutton.Value == 1
     h.Microtime_Plot.YLimMode = 'auto';
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
-    if ~strcmp(TauFitData.Who,'BurstBrowser')
+    if ~any(strcmp(TauFitData.Who,{'BurstBrowser','Burstwise'}))
         if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
             %%% show legend
             l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
@@ -2720,7 +2720,7 @@ end
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
-if ~strcmp(TauFitData.Who,'BurstBrowser')
+if ~any(strcmp(TauFitData.Who,{'BurstBrowser','Burstwise'}))
     if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
         Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
     else
