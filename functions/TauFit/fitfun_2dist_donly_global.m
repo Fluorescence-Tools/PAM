@@ -32,23 +32,15 @@ fraction_donly = param(6);
 sc = param(7);
 bg = param(8);
 R0 = param(9);
-tauD01 = param(10);
+tau0 = param(10); % this is the lifetime of the "unquenced" donor used to determine the specified R0
+tau0(tau0==0) = 1; %%% set minimum lifetime to TACbin width
+tauD01 = param(11);
 tauD01(tauD01==0) = 1; %%% set minimum lifetime to TACbin width
-tauD02 = param(11);
+tauD02 = param(12);
 tauD02(tauD02==0) = 1; %%% set minimum lifetime to TACbin width
-f1_donly = param(12);
-sc_donly = param(13);
-bg_donly = param(14);
-
-%%% correct Förster radius for quenching
-%%% assume, that the longer donor-only lifetime belongs to the unquenched species
-%%% In the following, we assume that the given Förster radius belongs to
-%%% this lifetime.
-if tauD01 > tauD02
-    tau0 = tauD01;
-else
-    tau0 = tauD02;
-end
+f1_donly = param(13);
+sc_donly = param(14);
+bg_donly = param(15);
 
 %%% Determine distribution of lifetimes
 dR = 0.25;
