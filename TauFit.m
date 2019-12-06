@@ -1287,7 +1287,7 @@ h.FitPar_Table = uitable(...
     'BackgroundColor', [Look.Table1;Look.Table2],...
     'ForegroundColor', Look.TableFore);
 %%% Get the values of the table and the RowNames from UserValues
-[h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(1, 1);
+[h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(1, 1);
 h.FitResultToClip_Menu = uicontextmenu;
 h.FitResultToClip = uimenu(...
     'Parent',h.FitResultToClip_Menu,...
@@ -2052,7 +2052,7 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
         h.FitMethod_Popupmenu.Value = 1;
     end
     h.FitMethod_Popupmenu.String = h.FitMethods(1:9);
-    [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(h.FitMethod_Popupmenu.Value, chan);
+    [h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(h.FitMethod_Popupmenu.Value, chan);
 else
     set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
         h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
@@ -2656,7 +2656,7 @@ else
         chan = 1;
     end 
 end
-[h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(obj.Value, chan);
+[h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(obj.Value, chan);
 
 if strcmp(TauFitData.Who, 'BurstBrowser')
     if strcmp(obj.String{obj.Value},'Distribution Fit - Global Model')
@@ -6263,11 +6263,11 @@ if mod(numel(invec),newbin) ~= 0
 end
 outv = sum(reshape(invec,newbin,numel(invec)/newbin),1)';
 
-function [startpar, names] = GetTableData(model, chan)
+function [startpar, names, tooltipstring] = GetTableData(model, chan)
 % model is the selected fit model in the popupmenu
 % chan is the selected (burst or PIE pair) channel
 global UserValues
-Parameters = cell(7,1);
+Parameters = cell(14,1);
 Parameters{1} = {'Tau [ns]','Scatter','Background','IRF Shift'};
 Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Scatter','Background','IRF Shift'};
 Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','Scatter','Background','IRF Shift'};
@@ -6283,6 +6283,22 @@ Parameters{12} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Sc
 Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{14} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 
+%%% ToolTipString
+ToolTip = cell(14,1);
+ToolTip{1} = '';
+ToolTip{2} = '';
+ToolTip{3} = '';
+ToolTip{4} = '';
+ToolTip{5} = '';
+ToolTip{6} = '';
+ToolTip{7} = '';
+ToolTip{8} = '';
+ToolTip{9} = sprintf('Global fit of DA and DO samples.\nTauD0(R0) is the donor lifetime of the sample used to determine the given R0.');
+ToolTip{10} = '';
+ToolTip{11} = '';
+ToolTip{12} = '';
+ToolTip{13} = '';
+ToolTip{14} = '';
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -6367,6 +6383,7 @@ StartPar{14} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rh
 
 startpar = StartPar{model};
 names = Parameters{model};
+tooltipstring = ToolTip{model};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Updates UserValues on settings change  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
