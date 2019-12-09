@@ -43,7 +43,8 @@ sc_donly = param(14);
 bg_donly = param(15);
 
 %%% Determine distribution of lifetimes
-dR = 0.25;
+%dR = 0.25;
+R_res = 100; %%% sampling points between -4sigma and +4sigma
 xdist = zeros(2,n);
 
 %%% Homogenous model or not?
@@ -61,7 +62,7 @@ if homogenous
                 meanR = meanR2;
                 sigmaR = sigmaR2;
         end
-        xR = (meanR-4*sigmaR):dR:(meanR+4*sigmaR);
+        xR = linspace(meanR-4*sigmaR,meanR+4*sigmaR,R_res);%(meanR-4*sigmaR):dR:(meanR+4*sigmaR);
         xR = xR(xR > 0)';
         pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
         
@@ -95,7 +96,7 @@ else
                 sigmaR = sigmaR2;
                 tauD0 = tauD02;
         end
-        xR = (meanR-4*sigmaR):dR:(meanR+4*sigmaR);
+        xR = linspace(meanR-4*sigmaR,meanR+4*sigmaR,R_res);%(meanR-4*sigmaR):dR:(meanR+4*sigmaR);
         xR = xR(xR > 0)';
         pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
         

@@ -1298,6 +1298,7 @@ h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
 h.PlotDynamicFRETLine = uimenu(...
     'Parent',h.FitPar_Table.UIContextMenu,...
     'Label','Plot dynamic FRET line',...
+    'Visible','off',...
     'Callback',@Export);
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
@@ -1490,7 +1491,7 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.3 0.425 0.05],...
+    'Position',[0.05 0.6 0.425 0.05],...
     'String','Use weighted residuals',...
     'Value',UserValues.TauFit.use_weighted_residuals,...
     'FontSize',10,...
@@ -1500,11 +1501,22 @@ h.WeightedResidualsType_Menu = uicontrol(...
     'Style','popupmenu',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
-    'Position',[0.525 0.3 0.425 0.05],...
+    'Position',[0.525 0.61 0.425 0.05],...
     'String',{'Gaussian','Poissonian'},...
     'Value',find(strcmp({'Gaussian','Poissonian'},UserValues.TauFit.WeightedResidualsType)),...
     'Tag','WeightedResidualsType_Menu');
-
+h.MCMC_Error_Estimation_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.3 0.65 0.05],...
+    'String','Perform MCMC error estimation?',...
+    'FontSize',10,...
+    'TooltipString',sprintf('Performs Markov Chain Monte Carlo sampling using the Metropolis-Hasting algorithm\nto estimate the posterior distribution of the model parameters.'),...
+    'Tag','NormalizeScatter_Menu',...
+    'Callback',[]);
 h.Cleanup_IRF_Menu = uicontrol(...
     'Style','checkbox',...
     'Parent',h.Settings_Panel,...
@@ -2696,7 +2708,7 @@ end
 h.Result_Plot_Text.Visible = 'off';
 h.Output_Text.String = '';
 h.Plots.Residuals.Visible = 'on';
-
+h.PlotDynamicFRETLine.Visible = 'off';
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -2810,9 +2822,12 @@ switch obj
                 %%% taus    - Lifetimes
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = x0(1)/TauFitData.TACChannelWidth;
-                lb(1) = lb(1)/TauFitData.TACChannelWidth;
-                ub(1) = ub(1)/TauFitData.TACChannelWidth;
+                lifetimes = [1];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2854,8 +2869,8 @@ switch obj
                 Decay = Decay(ignore:end);
                 %%% Update FitResult
                 FitResult = num2cell(x');
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(1,:) = TauFitData.ConfInt(1,:).*TauFitData.TACChannelWidth;
+                FitResult{lifetimes} = FitResult{lifetimes}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -2874,10 +2889,12 @@ switch obj
                 %%% A       - Amplitude of first lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
-                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
-                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
-                
+                lifetimes = [1,2];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2924,9 +2941,9 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2],:) = TauFitData.ConfInt([1,2],:).*TauFitData.TACChannelWidth;
+                FitResult{lifetimes(1)} = FitResult{lifetimes(1)}.*TauFitData.TACChannelWidth;
+                FitResult{lifetimes(2)} = FitResult{lifetimes(2)}.*TauFitData.TACChannelWidth;
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
                 %%% (i.e. correct for brightness)
                 %%% Intensity is proportional to tau*amplitude
@@ -2956,6 +2973,7 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
                 UserValues.TauFit.FitParams{chan}(10) = FitResult{5};
                 UserValues.TauFit.IRFShift{chan} = FitResult{6};
+                h.PlotDynamicFRETLine.Visible = 'on';
             case 'Three Exponentials'
                 %%% Parameter:
                 %%% taus    - Lifetimes
@@ -2963,9 +2981,12 @@ switch obj
                 %%% A2      - Amplitude of second lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
-                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
-                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
+                lifetimes = [1:3];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3014,10 +3035,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,3],:) = TauFitData.ConfInt([1,2,3],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% fix amplitudes the same way it is done in the fit
                 %%% function
                 if (FitResult{4} + FitResult{5}) > 1
@@ -3072,9 +3093,12 @@ switch obj
                 %%% A3      - Amplitude of third lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:4) = x0(1:4)/TauFitData.TACChannelWidth;
-                lb(1:4) = lb(1:4)/TauFitData.TACChannelWidth;
-                ub(1:4) = ub(1:4)/TauFitData.TACChannelWidth;
+                lifetimes = [1:4];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3123,11 +3147,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
-                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,3,4],:) = TauFitData.ConfInt([1,2,3,4],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% fix amplitudes the same way it is done in the fit
                 %%% function
                 if (FitResult{5} + FitResult{6} + FitResult{7}) > 1
@@ -3189,9 +3212,12 @@ switch obj
                 %%% beta    - distribution parameter
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = x0(1)/TauFitData.TACChannelWidth;
-                lb(1:3) = lb(1)/TauFitData.TACChannelWidth;
-                ub(1:3) = ub(1)/TauFitData.TACChannelWidth;
+                lifetimes = [1];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3238,8 +3264,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(1,:) = TauFitData.ConfInt(1,:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 
                 % species-weighted meanTau = tau/beta*gammafunction(1/beta)
@@ -3270,9 +3298,12 @@ switch obj
                 %%% R0
                 %%% Donor only lifetime
                 %%% Convert Lifetimes
-                x0(6) = x0(6)/TauFitData.TACChannelWidth;
-                lb(6) = lb(6)/TauFitData.TACChannelWidth;
-                ub(6) = ub(6)/TauFitData.TACChannelWidth;
+                lifetimes = [6];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3320,8 +3351,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{6} = FitResult{6}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(6,:) = TauFitData.ConfInt(6,:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3351,9 +3384,12 @@ switch obj
                 %%% Donor only lifetime
                 
                 %%% Convert Lifetimes
-                x0(7) = x0(7)/TauFitData.TACChannelWidth;
-                lb(7) = lb(7)/TauFitData.TACChannelWidth;
-                ub(7) = ub(7)/TauFitData.TACChannelWidth;
+                lifetimes = [7];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3399,8 +3435,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(7,:) = TauFitData.ConfInt(7,:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3434,10 +3472,14 @@ switch obj
                 %%% R0
                 %%% Donor only lifetime
                 
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata);
+                
                 %%% Convert Lifetimes
-                x0(10) = x0(10)/TauFitData.TACChannelWidth;
-                lb(10) = lb(10)/TauFitData.TACChannelWidth;
-                ub(10) = ub(10)/TauFitData.TACChannelWidth;
+                lifetimes = [10];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3483,8 +3525,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3593,15 +3637,19 @@ switch obj
                 %%% IRF shift
                 
                 %%% Convert Lifetimes
-                x0([10,11,12]) = x0([10,11,12])/TauFitData.TACChannelWidth;
-                lb([10,11,12]) = lb([10,11,12])/TauFitData.TACChannelWidth;
-                ub([10,11,12]) = ub([10,11,12])/TauFitData.TACChannelWidth;
+                lifetimes = [10,11,12];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
                 
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata);
                 
                 %%% Prepare data as vector
                 Decay_DA = Decay;
                 Decay =  [Decay_DA(ignore:end); Decay_donly(ignore:end)];
                 Decay_stacked = [Decay_DA(ignore:end) Decay_donly(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -3649,12 +3697,10 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{10} = FitResult{10}.*TauFitData.TACChannelWidth;
-                FitResult{11} = FitResult{11}.*TauFitData.TACChannelWidth;
-                FitResult{12} = FitResult{12}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(10,:) = TauFitData.ConfInt(10,:).*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(11,:) = TauFitData.ConfInt(11,:).*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt(12,:) = TauFitData.ConfInt(12,:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3718,13 +3764,15 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end
                 %%% Convert Lifetimes
-                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
-                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
-                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
+                lifetimes = [1:2];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -3737,6 +3785,9 @@ switch obj
                 lb(end+1) = 0;
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
+                
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata);
                 
                 if fit                    
                     %%% Update Progressbar
@@ -3779,10 +3830,11 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell(x');
                 disp(sprintf('I0 = %.2i\n',x(end)));
-                %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2],:) = TauFitData.ConfInt([1,2],:).*TauFitData.TACChannelWidth;
+               %%% Convert Lifetimes to Nanoseconds
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3841,13 +3893,14 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0([1,2,4]) = x0([1,2,4])/TauFitData.TACChannelWidth;
-                lb([1,2,4]) = lb([1,2,4])/TauFitData.TACChannelWidth;
-                ub([1,2,4]) = ub([1,2,4])/TauFitData.TACChannelWidth;
-                
+                lifetimes = [1,2,4];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;               
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -3860,7 +3913,10 @@ switch obj
                 lb(end+1) = 0;
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
-
+                
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata);
+                
                 if fit
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
@@ -3903,10 +3959,10 @@ switch obj
                 FitResult = num2cell(x');
                 disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,4],:) = TauFitData.ConfInt([1,2,4],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
                 %%% (i.e. correct for brightness)
                 %%% Intensity is proportional to tau*amplitude
@@ -3983,13 +4039,15 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
-                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
-                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
+                lifetimes = [1:3];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -4002,6 +4060,9 @@ switch obj
                 lb(end+1) = 0;
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
+                
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata);
                 
                 if fit
                     %%% Update Progressbar
@@ -4047,10 +4108,10 @@ switch obj
                 FitResult = num2cell(x');
                 disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,3],:) = TauFitData.ConfInt([1,2,3],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -4111,13 +4172,14 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
-                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
-                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
-                
+                lifetimes = [1,2,4,5];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;                
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -4130,6 +4192,9 @@ switch obj
                 lb(end+1) = 0;
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
+                
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata);
                 
                 if fit
                     %%% Update Progressbar
@@ -4173,11 +4238,10 @@ switch obj
                 FitResult = num2cell(x');
                 disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
-                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,4,5],:) = TauFitData.ConfInt([1,2,4,5],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
                 %%% (i.e. correct for brightness)
                 %%% Intensity is proportional to tau*amplitude
@@ -4257,13 +4321,14 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
-                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
-                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
-                
+                lifetimes = [1,2,4,5];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;                
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
@@ -4276,6 +4341,9 @@ switch obj
                 lb(end+1) = 0;
                 ub(end+1) = Inf;
                 fixed(end+1) = false;
+                
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata);
                 
                 if fit
                     %%% Update Progressbar
@@ -4320,11 +4388,10 @@ switch obj
                 FitResult = num2cell(x');
                 disp(sprintf('I0 = %.2i\n',x(end)));
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
-                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
-                TauFitData.ConfInt([1,2,4,5],:) = TauFitData.ConfInt([1,2,4,5],:).*TauFitData.TACChannelWidth;
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
                 %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
                 %%% (i.e. correct for brightness)
                 %%% Intensity is proportional to tau*amplitude
@@ -4478,16 +4545,16 @@ switch obj
             if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
                 r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
                 r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
-                x = (1:numel(Decay)/2).*TACtoTime;
+                x_r = (1:numel(Decay)/2).*TACtoTime;
                 
                 % update plots
-                h.Plots.AnisoResult.XData = x(ignore:end);
+                h.Plots.AnisoResult.XData = x_r(ignore:end);
                 h.Plots.AnisoResult.YData = r_meas(ignore:end);
-                h.Plots.AnisoResult_ignore.XData = x(1:ignore);
+                h.Plots.AnisoResult_ignore.XData = x_r(1:ignore);
                 h.Plots.AnisoResult_ignore.YData = r_meas(1:ignore);
-                h.Plots.FitAnisoResult.XData = x(ignore:end);
+                h.Plots.FitAnisoResult.XData = x_r(ignore:end);
                 h.Plots.FitAnisoResult.YData = r_fit(ignore:end);
-                h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
+                h.Plots.FitAnisoResult_ignore.XData = x_r(1:ignore);
                 h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
                 axis(h.Result_Plot_Aniso,'tight');
                 h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
@@ -4641,6 +4708,41 @@ switch obj
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
         h.Fit_Button_MEM_tau.Visible = 'on';
         h.Fit_Button_MEM_dist.Visible = 'on';
+        
+        if h.MCMC_Error_Estimation_Menu.Value
+            alpha = 0.05; %95% confidence interval            
+            disp('Running MCMC... This could take a minute.');tic;
+            confint = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+            proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+            if any(isnan(proposal))
+                %%% nlparci may return NaN values. Set to 1% of the fit value
+                proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/10;
+            end
+            if ~exist('Decay_FitRange','var')
+                Decay_FitRange = Decay;
+            end
+            %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
+            loglikelihood = @(x) (-1/2)*sum((ModelFun(x,xdata)./sigma_est-Decay_FitRange./sigma_est).^2);
+            %%% Sample
+            nsamples = 1E4; spacing = 1E2;
+            [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,lb(~fixed),ub(~fixed),x(~fixed)',zeros(1,numel(x(~fixed))));
+            if acceptance < 0.01
+                disp(sprintf('Acceptance was too low at %.4f!',acceptance));
+                disp('Running again with more narrow proposal distribution.');
+                [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal/10,lb(~fixed),ub(~fixed),x(~fixed)',zeros(1,numel(x(~fixed))));
+            end
+            %%% convert lifetimes
+            lt = false(size(fixed)); lt(lifetimes) = true;
+            samples(:,lt(~fixed)) = samples(:,lt(~fixed)).*TauFitData.TACChannelWidth;
+            confint_mcmc = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+            disp(sprintf('Done. Performed %d steps in %.2f seconds.\nAcceptance was %.2f.\nSpacing used was %d.',nsamples,toc,acceptance,spacing));
+            % print variables to workspace
+            assignin('base',['Samples'],samples(1:spacing:end,:));
+            assignin('base',['acceptance'],acceptance);
+            assignin('base',['LogLikelihood'],prob(1:spacing:end));
+            assignin('base',['ConfInt_MCMC'],confint_mcmc);
+            disp(table(confint_mcmc));
+        end
     case {h.Fit_Button_MEM_tau,h.Fit_Button_MEM_dist}
         TauFitData.FitType = 'MEM';
         TauFitData.WeightedResidualsType = h.WeightedResidualsType_Menu.String{h.WeightedResidualsType_Menu.Value};
