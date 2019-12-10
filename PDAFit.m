@@ -42,7 +42,7 @@ if isempty(h.GlobalPDAFit)
         'defaultUicontrolFontName',Look.Font,...
         'defaultAxesFontName',Look.Font,...
         'defaultTextFontName',Look.Font,...
-        'OuterPosition',[0.01 0.05 0.78 0.9],...
+        'OuterPosition',[0.05 0.05 0.9 0.9],...
         'UserData',[],...
         'Visible','on',...
         'Tag','GlobalPDAFit',...
@@ -936,7 +936,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
         'String','Fix Sigma at Fraction of R:',...
-        'Tooltipstring', 'If you want this parameter globally, globally link some random parameter like Donly',...
+        'Tooltipstring', 'This parameter is optimized globally if multiple datasets are loaded.',...
         'Value',UserValues.PDA.FixSigmaAtFraction,...
         'Callback',@Update_GUI,...
         'Position',[0.65 0.75 0.15 0.2]);
@@ -966,6 +966,19 @@ if isempty(h.GlobalPDAFit)
         'Position',[0.85 0.75 0.1 0.2],...
         'Enable','off',...
         'Tag','FixSigmaAtFractionOfR_Fix');
+    h.SettingsTab.FixStaticToDynamicSpecies = uicontrol(...
+        'Parent',h.SettingsTab.Panel,...
+        'Tag','FixSigmaAtFractionOfR',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Style','checkbox',...
+        'String','Static/dynamic mixture',...
+        'Tooltipstring', sprintf('Assumes that static species have the same center distance and width as dynamic species.'),...
+        'Value',UserValues.PDA.FixStaticToDynamicSpecies,...
+        'Callback',@Update_GUI,...
+        'Position',[0.9 0.75 0.15 0.2]);
     h.SettingsTab.OuterBins_Fix = uicontrol(...
         'Style','checkbox',...
         'Parent',h.SettingsTab.Panel,...
@@ -975,7 +988,7 @@ if isempty(h.GlobalPDAFit)
         'Value',UserValues.PDA.IgnoreOuterBins,...
         'FontSize',12,...
         'String','ignore outer bins?',...
-        'Tooltipstring', 'ignore outer Epr bins during fitting. Does not work for MLE fitting!!!',...
+        'Tooltipstring', 'Ugnore outer proximity ratio histogram bins during fitting. Does not work for MLE fitting!',...
         'Callback',{@Update_Plots,3},...
         'Position',[0.8 0.3 0.2 0.15],...
         'Tag','OuterBins_Fix');
@@ -1346,10 +1359,10 @@ for i = 1:numel(FileName)
                 h.SettingsTab.DynamicSystem.Value = SavedData.DynamicSystem;
             end
             if isfield(SavedData,'KineticRatesTable')
-                PDAData.KineticRatesTable{i} = SavedData.KineticRatesTable;
+                PDAData.KineticRatesTable{end+1} = SavedData.KineticRatesTable;
                 %h.KineticRates_table.Data = SavedData.ThreeStateModel;
             else
-                PDAData.KineticRatesTable{i} = [];
+                PDAData.KineticRatesTable{end+1} = [];
             end
             if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
                 PDAData.Type{end+1} = SavedData.Type;
@@ -3030,13 +3043,16 @@ if ~do_global
         
         %%% If sigma was fixed at fraction of R, update edit box here and
         %%% remove from fitpar array
-        %%% if sigma is fixed at fraction of, read value here before reshape
         if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
             h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fitpar(end));
             fitpar(end) = [];
             %%% if sigma is fixed at fraction of, change its value here
             fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
             fitpar(3:3:end) = fraction.*fitpar(2:3:end);
+        end
+        if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1
+            %%% Overwrite values of static species with values of dynamic species
+            fitpar([8,9,11,12]) = fitpar([2,3,5,6]);
         end
         % put optimized values back in table
         try
@@ -3252,6 +3268,10 @@ else
                 %%% if sigma is fixed at fraction of, change its value here
                 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
                     PDAMeta.FitParams(i,3:3:end) = fraction.*PDAMeta.FitParams(i,2:3:end);
+                end
+                if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1
+                    %%% Overwrite values of static species with values of dynamic species
+                    PDAMeta.FitParams(i,[8,9,11,12]) = PDAMeta.FitParams(i,[2,3,5,6]);
                 end
                 h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str,num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'UniformOutput',false);
             end
@@ -3536,6 +3556,11 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(3:3:end) = fraction.*fitpar(2:3:end);
 end
 
+%%% if dynamic and static species are linked, overwrite the distances and
+%%% sigmas of the static species here
+if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1
+    fitpar([8,9,11,12]) = fitpar([2,3,5,6]);
+end
 %%% create individual histograms
 hFit_Ind = cell(6,1);
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
@@ -4090,6 +4115,11 @@ fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 %%% if sigma is fixed at fraction of, change its value here
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(:,3) = fraction.*fitpar(:,2);
+end
+%%% if dynamic and static species are linked, overwrite the distances and
+%%% sigmas of the static species here
+if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1
+    fitpar(3:4,2:3) = fitpar(1:2,2:3);
 end
 
 % Parameters
@@ -4666,6 +4696,11 @@ fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 %%% if sigma is fixed at fraction of, change its value here
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(:,3) = fraction.*fitpar(:,2);
+end
+%%% if dynamic and static species are linked, overwrite the distances and
+%%% sigmas of the static species here
+if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1
+    fitpar(3:4,2:3) = fitpar(1:2,2:3);
 end
 
 %Parameters
@@ -5595,6 +5630,22 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
     h.FitTab.Table.Data = Data;
     %%% Enables cell callback again
     h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
+elseif h.SettingsTab.FixStaticToDynamicSpecies.Value == 1 %%% Link distances of static and dynamic species
+    %%% Disables cell callbacks, to prohibit double callback
+    h.FitTab.Table.CellEditCallback=[];
+    %%% Get Table Data
+    Data = h.FitTab.Table.Data;
+    %%% link distances and width of static to dynamic species
+    for i = 1:(size(Data,1)-2)
+        %%% Fix distances and width of static species
+        Data(i,[24,27,33,36]) = deal({true});
+        %%% set to values of dynamic species
+        Data(i,[23,26,32,35]) = Data(i,[5,8,14,17]);
+    end
+    %%% Set Table Data
+    h.FitTab.Table.Data = Data;
+    %%% Enables cell callback again
+    h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
 end
 
 % Update the Parameters Tab
@@ -6025,7 +6076,7 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             %%% Reset the fixed status of the fit table
             Data = h.FitTab.Table.Data;
             for i = 1:(size(Data,1)-2)
-                %%% Fix all sigmas
+                %%% Un-Fix all sigmas
                 Data(i,9:9:end) = deal({false});
             end
             h.FitTab.Table.Data = Data;
@@ -6037,6 +6088,35 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
     h.SettingsTab.SigmaAtFractionOfR_edit.ForegroundColor = [0,0,0];
     h.SettingsTab.SigmaAtFractionOfR_edit.BackgroundColor = [1,1,1];
     drawnow;
+    UserValues.PDA.FixSigmaAtFraction = obj.Value;
+elseif obj == h.SettingsTab.FixStaticToDynamicSpecies
+    %%% Toggle fixing dynamic species distances to static species
+    switch obj.Value
+        case 1
+            %%% Update FitParameter Table (fix all sigmas, set to value
+            %%% according to number in edit box)
+            Update_FitTable([],[],4);
+            %%% Disable Columns
+            %%% 2 state system, i.e. distances and sigma of the first two
+            %%% static species need to be uneditable
+            h.FitTab.Table.ColumnEditable(23:28) = deal(false);
+            h.FitTab.Table.ColumnEditable(32:37) = deal(false);
+        case 0
+            %%% Reset the fixed status of the fit table
+            % Data = h.FitTab.Table.Data;
+            % for i = 1:(size(Data,1)-2)
+            %     %%% Un-Fix all Distances and Sigmas
+            %      Data(i,[24,27,33,36]) = deal({false});
+            % end
+            % h.FitTab.Table.Data = Data;
+            %%% Reenable Columns
+            h.FitTab.Table.ColumnEditable(23:28) = deal(true);
+            h.FitTab.Table.ColumnEditable(32:37) = deal(true);
+    end
+    h.SettingsTab.SigmaAtFractionOfR_edit.ForegroundColor = [0,0,0];
+    h.SettingsTab.SigmaAtFractionOfR_edit.BackgroundColor = [1,1,1];
+    drawnow;
+    UserValues.PDA.FixStaticToDynamicSpecies = obj.Value;
 elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
     switch h.SettingsTab.DynamicModel.Value
         case 1 %%% switched to dynamic            
@@ -6069,8 +6149,14 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
                     %%% unhide rate table
                     h.KineticRates_table.Visible = 'on';
                     %%% change fit table width
-                    h.FitTab.Table.Position(3) = 0.69;                    
-                end
+                    h.FitTab.Table.Position(3) = 0.69;
+                    %%% disable linking of distances between static and dynamic
+                    h.SettingsTab.FixStaticToDynamicSpecies.Value = 0;
+                    h.SettingsTab.FixStaticToDynamicSpecies.Enable = 'off';
+                else
+                    %%% enable linking of distances between static and dynamic
+                    h.SettingsTab.FixStaticToDynamicSpecies.Enable = 'on';
+                end                
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
@@ -6086,6 +6172,9 @@ elseif obj == h.SettingsTab.DynamicModel || obj == h.SettingsTab.DynamicSystem
             h.FitTab.Table.Position(3) = 1;
              %%% hide rate table
             h.KineticRates_table.Visible = 'off';
+            %%% disable linking of static and dynamic species
+            h.SettingsTab.FixStaticToDynamicSpecies.Value = 0;
+            h.SettingsTab.FixStaticToDynamicSpecies.Enable = 'off';
     end
     UserValues.PDA.DynamicSystem = h.SettingsTab.DynamicSystem.Value;
 end
