@@ -5475,7 +5475,15 @@ print(f, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c b],1))
 if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% get name of file
     %%% Make table from fittable and save as txt
-    tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
+    res = h.FitPar_Table.Data(:,1);
+    if ~all(isnan(TauFitData.ConfInt(:)))
+            if size(TauFitData.ConfInt,1) == size(res,1)
+                res = [res, num2cell(TauFitData.ConfInt)];
+            else                
+                res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
+            end
+        end
+    tab = cell2table(res,'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result','CI lower','CI upper'});
     writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
 
