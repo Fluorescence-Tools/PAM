@@ -1350,6 +1350,9 @@ for i = 1:numel(FileName)
                 catch
                 end
             end
+            if isfield(SavedData,'LinkStaticAndDynamic');
+                h.SettingsTab.FixStaticToDynamicSpecies.Value = SavedData.LinkStaticAndDynamic;
+            end
             if isfield(SavedData,'Dynamic')
                 h.SettingsTab.DynamicModel.Value = SavedData.Dynamic;
                 UserValues.PDA.Dynamic = SavedData.Dynamic;
@@ -1457,6 +1460,7 @@ for i = 1:numel(PDAData.FileName)
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
     SavedData.DynamicSystem = h.SettingsTab.DynamicSystem.Value;
     SavedData.KineticRatesTable = h.KineticRates_table.Data(i,:);
+    SavedData.LinkStaticAndDynamic = h.SettingsTab.FixStaticToDynamicSpecies.Value;
     SavedData.MinN = str2double(h.SettingsTab.NumberOfPhotMin_Edit.String);
     SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
     SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
