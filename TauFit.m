@@ -5405,7 +5405,7 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                if ~strcmp(TauFitData.FitType,'MEM')
+                if strcmp(TauFitData.FitType,'MEM') && ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
                     ax(i).Position = [0.125 0.13 0.845 0.15];
                     if strcmp(h.Microtime_Plot.YScale,'log')
                         %ax(i).YScale = 'log';
@@ -5415,7 +5415,7 @@ else
                 end
                 aniso_plot = i;
             case 'Microtime_Plot'
-                if ~strcmp(TauFitData.FitType,'MEM')
+                if ~strcmp(TauFitData.FitType,'MEM') && ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
                     ax(i).Position = [0.125 0.28 0.845 0.58];
                      ax(i).XTickLabels = [];
                     ax(i).XLabel.String = '';
