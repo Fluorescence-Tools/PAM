@@ -2428,7 +2428,13 @@ if Mode==0 %%% Loads user values
         S.PDA.FixSigmaAtFraction = 0;
     end
     P.PDA.FixSigmaAtFraction = S.PDA.FixSigmaAtFraction;
-
+    
+    if ~isfield(S.PDA, 'FixStaticToDynamicSpecies')
+        disp('WARNING: UserValues structure incomplete, field "PDA.FixStaticToDynamicSpecies" missing');
+        S.PDA.FixStaticToDynamicSpecies = 0;
+    end
+    P.PDA.FixStaticToDynamicSpecies = S.PDA.FixStaticToDynamicSpecies;
+    
     if ~isfield(S.PDA, 'SigmaAtFractionOfR')
         disp('WARNING: UserValues structure incomplete, field "PDA.SigmaAtFractionOfR" missing');
         S.PDA.SigmaAtFractionOfR = '0.08';
