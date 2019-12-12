@@ -76,7 +76,7 @@ end
 
 
 function [p] = normal_dist(xR,Rmp,sigma)
-p = exp(-((xR-Rmp)).^2)./(2*sigma^2);
+p = (1./(sqrt(2*pi).*sigma)).*exp(-((xR-Rmp)).^2)./(2*sigma^2);
 p = p./sum(p);
 
 function [p] = chi_dist(xR,Rmp,sigma)
