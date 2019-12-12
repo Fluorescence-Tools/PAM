@@ -3606,9 +3606,9 @@ switch obj
                         end
                         %%% since we can't just read the plots, we have to shift the data here
                         %%% using the shift applied to the DA sample
-                        donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
-                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
-                        donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
+                        donly_par = donly_par((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
+                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{chan});
+                        donly_per = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
                         
                         if PIE_1 == PIE_2
                             Decay_donly = donly_par;
@@ -7225,7 +7225,7 @@ switch mode
             % get second donor-only lifetime
             tauD2 = h.FitPar_Table.Data{12,1}/TauFitData.TACChannelWidth;
             % get fraction
-            fraction_tauD1 = h.FitPar_Table.Data{12,1};
+            fraction_tauD1 = h.FitPar_Table.Data{13,1};
             % determine FRET rate
             k_RET = (1./tau0).*(R0./R).^6;        
             % determine lifetimes
@@ -7273,6 +7273,7 @@ end
 
 %%% initialize p
 p0 = ones(numel(tau),1)./numel(tau);
+% p0 = p0 + normrnd(0,1,size(p0))*0.01; p0 = p0./sum(p0);
 p=p0;
 
 %%% initialize boundaries
