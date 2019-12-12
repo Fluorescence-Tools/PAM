@@ -7207,17 +7207,30 @@ switch mode
         R0 = params(end-1);
         tauD = params(end)/TauFitData.TACChannelWidth;
         params(end-1:end) = [];
-        %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
-        R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
-        R = R(2:end-1);
-        %%% calculate respective lifetime vector
-        tau = tauD.*(1+(R0./R).^6).^(-1);
-        
-        if strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
+        lin = true; % linear R spacing or not
+        if lin
+            R = linspace(R0/4,3*R0,resolution);
+        else
+            %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
+            R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
+            R = R(2:end-1);
+        end
+        if ~strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
+            %%% calculate respective lifetime vector
+            tau = tauD.*(1+(R0./R).^6).^(-1);
+        else
             %%% fitting with two donor lifetimes
-            tauD2 = h.FitPar_Table.Data{11,1}/TauFitData.TACChannelWidth;
+            % get donor lifetime that belongs to R0
+            tau0 = UserValues.TauFit.FitParams{TauFitData.chan}(28)/TauFitData.TACChannelWidth;
+            % get second donor-only lifetime
+            tauD2 = h.FitPar_Table.Data{12,1}/TauFitData.TACChannelWidth;
+            % get fraction
             fraction_tauD1 = h.FitPar_Table.Data{12,1};
-            tau2 = tauD2.*(1+(R0./R).^6).^(-1);
+            % determine FRET rate
+            k_RET = (1./tau0).*(R0./R).^6;        
+            % determine lifetimes
+            tau = (1./tauD+k_RET).^(-1);
+            tau2 = (1./tauD2+k_RET).^(-1);
         end
 end
 
@@ -7238,10 +7251,16 @@ end
 %%% generate linear combination decay
 decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
 
-if strcmp(mode,'dist') && contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
-    %%% consider donor only fraction in model
-    decay_donly = fitfun_1exp([tauD,params],static_fit_params);
+if strcmp(mode,'dist')
     fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
+    if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
+        %%% consider donor only fraction in model
+        decay_donly = fitfun_1exp([tauD,params],static_fit_params);
+     elseif strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
+        % consider biexponential donor only
+        params_donly = [h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
+        decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly],static_fit_params);
+    end
     decay_lincomb = @(p) (1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly;
 end
 
