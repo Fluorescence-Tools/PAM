@@ -4161,6 +4161,7 @@ n_sigma = 3; %%% how many sigma to sample distribution width?
 anisotropy_correction = true; % correct anisotropy?
 r0 = 0.38;
 rho = 3.2;
+tauD0 = 4;
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     L = cell(6,1); %%% Likelihood per Gauss
     for j = PDAMeta.Comp{file}
@@ -4188,7 +4189,7 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
-            tau0 = 4/TACbin;
+            tau0 = tauD0/TACbin;
             tau = tau0*(1+(R0./fitpar(j,2)).^6).^(-1);            
             if anisotropy_correction
                 % correct for anisotropy
@@ -4339,7 +4340,7 @@ else
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
-            tau0 = 4./TACbin;
+            tau0 = tauD0./TACbin;
             tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
             tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1); 
             % convert T1, fraction of time in state 1, to F1, i.e. the fractional intensity in state 1
@@ -4434,7 +4435,7 @@ else
         if PDAMeta.lifetime_PDA
             % get the lifetimes of the species in TAC units
             TACbin = PDAData.Data{file}.TACbin; %in ns, i.e. 8 ps
-            tau0 = 4./TACbin;
+            tau0 = tauD0./TACbin;
             tau1 = tau0*(1+(R0./fitpar(1,2)).^6).^(-1);
             tau2 = tau0*(1+(R0./fitpar(2,2)).^6).^(-1);
             tau3 = tau0*(1+(R0./fitpar(3,2)).^6).^(-1);            
@@ -4519,7 +4520,7 @@ else
             if PDAMeta.lifetime_PDA
                 % get the lifetimes of the species in TAC units
                 TACbin = PDAData.Data{file}.TACbin;  %in ns, i.e. 8 ps
-                tau0 = 4./TACbin;
+                tau0 = tauD0./TACbin;
                 tau = tau0*(1+(R0./fitpar(c,2)).^6).^(-1);
                 if anisotropy_correction
                     % correct for anisotropy
