@@ -2484,7 +2484,7 @@ if sum(Global)==0
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-                    if acceptance < 0.01
+                    while acceptance < 0.01
                         disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
                         disp('Running again with more narrow proposal distribution.');
                         proposal = proposal/10;
@@ -2576,7 +2576,7 @@ else
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            if acceptance < 0.01
+            while acceptance < 0.01
                     disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
                     disp('Running again with more narrow proposal distribution.');
                     proposal = proposal/10;
