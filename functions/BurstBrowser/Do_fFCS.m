@@ -21,6 +21,7 @@ BurstMeta.fFCS.Result.Cor_Times = [];
 BurstMeta.fFCS.Result.Cor_Average = [];
 BurstMeta.fFCS.Result.Cor_SEM = [];
 BurstMeta.fFCS.Result.Cor_Array = [];
+BurstMeta.fFCS.Result.MetaData = [];
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
@@ -133,12 +134,16 @@ for i=1:NumChans
             Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j}];
             switch UserValues.BurstBrowser.Settings.fFCS_Mode
                 case {2} % burstwise with time window
+                    Method = 'burstwise with time window';
                     Current_FileName=[Current_FileName '_tw_' sprintf('%d',UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
                 case {1} % burstwise
+                    Method = 'burstwise';
                     Current_FileName=[Current_FileName '_bw.mcor'];
                 case {3} % total photon stream
+                    Method = 'total photon stream';
                     Current_FileName=[Current_FileName '_ps.mcor'];
                 case {4} % total photon stream + donor only
+                    Method = 'total photon stream + donor only';
                     Current_FileName=[Current_FileName '_ps_donly.mcor'];
             end
             BurstMeta.fFCS.Result.FileName{end+1} = Current_FileName;
@@ -149,10 +154,9 @@ for i=1:NumChans
             BurstMeta.fFCS.Result.Cor_Average{end+1} = Cor_Average;
             BurstMeta.fFCS.Result.Cor_SEM{end+1} = Cor_SEM;
             BurstMeta.fFCS.Result.Cor_Array{end+1} = Cor_Array;
-            %Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [0 ,0];
-            %Valid = 1:size(Cor_Array,2);
-            %save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+            %%% store additional meta data describing the species selection
+            BurstMeta.fFCS.Result.MetaData{end+1} = BurstMeta.fFCS.MetaData;
+            BurstMeta.fFCS.Result.MetaData{end}.Method = Method;
             
             count = count +1;
             Progress(count/(NumChans^2),h.Progress_Axes,h.Progress_Text,'Correlating...');

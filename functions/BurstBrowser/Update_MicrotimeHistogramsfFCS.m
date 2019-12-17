@@ -679,7 +679,7 @@ if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings
         end
     end
     
-    if UserValues.BurstBrowser.Settings.Downsample_fFCS
+    if downsample
         %%% Downsampling if checked
         hScat_par = downsamplebin(hScat_par,new_bin_width);hScat_par = hScat_par';
         if isMFD
@@ -771,7 +771,42 @@ plots = [...
     BurstMeta.Plots.fFCS.Microtime_DOnly_par...
     ];
 active = strcmp(get(plots,'Visible'),'on');
-legend(plots(active),legend_string(active));
+legend(plots(active),legend_string(active),'Interpreter','none');
+
+%%% store the analysis settings so that they can be saved with the data
+%%% later
+BurstMeta.fFCS.MetaData = [];
+BurstMeta.fFCS.MetaData.TimeWindow = tw;
+[~,species] = get_multiselection(h);
+BurstMeta.fFCS.MetaData.TotalSpecies.Name = BurstData{file}.SpeciesNames{species(1)};
+Cut = BurstData{file}.Cut{species(1),1};
+BurstMeta.fFCS.MetaData.TotalSpecies.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'});
+% get current selection
+if synthetic_species1
+    BurstMeta.fFCS.MetaData.Species1 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species1}];
+else
+    BurstMeta.fFCS.MetaData.Species1.Name = [BurstData{file}.SpeciesNames{species1(1)} ' - ' BurstData{file}.SpeciesNames{species1(2)}];
+    Cut = BurstData{file}.Cut{species1(1),species1(2)};
+    BurstMeta.fFCS.MetaData.Species1.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'})
+end
+
+if synthetic_species2
+    BurstMeta.fFCS.MetaData.Species2 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species2}];
+else
+    BurstMeta.fFCS.MetaData.Species2.Name = [BurstData{file}.SpeciesNames{species2(1)} ' - ' BurstData{file}.SpeciesNames{species2(2)}];
+    Cut = BurstData{file}.Cut{species2(1),species2(2)};
+    BurstMeta.fFCS.MetaData.Species2.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'})
+end
+
+if use_species3
+    if synthetic_species3
+        BurstMeta.fFCS.Result.MetaData.Species3 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species3}];
+    else
+        BurstMeta.fFCS.MetaData.Species3.Name = [BurstData{file}.SpeciesNames{species3(1)} ' - ' BurstData{file}.SpeciesNames{species3(2)}];
+        Cut = BurstData{file}.Cut{species3(1),species3(2)};
+        BurstMeta.fFCS.MetaData.Species3.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'})
+    end
+end
 
 h.Calc_fFCS_Filter_button.Enable = 'on';
 axis(h.axes_fFCS_DecayPar,'tight');
