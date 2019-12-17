@@ -80,8 +80,14 @@ for i=1:NumChans
                 end
                 %%% Calculates the maximum inter-photon time in clock ticks
                 Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+                
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
+                
+                %%% estimate average count rates
+                counts_per_channel = [sum(cellfun(@sum,Weights1)) sum(cellfun(@sum,Weights2))];
+                duration = sum((cellfun(@(x,y) max(x(end),y(end)),MT1,MT2) - cellfun(@(x,y) min(x(1),y(1)),MT1,MT2))).*BurstData{file}.ClockPeriod;
+                Counts = counts_per_channel./duration/1000; % average countrate in kHz
             elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) %%% Full correlation
                 Weights1_dummy = filters_par{i}(MIpar);
                 Weights2_dummy = filters_perp{j}(MIperp);
@@ -104,6 +110,11 @@ for i=1:NumChans
                 end
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                
+                %%% estimate average count rates
+                counts_per_channel = [sum(cellfun(@sum,Weights1)) sum(cellfun(@sum,Weights2))];
+                duration = sum(cellfun(@(x,y) max(x(end),y(end)),Data1,Data2)).*BurstData{file}.ClockPeriod;
+                Counts = counts_per_channel./duration/1000; % average countrate in kHz  
             end
             Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
             
@@ -132,7 +143,7 @@ for i=1:NumChans
             end
             BurstMeta.fFCS.Result.FileName{end+1} = Current_FileName;
             BurstMeta.fFCS.Result.Header{end+1} = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            BurstMeta.fFCS.Result.Counts{end+1} = [0,0];
+            BurstMeta.fFCS.Result.Counts{end+1} = Counts;%[0,0];
             BurstMeta.fFCS.Result.Valid{end+1} = 1:size(Cor_Array,2);
             BurstMeta.fFCS.Result.Cor_Times{end+1} = Cor_Times;
             BurstMeta.fFCS.Result.Cor_Average{end+1} = Cor_Average;
