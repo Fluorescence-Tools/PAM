@@ -1,6 +1,27 @@
 PAM change log
 ========================
 
+v1.3
+------
+
+This update brings a lot of bugfixes that we have gathered over the past year. Thanks to all who contributed to the project by reporting issues or squashing bugs! Many of these relate to newer versions of MATLAB (2018a and beyond) that saw some changes to the behavior of GUI elements such as toolbars and tables.
+
+In addition, we have worked on a number of features for the different modules:
+
+*  *Three-color Photon Distribution Analysis* has arrived following our recent [publication](https://pubs.acs.org/doi/abs/10.1021/acs.jpcb.9b02967).
+*  *Spectrally-resolved image correlation analysis* is now implemented following last years [publication](https://www.sciencedirect.com/science/article/pii/S1046202317302657) on crosstalk-free RICS using spectral weighting.
+*  *Phasor-FLIM* can now be calculate per PIE channel, instead of being restricted to detection channels.
+*  New module *ParticleDetection* allows you to perform particle-averaged and tracking-based Phasor-FLIM analysis.
+*  *PAM* now supports the read-in of continuous wave microsecond ALEX experiments saved in the [PhotonHDF5 ](http://photon-hdf5.github.io/) file format, with full support for burst analysis.
+*  *BurstBrowser*
+   *  [Burst Variance Analysis](https://www.sciencedirect.com/science/article/pii/S0006349511001858) is now available in *PAM* to detect dynamics if no lifetime information is available, or if you don't trust the *E*-$`\tau_{D(A)}`$ plot.
+   *  You can now resample your burst data based on a specific kinetic scheme using two or three dynamic states. We call this "kinetic consistency check" as it allows you to test your kinetic model against the data set.
+   *  Burst-wise lifetimes can now also be calculated using the phasor approach.
+* *PDAFit*: Together with the additional kinetic analysis available in BurstBrowser, we have added support for fitting of three-state kinetic networks to PDAFit.
+* *TauFit*: We now support global fitting of fluorescence decays of donor-acceptor and donor-only samples using inter-dye distance distributions.
+* Segmented image analysis is now possible for RICS, TICS and Number&Brightness analyses.
+* Support for the Zeiss CZI file type.
+
 v1.2
 ------
 
