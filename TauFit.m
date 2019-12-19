@@ -5498,7 +5498,7 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
                 res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
             end
         end
-    tab = cell2table(res,'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result','CI lower','CI upper'});
+    tab = cell2table(res,'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result','CI_lower','CI_upper'});
     writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
 
