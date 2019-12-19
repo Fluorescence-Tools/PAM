@@ -29,9 +29,24 @@ if nargin<9 %%% Opens Dialog box for selecting new files to be loaded
     %%% Puts last uses file type to front
     Fileorder = 1:size(Filetypes,1);
     Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
-    Filetypes = Filetypes(Fileorder,:);   
-    %%% Choose file to be loaded
-    [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');   
+    Filetypes = Filetypes(Fileorder,:);
+    
+    %%% there is an issue with selecting multiple files on MacOS Catalina,
+    %%% where only the first filter (.mcor) works, and no other file types 
+    %%% can be selected.
+    %%% As a workaround, we avoid using the system file selection for now.
+    %%% 11/2019
+    if ~ismac | ~(ismac & strcmp(get_macos_version(),'10.15'))
+        %%% Choose file to be loaded
+        [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');   
+    else
+        %%% use workaround
+        %%% Choose files to load
+        [FileName, Path, Type] = uigetfile_with_preview(Filetypes,...
+            'Choose a TCSPC data file',UserValues.File.Path,...
+            '',... % empty callback
+            true); % Multiselect on
+    end
     %%% Determines actually selected file type
     if Type~=0
         Type = Fileorder(Type);
