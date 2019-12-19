@@ -2472,24 +2472,27 @@ end
 if strcmp(TauFitData.Who,'BurstBrowser')
     %%% if two-color MFD data is loaded
     if any(TauFitData.BAMethod == [1,2])
-        %%% if Donor only is available
-        if numel(TauFitData.hMI_Par) == 4 % DD, AA, DA, DOnly            
-            if chan == 1
-                %%% if DD is modified, copy settings to DOnly
-                chan_copy = 4;
-            elseif chan == 4
-                %%% if DONLY is modified, copy settings to DD
-                chan_copy = 1;
+        %%% if donor or donor-only was selected in dropdown menu
+        if any(chan == [1,4])
+            %%% if Donor only is available
+            if numel(TauFitData.hMI_Par) == 4 % DD, AA, DA, DOnly            
+                if chan == 1
+                    %%% if DD is modified, copy settings to DOnly
+                    chan_copy = 4;
+                elseif chan == 4
+                    %%% if DONLY is modified, copy settings to DD
+                    chan_copy = 1;
+                end
+                UserValues.TauFit.StartPar{chan_copy} = TauFitData.StartPar{chan};
+                UserValues.TauFit.Length{chan_copy} = TauFitData.Length{chan};
+                UserValues.TauFit.ShiftPer{chan_copy} = TauFitData.ShiftPer{chan};
+                UserValues.TauFit.IRFLength{chan_copy} = TauFitData.IRFLength{chan};
+                UserValues.TauFit.IRFShift{chan_copy} = TauFitData.IRFShift{chan};
+                UserValues.TauFit.IRFrelShift{chan_copy} = TauFitData.IRFrelShift{chan};
+                UserValues.TauFit.ScatShift{chan_copy} = TauFitData.ScatShift{chan};
+                UserValues.TauFit.ScatrelShift{chan_copy} = TauFitData.ScatrelShift{chan};
+                UserValues.TauFit.Ignore{chan_copy} = TauFitData.Ignore{chan};
             end
-            UserValues.TauFit.StartPar{chan_copy} = TauFitData.StartPar{chan};
-            UserValues.TauFit.Length{chan_copy} = TauFitData.Length{chan};
-            UserValues.TauFit.ShiftPer{chan_copy} = TauFitData.ShiftPer{chan};
-            UserValues.TauFit.IRFLength{chan_copy} = TauFitData.IRFLength{chan};
-            UserValues.TauFit.IRFShift{chan_copy} = TauFitData.IRFShift{chan};
-            UserValues.TauFit.IRFrelShift{chan_copy} = TauFitData.IRFrelShift{chan};
-            UserValues.TauFit.ScatShift{chan_copy} = TauFitData.ScatShift{chan};
-            UserValues.TauFit.ScatrelShift{chan_copy} = TauFitData.ScatrelShift{chan};
-            UserValues.TauFit.Ignore{chan_copy} = TauFitData.Ignore{chan};
         end
     end
 end
