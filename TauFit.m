@@ -1287,7 +1287,12 @@ h.FitPar_Table = uitable(...
     'BackgroundColor', [Look.Table1;Look.Table2],...
     'ForegroundColor', Look.TableFore);
 %%% Get the values of the table and the RowNames from UserValues
-[h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(1, 1);
+[h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData(1, 1);
+try
+    h.FitPar_Table.TooltipString = Tooltip;
+catch %%% in newer version, this is now just called "Tooltip"
+    h.FitPar_Table.Tooltip = Tooltip;
+end
 h.FitResultToClip_Menu = uicontextmenu;
 h.FitResultToClip = uimenu(...
     'Parent',h.FitResultToClip_Menu,...
@@ -2064,7 +2069,12 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
         h.FitMethod_Popupmenu.Value = 1;
     end
     h.FitMethod_Popupmenu.String = h.FitMethods(1:9);
-    [h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(h.FitMethod_Popupmenu.Value, chan);
+    [h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData(h.FitMethod_Popupmenu.Value, chan);
+    try
+        h.FitPar_Table.TooltipString = Tooltip;
+    catch %%% in newer version, this is now just called "Tooltip"
+        h.FitPar_Table.Tooltip = Tooltip;
+    end
 else
     set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
         h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
@@ -2668,7 +2678,12 @@ else
         chan = 1;
     end 
 end
-[h.FitPar_Table.Data, h.FitPar_Table.RowName, h.FitPar_Table.Tooltip] = GetTableData(obj.Value, chan);
+[h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData(obj.Value, chan);
+try
+    h.FitPar_Table.TooltipString = Tooltip;
+catch %%% in newer version, this is now just called "Tooltip"
+    h.FitPar_Table.Tooltip = Tooltip;
+end
 
 if strcmp(TauFitData.Who, 'BurstBrowser')
     if strcmp(obj.String{obj.Value},'Distribution Fit - Global Model')
