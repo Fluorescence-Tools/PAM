@@ -86,7 +86,7 @@ void Simulate_Diffusion(
                 New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*normal(mt); // Go one step in x direction
                 New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*normal(mt); // Go one step in y direction
             }
-            if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+            if (Box[2] > 0) { New_Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
             else { Box[2] = 0; } // Puts particle inside plane
             
             /// Particle exits border /////////////////////////////////////////

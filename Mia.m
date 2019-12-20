@@ -52,7 +52,13 @@ h.Mia.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.Mia,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 13:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 13:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
+end
 %%% Menu to load mia data
 h.Mia_Load = uimenu(...
     'Parent',h.Mia,...
@@ -65,9 +71,32 @@ h.Mia_Load_TIFF_Single = uimenu(...
     'Callback',{@Mia_Load,1},...
     'Tag','Load_Mia_TIFF_SIngle');
 %%% Load TIFF
+h.Mia_Load_TIFF_RGB = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...RGB TIFFs');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Green-Red',...
+    'Callback',{@Mia_Load,4},...
+    'Tag','Load_Mia_TIFF_SIngle');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Blue-Green',...
+    'Callback',{@Mia_Load,5},...
+    'Tag','Load_Mia_TIFF_SIngle');
+%%% Load TIFF
+h.Mia_Load_TIFF_RGB_GR = uimenu(...
+    'Parent',h.Mia_Load_TIFF_RGB,...
+    'Label','...Blue-Red',...
+    'Callback',{@Mia_Load,6},...
+    'Tag','Load_Mia_TIFF_SIngle');
+
+%%% Load TIFF
 h.Mia_Load_TIFF_RLICS = uimenu(...
     'Parent',h.Mia_Load,...
-    'Label','...RLICS TIFFs',...
+    'Label','...weighted TIFFs',...
     'Callback',{@Mia_Load,1.5},...
     'Tag','Load_Mia_TIFF_RLICS');
 %%% Load Data from Pam
@@ -82,6 +111,31 @@ h.Mia_Load_Custom = uimenu(...
     'Label','...custom data format',...
     'Callback',{@Mia_Load,3},...
     'Tag','Load_Mia_Custom');
+
+
+%%% Menu to open MIAFit and Spectral
+h.Mia_Open = uimenu(...
+    'Parent',h.Mia,...
+    'Label','Open...',...
+    'Tag','Mia_Open');
+%%% Open MIAFit
+h.Mia_Open_MIAFit = uimenu(...
+    'Parent',h.Mia_Open,...
+    'Label','MIAFit',...
+    'Callback',@MIAFit,...
+    'Tag','Mia_Open_MIAFit');
+%%% Open RICSPE
+h.Mia_Open_RICSPE = uimenu(...
+    'Parent',h.Mia_Open,...
+    'Label','RICSPE',...
+    'Callback',@RICSPE_GUI,...
+    'Tag','Mia_Open_RICSPE');
+%%% Open Spectral
+h.Mia_Open_Spectral = uimenu(...
+    'Parent',h.Mia_Open,...
+    'Label','Spectral',...
+    'Callback',@Spectral,...
+    'Tag','Mia_Open_Spectral');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -152,12 +206,14 @@ for i=1:2
     %%% Axes to display images
     h.Mia_Image.Axes(i,1)= axes(...
         'Parent',h.Mia_Image.Panel,...
+        'Tag', ['ImRaw', num2str(i)],...
         'Units','normalized',...
         'NextPlot','Add',...
         'Position',[0.28 0.99-0.49*i 0.35 0.48]);
     colormap(h.Mia_Image.Axes(i,1),gray(64));
     h.Mia_Image.Axes(i,2)= axes(...
         'Parent',h.Mia_Image.Panel,...
+        'Tag', ['ImCorr', num2str(i)],...
         'Units','normalized',...
         'NextPlot','Add',...
         'Position',[0.64 0.99-0.49*i 0.35 0.48]);
@@ -228,7 +284,7 @@ h.Plots.Int(2,2) = line(...
     'Color',[1 0 0]);
 
 h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
-h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Countsrate [kHz]';
+h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Countrate [kHz]';
 h.Mia_Image.Intensity_Axes.XLabel.Color = Look.Fore;
 h.Mia_Image.Intensity_Axes.YLabel.Color = Look.Fore;
 h.Mia_Image.Intensity_Axes.YLabel.UserData = 1;
@@ -584,7 +640,7 @@ h.Mia_Image.Settings.Channel_FrameUse(1) = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Mia_UseFrame,1},...
+    'Callback',{@Mia_CheckFrame,1},...
     'Value',1,...
     'Position',[0.23 0.06, 0.25 0.05],...
     'String','Use');
@@ -618,7 +674,7 @@ h.Mia_Image.Settings.Channel_FrameUse(2) = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Mia_UseFrame,2},...
+    'Callback',{@Mia_CheckFrame,2},...
     'Value',1,...
     'Position',[0.73 0.06, 0.25 0.05],...
     'String','Use');
@@ -840,7 +896,8 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.76, 0.5 0.06],...
-    'String','Frames to use:');
+    'String','Frame range:',...
+    'Tooltipstring','Sets the frame range to use (applies to all analyses)');
 %%% Editbox to select, which frames to correlate
 h.Mia_Image.Settings.ROI_Frames = uicontrol(...
     'Parent', h.Mia_Image.Settings.ROI_Panel,...
@@ -850,7 +907,9 @@ h.Mia_Image.Settings.ROI_Frames = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.76, 0.25 0.06],...
-    'String','1');
+    'String','1',...
+    'Tooltipstring','Sets the frame range to use (applies to all analyses)');
+
 %%%Button to Import ROI from file
 h.Mia_Image.Settings.Load_ROI = uicontrol(...
     'Parent', h.Mia_Image.Settings.ROI_Tab,...
@@ -863,6 +922,18 @@ h.Mia_Image.Settings.Load_ROI = uicontrol(...
     'Callback',{@Import_ROI},...
     'String','Import ROI from .mat File');
 
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',14,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.68, 0.35 0.06],...
+    'String','Special selection:');
+
 %%% Select unselection criteria
 h.Mia_Image.Settings.ROI_FramesUse = uicontrol(...
     'Parent', h.Mia_Image.Settings.ROI_Panel,...
@@ -871,26 +942,26 @@ h.Mia_Image.Settings.ROI_FramesUse = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.68, 0.64 0.06],...
+    'Position',[0.34 0.68, 0.27 0.06],...
     'Callback',{@MIA_Various,3},...
-    'String',{'Use all frames','Use selected frames','Arbitrary region ICS'});
+    'String',{'None','Checked frames','Arbitrary ROI'});
 if ismac
     h.Mia_Image.Settings.ROI_FramesUse.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.ROI_FramesUse.BackgroundColor = [1 1 1];
 end
 
 h.Mia_Image.Settings.ROI_AR_Text = {};
-h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
-    'Parent', h.Mia_Image.Settings.ROI_Panel,...
-    'Style','text',...
-    'Units','normalized',...
-    'FontSize',14,...
-    'HorizontalAlignment','left',...
-    'BackgroundColor', Look.Back,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.54, 0.56 0.11],...
-    'Visible', 'off',...
-    'String','Arbitrary region threshold');
+% h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
+%     'Parent', h.Mia_Image.Settings.ROI_Panel,...
+%     'Style','text',...
+%     'Units','normalized',...
+%     'FontSize',14,...
+%     'HorizontalAlignment','left',...
+%     'BackgroundColor', Look.Back,...
+%     'ForegroundColor', Look.Fore,...
+%     'Position',[0.02 0.54, 0.56 0.11],...
+%     'Visible', 'off',...
+%     'String','Arbitrary region threshold');
 %%% Text
 h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'Parent', h.Mia_Image.Settings.ROI_Panel,...
@@ -900,7 +971,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.56 0.54, 0.2 0.06],...
+    'Position',[0.58 0.58, 0.2 0.06],...
     'Visible', 'off',...
     'String','MIN');
 %%% Text
@@ -912,7 +983,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.78 0.54, 0.2 0.06],...
+    'Position',[0.81 0.58, 0.2 0.06],...
     'Visible', 'off',...
     'String','MAX');
 %%% Text
@@ -925,7 +996,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min\max pixel countrate' 10 'averaged over all frames'],...
-    'Position',[0.02 0.46, 0.50 0.06],...
+    'Position',[0.02 0.52, 0.50 0.06],...
     'Visible', 'off',...
     'String','Intensity [kHz]:');
 %%% Minimal average pixel countrate
@@ -937,7 +1008,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Min(1) = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min pixel countrate' 10 'averaged over all frames'],...
-    'Position',[0.52 0.46, 0.11 0.06],...
+    'Position',[0.52 0.52, 0.11 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int(1)));
@@ -950,7 +1021,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Min(2) = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min pixel countrate' 10 'averaged over all frames'],...
-    'Position',[0.63 0.46, 0.11 0.06],...
+    'Position',[0.63 0.52, 0.11 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int(2)));
@@ -963,7 +1034,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Max(1) = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies max pixel countrate' 10 'averaged over all frames'],...
-    'Position',[0.76 0.46, 0.11 0.06],...
+    'Position',[0.76 0.52, 0.11 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int(3)));
@@ -976,7 +1047,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Max(2) = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies max pixel countrate' 10 'averaged over all frames'],...
-    'Position',[0.87 0.46, 0.11 0.06],...
+    'Position',[0.87 0.52, 0.11 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int(4)));
@@ -990,7 +1061,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies the sliding windows used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
-    'Position',[0.02 0.39, 0.72 0.06],...
+    'Position',[0.02 0.45, 0.72 0.06],...
     'Visible', 'off',...
     'String','Subregions [px]:');
 %%% Smaller subregion
@@ -1002,7 +1073,7 @@ h.Mia_Image.Settings.ROI_AR_Sub1 = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies the smaller sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
-    'Position',[0.56 0.39, 0.2 0.06],...
+    'Position',[0.56 0.45, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Region(1)));
@@ -1015,7 +1086,7 @@ h.Mia_Image.Settings.ROI_AR_Sub2 = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies the larger sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
-    'Position',[0.78 0.39, 0.2 0.06],...
+    'Position',[0.78 0.45, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Region(2)));
@@ -1029,7 +1100,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min\max intensity ratio' 10 'of subregions specified above'],...
-    'Position',[0.02 0.32, 0.72 0.06],...
+    'Position',[0.02 0.38, 0.72 0.06],...
     'Visible', 'off',...
     'String','Intensity [Fold]:');
 %%% Minimal intensity ratio of subregions
@@ -1041,7 +1112,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Fold_Min = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min intensity ratio' 10 'of subregions specified above'],...
-    'Position',[0.56 0.32, 0.2 0.06],...
+    'Position',[0.56 0.38, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int_Fold(1)));
@@ -1054,7 +1125,7 @@ h.Mia_Image.Settings.ROI_AR_Int_Fold_Max = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies max intensity ratio' 10 'of subregions specified above'],...
-    'Position',[0.78 0.32, 0.2 0.06],...
+    'Position',[0.78 0.38, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Int_Fold(2)));
@@ -1068,7 +1139,7 @@ h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min\max variance ratio' 10 'of subregions specified above'],...
-    'Position',[0.02 0.25, 0.72 0.06],...
+    'Position',[0.02 0.31, 0.72 0.06],...
     'Visible', 'off',...
     'String','Variance [Fold]:');
 %%% Minimal variance ratio of subregions
@@ -1080,7 +1151,7 @@ h.Mia_Image.Settings.ROI_AR_Var_Fold_Min = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies min variance ratio' 10 'of subregions specified above'],...
-    'Position',[0.56 0.25, 0.2 0.06],...
+    'Position',[0.56 0.31, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Var_Fold(1)));
@@ -1093,7 +1164,7 @@ h.Mia_Image.Settings.ROI_AR_Var_Fold_Max = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',['Specifies max variance ratio' 10 'of subregions specified above'],...
-    'Position',[0.78 0.25, 0.2 0.06],...
+    'Position',[0.78 0.31, 0.2 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',num2str(UserValues.MIA.AR_Var_Fold(2)));
@@ -1106,7 +1177,7 @@ h.Mia_Image.Settings.ROI_AR_Same = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Value',1,...
-    'Position',[0.02 0.17, 0.64 0.06],...
+    'Position',[0.02 0.24, 0.64 0.06],...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',{'Individual Channels', 'Channel1','Channel2','Both'});
@@ -1114,6 +1185,69 @@ if ismac
     h.Mia_Image.Settings.ROI_AR_Same.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.ROI_AR_Same.BackgroundColor = [1 1 1];
 end
+h.Mia_Image.Settings.ROI_AR_Spatial_Int = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'Callback', {@Mia_Correct,1},...
+    'Visible', 'off',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.18, 0.5 0.06],...
+    'TooltipString',['Do spatial absolute intensity' 10 'thresholding in the small sub-ROI' 10 'instead of over all frames.' 10 'the code considers photobleaching'],...
+    'String','Framewise Int. Threshold');
+h.Mia_Image.Settings.ROI_AR_median = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'Callback', {@Mia_Correct,1},...
+    'Visible', 'off',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.62 0.18, 0.3 0.06],...
+    'TooltipString',['median filter the ROI' 10, 'in a square region' 10 'with small subROI size'],...
+    'String','Median Filter');
+
+%%%Button to Store ROI count rate as background
+h.Mia_Image.Settings.GetBG = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Tab,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.1, 0.5 0.06],...
+    'Callback',{@MIA_Various,4},...
+    'String','Get background from ROI');
+
+%%% Editbox to select, which frames to correlate
+h.Mia_Image.Settings.Background(1) = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.55 0.1, 0.2 0.06],...
+    'String','0',...
+    'Callback',{@Mia_Correct,1},...
+    'ToolTipString', 'Background channel 1 in counts per dwell time');
+%%% Editbox to select, which frames to correlate
+h.Mia_Image.Settings.Background(2) = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.75 0.1, 0.2 0.06],...
+    'String','0',...
+    'Callback',{@Mia_Correct,1},...
+    'ToolTipString', 'Background channel 2 in counts per dwell time');
 %% Mia correction tab
 %%% Tab and panel for Mia image correction settings UIs
 h.Mia_Image.Settings.Correction_Tab= uitab(...
@@ -1204,6 +1338,7 @@ h.Mia_Image.Settings.Correction_Subtract_Frames = uicontrol(...
     'Callback',{@Mia_Correct,1},...
     'Visible','off',...
     'String',num2str(UserValues.MIA.Correct_Sub_Values(2)));
+
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.Mia_Image.Settings.Correction_Panel,...
@@ -1284,7 +1419,7 @@ h.Mia_Image.Settings.Correction_Add_Frames = uicontrol(...
 h.Mia_Image.Settings.Orientation_Tab= uitab(...
     'Parent',h.Mia_Image.Settings.Tabs,...
     'Tag','MI_Orientation_SettingsTab',...
-    'Title','Orientation & Type');
+    'Title','Options');
 h.Mia_Image.Settings.Orientation_Panel = uibuttongroup(...
     'Parent',h.Mia_Image.Settings.Orientation_Tab,...
     'Tag','Mia_Orientation_Settings_Panel',...
@@ -1313,7 +1448,7 @@ h.Mia_Image.Settings.Orientation_Flip_Hor = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Mia_Orientation},...
+    'Callback',{@Mia_Orientation,1},...
     'Value',0,...
     'Position',[0.02 0.83, 0.47 0.06],...
     'String','Flip Horizontally');
@@ -1325,7 +1460,7 @@ h.Mia_Image.Settings.Orientation_Flip_Ver = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Mia_Orientation},...
+    'Callback',{@Mia_Orientation,2},...
     'Value',0,...
     'Position',[0.02 0.75, 0.47 0.06],...
     'String','Flip Vertically');
@@ -1337,7 +1472,7 @@ h.Mia_Image.Settings.Orientation_Rotate = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Mia_Orientation},...
+    'Callback',{@Mia_Orientation,3},...
     'Value',0,...
     'Position',[0.02 0.67, 0.47 0.06],...
     'String','Rotate');
@@ -1368,25 +1503,55 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.56, 0.9 0.06],...
-    'String','Custom Filtetype:');
+    'String','Custom Filetype:');
 
 %%% Allows custom Filetype selection
-Customdir = [PathToApp filesep 'functions' filesep 'MIA' filesep 'ReadIN'];
-if ~(exist(Customdir,'dir') == 7)
-    mkdir(Customdir);
-end
-%%% Finds all matlab files in profiles directory
-Custom_Methods = what(Customdir);
-Custom_Methods = ['none'; Custom_Methods.m(:)];
-Custom_Value = 1;
-for i=2:numel(Custom_Methods)
-    Custom_Methods{i}=Custom_Methods{i}(1:end-2);
-    if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
-        Custom_Value = i;
+if ~isdeployed
+    Customdir = [PathToApp filesep 'functions' filesep 'MIA' filesep 'ReadIN'];
+    if ~(exist(Customdir,'dir') == 7)
+        mkdir(Customdir);
+    end
+    %%% Finds all matlab files in profiles directory
+    Custom_Methods = what(Customdir);
+    Custom_Methods = ['none'; Custom_Methods.m(:)];
+    Custom_Value = 1;
+    for i=2:numel(Custom_Methods)
+        Custom_Methods{i}=Custom_Methods{i}(1:end-2);
+        if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
+            Custom_Value = i;
+        end
+    end
+else
+    %%% compiled application
+    %%% custom file types are embedded
+    %%% names are in associated text file
+    fid = fopen([PathToApp filesep 'Custom_Read_Ins_MIA.txt'],'rt');
+    if fid == -1
+        disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
+        Custom_Methods = {'none'};
+        Custom_Value = 1;
+    else % read file
+        % skip the first three lines (header)
+        for i = 1:3
+            tline = fgetl(fid);
+        end
+        Custom_Methods = {'none'};
+        Custom_Value = 1;
+        while ischar(tline)
+            tline = fgetl(fid);
+            if ischar(tline)
+                Custom_Methods{end+1,1} = tline;
+            end
+        end
+        for i=2:numel(Custom_Methods)
+            if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
+                Custom_Value = i;
+            end
+        end
     end
 end
 
-%%% Popupmenu for rotation direction
+%%% Creates objects for custom filetype settings
 h.Mia_Image.Settings.FileType = uicontrol(...
     'Parent',h.Mia_Image.Settings.Orientation_Panel,...
     'Style','popupmenu',...
@@ -1405,10 +1570,56 @@ if ismac
 end
 MIA_CustomFileType(h.Mia_Image.Settings.FileType,[],1);
 h.Mia_Image.Settings.Custom = h.Mia_Image.Settings.FileType.UserData{3};
-%%% Creates objects for custom filetype settings
 
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.16, 0.15 0.06],...
+    'String','S:');
+% editbox for variance-intensity slope
+h.Mia_Image.Settings.S = uicontrol(...
+    'Tag','h.Mia_Image.Settings.S',...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String', num2str(UserValues.MIA.Options.S),...
+    'Callback',{@Mia_Orientation,4},...
+    'Position',[0.20 0.18, 0.3 0.05],...
+    'Tooltipstring','Variance vs Intensity slope for a sample without concentration fluctuations');
 
-
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.06, 0.15 0.06],...
+    'String','Offset:');
+% editbox for offset ("what is the intensity if you extrapolate to variance zero")
+h.Mia_Image.Settings.Offset = uicontrol(...
+    'Tag','h.Mia_Image.Settings.Offset',...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',num2str(UserValues.MIA.Options.Offset),...
+    'Callback',{@Mia_Orientation,4},...
+    'Position',[0.20 0.08, 0.3 0.05],...
+    'Tooltipstring','Extrapolated Intensity at zero variance for a sample without concentration fluctuations');
 
 %% Calculations tab container
 h.Mia_Image.Calculations_Panel = uibuttongroup(...
@@ -1425,6 +1636,7 @@ h.Mia_Image.Calculations_Tabs = uitabgroup(...
     'Tag','Mia_Calculations_Tabs',...
     'Units','normalized',...
     'Position',[0 0 1 1]);
+
 %% Perform correlation tab
 %%% Tab and panel for perform correlation UIs
 h.Mia_Image.Calculations.Cor_Tab= uitab(...
@@ -1464,7 +1676,7 @@ h.Mia_Image.Calculations.Cor_Do_ICS = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.82, 0.47 0.06],...
-    'Callback',@Do_2D_XCor,...
+    'Callback',{@Do_2D_XCor,1},...
     'String','Do (R)ICS');
 %%% Selects data saving procedure
 h.Mia_Image.Calculations.Cor_Save_ICS = uicontrol(...
@@ -1486,6 +1698,7 @@ end
 h.Mia_Image.Calculations.Cor_Do_TICS = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Cor_Panel,...
     'Style','push',...
+    'Tag', 'DoTICS',...
     'Units','normalized',...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
@@ -1632,7 +1845,8 @@ h.Mia_Image.Calculations.NB_Average = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.76, 0.4 0.06],...
-    'String',{'None','Average','Disk','Gaussian'});
+    'String',{'None','Average','Disk','Gaussian'},...
+    'Tooltipstring','apply an averaging filter to the intensity and variance images');
 if ismac
     h.Mia_Image.Calculations.NB_Average.ForegroundColor = [0 0 0];
     h.Mia_Image.Calculations.NB_Average.BackgroundColor = [1 1 1];
@@ -1646,9 +1860,9 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.44 0.745, 0.26 0.06],...
-    'String','Diameter:');
+    'String','Radius:');
 %%% Editbox for Averaging radius
-h.Mia_Image.Calculations.NB_Average_Diameter = uicontrol(...
+h.Mia_Image.Calculations.NB_Average_Radius = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -1656,7 +1870,19 @@ h.Mia_Image.Calculations.NB_Average_Diameter = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.72 0.75, 0.15 0.06],...
-    'String','3');
+    'String','3',...
+    'Tooltipstring','sets the radius for the averaging and median filtering');
+%%% Checkboxbox for Median filter
+h.Mia_Image.Calculations.NB_Median = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.NB_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.68, 0.35 0.06],...
+    'String','Median filter',...
+    'Tooltipstring','apply a median filter to the N and epsilon images');
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
@@ -1665,8 +1891,8 @@ h.Text{end+1} = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.01 0.62, 0.8 0.06],...
-    'String','Detector Deadtime(ns):');
+    'Position',[0.01 0.60, 0.8 0.06],...
+    'String','Detector Dead time [ns]:');
 %%% Editbox for Deadtime correction
 h.Mia_Image.Calculations.NB_Detector_Deadtime = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
@@ -1675,8 +1901,190 @@ h.Mia_Image.Calculations.NB_Detector_Deadtime = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.7 0.62, 0.22 0.06],...
+    'Position',[0.7 0.60, 0.22 0.06],...
     'String','100');
+
+%% Perform FRET tab
+%%% Tab and panel for perform correlation UIs
+h.Mia_Image.Calculations.FRET_Tab= uitab(...
+    'Parent',h.Mia_Image.Calculations_Tabs,...
+    'Tag','MI_Image_Tab',...
+    'Title','FRET');
+h.Mia_Image.Calculations.FRET_Panel = uibuttongroup(...
+    'Parent',h.Mia_Image.Calculations.FRET_Tab,...
+    'Tag','Mia_Calculations_FRET_Panel',...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0 0 1 1]);
+
+%%% Select, which FRET method to use
+h.Mia_Image.Calculations.FRET_Type = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.92, 0.96 0.06],...
+    'String',{'norm A/D','A/D','Fc (Youvan)', 'FRETN (Gordon)', 'N-FRET (Xia)'});
+if ismac
+    h.Mia_Image.Calculations.FRET_Type.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.FRET_Type.BackgroundColor = [1 1 1];
+end
+%%% Button to start FRET calculation
+h.Mia_Image.Calculations.DoFRET = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.72, 0.47 0.06],...
+    'Callback',@Do_FRET,...
+    'String','Do FRET');
+%%% Selects data saving procedure
+h.Mia_Image.Calculations.Save_FRET = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.51 0.72, 0.47 0.06],...
+    'String',{'Do not save','Save'});
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.82, 0.4 0.06],...
+    'String','Normalize on frames:');
+%%% Editbox for Averaging radius
+h.Mia_Image.Calculations.FRET_norm = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.FRET_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.52 0.82, 0.15 0.06],...
+    'String','1:5',...
+    'Tooltipstring','normalizes the FRET data on frames n:m');
+if ismac
+    h.Mia_Image.Calculations.Save_FRET.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Save_FRET.BackgroundColor = [1 1 1];
+end
+
+%% Perform Colocalization tab
+%%% Tab and panel for perform correlation UIs
+h.Mia_Image.Calculations.Coloc_Tab= uitab(...
+    'Parent',h.Mia_Image.Calculations_Tabs,...
+    'Tag','MI_Image_Tab',...
+    'Title','Colocalization');
+h.Mia_Image.Calculations.Coloc_Panel = uibuttongroup(...
+    'Parent',h.Mia_Image.Calculations.Coloc_Tab,...
+    'Tag','Mia_Calculations_Coloc_Panel',...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0 0 1 1]);
+
+%%% Select, which Coloc method to use
+h.Mia_Image.Calculations.Coloc_Type = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.92, 0.5 0.06],...
+    'String',{'Pearson','Manders', 'Costes', 'Van Steensel', 'Li', 'object-based'});
+if ismac
+    h.Mia_Image.Calculations.Coloc_Type.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Coloc_Type.BackgroundColor = [1 1 1];
+end
+
+%%% Checkboxbox for intensity weighting
+h.Mia_Image.Calculations.Coloc_weighting = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.82, 0.5 0.06],...
+    'String','Intensity weighted',...
+    'Tooltipstring','Calculate the colocalization using intensity-weighting. Option doesn`t work yet!');
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.72, 0.3 0.06],...
+    'String','Averaging diameter:');
+%%% Editbox for Averaging radius
+h.Mia_Image.Calculations.Coloc_avg = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.52 0.72, 0.15 0.06],...
+    'String','3',...
+    'Tooltipstring','size of the square subregion for calculating the square');
+
+h.Mia_Image.Calculations.Coloc_avg.Visible = 'off';
+h.Text{end}.Visible = 'off';
+
+%%% Button to start Coloc calculation
+h.Mia_Image.Calculations.DoColoc = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.62, 0.3 0.06],...
+    'Callback',@Do_Coloc,...
+    'Tooltipstring','Calculate the colocalization using the top right AROI',...
+    'String','Analyze');
+%%% Selects data saving procedure
+h.Mia_Image.Calculations.Save_Coloc = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.35 0.62, 0.47 0.06],...
+    'String',{'Do not save','Save as .miacor'});
+%% mean Pearson's coefficient
+h.Mia_Image.Calculations.Coloc_Pearsons = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Coloc_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.47, 0.96 0.1],...
+    'String','mean Pearson`s: ',...
+    'ToolTipString', 'Pearsons correlation coefficient/nfor the corrected images within the AROI');% %%% Text
+if ismac
+    h.Mia_Image.Calculations.Save_Coloc.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Save_Coloc.BackgroundColor = [1 1 1];
+end
 
 %% Additional Properties Tab
 s.ProgressRatio = 0.15;
@@ -2186,24 +2594,205 @@ h.Mia_TICS.Fit_Table.Data=Data;
 h.Mia_TICS.Fit = uicontrol(...
     'Parent',h.Mia_TICS.Panel,...
     'Style','push',...
+    'Tag','Fit',...
     'Units','normalized',...
     'FontSize',14,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String','Fit TICS',...
+    'String','Fit',...
     'Callback',@Do_TICS_Fit,...
-    'Position',[0.01 0.67, 0.06 0.03]);
+    'Position',[0.01 0.67, 0.04 0.03]);
+%%% Button to Save the correlation data to .mcor
+h.Mia_TICS.Save = uicontrol(...
+    'Parent',h.Mia_TICS.Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'Tag','Save',...
+    'FontSize',14,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Save',...
+    'Callback',{@Update_Plots,5,[]},...
+    'Position',[0.01 0.63, 0.04 0.03],...
+    'ToolTipString', 'Save currently displayed data as .mcor');
+%%% Button to Reset thresholds
+h.Mia_TICS.Reset = uicontrol(...
+    'Parent',h.Mia_TICS.Panel,...
+    'Style','push',...
+    'Tag','Reset',...
+    'Units','normalized',...
+    'FontSize',14,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Reset',...
+    'Callback',{@Update_Plots,5,[]},...
+    'Position',[0.01 0.59, 0.04 0.03],...
+    'ToolTipString', 'Reset thresholds to their initial values');
+
+
 %%% Popup to select what to image
 h.Mia_TICS.SelectImage = uicontrol(...
     'Parent',h.Mia_TICS.Panel,...
+    'Tag','SelectImage',...
     'Style','popup',...
     'Units','normalized',...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'G(1)','"Brightness"','Counts','"Half-Life"'},...
+    'String',{'G(1)','Brightness','Counts','Half-Life'},...
     'Callback',{@Update_Plots,5,[]},...
-    'Position',[0.08 0.67, 0.1 0.03]);
+    'Position',[0.01 0.54, 0.06 0.03]);
+if ismac
+    h.Mia_TICS.SelectImage.ForegroundColor = [0 0 0];
+    h.Mia_TICS.SelectImage.BackgroundColor = [1 1 1];
+end
+
+%%% Popup to select what to which image the thresholds apply
+h.Mia_TICS.SelectCor = uicontrol(...
+    'Parent',h.Mia_TICS.Panel,...
+    'Style','popup',...
+    'Tag','SelectCor',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',{'ACF1','ACF2','CCF'},...
+    'Callback',{@Update_Plots,5,[]},...
+    'Position',[0.01 0.51, 0.06 0.03]);
+if ismac
+    h.Mia_TICS.SelectCor.ForegroundColor = [0 0 0];
+    h.Mia_TICS.SelectCor.BackgroundColor = [1 1 1];
+end
+
+%%% Editboxes for different thresholds for species selection
+    h.Mia_TICS.ThresholdsContainer = uigridcontainer(...
+        'GridSize',[5,3],...
+        'HorizontalWeight',[0.3,0.2,0.2],... 
+        'Parent',h.Mia_TICS.Panel,...
+        'Units','norm',...
+        'Position',[.08,0.57,0.13,0.13],...
+        'BackgroundColor',Look.Back);
+    h.Mia_TICS.Threshold_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Thresholds:',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+     h.Mia_TICS.Threshold_MinText = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Min',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_MaxText = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Max',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_G1_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','G(1)',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_G1_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',0,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_G1_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',100,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_brightness_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Brightness',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_brightness_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',0,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_brightness_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',100,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_counts_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Counts',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_counts_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',0,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_counts_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',100,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_halflife_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Half-life',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Mia_TICS.Threshold_halflife_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',0,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
+    h.Mia_TICS.Threshold_halflife_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',100,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]});
 
 %%% Axes to display correlation
 h.Mia_TICS.Axes = axes(...
@@ -2226,11 +2815,6 @@ h.Mia_TICS.Clear_Manual_ROI = uimenu(...
     'Parent',h.Mia_TICS.Menu,...
     'Label','Clear manual ROI',...
     'Callback',{@Mia_Freehand,6});
-h.Mia_TICS.Save_MS = uimenu(...
-    'Parent',h.Mia_TICS.Menu,...
-    'Label','Save selected region',...
-    'Callback',{@MIA_Various,4});
-
 for i=1:3
     h.Plots.TICS(i,1) = errorbar(...
         [0.1 1],...
@@ -2842,7 +3426,7 @@ h.Text{end+1} = uicontrol(...
 
 %%% Editboxes for Min, Max and Bin number
 %%% Checkboxes for threshold use
-for i=1:3;
+for i=1:3
     for j=1:3
         h.Mia_NB.Image.Hist(i,j) = uicontrol(...
             'Parent',h.Mia_NB.Image.Panel,...
@@ -2889,9 +3473,10 @@ MIAData.FileName=cell(0);
 MIAData.Use=ones(2,1);
 MIAData.AR = [];
 MIAData.MS = cell(2,2);
-MIAData.TICS = [];
-MIAData.TICS_Int = [];
-MIAData.TICS_MS = [];
+MIAData.TICS.Data = [];
+MIAData.TICS.Data = [];
+MIAData.TICS.Data.Int = [];
+MIAData.TICS.Data.MS = [];
 MIAData.PCH = [];
 MIAData.STICS = [];
 MIAData.STICS_SEM = [];
@@ -2912,6 +3497,9 @@ h = guidata(findobj('Tag','Mia'));
 
 switch mode
     case {1, 1.5} %%% Loads single color TIFFs
+        % case 1 is normal data
+        % case 1.5 is RSICS/RLICS data - the first half of the frames is
+        % the raw data, the second half of the data is the filtered data
         [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', UserValues.File.MIAPath, 'MultiSelect', 'on');
         
         if all(Path1==0)
@@ -2930,15 +3518,15 @@ switch mode
             FileName2={FileName2};
         end
               
-        MIAData.Data = [];
+        MIAData.Data = {};
         MIAData.Type = mode;
         MIAData.FileName = [];
         MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
-        MIAData.TICS_MS = [];
-        MIAData.TICS = [];
-        MIAData.TICS_Int = [];
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
         MIAData.STICS = [];
         MIAData.STICS_SEM = [];
         MIAData.RLICS = [];
@@ -2984,7 +3572,6 @@ switch mode
         h.Plots.NB(4).XData=0;
         h.Plots.NB(5).CData=zeros(1,1);        
         %% Loads all frames for channel 1
-        MIAData.Data{1,1}=uint16.empty(0,0,0);        
         for i=1:numel(FileName1)  
             MIAData.FileName{1}{i}=FileName1{i};
             Info=imfinfo(fullfile(Path1,FileName1{i}));
@@ -3013,19 +3600,30 @@ switch mode
                     MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
                 end
             end
+            H = Info.Height;
+            W = Info.Width;
             
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
             TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
             
             %%% If RLICS or RSICS was used, the data contains the
             %%% unfiltered data first. MIA can load the unfiltere or the
             %%% filtered data
             if isempty(MIAData.RLICS) 
+                % normal TIFFs
                 Frames = 1:numel(Info);
+                Data = zeros([H, W, numel(Frames)], 'uint16');
             elseif ~isempty(MIAData.RLICS) && mode==1
+                % TIFFs generated via RLICS or spectral and user wants to
+                % load the raw data that is stored in the first half of the
+                % frames
                 Frames = 1:numel(Info)/2;
+                Data = zeros([H, W, numel(Frames)], 'uint16');
             else
+                % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                % that is stored in the last half of the frames
                 Frames = (numel(Info)/2+1):numel(Info);
-                MIAData.Data{1,1} = single(MIAData.Data{1,1});
+                Data = zeros([H, W, numel(Frames)], 'single');
             end
             
             for j=Frames
@@ -3041,13 +3639,32 @@ switch mode
                 
                 %%% Adjusts range for RLICS and RSICS data
                 if ~isempty(MIAData.RLICS) && mode==1.5
-                    MIAData.Data{1,1}(:,:,end+1) = single(TIFF_Handle.read());
-                    MIAData.Data{1,1}(:,:,end)= MIAData.Data{1,1}(:,:,end)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
+                    % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                    % that is stored in the last half of the frames
+                    NoF = numel(Frames);
+                    Data(:,:,j-NoF) = single(TIFF_Handle.read());
+                    Data(:,:,j-NoF)= Data(:,:,j-NoF)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
                 else
-                    MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
+                    data = TIFF_Handle.read();
+                    if size(data,3) > 1
+                        % 3 color TIFFs, code takes the sum
+                        if i ==1 
+                            msgbox('3 color TIFFs, code takes the sum')
+                        end
+                        data = sum(data, 3);
+                    end
+                    Data(:,:,j) = data;
                 end
             end
-            TIFF_Handle.close(); % Close tif reference   
+            
+            % Concatenate to existing data if available
+            if i > 1
+                MIAData.Data{1,1} = cat(3, MIAData.Data{1,1}, Data);
+            else
+                MIAData.Data{1,1} = Data;
+            end
+            TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
         end
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -3088,13 +3705,11 @@ switch mode
             return
         end
         %% Loads all frames for channel 2
-        MIAData.Data{2,1}=uint16.empty(0,0,0);
         for i=1:numel(FileName2)
             MIAData.FileName{2}{i}=FileName2{i};
             Info=imfinfo(fullfile(Path2,FileName2{i}));
-            
-            
-                        %%% Automatically updates image properties
+                        
+            %%% Automatically updates image properties
             if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
                 Start = strfind(Info(1).ImageDescription,': ');
                 Stop = strfind(Info(1).ImageDescription,'\n');
@@ -3103,16 +3718,27 @@ switch mode
                     MIAData.RLICS(2,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
                 end
             end
+            H = Info.Height;
+            W = Info.Width;
             
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
             TIFF_Handle = Tiff(fullfile(Path2,FileName2{i}),'r'); % Open tif reference
             
             if isempty(MIAData.RLICS) || size(MIAData.RLICS,1)~=2
+                % normal TIFFs
                 Frames = 1:numel(Info);
+                Data = zeros([H, W, numel(Frames)], 'uint16');
             elseif size(MIAData.RLICS,1)==2 && mode==1 
+                % TIFFs generated via RLICS or spectral and user wants to
+                % load the raw data that is stored in the first half of the
+                % frames
                 Frames = 1:numel(Info)/2;
+                Data = zeros([H, W, numel(Frames)], 'uint16');
             else
+                % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                % that is stored in the last half of the frames
                 Frames = (numel(Info)/2+1):numel(Info);
-                MIAData.Data{2,1} = single(MIAData.Data{2,1});
+                Data = zeros([H, W, numel(Frames)], 'single');
             end
             
             for j=Frames
@@ -3127,14 +3753,286 @@ switch mode
                 
                 %%% Adjusts for RLICS and RSICS range
                 if ~isempty(MIAData.RLICS) && mode==1.5
-                    MIAData.Data{2,1}(:,:,end+1) = single(TIFF_Handle.read());
-                    MIAData.Data{2,1}(:,:,end)=single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
+                    % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                    % that is stored in the last half of the frames
+                    NoF = numel(Frames);
+                    Data(:,:,j-NoF) = single(TIFF_Handle.read());
+                    Data(:,:,j-NoF) = Data(:,:,j-NoF)/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
                 else
-                    MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
+                    data = TIFF_Handle.read();
+                    if size(data,3) > 1
+                        % 3 color TIFFs, code takes the sum
+                        if i ==1 
+                            msgbox('3 color TIFFs, code takes the sum')
+                        end
+                        data = sum(data, 3);
+                    end
+                    Data(:,:,j) = data;
                 end
             end
+            if i>1
+                MIAData.Data{2,1} = cat(3, MIAData.Data{2,1}, Data);
+            else
+                MIAData.Data{2,1} = Data;
+            end
             TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
         end
+        % convert data using S and offset parameter
+        Mia_Orientation([],[],5)
+
+        %%% Updates frame settings for channel 2
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=0;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=0;
+        h.Plots.ROI(2).Position=[10 10 200 200];
+        h.Plots.ROI(4).Position=[10 10 200 200];
+        %%% Links frames
+        h.Mia_Image.Settings.Channel_Link.Value = 1;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'on';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'on';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'on';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'on';
+        h.Mia_Image.Axes(2,1).Visible = 'on';
+        h.Mia_Image.Axes(2,2).Visible = 'on';
+        h.Plots.Image(2,1).Visible = 'on';
+        h.Plots.Image(2,2).Visible = 'on';
+        h.Plots.ROI(2).Visible = 'on';
+        
+        Progress(1);
+        %%% Updates plots
+        Mia_ROI([],[],1)
+    case {4,5,6} %%% Loads RGB TIFFs
+        % case 4 green red
+        % case 5 blue green
+        % case 6 blue red
+        [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFF', UserValues.File.MIAPath, 'MultiSelect', 'on');
+        
+        if all(Path1==0)
+            retur
+        end
+        UserValues.File.MIAPath = Path1;
+        Path2 = Path1;
+        LSUserValues(1);
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName1)
+            FileName1={FileName1};
+        end
+        FileName2 = FileName1;      
+        MIAData.Data = {};
+        MIAData.Type = mode;
+        MIAData.FileName = [];
+        MIAData.PCH = [];
+        %% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
+        MIAData.STICS = [];
+        MIAData.STICS_SEM = [];
+        MIAData.RLICS = [];
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_ICS.Axes(i,1).Visible='off';
+            h.Mia_ICS.Axes(i,2).Visible='off';
+            h.Mia_ICS.Axes(i,3).Visible='off';
+            h.Mia_ICS.Axes(i,4).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+            h.Plots.Cor(i,4).Visible='off';
+            h.Plots.Cor(i,5).Visible='off';
+            h.Plots.Cor(i,6).Visible='off';
+            h.Plots.Cor(i,7).Visible='off';
+            h.Plots.TICS(i,1).Visible = 'off';
+            h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
+            h.Plots.TICSImage(i).Visible = 'off';
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
+        end
+        h.Mia_ICS.Frame_Slider.Min=0;
+        h.Mia_ICS.Frame_Slider.Max=0;
+        h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
+        h.Mia_ICS.Frame_Slider.Value=0;
+        h.Mia_STICS.Lag_Slider.Min=0;
+        h.Mia_STICS.Lag_Slider.Max=1;
+        h.Mia_STICS.Lag_Slider.SliderStep=[1 1];
+        h.Mia_STICS.Lag_Slider.Value=0;
+        %% Clears N&B data and plots
+        MIAData.NB=[];
+        h.Plots.NB(1).CData=zeros(1,1);
+        h.Plots.NB(2).CData=zeros(1,1);
+        h.Plots.NB(3).CData=zeros(1,1);
+        h.Plots.NB(4).YData=0;
+        h.Plots.NB(4).XData=0;
+        h.Plots.NB(5).CData=zeros(1,1);        
+        %% Loads all frames for channel 1
+        for i=1:numel(FileName1)  
+            MIAData.FileName{1}{i}=FileName1{i};
+            Info=imfinfo(fullfile(Path1,FileName1{i}));
+            
+            %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==5 && numel(Stop)==5
+                    h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image.Settings.Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                elseif numel(Start)==7 && numel(Stop)==7
+                    h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image.Settings.Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                    MIAData.RLICS(1,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
+                end
+            end
+            H = Info.Height;
+            W = Info.Width;
+            
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+            TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
+            
+                Frames = 1:numel(Info);
+                Data = zeros([H, W, numel(Frames)], 'uint16');
+            for j=Frames
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);
+                end
+                %%% Reads the actual data
+                TIFF_Handle.setDirectory(j);
+               
+                data = TIFF_Handle.read();
+                if mode == 4
+                    data = data(:,:,2); %green
+                else %mode == 5 or 6
+                    data = data(:,:,3); %blue
+                    
+                end
+                Data(:,:,j) = data;
+            end
+            
+            % Concatenate to existing data if available
+            if i > 1
+                MIAData.Data{1,1} = cat(3, MIAData.Data{1,1}, Data);
+            else
+                MIAData.Data{1,1} = Data;
+            end
+            TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+        end
+        %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image.Settings.Channel_Link.Value = 0;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'off';
+        h.Mia_Image.Axes(2,1).Visible = 'off';
+        h.Mia_Image.Axes(2,2).Visible = 'off';
+        h.Plots.Image(2,1).Visible = 'off';
+        h.Plots.Image(2,2).Visible = 'off';
+        h.Plots.ROI(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
+        %% Stops function, if only one channel was loaded and clear channel 2
+        if all(Path2==0) 
+            %%% Clears images
+            h.Plots.Image(2,1).CData=zeros(1,1,3);
+            h.Mia_Image.Axes(2,1).XLim=[0 1]+0.5;
+            h.Mia_Image.Axes(2,1).YLim=[0 1]+0.5;
+            h.Plots.Image(2,2).CData=zeros(1,1,3);
+            h.Mia_Image.Axes(2,2).XLim=[0 1]+0.5;
+            h.Mia_Image.Axes(2,2).YLim=[0 1]+0.5;
+            %%% Resets slider
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1 1];
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=1;
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=1;
+            h.Mia_Image.Settings.Channel_Frame(2).String='1';
+            Progress(1);
+            %%% Updates plot
+            Mia_ROI([],[],1)  
+            return
+        end
+        %% Loads all frames for channel 2
+        for i=1:numel(FileName2)
+            MIAData.FileName{2}{i}=FileName2{i};
+            Info=imfinfo(fullfile(Path2,FileName2{i}));
+                        
+            %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==7 && numel(Stop)==7
+                    MIAData.RLICS(2,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(2,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
+                end
+            end
+            H = Info.Height;
+            W = Info.Width;
+            
+            warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+            TIFF_Handle = Tiff(fullfile(Path2,FileName2{i}),'r'); % Open tif reference
+            
+            Frames = 1:numel(Info);
+            Data = zeros([H, W, numel(Frames)], 'uint16');
+            
+            
+            for j=Frames
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName2)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName2)) ' for Channel 2']);
+                end
+                TIFF_Handle.setDirectory(j);
+                
+                
+                data = TIFF_Handle.read();
+                if mode == 5
+                    data = data(:,:,2); % green
+                else
+                    data = data(:,:,1);
+                end
+                Data(:,:,j) = data;
+            end
+            
+            % Concatenate to existing data if available
+            if i>1
+                MIAData.Data{2,1} = cat(3, MIAData.Data{2,1}, Data);
+            else
+                MIAData.Data{2,1} = Data;
+            end
+            TIFF_Handle.close(); % Close tif reference
+            warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+        end
+        % convert data using S and offset parameter
+        Mia_Orientation([],[],5)
 
         %%% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
@@ -3158,7 +4056,6 @@ switch mode
         Progress(1);  
         %%% Updates plots
         Mia_ROI([],[],1)
-        
     case 2 %%% Loads data from Pam
         %% Aborts, if not Data is loaded or Pam is closed
         if isempty(findobj('Tag','Pam'))
@@ -3173,9 +4070,9 @@ switch mode
         MIAData.Data{1,1} = single.empty(0,0,0);
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
-        MIAData.TICS_MS = [];
-        MIAData.TICS = [];
-        MIAData.TICS_Int = [];
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
         for i=1:3
             h.Plots.Cor(i,1).CData=zeros(1,1,3);
             h.Plots.Cor(i,2).ZData=zeros(1);
@@ -3211,12 +4108,13 @@ switch mode
         MIAData.Type = mode;
         MIAData.FileName{1} = FileInfo.FileName;
         h.Mia_Image.Settings.Image_Frame.String = num2str(mean(diff(FileInfo.ImageTimes)));
-        h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
         
         if isfield(FileInfo, 'LineStops')
             h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines*1000000);
+            h.Mia_Image.Settings.Image_Line.String = num2str(mean(mean(diff(FileInfo.LineTimes,1,2)))*1000);
         else
             h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000);
+            h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
         end
         
         h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000)};
@@ -3358,12 +4256,13 @@ switch mode
               
 end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_Plots(~,~,mode,channel)
+function Update_Plots(obj,~,mode,channel)
 global MIAData UserValues
-Fig = gcf;
+Fig = gcf; 
 %%% This speeds display up
 if strcmp(Fig.Tag,'Mia') 
     h = guidata(Fig);
@@ -3431,13 +4330,13 @@ if any(mode==1)
                 AlphaRatio = 3;
         end        
         %% Plots main image
-        if size(MIAData.Data,1)>=1 && size(MIAData.Data,1)>=i
+        if size(MIAData.Data,1)>=i
             Frame=round(h.Mia_Image.Settings.Channel_Frame_Slider(i).Value);
             if Frame>0 %%% Extracts data of current frame
-                Image=double(MIAData.Data{i,1}(:,:,Frame));
+                Image=MIAData.Data{i,1}(:,:,Frame);
             elseif Frame == 0 %%% Extracts data of all selected frames, if Frame==0
                 Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
-                Image = mean(double(MIAData.Data{i,1}(:,:,Frames)),3);
+                Image = mean(MIAData.Data{i,1}(:,:,Frames),3);
             end
             %%% Updates image and axis
             h.Plots.Image(i,1).CData = Image;
@@ -3467,72 +4366,76 @@ if any(mode==1)
         end
         
         %% Plots second image
-        if size(MIAData.Data,2)>=2
-            if size(MIAData.Data,1)>=i
-                Frame=round(h.Mia_Image.Settings.Channel_Frame_Slider(i).Value);
-                From= h.Plots.ROI(i).Position(1:2)+0.5;
-                To=From+h.Plots.ROI(i).Position(3:4)-1;
-                switch h.Mia_Image.Settings.Channel_Second(i).Value
-                    case 1 %%% Uses ROI of original image
-                        if Frame>0;
-                            Image=double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame));
-                        elseif Frame==0
-                            Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
-                            Image = mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames)),3);
-                        end
-                    case 2 %%% Uses ROI of corrected image (=> dynamic species)
-                        if Frame>0;
-                            Image=double(MIAData.Data{i,2}(:,:,Frame));
-                        elseif Frame==0
-                            Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
-                            Image = mean(double(MIAData.Data{i,2}(:,:,Frames)),3);
-                        end
-                    case 3 %%% Uses ROI of correctiond image (=> static species)
-                        if Frame>0;
-                            Image=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame))-MIAData.Data{i,2}(:,:,Frame);
-                        elseif Frame==0
-                            Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
-                            Image=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames))-MIAData.Data{i,2}(:,:,Frames),3);
-                        end
-                end
-                
-                %%% Updates image
-                h.Plots.Image(i,2).CData = Image;
-                %%% Adjusts Scale of image
-                switch h.Mia_Image.Settings.AutoScale.Value
-                    case 1
-                        h.Mia_Image.Axes(i,2).CLimMode = 'auto';
-                    case 2
-                        Min = nanmin(MIAData.Data{i,2}(:));
-                        Max = nanmax(MIAData.Data{i,2}(:));
-                        h.Mia_Image.Axes(i,2).CLim = [Min Max];
-                    case 3
-                        h.Mia_Image.Axes(i,2).CLim = [str2double(h.Mia_Image.Settings.Scale(i,1).String) str2double(h.Mia_Image.Settings.Scale(i,2).String)];
-                end
-                
-                %%% Sets transparency of NaN pixels to 100%;
-                %%% Also sets AlphaData to right size
-                h.Plots.Image(i,2).AlphaData = ~isnan(Image);
-                if Frame>0 %%% For one frame, use manual selection and arbitrary region
-                    if ~isempty(MIAData.AR)
-                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,1}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
-                    else
-                        h.Plots.Image(i,2).AlphaData = 1;
+        if size(MIAData.Data,1)>=i && size(MIAData.Data,2)>=2
+            Frame=round(h.Mia_Image.Settings.Channel_Frame_Slider(i).Value);
+            From= h.Plots.ROI(i).Position(1:2)+0.5;
+            To=From+h.Plots.ROI(i).Position(3:4)-1;
+            switch h.Mia_Image.Settings.Channel_Second(i).Value
+                case 1 %%% Uses ROI of original image
+                    if Frame>0
+                        Image =MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame);
+                    elseif Frame==0
+                        Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
+                        Image = mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames),3);
                     end
-                else %%% For all frames, only use manual selection
-                    if ~isempty(MIAData.AR)
-                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,2}(:,:) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
-                    else
-                        h.Plots.Image(i,2).AlphaData = 1;
+                case 2 %%% Uses ROI of corrected image (=> dynamic species)
+                    if Frame>0
+                        Image = MIAData.Data{i,2}(:,:,Frame);
+                    elseif Frame==0
+                        Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
+                        Image = mean(MIAData.Data{i,2}(:,:,Frames),3);
                     end
-                end
-                %%% Updates axis
-                h.Mia_Image.Axes(i,2).XLim=[0 size(Image,2)]+0.5;
-                h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
+                case 3 %%% Uses ROI of correctiond image (=> static species)
+                    if Frame>0
+                        Image=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame))-MIAData.Data{i,2}(:,:,Frame);
+                    elseif Frame==0
+                        Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
+                        Image=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames))-MIAData.Data{i,2}(:,:,Frames),3);
+                    end
             end
+
+            %%% Updates image
+            h.Plots.Image(i,2).CData = Image;
+            %%% Adjusts Scale of image
+            switch h.Mia_Image.Settings.AutoScale.Value
+                case 1
+                    h.Mia_Image.Axes(i,2).CLimMode = 'auto';
+                case 2
+                    Min = nanmin(MIAData.Data{i,2}(:));
+                    Max = nanmax(MIAData.Data{i,2}(:));
+                    h.Mia_Image.Axes(i,2).CLim = [Min Max];
+                case 3
+                    h.Mia_Image.Axes(i,2).CLim = [str2double(h.Mia_Image.Settings.Scale(i,1).String) str2double(h.Mia_Image.Settings.Scale(i,2).String)];
+            end
+
+            %%% Sets transparency of NaN pixels to 100%;
+            %%% Also sets AlphaData to right size
+            h.Plots.Image(i,2).AlphaData = ~isnan(Image);
+            if Frame>0 %%% For one frame, use manual selection and arbitrary region
+                if ~isempty(MIAData.AR) 
+                    h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,1}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                elseif ~all(all(MIAData.MS{1}))
+                    % AROI was imported without further ado
+                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
+                else
+                    h.Plots.Image(i,2).AlphaData = 1;
+                end
+            else %%% For all frames, only use manual selection
+                if ~isempty(MIAData.AR)
+                    h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,2}(:,:) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                elseif ~all(all(MIAData.MS{1}))
+                    % AROI was imported without further ado
+                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
+                else
+                    h.Plots.Image(i,2).AlphaData = 1;
+                end
+            end
+            %%% Updates axis
+            h.Mia_Image.Axes(i,2).XLim=[0 size(Image,2)]+0.5;
+            h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
         end
         drawnow
-    end   
+    end
 end
 
 %% Plots ICS data
@@ -3649,7 +4552,7 @@ if any(mode==2)
                     else
                         SEM=ones(size(Fit,1),size(Fit,2));
                     end 
-                    if any(any(SEM==0));
+                    if any(any(SEM==0))
                         SEM=1;
                     end
                     %%% Calculates weighted residuals
@@ -3745,17 +4648,17 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,1).String),str2double(h.Mia_NB.Image.Hist(2,1).String),str2double(h.Mia_NB.Image.Hist(3,1).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Intensity [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '+/-' num2str(std(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
         case 3 %%% Number histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,2).String),str2double(h.Mia_NB.Image.Hist(2,2).String),str2double(h.Mia_NB.Image.Hist(3,2).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Num{i}(MIAData.NB.Use),h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Number';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f') '?' num2str(std(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f')];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f') '+/-' num2str(std(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f')];
         case 4 %%% Brightness histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,3).String),str2double(h.Mia_NB.Image.Hist(2,3).String),str2double(h.Mia_NB.Image.Hist(3,3).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Brightness [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '+/-' num2str(std(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
     end
     h.Mia_NB.Hist1D_Text.Position(1)=0.99-h.Mia_NB.Hist1D_Text.Extent(3);
     %%% Set X-Limit; uses 1/2 of binsize to not cut first and last bar
@@ -3891,14 +4794,17 @@ if any(mode==4)
         if h.Mia_Image.DoPCH.Value
             
             if isempty(MIAData.PCH)
-                MIAData.PCH{1} = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
+                MIAData.PCH{1} = histc(double(MIAData.Data{1,1}(:)), 0:double(max(MIAData.Data{1,1}(:))));
             end
             h.Plots.PCH(1,1).XData = 0:(numel(MIAData.PCH{1})-1);
             h.Plots.PCH(1,1).YData = MIAData.PCH{1};
             Max = max(MIAData.Data{1,2}(:));
             h.Plots.PCH(1,2).XData = 0:Max;
-            
-            h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
+            if ~isempty(MIAData.AR)
+                h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
+            else
+                h.Plots.PCH(1,2).YData = 0*h.Plots.PCH(1,2).XData;
+            end
             if h.Mia_Image.PCH_Axes.YLabel.UserData == 0
                 h.Mia_Image.PCH_Axes.YScale = 'Lin';
             else
@@ -3919,7 +4825,7 @@ if any(mode==4)
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(1,1).YData = mean(nanmean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
-                if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(1).YLabel.UserData == 1
                     h.Plots.Additional_Axes(1,1).YData = h.Plots.Additional_Axes(1,1).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                     h.Mia_Additional.Axes(1).YLabel.String = 'Average Frame Countrate [kHz]';
                 else
@@ -3933,7 +4839,7 @@ if any(mode==4)
                 h.Plots.Additional_Axes(1,1).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).YData;
                 h.Mia_Additional.Axes(1).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(1).YLabel.String = 'Frequency';
-                if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(1).YLabel.UserData == 1
                     h.Mia_Additional.Axes(1).YScale = 'Log';
                 else
                     h.Mia_Additional.Axes(1).YScale = 'Lin';
@@ -3946,7 +4852,7 @@ if any(mode==4)
         switch h.Mia_Additional.Plot_Popup(2,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(2,1).YData = mean(mean(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},2),1);
-                if h.Mia_Additional.Axes(2).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(2).YLabel.UserData == 1
                     h.Plots.Additional_Axes(2,1).YData = h.Plots.Additional_Axes(2,1).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                     h.Mia_Additional.Axes(2).YLabel.String = 'Average Frames Countrate [kHz]';
                 else
@@ -3960,7 +4866,7 @@ if any(mode==4)
                 h.Plots.Additional_Axes(2,1).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).YData;
                 h.Mia_Additional.Axes(2).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(2).YLabel.String = 'Frequency';
-                if h.Mia_Additional.Axes(2).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(2).YLabel.UserData == 1
                     h.Mia_Additional.Axes(2).YScale = 'Log';
                 else
                     h.Mia_Additional.Axes(2).YScale = 'Lin';
@@ -4021,28 +4927,32 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1);
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{2,2};
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             
         end
         
         if h.Mia_Image.DoPCH.Value
             
             if numel(MIAData.PCH,1)<2
-                MIAData.PCH{2} = histc(MIAData.Data{2,1}(:), 0:max(MIAData.Data{2,1}(:)));
+                MIAData.PCH{2} = histc(double(MIAData.Data{2,1}(:)), 0:max(double(MIAData.Data{2,1}(:))));
             end
             h.Plots.PCH(2,1).XData = 0:(numel(MIAData.PCH{2})-1);
             h.Plots.PCH(2,1).YData = MIAData.PCH{2};
             h.Plots.PCH(2,1).Visible = 'on';
             Max = max(MIAData.Data{2,2}(:));
-            h.Plots.PCH(2,2).XData = 0:Max;
-            h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1},3))), 0:Max);
+             h.Plots.PCH(2,2).XData = 0:Max;
+            if ~isempty(MIAData.AR)
+                h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1},3))), 0:Max);
+            else
+                h.Plots.PCH(2,2).YData = 0*h.Plots.PCH(2,2).XData;
+            end
             h.Plots.PCH(2,2).Visible = 'on';
         else
            h.Plots.PCH(2,1).XData = [0 1];
@@ -4057,7 +4967,7 @@ if any(mode==4)
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(1,2).YData = mean(mean(single(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
-                if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(1).YLabel.UserData == 1
                     h.Plots.Additional_Axes(1,2).YData = h.Plots.Additional_Axes(1,2).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 end
             case 2 %%% Variance
@@ -4072,7 +4982,7 @@ if any(mode==4)
         switch h.Mia_Additional.Plot_Popup(2,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(2,2).YData = mean(mean(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value},2),1);
-                if h.Mia_Additional.Axes(2).YLabel.UserData == 1;
+                if h.Mia_Additional.Axes(2).YLabel.UserData == 1
                     h.Plots.Additional_Axes(2,2).YData = h.Plots.Additional_Axes(2,2).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 end
             case 2 %%% Variance
@@ -4113,68 +5023,157 @@ end
 %% Plots TICS data
 if any(mode==5)
     for i=1:3
-       %%% 1&3: ACF 1&2
-       %%% 2:   CCF
-       if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})              
-           %%% Sets unselected pixels to NaN
-           if isempty(MIAData.TICS_MS) || size(MIAData.TICS_MS,1)~=size(MIAData.TICS{i},1) || size(MIAData.TICS_MS,2)~=size(MIAData.TICS{i},2)
-                TICS = MIAData.TICS{i};
-                MIAData.TICS_MS = [];
-           else
-               TICS = MIAData.TICS{i};
-               TICS(repmat(~MIAData.TICS_MS,1,1,size(TICS,3))) = NaN;
-           end
-           
-           %%% Averages pixel TICS data for selected (~NaN) pixels and
-           %%% plots the curve
-           h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
-           h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
-           EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
-           EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
-           h.Plots.TICS(i,1).UData = EData;
-           h.Plots.TICS(i,1).LData = EData;
-           
-           %%% Updates fit curve
-           Calc_TICS_Fit([],[],i);
-                      
-           %%% Plots individual pixel data in images
-           switch(h.Mia_TICS.SelectImage.Value)
-               case 1 %%% G(first lag)
-                   h.Plots.TICSImage(i).CData = MIAData.TICS{i}(:,:,1);
-               case 2 %%% G(first lag)./mean(Counts)
-                   switch i
-                       case 1
-                           h.Plots.TICSImage(1).CData = MIAData.TICS{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                       case 2
-                           h.Plots.TICSImage(2).CData = MIAData.TICS{2}(:,:,1).*...
-                               (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
-                                mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
-                       case 3
-                           h.Plots.TICSImage(3).CData = MIAData.TICS{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                   end
-               case 3 %%% Mean counts
-                   h.Plots.TICSImage(i).CData = (MIAData.TICS_Int{i,1}+MIAData.TICS_Int{i,2})/2;
-               case 4 %%% Find G(0)/2
-                   h.Plots.TICSImage(i).CData = (size(MIAData.TICS{i},3)-sum(cumsum(MIAData.TICS{i}./repmat(MIAData.TICS{i}(:,:,1),1,1,size(MIAData.TICS{i},3))<0.5,3)~=0,3)).*...
-                                                str2double(h.Mia_Image.Settings.Image_Frame.String);                   
-           end
-           %%% Sets transparency of unselected pixels to 80%
-           h.Plots.TICSImage(i).AlphaData = (any(~isnan(TICS),3)+0.25)/1.25;
-
-           %%% Updates axis and shows plots    
-           h.Mia_TICS.Image(i,1).XLim = [0 size(TICS,2)]+0.5;
-           h.Mia_TICS.Image(i,1).YLim = [0 size(TICS,1)]+0.5;
-           h.Plots.TICSImage(i).Visible = 'on';
-           h.Mia_TICS.Image(i,2).Visible = 'on';
-           h.Mia_TICS.Image(i,1).Visible = 'on';
-       else %%% Hides plots, if no TICS data exists for current channel
-           h.Plots.TICS(i,1).Visible = 'off';
-           h.Plots.TICS(i,2).Visible = 'off';
-           h.Plots.TICSImage(i).Visible = 'off';
-           h.Mia_TICS.Image(i,2).Visible = 'off';
-           h.Mia_TICS.Image(i,1).Visible = 'off';
-       end 
-    end 
+        %%% 1&3: ACF 1&2
+        %%% 2:   CCF
+        if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
+            % different images to be plotted
+            %%% G(first lag)
+            G1 = MIAData.TICS.Data{i}(:,:,1);
+            %%% G(first lag)./mean(Counts)
+            switch i
+                case 1 %ACF1
+                    brightness = MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
+                    counts = MIAData.TICS.Int{1};
+                case 2 %CCF
+                    brightness = MIAData.TICS.Data{2}(:,:,1).*...
+                        (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
+                        mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
+                    counts = (MIAData.TICS.Int{1}+MIAData.TICS.Int{2});
+                case 3 %ACF2
+                    brightness = MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
+                    counts = MIAData.TICS.Int{2};
+            end
+            
+            %%% Find G(0)/2
+            halflife = (size(MIAData.TICS.Data{i},3)-sum(cumsum(MIAData.TICS.Data{i}./repmat(MIAData.TICS.Data{i}(:,:,1),1,1,size(MIAData.TICS.Data{i},3))<0.5,3)~=0,3)).*...
+                str2double(h.Mia_Image.Settings.Image_Frame.String);
+            
+            
+            % reset the values
+            if ~isempty(obj)
+                if strcmp(obj.Tag, 'DoTICS') || strcmp(obj.Tag, 'Reset')
+                    % store or reset the values for each correlation
+                    MIAData.TICS.Thresholds{i}(1,1) = min(min(G1));
+                    MIAData.TICS.Thresholds{i}(1,2) = max(max(G1));
+                    MIAData.TICS.Thresholds{i}(2,1) = min(min(brightness));
+                    MIAData.TICS.Thresholds{i}(2,2) = max(max(brightness));
+                    MIAData.TICS.Thresholds{i}(3,1) = min(min(counts));
+                    MIAData.TICS.Thresholds{i}(3,2) = max(max(counts));
+                    MIAData.TICS.Thresholds{i}(4,1) = min(min(halflife));
+                    MIAData.TICS.Thresholds{i}(4,2) = max(max(halflife));
+                    
+                    % display the values of the popupmenu selected correlation
+                    h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
+                    h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
+                    h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
+                    h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
+                    h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
+                    h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
+                    h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
+                    h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                elseif strcmp(obj.Tag, 'SelectCor')
+                    % display the values of the popupmenu selected correlation
+                    h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
+                    h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
+                    h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
+                    h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
+                    h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
+                    h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
+                    h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
+                    h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                elseif strcmp(obj.Tag, 'thresholds')
+                    % user changed threshold value
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1) = str2num(h.Mia_TICS.Threshold_G1_Min_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2) = str2num(h.Mia_TICS.Threshold_G1_Max_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1) = str2num(h.Mia_TICS.Threshold_brightness_Min_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2) = str2num(h.Mia_TICS.Threshold_brightness_Max_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1) = str2num(h.Mia_TICS.Threshold_counts_Min_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2) = str2num(h.Mia_TICS.Threshold_counts_Max_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1) = str2num(h.Mia_TICS.Threshold_halflife_Min_Edit.String);
+                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2) = str2num(h.Mia_TICS.Threshold_halflife_Max_Edit.String);
+                end
+            end
+            
+            %%% Sets unselected pixels to NaN
+            if size(MIAData.TICS.MS,1)~=size(MIAData.TICS.Data{i},1) || size(MIAData.TICS.MS,2)~=size(MIAData.TICS.Data{i},2)
+                TICS = MIAData.TICS.Data{i};
+                MIAData.TICS.MS = true(size(MIAData.TICS.Int{1}));
+                mask = MIAData.TICS.MS;
+            else    
+                % take the thresholds into account in the mask
+                mask = true(size(MIAData.TICS.Int{1}));
+                mask(G1 < MIAData.TICS.Thresholds{i}(1,1)) = false;
+                mask(G1 > MIAData.TICS.Thresholds{i}(1,2)) = false;
+                mask(brightness < MIAData.TICS.Thresholds{i}(2,1)) = false;
+                mask(brightness > MIAData.TICS.Thresholds{i}(2,2)) = false;
+                mask(counts < MIAData.TICS.Thresholds{i}(3,1)) = false;
+                mask(counts > MIAData.TICS.Thresholds{i}(3,2)) = false;
+                mask(halflife < MIAData.TICS.Thresholds{i}(4,1)) = false;
+                mask(halflife > MIAData.TICS.Thresholds{i}(4,2)) = false;
+                % apply thresholds and freehand mask
+                mask = mask & MIAData.TICS.MS;
+                TICS = MIAData.TICS.Data{i};
+                TICS(repmat(~mask,1,1,size(TICS,3))) = NaN;
+            end
+            %set the intensity NaN outside the mask
+            Int1 = MIAData.TICS.Int{1};
+            Int2 = MIAData.TICS.Int{2};
+            Int1(~mask)=NaN;
+            Int2(~mask)=NaN;
+            
+            %%% Averages pixel TICS data for selected (~NaN) pixels and
+            %%% plots the curve
+            h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
+            h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
+            EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
+            h.Plots.TICS(i,1).UData = EData;
+            h.Plots.TICS(i,1).LData = EData;
+            
+            MIAData.TICS.Counts = [nanmean(nanmean(Int1,2),1) nanmean(nanmean(Int2,2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            data{i}.Valid = 1;
+            data{i}.Cor_Times = (1:size(MIAData.TICS.Data{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            data{i}.Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
+            data{i}.Cor_Array = data{i}.Cor_Average';
+            data{i}.Cor_SEM = EData;
+            
+            %%% Updates fit curve
+            Calc_TICS_Fit([],[],i);
+            
+            %%% Plots individual pixel data in images
+            switch(h.Mia_TICS.SelectImage.Value)
+                case 1 %%% G(first lag)
+                    h.Plots.TICSImage(i).CData = G1;
+                case 2 %%% G(first lag)./mean(Counts)
+                    h.Plots.TICSImage(i).CData = brightness;
+                case 3 %%% Mean counts
+                    h.Plots.TICSImage(i).CData = counts;
+                case 4 %%% Find G(0)/2
+                    h.Plots.TICSImage(i).CData = halflife;
+            end
+            %%% Sets transparency of unselected pixels to 80%
+            h.Plots.TICSImage(i).AlphaData = (any(~isnan(TICS),3)+0.25)/1.25;
+            
+            %%% Updates axis and shows plots
+            h.Mia_TICS.Image(i,1).XLim = [0 size(TICS,2)]+0.5;
+            h.Mia_TICS.Image(i,1).YLim = [0 size(TICS,1)]+0.5;
+            h.Plots.TICSImage(i).Visible = 'on';
+            h.Mia_TICS.Image(i,2).Visible = 'on';
+            h.Mia_TICS.Image(i,1).Visible = 'on';
+        else %%% Hides plots, if no TICS data exists for current channel
+            h.Plots.TICS(i,1).Visible = 'off';
+            h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.TICSImage(i).Visible = 'off';
+            h.Mia_TICS.Image(i,2).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+        end
+    end
+    % Save displayed TICS data
+    if ~isempty(obj)
+        if strcmp(obj.Tag, 'Save')
+            Save_TICS([],[],data)
+        end
+    end
 end
 
 %% Plots STICS/iMSD data
@@ -4199,7 +5198,7 @@ if any(mode==6)
             
             h.Plots.STICSImage(i,1).CData = MIAData.STICS{i}(X(1):X(2),Y(1):Y(2),round(h.Mia_STICS.Lag_Slider.Value+1));
             h.Plots.STICSImage(i,1).Visible = 'on';
-            h.Mia_STICS.Image(i,2).Visible = 'on';           
+            h.Mia_STICS.Image(i,2).Visible = 'on';
             %% Fitted iMSD plot
             Size = str2double(h.Mia_Image.Settings.Image_Size.String);
             Time = (0:(numel(MIAData.iMSD{i,1})-1))*str2double(h.Mia_Image.Settings.Image_Frame.String);
@@ -4210,7 +5209,7 @@ if any(mode==6)
             h.Plots.STICS(i,1).LData = (MIAData.iMSD{i,1}.^2-MIAData.iMSD{i,2}(:,2).^2).*Size.^2/10^6;
             h.Plots.STICS(i,1).Visible = 'on';
             h.Plots.STICS(i,1).Visible = 'on';
-            %%% Fit 
+            %%% Fit
             Time = linspace(0,Time(end),1000);
             P = cellfun(@str2double,h.Mia_STICS.Fit_Table.Data(1:2:end,i));
             h.Plots.STICS(i,2).YData = P(1)^2+4*P(2).*(Time.^P(3));
@@ -4219,7 +5218,7 @@ if any(mode==6)
             h.Plots.STICS(i,2).Visible = 'on';
             
             h.Mia_STICS.Axes.XLim = [0 Time(end)];
-          
+            
         else
             h.Plots.STICSImage(i,1).Visible = 'off';
             h.Mia_STICS.Image(i,2).Visible = 'off';
@@ -4235,7 +5234,7 @@ end
 if numel(MIAData.FileName)==2
     h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
 elseif numel(MIAData.FileName)==1
-    h.Mia_Progress_Text.String = MIAData.FileName{1}{1};  
+    h.Mia_Progress_Text.String = MIAData.FileName{1}{1};
 else
     h.Mia_Progress_Text.String = 'Nothing loaded';
 end
@@ -4275,7 +5274,7 @@ if size(MIAData.Data,1)>0
                 Frame=round(Frame);
                 h.Mia_Image.Settings.Channel_Frame(channel).String=num2str(Frame);
             end
-            if Frame<0;
+            if Frame<0
                 Frame=0;
                 h.Mia_Image.Settings.Channel_Frame(channel).String='0';
             end
@@ -4352,6 +5351,7 @@ if size(MIAData.Data,1)>0
     end
     %%% Sets the frame use value
     if str2double(h.Mia_Image.Settings.Channel_Frame(1).String)>0
+        % MIAData.Use is just a 1xFrames logical with the checkboxes
         h.Mia_Image.Settings.Channel_FrameUse(1).Value=MIAData.Use(1,str2double(h.Mia_Image.Settings.Channel_Frame(1).String));
     end
     if str2double(h.Mia_Image.Settings.Channel_Frame(2).String)>0
@@ -4362,15 +5362,19 @@ end
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Color(Obj,~,mode)
-Color=uisetcolor;
+if ~isdeployed
+    Color=uisetcolor;
+elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+    Color = color_setter(Obj.UserData); % open dialog to input color
+end
 if numel(Color)
     Obj.UserData=Color;
 end
 Update_Plots([],[],1,mode);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Selects\Unselects frames %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Selects\Unselects frames via checkbox %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_UseFrame(~,~,mode)
+function Mia_CheckFrame(~,~,mode) %mode is channel
 global MIAData
 h = guidata(findobj('Tag','Mia'));
 if h.Mia_Image.Settings.Channel_Link.Value
@@ -4381,6 +5385,7 @@ else
     MIAData.Use(mode,str2double(h.Mia_Image.Settings.Channel_Frame(mode).String))=h.Mia_Image.Settings.Channel_FrameUse(mode).Value;
 end
 h.Mia_Image.Settings.ROI_FramesUse.Value=2;
+MIA_Various([],[],3)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4428,7 +5433,7 @@ for i=1:2
                 if h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(nanmean(nanmean(Add)));
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(Add(:));
                 clear Add
             case 3 %%% Frame ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
@@ -4520,7 +5525,10 @@ for i=1:2
         %%% Removes NaNs from file
         %%% Sometimes happens with filtered data
         MIAData.Data{i,2}(isnan(MIAData.Data{i,2})) = 0;
-    end   
+        %subtract the background stored displayed on the ROI tab
+        MIAData.Data{i,2}=MIAData.Data{i,2}-str2double(h.Mia_Image.Settings.Background(i).String);
+        
+    end
 end
 
 Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
@@ -4570,14 +5578,18 @@ for i=Channel
     Data=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3);
     %%% Logical array to determin which pixels to use
     Use=true(size(Data));
-    
-    %%% Removes pixel below an intensity threshold set in kHz
-    if Int_Min(i)>0
-        Use(Data<Int_Min(i))=false;
-    end
-    %%% Removes pixel above an intensity threshold set in kHz
-    if Int_Max(i)>Int_Min(i)
-        Use(Data>Int_Max(i))=false;
+    if ~h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value
+        %%% Removes pixel below an intensity threshold set in kHz
+        if Int_Min(i)>0
+            Use(Data<Int_Min(i))=false;
+        end
+        %%% Removes pixel above an intensity threshold set in kHz
+        if Int_Max(i)>Int_Min(i)
+            Use(Data>Int_Max(i))=false;
+        end
+        if h.Mia_Image.Settings.ROI_AR_median.Value
+            Use = medfilt2(Use,[Var_SubSub,Var_SubSub]);
+        end
     end
     MIAData.AR{i,2}=Use;
     %% Sliding window thresholding for arbitrary region ICS
@@ -4589,7 +5601,7 @@ for i=Channel
     
     %%% Thresholding operates on uncorrected data
     Data=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-    %%% Exdents aray to determine which pixels to use, because now
+    %%% Extends aray to determine which pixels to use, because now
     %%% every frame is calculated individually
     Use=repmat(Use,[1 1 size(Data,3)]);
     if Var_SubSub>1 && Var_Sub>Var_SubSub
@@ -4602,6 +5614,7 @@ for i=Channel
             %%% Calculates mean of both subregions
             Mean1=filter2(Filter1,Data(:,:,j));
             Mean2=filter2(Filter2,Data(:,:,j));
+            BleachFact = mean2(Data(:,:,j))/mean2(Data(:,:,1));
             %%% Calculates population variance for both subregions (sample2population var)
             Var1=(filter2(Filter1,Data(:,:,j).^2)-Mean1.^2)*(Var_SubSub^2/(Var_SubSub^2-1));
             Var2=(filter2(Filter2,Data(:,:,j).^2)-Mean2.^2)*((Var_Sub^2)/(Var_Sub^2-1));
@@ -4612,17 +5625,36 @@ for i=Channel
             if Var_Fold_Min<1 && Var_Fold_Min>0
                 Use(:,:,j)=Use(:,:,j) & (Var1>(Var2*Var_Fold_Min));
             end
-            %%% Discards samples with too low\high intensities
+            %%% Discards samples with too low\high relative intensities
             if Int_Fold_Max>1
                 Use(:,:,j)=Use(:,:,j) & (Mean1<(Mean2*Int_Fold_Max));
             end
             if Int_Fold_Min<1 && Int_Fold_Min>0
                 Use(:,:,j)=Use(:,:,j) & (Mean1>(Mean2*Int_Fold_Min));
             end
+            if h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value
+                %%% Discards samples with too low\high absolute intensities
+                if Int_Max(i)>Int_Min(i)
+                    Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)<Int_Max(i));
+                end
+                if Int_Min(i)>0
+                    Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)>Int_Min(i));
+                end
+            end
+            %%% For very low frame intensities, the IntFold and VarFold calculations fail
+            %%% Include regions again in the ROI that contained no signal to begin with
+            Mean1_zero = false(size(Mean1));
+            Mean1_zero(Mean1==0) = true;
+            Use(:,:,j) = Use(:,:,j) | Mean1_zero;
+            %%% median filter the image
+            if h.Mia_Image.Settings.ROI_AR_median.Value
+                Use(:,:,j) = medfilt2(Use(:,:,j),[Var_SubSub,Var_SubSub]);
+            end
         end
         %%% Discards border pixels, where variance and intensity were not calculated
         Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
         Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
+        
     end
     
     %%% Removes pixels, if invalid pixels were used for averaging
@@ -4820,24 +5852,24 @@ switch mode
         ROI = imfreehand;
         Mask = createMask(ROI);
         delete(ROI);        
-        if any(~MIAData.TICS_MS(:))
-            MIAData.TICS_MS = MIAData.TICS_MS | Mask;
+        if any(~MIAData.TICS.MS(:))
+            MIAData.TICS.MS = MIAData.TICS.MS | Mask;
         else
-            MIAData.TICS_MS = Mask;
+            MIAData.TICS.MS = Mask;
         end
         Update_Plots([],[],5,1:size(MIAData.Data,1));
     case 5 %%% Unselect Region for TICS manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
         delete(ROI);
-        if ~isempty(MIAData.TICS_MS)
-            MIAData.TICS_MS = MIAData.TICS_MS & ~Mask;
+        if ~isempty(MIAData.TICS.MS)
+            MIAData.TICS.MS = MIAData.TICS.MS & ~Mask;
         else
-            MIAData.TICS_MS = ~Mask;
+            MIAData.TICS.MS = ~Mask;
         end
         Update_Plots([],[],5,1:size(MIAData.Data,1));
     case 6 %%% Clear Region for TICS manual seletion
-        MIAData.TICS_MS = [];
+        MIAData.TICS.MS = true(size(MIAData.TICS.Int{1}));
         Update_Plots([],[],5,1:size(MIAData.Data,1));
         
 end
@@ -4999,22 +6031,29 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_Orientation(hObject,~)
-global MIAData
+function Mia_Orientation(~,~,mode)
+global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
 
-if isempty(MIAData.Data) || size(MIAData.Data,1)~=2
+if isempty(MIAData.Data)
     return;
 end
 
-switch hObject.String
-    case h.Mia_Image.Settings.Orientation_Flip_Hor.String
+switch mode
+    case {1, 2, 3}
+        if size(MIAData.Data,1)~=2
+            return;
+        end
+end
+switch mode
+    %% Rotate and flip data
+    case 1
         MIAData.Data(2,:) = cellfun(@(x)fliplr(x),MIAData.Data(2,:),'UniformOutput',false);
         
-    case h.Mia_Image.Settings.Orientation_Flip_Ver.String
+    case 2
         MIAData.Data(2,:) = cellfun(@(x)flipud(x),MIAData.Data(2,:),'UniformOutput',false);
         
-    case h.Mia_Image.Settings.Orientation_Rotate.String
+    case 3
         switch h.Mia_Image.Settings.Orientation_Rotate_Dir.Value
             case 1 % clockwise
                 d = 1;
@@ -5022,14 +6061,44 @@ switch hObject.String
                 d = -1;
         end
         MIAData.Data(2,:) = cellfun(@(x)rot90(x,d),MIAData.Data(2,:),'UniformOutput',false);
+    %% Convert data to photon counting when parameters change
+    case 4
+    % callback of the editboxes
+        for i = 1:size(MIAData.Data,1)
+            % read new values from user interface
+            S = str2double(h.Mia_Image.Settings.S.String);
+            offset = str2double(h.Mia_Image.Settings.Offset.String);
+            % scale the displayed data to S = 1 and offset = 0
+            MIAData.Data{i,1} = (MIAData.Data{i,1}.*UserValues.MIA.Options.S)+UserValues.MIA.Options.Offset;
+            % scale the displayed data to the new values
+            MIAData.Data{i,1} = (MIAData.Data{i,1}-offset)./S;
+            %%% Updates plots
+            Mia_ROI([],[],1)
+        end
+        
+        % store the new values in UserValues
+        UserValues.MIA.Options.S = S;
+        UserValues.MIA.Options.Offset = offset;
+        LSUserValues(1)
+    case 5
+    % Convert data to photon counting upon data load
+        for i = 1:size(MIAData.Data,1)
+            % rescale the data
+            MIAData.Data{i,1} = (MIAData.Data{i,1}-str2double(h.Mia_Image.Settings.Offset.String))./str2double(h.Mia_Image.Settings.S.String);
+        end
 end
+
 Update_Plots([],[],1,1:size(MIAData.Data,1));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_2D_XCor(~,~)
+function Do_2D_XCor(~,~,mode)
+% mode = 1 % RICS
+% mode = 2 % Van steensel type co-localization
+
 h = guidata(findobj('Tag','Mia'));
+
 global MIAData UserValues
 
 %%% Stops, if no data was loaded
@@ -5065,7 +6134,10 @@ if size(MIAData.Data,1)<2
 end
 
 %%% Determins, which correlations to perform
-if h.Mia_Image.Calculations.Cor_Type.Value==3
+if mode == 2 %Van Steensel type colocalization
+    Auto = 1:2; Cross = 1;
+    channel=2; %the CCF is stored at channe 2
+elseif h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto=1:2; Cross=1;
     channel=1:3;
 else
@@ -5081,7 +6153,7 @@ if all(Frames==0)
     Frames=1:size(MIAData.Data{1,2},3);
 end
 %%% Remove all Frames<1 and >Movie size
-if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
+if any(Frames<0 | Frames>size(MIAData.Data{1,2},3))
     Min=max(1,min(Frames)); Min=min(Min,size(MIAData.Data{1,2},3));   
     Max=min(size(MIAData.Data{1,2},3),max(Frames)); Max=max(Max,1);
     Frames=Min:Max;
@@ -5142,7 +6214,7 @@ for i=Auto
             %%% Used to calculate total mean
             TotalInt(j)=sum(sum((Image)));
             TotalPx(j)=numel(Image);
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(size(Image,1)*size(Image,2)*(mean2(Image))^2)-1;
         end
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
@@ -5155,7 +6227,7 @@ end
 %%% Performs crosscorrelation
 if Cross
     MIAData.Cor{2}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
-    for j=i:numel(Frames)
+    for j=1:numel(Frames)
         Image{1}=double(MIAData.Data{1,2}(:,:,Frames(j)));
         Image{2}=double(MIAData.Data{2,2}(:,:,Frames(j)));
         Size = [2*size(Image{1},1)-1, 2*size(Image{1},2)-1];
@@ -5174,10 +6246,23 @@ if Cross
             %%% Corrects for shape of selected region
             ImageCor = ImageCor./Norm;
             ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(2)/4):round(Size(2)*3/4));
-            MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+            switch mode
+                case 1 %normal cc(R)ICS
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+                case 2 %Van Steensel type colocalization, but then in 2D
+                    MIAData.Cor{2}(:,:,j)=ImageCor/(std(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*std(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+            end
         else
+            ImageFluct{1} = Image{1}-mean2(Image{1});
+            ImageFluct{2} = Image{2}-mean2(Image{2});
             %%% Actual correlation
-            MIAData.Cor{2}(:,:,j)=(fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2})*size(Image{1},1)*size(Image{1},2))) - 1;
+            MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(fft2(ImageFluct{1}).*conj(fft2(ImageFluct{2})))))/(size(Image{1},1)*size(Image{1},2));
+            switch mode
+                case 1 %normal cc(R)ICS
+                    MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(mean2(Image{1})*mean2(Image{2}));
+                case 2 %Van Steensel type colocalization, but then in 2D
+                    MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(std2(Image{1})*std2(Image{2}));
+            end
         end
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
@@ -5214,13 +6299,20 @@ for i=1:size(MIAData.Cor)
     end
 end
 
+switch mode
+    case 1 %normal RICS
+        savedata = h.Mia_Image.Calculations.Cor_Save_ICS.Value;
+    case 2 %Van Steensel type colocalization
+        savedata = h.Mia_Image.Calculations.Save_Coloc.Value;
+end
+
 %%% Saves correlation files
-if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
+if savedata > 1
     if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
         mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
     end
     
-    if h.Mia_Image.Calculations.Cor_Save_ICS.Value ~= 4 %% normal saving
+    if savedata ~= 4 %% normal saving
         Window = numel(Frames);
         Offset = numel(Frames);
         Blocks = 1;
@@ -5339,9 +6431,11 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                     InfoAll(3).AR = [];
                 case 3 %%% Arbitrary region
                     %%% Mean intensity of selected pixels [counts]
+                    Use1 = Use{1}(frames);
+                    Use2 = Use{2}(frames);
                     Image1 = double(MIAData.Data{1,2}(:,:,frames));
                     Image2 = double(MIAData.Data{2,2}(:,:,frames));
-                    InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
+                    InfoAll(3).Mean = (mean(Image1(Use1 & Use2)) + mean(Image2(Use1 & Use2)))/2;
                     %%% Arbitrary region information
                     InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
                     InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
@@ -5362,7 +6456,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,1:numel(frames)),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,(1:numel(frames))+(b-1)*Offset),3));
         end
         %% Saves correlations
-        switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
+        switch savedata
             case {2,4} %%% .miacor filetype
                 
                 %% Creates new filename
@@ -5415,7 +6509,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                 %%% Saves Auto correlations
                 for i=Auto
                     Info = InfoAll(i); %#ok<NASGU>
-                    Data = DataAll(i,:); %#ok<NASGU>
+                    Data = DataAll(i,:); 
                     if i==1
                         save(Current_FileName1,'Info','Data');
                     else
@@ -5425,7 +6519,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                 %%% Saves Cross correlations
                 if Cross
                     Info = InfoAll(3); %#ok<NASGU>
-                    Data = DataAll(3,:); %#ok<NASGU>
+                    Data = DataAll(3,:); 
                     save(Current_FileName3,'Info','Data');
                 end
                 
@@ -5688,8 +6782,8 @@ Update_Plots([],[],2,channel);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate temporal image correlations %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_1D_XCor(~,~)
-global MIAData UserValues
+function Do_1D_XCor(obj,~)
+global MIAData
 h = guidata(findobj('Tag','Mia'));
 
 %%% Stops, if no data was loaded
@@ -5701,15 +6795,15 @@ h.Mia_Progress_Text.String = 'Correlating';
 h.Mia_Progress_Axes.Color=[1 0 0];  
 drawnow;
 %%% Clears correlation data and plots
-MIAData.TICS = [];
-MIAData.TICS_MS = [];
+MIAData.TICS.Data = [];
+MIAData.TICS.MS = [];
 
 %%% Adjust for number of selected files
 if size(MIAData.Data,1)<2
     h.Mia_Image.Calculations.Cor_Type.Value = 1;
 end
 
-%%% Determins, which correlations to perform
+%%% Determines, which correlations to perform
 if h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto = 1:2; Cross = 1;
     channel = 1:3;
@@ -5717,6 +6811,8 @@ else
     Auto = h.Mia_Image.Calculations.Cor_Type.Value; Cross = 0;
     channel = floor(Auto*1.5);
 end
+MIAData.TICS.Auto = Auto;
+MIAData.TICS.Cross = Cross;
 
 %%% Determins, which frames to correlate
 Frames = sort(str2num(h.Mia_Image.Settings.ROI_Frames.String)); %#ok<ST2NM> %%% Uses str2num, because the output is not scalar
@@ -5725,7 +6821,7 @@ if all(Frames == 0)
     Frames = 1:size(MIAData.Data{1,2},3);
 end
 %%% Remove all Frames<1 and >Movie size
-if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
+if any(Frames<0 | Frames>size(MIAData.Data{1,2},3))
     Min = max(1,min(Frames)); Min = min(Min,size(MIAData.Data{1,2},3));   
     Max = min(size(MIAData.Data{1,2},3),max(Frames)); Max = max(Max,1);
     Frames = Min:Max;
@@ -5759,7 +6855,8 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
             Use{i} = logical(MIAData.AR{i,1}(:,:,1:Frames(end)) & repmat(MIAData.MS{i},1,1,Frames(end)));
         end   
 end
-
+MIAData.TICS.Frames = Frames;
+MIAData.TICS.Use = Use;
 %% Performs TICS correlation
 for i=1:3 %%%    
     if any(Auto==i) || (i==3 && Cross)       
@@ -5827,178 +6924,42 @@ for i=1:3 %%%
             TICSresult = TICSresult./Norm;
             clear Norm;
             %%% Normalizes to pixel intensity
-            MIAData.TICS{i}(l,:,:) = TICSresult./repmat(Int{1}(l,:).*Int{2}(l,:),1,1,size(TICSresult,3));
+            MIAData.TICS.Data{i}(l,:,:) = TICSresult./repmat(Int{1}(l,:).*Int{2}(l,:),1,1,size(TICSresult,3));
         end
         clear Normt;
-        MIAData.TICS_Int{i,1} = Int{1};
-        MIAData.TICS_Int{i,2} = Int{2};
+        MIAData.TICS.Int{i,1} = Int{1};
+        MIAData.TICS.Int{i,2} = Int{2};
         clear TICSresult;
         %%% Remove too dark pixels
         Valid = sqrt(Int{1}.*Int{2})> nanmean(nanmean(sqrt(Int{1}.*Int{2}),2),1)/10;
-        MIAData.TICS{i}(~repmat(Valid,1,1,size(MIAData.TICS{i},3))) = NaN;
-        %% Saves data
-        if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
-            if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
-                mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
-            end
-            %%% Generates filename
-            if i<3
-                FileName = MIAData.FileName{i}{1}(1:end-4);
-                Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF' num2str(i) '.mcor']);
-            else
-                FileName = MIAData.FileName{1}{1}(1:end-4);
-                Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
-            end
-            
-            k=0;
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                %%% Increases counter, until no file is fount
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                end
-            end
-            
-            Header = 'TICS correlation file'; %#ok<NASGU>
-            Counts = [nanmean(nanmean(Int{1},2),1) nanmean(nanmean(Int{2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-            Valid = 1;
-            Cor_Times = (1:size(MIAData.TICS{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS{i},2),1))');
-            Cor_Array = Cor_Average';
-            Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS{i},0,2),0,1))');
-            Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS{i}),[],size(MIAData.TICS{i},3)),1));
-            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-        end     
+        MIAData.TICS.Data{i}(~repmat(Valid,1,1,size(MIAData.TICS.Data{i},3))) = NaN;
+        MIAData.TICS.Counts = [nanmean(nanmean(Int{1},2),1) nanmean(nanmean(Int{2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+        data{i}.Valid = 1;
+        data{i}.Cor_Times = (1:size(MIAData.TICS.Data{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+        data{i}.Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS.Data{i},2),1))');
+        data{i}.Cor_Array = data{i}.Cor_Average';
+        data{i}.Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS.Data{i},0,2),0,1))');
+        data{i}.Cor_SEM = data{i}.Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS.Data{i}),[],size(MIAData.TICS.Data{i},3)),1));
     end
 end
-if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
-    %% Get Info structure
-    Info = struct;
-    %%% Pixel [us], Line [ms] and Frametime [s]
-    Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
-    %%% Pixel size
-    Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
-    %%% ROI and TOI
-    Info.Frames = Frames;
-    From = h.Plots.ROI(1).Position(1:2)+0.5;
-    To = From+h.Plots.ROI(1).Position(3:4)-1;
-    Info.ROI = [From To];
-    %%% Countrate
-    Info.Counts = Counts;
-    %%% Correction information
-    Info.Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
-    if h.Mia_Image.Settings.Correction_Subtract.Value == 4
-        Info.Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
-    end
-    Info.Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
-    if h.Mia_Image.Settings.Correction_Add.Value == 5
-        Info.Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
-    end
-    %%% Correlation Type (Arbitrary region == 3)
-    Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
-    switch h.Mia_Image.Settings.ROI_FramesUse.Value
-        case {1,2} %%% All/Selected frames
-            %%% Mean intensity [counts]
-            for i = 1:2
-                if any(Auto==i)      
-                    Info.Mean(i) = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
-                end
-            end
-            Info.AR = [];
-        case 3 %%% Arbitrary region
-            %%% Mean intensity of selected pixels [counts]
-            for i = 1:2
-                if any(Auto==i)
-                    Image = double(MIAData.Data{i,2}(:,:,Frames));
-                    Info.Mean(i) = mean(Image(Use{i}));
-                end
-            end
-            %%% Arbitrary region information
-            Info.AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-            Info.AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-            Info.AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-            Info.AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-            Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-            Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-            Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-            Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-            Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-            Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
-    end
-    %% Saves info file 
-    if k==0
-        Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
-    else
-        Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(k) '.txt']);
-    end
-    FID = fopen(Current_FileName,'w');
-    fprintf(FID,'%s\n','Image Correlation info file');
-    %%% Pixel\Line\Frame times
-    fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
-    fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
-    fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
-    %%% Pixel size
-    fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
-    %%% Region of interest
-    fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
-    %%% Counts per pixel
-    fprintf(FID,'%s\t%f\t%f\n', 'Mean counts per pixel:',Info.Counts(1),Info.Counts(2));
-    %%% Frames used
-    fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
-    %%% Subtraction used
-    switch h.Mia_Image.Settings.Correction_Subtract.Value
-        case 1
-            fprintf(FID,'%s\n','Nothing subtracted');
-        case 2
-            fprintf(FID,'%s\n','Frame mean subtracted');
-        case 3
-            fprintf(FID,'%s\n','Pixel mean subtracted');
-        case 4
-            fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
-    end
-    %%% Addition used
-    switch h.Mia_Image.Settings.Correction_Subtract.Value
-        case 1
-            fprintf(FID,'%s\n','Nothing added');
-        case 2
-            fprintf(FID,'%s\n','Total mean added');
-        case 3
-            fprintf(FID,'%s\n','Frame mean added');
-        case 4
-            fprintf(FID,'%s\n','Pixel mean added');
-        case 5
-            fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
-    end
-    %%% Arbitrary region
-    if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-        fprintf(FID,'%s\n','Arbitrary region used:');
-        fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min(1), '; ',Info.AR.Int_Min(2));
-        fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max(1), '; ',Info.AR.Int_Max(2));
-        fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
-        fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
-        fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
-    end
-    fclose(FID);
+%% Saves data & info file
+if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2   
+    Save_TICS([],[],data)
 end
 %%% Switches 2nd and 3rd entry to make it conform with ICS
 %%% Cross is 2nd entry
-if size(MIAData.TICS,2)>1
-    if size(MIAData.TICS,2)==2
-        MIAData.TICS{3} = MIAData.TICS{2};
-        MIAData.TICS{2} = [];
-        MIAData.TICS_Int{3} = MIAData.TICS_Int{2};
-        MIAData.TICS_Int{2} = [];
+if size(MIAData.TICS.Data,2)>1
+    if size(MIAData.TICS.Data,2)==2
+        % User calculated ACF2
+        MIAData.TICS.Data{3} = MIAData.TICS.Data{2};
+        MIAData.TICS.Data{2} = [];
     else
-        MIAData.TICS = MIAData.TICS([1 3 2]);
-        MIAData.TICS_Int = MIAData.TICS_Int([1 3 2]);
+        % User calculated ACF+CCF
+        MIAData.TICS.Data = MIAData.TICS.Data([1 3 2]);
     end
 end
 
-Update_Plots([],[],5,channel);
+Update_Plots(obj,[],5,channel);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate STICS/iMSD correlations %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6031,7 +6992,7 @@ if all(Frames==0)
     Frames=1:size(MIAData.Data{1,2},3);
 end
 %%% Remove all Frames<1 and >Movie size
-if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
+if any(Frames<0 | Frames>size(MIAData.Data{1,2},3))
     Min=max(1,min(Frames)); Min=min(Min,size(MIAData.Data{1,2},3));   
     Max=min(size(MIAData.Data{1,2},3),max(Frames)); Max=max(Max,1);
     Frames=Min:Max;
@@ -6415,7 +7376,7 @@ if str2double(h.Mia_ICS.Frame.String)==0
 else
     SEM=ones(size(YData));
 end
-if any(any(SEM==0));
+if any(any(SEM==0))
     SEM=1;
 end
 
@@ -6483,7 +7444,7 @@ drawnow;
 
 
 for i=1:3
-    if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})
+    if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
         %%% Extracts parameters and data
         NotFixed=find(~cell2mat(h.Mia_TICS.Fit_Table.Data(2:2:end,i)));
         Params=cellfun(@str2double,h.Mia_TICS.Fit_Table.Data(1:2:end,i));
@@ -6514,18 +7475,18 @@ P(Data{2}) = Fit_Params;
 X = Data{3};
 SEM = Data{4};
 
-%%%-----------------------------FIT FUNCTION----------------------------%%%  
+%%%-----------------------------FIT FUNCTION----------------------------%%%
 OUT=(1/sqrt(8))*1/P(1).*(1./(1+4*(P(2)*1e-12).*X/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12).*X/(P(4)*1e-6)^2))+P(5);
 OUT=OUT./SEM;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates fit function without fitting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [OUT] = Calc_TICS_Fit(~,~,mode)
 h = guidata(findobj('Tag','Mia'));
 global MIAData
 
 for i=mode
-    if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})
+    if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
         P = cellfun(@str2double,h.Mia_TICS.Fit_Table.Data(1:2:end,i));
         X = logspace(log10(h.Plots.TICS(i,1).XData(1)),log10(h.Plots.TICS(i,1).XData(end)),1000);
         
@@ -6543,6 +7504,186 @@ for i=mode
 end
 drawnow
 
+function Save_TICS(~,~, data)
+global UserValues MIAData
+h = guidata(findobj('Tag','Mia'));
+
+if ~h.Mia_Image.Calculations.Save_Name.Value
+    switch MIAData.Type
+        case {1,1.5, 2}
+            FileName=MIAData.FileName{1}{1}(1:end-4);
+    end
+    [FileName,PathName] = uiputfile([FileName '.mcor'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+    FileName = FileName(1:end-5);
+end
+
+for i = 1:3
+    if any(MIAData.TICS.Auto==i) || (i==3 && MIAData.TICS.Cross)
+        if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
+            mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
+        end
+        %%% Generates filename
+        if h.Mia_Image.Calculations.Save_Name.Value
+            if i == 1 %ACF1
+                FileName = MIAData.FileName{i}{1}(1:end-4);
+            elseif i == 2 %ACF2
+                FileName = MIAData.FileName{1}{1}(1:end-4);
+            elseif i == 3 %CCF
+                FileName = MIAData.FileName{2}{1}(1:end-4);
+            end
+            if i==1
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
+            elseif i==2
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
+            else
+                Current_FileName = fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
+            end
+        else
+            if i==1
+                Current_FileName=fullfile(PathName,[FileName '_ACF1.mcor']);
+            elseif i==2
+                Current_FileName=fullfile(PathName,[FileName '_ACF2.mcor']);
+            else
+                Current_FileName=fullfile(PathName,[FileName '_CCF.mcor']);
+            end
+        end
+        
+        k=0;
+        %%% Checks, if file already exists
+        if  exist(Current_FileName,'file')
+            k=1;
+            %%% Adds 1 to filename
+            Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+            %%% Increases counter, until no file is fount
+            while exist(Current_FileName,'file')
+                k=k+1;
+                Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+            end
+        end
+        Header = 'TICS correlation file'; %#ok<NASGU>
+        Counts = MIAData.TICS.Counts;
+        Valid = data{i}.Valid;
+        Cor_Times = data{i}.Cor_Times;
+        Cor_Average = data{i}.Cor_Average;
+        Cor_SEM = data{i}.Cor_SEM;
+        Cor_Array = data{i}.Cor_Array;
+        save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+    end
+end
+%% Get Info structure
+Info = struct;
+%%% Pixel [us], Line [ms] and Frametime [s]
+Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
+%%% Pixel size
+Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+%%% ROI and TOI
+Info.Frames = MIAData.TICS.Frames;
+From = h.Plots.ROI(1).Position(1:2)+0.5;
+To = From+h.Plots.ROI(1).Position(3:4)-1;
+Info.ROI = [From To];
+%%% Countrate
+Info.Counts = MIAData.TICS.Counts;
+%%% Correction information
+Info.Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
+if h.Mia_Image.Settings.Correction_Subtract.Value == 4
+    Info.Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+end
+Info.Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
+if h.Mia_Image.Settings.Correction_Add.Value == 5
+    Info.Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+end
+%%% Correlation Type (Arbitrary region == 3)
+Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
+switch h.Mia_Image.Settings.ROI_FramesUse.Value
+    case {1,2} %%% All/Selected frames
+        %%% Mean intensity [counts]
+        for i = 1:2
+            if any(MIAData.TICS.Auto==i)
+                Info.Mean(i) = mean2(double(MIAData.Data{i,2}(:,:,Info.Frames)));
+            end
+        end
+        Info.AR = [];
+    case 3 %%% Arbitrary region
+        %%% Mean intensity of selected pixels [counts]
+        for i = 1:2
+            if any(MIAData.TICS.Auto==i)
+                Image = double(MIAData.Data{i,2}(:,:,Info.Frames));
+                Info.Mean(i) = mean(Image(MIAData.TICS.Use{i}));
+            end
+        end
+        %%% Arbitrary region information
+        Info.AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
+        Info.AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
+        Info.AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
+        Info.AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
+        Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+        Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+        Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+        Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+        Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
+        Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+end
+%% Saves info file
+%FileName = MIAData.FileName{1}{1}(1:end-4);
+Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
+k=0;
+%%% Checks, if file already exists
+if exist(Current_FileName,'file')
+    %%% Increases counter, until no file is fount
+    while exist(Current_FileName,'file')
+        k=k+1;
+        Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info_' num2str(k) '.txt']);
+    end
+end
+
+FID = fopen(Current_FileName,'w');
+fprintf(FID,'%s\n','Image Correlation info file');
+%%% Pixel\Line\Frame times
+fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
+fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+%%% Pixel size
+fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+%%% Region of interest
+fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+%%% Counts per pixel
+fprintf(FID,'%s\t%f\t%f\n', 'Mean counts per pixel:',Info.Counts(1),Info.Counts(2));
+%%% Frames used
+fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+%%% Subtraction used
+switch h.Mia_Image.Settings.Correction_Subtract.Value
+    case 1
+        fprintf(FID,'%s\n','Nothing subtracted');
+    case 2
+        fprintf(FID,'%s\n','Frame mean subtracted');
+    case 3
+        fprintf(FID,'%s\n','Pixel mean subtracted');
+    case 4
+        fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+end
+%%% Addition used
+switch h.Mia_Image.Settings.Correction_Subtract.Value
+    case 1
+        fprintf(FID,'%s\n','Nothing added');
+    case 2
+        fprintf(FID,'%s\n','Total mean added');
+    case 3
+        fprintf(FID,'%s\n','Frame mean added');
+    case 4
+        fprintf(FID,'%s\n','Pixel mean added');
+    case 5
+        fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+end
+%%% Arbitrary region
+if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+    fprintf(FID,'%s\n','Arbitrary region used:');
+    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min(1), '; ',Info.AR.Int_Min(2));
+    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max(1), '; ',Info.AR.Int_Max(2));
+    fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
+    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
+    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
+end
+fclose(FID);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Peforms Gaussian fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6681,15 +7822,15 @@ end
 %% Calculates N&B
 for i=Auto
     %%% Apply Dead time correction
-    MIAData.NB.DTCorr_Img{floor(i*1.5)} = (double(MIAData.Data{i,2}))./(1-double(MIAData.Data{i,2}).*(str2double(h.Mia_Image.Calculations.NB_Detector_Deadtime.String)/(str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000)))
+    MIAData.NB.DTCorr_Img{floor(i*1.5)} = (double(MIAData.Data{i,2}))./(1-double(MIAData.Data{i,2}).*(str2double(h.Mia_Image.Calculations.NB_Detector_Deadtime.String)/(str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000)));
     %%% Limit for PCH
     MaxPhotons=ceil(max(max(max(MIAData.NB.DTCorr_Img{floor(i*1.5)}))));
     %%% Calculaces PCH, mean intensity, standard deviation for each pixel
     MIAData.NB.PCH{floor(i*1.5)}=histc(MIAData.NB.DTCorr_Img{floor(i*1.5)}(:),0:MaxPhotons); 
-    MIAData.NB.Int{floor(i*1.5)}=mean(MIAData.NB.DTCorr_Img{floor(i*1.5)},3, 'omitnan');
-    MIAData.NB.Std{floor(i*1.5)}=std(MIAData.NB.DTCorr_Img{floor(i*1.5)},0,3, 'omitnan');
+    MIAData.NB.Int{floor(i*1.5)}=nanmean(MIAData.NB.DTCorr_Img{floor(i*1.5)},3);
+    MIAData.NB.Std{floor(i*1.5)}=nanstd(MIAData.NB.DTCorr_Img{floor(i*1.5)},0,3);
     %%% Applies spacial filter to intensity and standard deviation
-    if str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)<=1
+    if str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)<=1
         h.Mia_Image.Calculations.NB_Average.Value=1;
     end
     %%% Determinesspatial filter
@@ -6697,11 +7838,11 @@ for i=Auto
         case 1 %%% Do nothing
             Filter = fspecial('average',1);
         case 2 %%% Moving average
-            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)));
+            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)));
         case 3 %%% Disc average
-            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)-1);
+            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)-1);
         case 4 %%% Gaussian average
-            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String),str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)/2);
+            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Radius.String),str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)/2);
     end
     %%% Applies filter
     MIAData.NB.Int{floor(i*1.5)}=imfilter(MIAData.NB.Int{floor(i*1.5)},Filter,'symmetric');
@@ -6711,6 +7852,10 @@ for i=Auto
     %MIAData.NB.Eps{floor(i*1.5)}=MIAData.NB.Std{floor(i*1.5)}.^2./MIAData.NB.Int{floor(i*1.5)};
     MIAData.NB.Num{floor(i*1.5)}=MIAData.NB.Int{floor(i*1.5)}.^2./(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})/sqrt(8);
     MIAData.NB.Eps{floor(i*1.5)}=(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})./MIAData.NB.Int{floor(i*1.5)}*sqrt(8);
+    if h.Mia_Image.Calculations.NB_Median.Value
+        MIAData.NB.Num{floor(i*1.5)}=medfilt2(MIAData.NB.Num{floor(i*1.5)},[3 3]);
+        MIAData.NB.Eps{floor(i*1.5)}=medfilt2(MIAData.NB.Eps{floor(i*1.5)},[3 3]);
+    end
 end
 
 %% Calculates crossN&B
@@ -6722,7 +7867,7 @@ if Cross
     MIAData.NB.Std{2}=sqrt(mean((MIAData.Data{1,2}-repmat(mean(MIAData.Data{1,2},3),[1 1,size(MIAData.Data{1,2},3)]))...
                                  .*(MIAData.Data{2,2}-repmat(mean(MIAData.Data{2,2},3),[1 1,size(MIAData.Data{2,2},3)])),3)); %%% sqrt of co-variance
     %%% Applies spacial filter to intensity and standard deviation
-    if str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)<=1
+    if str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)<=1
         h.Mia_Image.Calculations.NB_Average.Value=1;
     end
     %%% Determinesspatial filter
@@ -6730,11 +7875,11 @@ if Cross
         case 1 %%% Do nothing
             Filter = fspecial('average',1);
         case 2 %%% Moving average
-            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)));
+            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)));
         case 3 %%% Disc average
-            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)-1);
+            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)-1);
         case 4 %%% Gaussian average
-            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String),str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)/2);
+            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Radius.String),str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)/2);
     end
     %%% Applies filter
     MIAData.NB.Int{floor(2)}=imfilter(MIAData.NB.Int{floor(2)},Filter,'symmetric');
@@ -6811,25 +7956,52 @@ end
 function Import_ROI(~,~)
 global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
+% put UI to arbitrary ROI and set to values that will not apply it
+h.Mia_Image.Settings.ROI_FramesUse.Value = 3;
+h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String = 1000;
+h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String = 0.001;
+h.Mia_Image.Settings.ROI_AR_Int_Max(1).String = 10000;
+h.Mia_Image.Settings.ROI_AR_Int_Max(2).String = 10000;
+h.Mia_Image.Settings.ROI_AR_Int_Min(1).String = 0;
+h.Mia_Image.Settings.ROI_AR_Int_Min(2).String = 0;
+h.Mia_Image.Settings.ROI_AR_Same.Value = 1;
+h.Mia_Image.Settings.ROI_AR_Sub1.String = 5;
+h.Mia_Image.Settings.ROI_AR_Sub2.String = 10;
+h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String = 1000;
+h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String = 0.001;
+h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value = 0;
+h.Mia_Image.Settings.ROI_AR_median.Value = 0;
+
+MIA_Various([],[],3);
+
 [FileName,Path] = uigetfile('*.mat', 'Load ROI', UserValues.File.MIAPath);
 if ~(isequal(FileName,0) || isequal(Path,0))
     info = load(strcat(Path,FileName));
-    %Set ROI size and position
-    h.Mia_Image.Settings.ROI_SizeX.String = num2str(info.ROI(1,1));
-    h.Mia_Image.Settings.ROI_SizeY.String = num2str(info.ROI(1,2));
-    h.Mia_Image.Settings.ROI_PosX.String = num2str(info.ROI(1,3));
-    h.Mia_Image.Settings.ROI_PosY.String = num2str(info.ROI(1,4));
-    %Update ROI
-    Mia_ROI([],[],1)
-    %Merge loaded ROI with existing arbitrary region
-    if prod(size(MIAData.MS{1}) == size(info.Mask))&(info.ch==1)
-        MIAData.MS{1} = MIAData.MS{1} & info.Mask;
+    if isfield(info, 'ROI')
+        %Set ROI size and position to the one exported from N&B
+        h.Mia_Image.Settings.ROI_SizeX.String = num2str(info.ROI(1,1));
+        h.Mia_Image.Settings.ROI_SizeY.String = num2str(info.ROI(1,2));
+        h.Mia_Image.Settings.ROI_PosX.String = num2str(info.ROI(1,3));
+        h.Mia_Image.Settings.ROI_PosY.String = num2str(info.ROI(1,4));
     end
-    if prod(size(MIAData.MS{2}) == size(info.Mask))&(info.ch==3)
+    %Update ROI position
+    Mia_ROI([],[],1)
+    if ~isfield(info, 'Mask')
+        a = struct2cell(info);
+        info.Mask = a{1};
+        info.ch = 1;
+    end
+    %Merge loaded ROI with existing arbitrary region
+    if prod(size(MIAData.MS{1}) == size(info.Mask))&&(info.ch==1)
+        MIAData.MS{1} = MIAData.MS{1} & info.Mask;
+        MIAData.MS{2} = MIAData.MS{1};
+    end
+    if prod(size(MIAData.MS{2}) == size(info.Mask))&&(info.ch==3)     
         MIAData.MS{2} = MIAData.MS{2} & info.Mask;
     end
     %Update images
     Mia_Correct([],[],0);
+    % set the ROI popupmenu to Arbitrary
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6839,6 +8011,8 @@ end
 %%% 2:Updates additional parameters plots
 %%% 3:Hide\Show Arbitrary region controls
 %%% 4:Save TICS manual selection
+%%% 5:Display Count rate axes in kHz or a.u.
+
 function MIA_Various(Obj,~,mode)
 h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
@@ -6863,16 +8037,17 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Sub2.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'off';
-                    h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'off';
+                    h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'off';
+                    h.Mia_Image.Settings.ROI_AR_median.Visible = 'off';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
                         h.Mia_Image.Settings.ROI_AR_Text{j}.Visible = 'off';
                     end
-%                     if size(MIAData.Data,1)>0
-%                         MIAData.AR{1} = true(size(MIAData.Data{1,2}));
-%                     end
-%                     if size(MIAData.Data,1)>1
-%                         MIAData.AR{2} = true(size(MIAData.Data{2,2}));
-%                     end
+                    %                     if size(MIAData.Data,1)>0
+                    %                         MIAData.AR{1} = true(size(MIAData.Data{1,2}));
+                    %                     end
+                    %                     if size(MIAData.Data,1)>1
+                    %                         MIAData.AR{2} = true(size(MIAData.Data{2,2}));
+                    %                     end
                     h.Plots.Image(1,2).UIContextMenu = [];
                     h.Plots.Image(2,2).UIContextMenu = [];
                     Update_Plots([],[],1,1:size(MIAData.Data,1));
@@ -6888,7 +8063,8 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Sub2.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'on';
-                    h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'on';
+                    h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'on';
+                    h.Mia_Image.Settings.ROI_AR_median.Visible = 'on';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
                         h.Mia_Image.Settings.ROI_AR_Text{j}.Visible = 'on';
                     end
@@ -6896,58 +8072,28 @@ for i=mode
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
                     Mia_Correct([],[],1);
             end
-        case 4 %%% Save TICS manual selection
-            %%% Generates filename
-            switch(gca)
-                case h.Mia_TICS.Image(1,1)
-                    FileName = MIAData.FileName{1}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
-                    TICS = MIAData.TICS{1};
-                    Counts = [nanmean(nanmean(MIAData.TICS_Int{1,1},2),1) nanmean(nanmean(MIAData.TICS_Int{1,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-                case h.Mia_TICS.Image(2,1)
-                    FileName = MIAData.FileName{1}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
-                    TICS = MIAData.TICS{2};
-                    Counts = [nanmean(nanmean(MIAData.TICS_Int{2,1},2),1) nanmean(nanmean(MIAData.TICS_Int{2,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-                case h.Mia_TICS.Image(3,1)
-                    FileName = MIAData.FileName{2}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
-                    TICS = MIAData.TICS{3};
-                    Counts = [nanmean(nanmean(MIAData.TICS_Int{3,1},2),1) nanmean(nanmean(MIAData.TICS_Int{3,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+        case 4
+            %% Set the background to 0
+            tmp(1) = str2double(h.Mia_Image.Settings.Background(1).String);
+            tmp(2) = str2double(h.Mia_Image.Settings.Background(2).String);
+            h.Mia_Image.Settings.Background(1).String = '0';
+            h.Mia_Image.Settings.Background(2).String = '0';
+            Mia_Correct([],[],1)
+            %% Get the background from the current ROI
+            h.Mia_Image.Settings.Background(1).String = num2str(tmp(1));
+            h.Mia_Image.Settings.Background(2).String = num2str(tmp(2));
+            if size(MIAData.Data,1)==1 && size(MIAData.Data,2)==2
+                h.Mia_Image.Settings.Background(1).String = num2str(mean2(MIAData.Data{1,2}));
+                h.Mia_Image.Settings.Background(2).String = '0';
+            elseif size(MIAData.Data,1)==2 && size(MIAData.Data,2)==2
+                h.Mia_Image.Settings.Background(1).String = num2str(mean2(MIAData.Data{1,2}));
+                h.Mia_Image.Settings.Background(2).String = num2str(mean2(MIAData.Data{2,2}));
+            else
+                h.Mia_Image.Settings.Background(1).String = '0';
+                h.Mia_Image.Settings.Background(2).String = '0';
             end
+            Mia_Correct([],[],1)
             
-            if ~isempty(MIAData.TICS_MS)
-                TICS(repmat(~MIAData.TICS_MS,1,1,size(TICS,3))) = NaN;
-            end
-            
-            
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                %%% Increases counter, until no file is fount
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                end
-            end
-            
-            Header = 'TICS correlation file'; %#ok<NASGU>
-            Valid = 1;
-            Cor_Times = (1:size(TICS,3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
-            Cor_Array = Cor_Average';
-            Cor_SEM = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
-            Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
-            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-        %case 5 %%% Read ROI info file
-        %    [FileName,Path] = uigetfile({'*.txt', 'All Files (*.*)'}, 'Load ROI Info', UserValues.File.MIAPath);
-        %    if ~isempty(FileName)
-        %        info = textread(strcat(Path,FileName), '%s', 'delimiter', '\n');
-        %        info = regexprep(info, '[^0123456789.,]', '')
-        %        
-        %    end
     end
 end
 
@@ -7023,8 +8169,16 @@ if any(FileName~=0)
     LSUserValues(1)
     Image=single(obj.CData);
     if size(Image,3)==3       
-        Image=Image/max(Image(:))*255;     
+        Image=Image/max(Image(:))*255;
     else
+        if h.Mia_Image.Settings.AutoScale.Value == 3
+            % manual scaling values for the respective imaging channel
+            mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
+            maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
+            Image(Image<mini)=mini;
+            Image(Image>maxi)=maxi;
+        end
+        
         cmap=colormap(obj.Parent);
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
         CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
@@ -7076,7 +8230,7 @@ switch mode
         %%% Out: cell array containing:
         %%% 1: File extension
         %%% 2: File description
-        %%% 3: Settings object handels
+        %%% 3: Settings object handles
         %%% 4: Function handle
         Out = Function(1);
         Out{4} = Function;
@@ -7108,5 +8262,180 @@ switch mode
 
 end
 
+function Do_FRET(~,~)
+% Function for calculating intensity based FRET
+global MIAData
+h = guidata(findobj('Tag','Mia'));
 
+% what is plotted in the count rate tab solid lines,
+% i.e. the AROI pixels
+donor = h.Plots.Int(1,2).YData;
+acceptor = h.Plots.Int(2,2).YData;
+
+%go to a post
+DIm = medfilt2(mean(MIAData.Data{1,2}(:,:,10:50),3),[3,3]);
+AIm = medfilt2(mean(MIAData.Data{2,2}(:,:,10:50),3),[3,3]);
+DIm(DIm<0)=0;
+AIm(AIm<0)=0;
+ar  = MIAData.AR{1,2};
+DIm(~ar)=0;
+ar  = MIAData.AR{2,2};
+AIm(~ar)=0;
+% range over which the normalization is calculated
+normrange = eval(h.Mia_Image.Calculations.FRET_norm.String);
+
+method = h.Mia_Image.Calculations.FRET_Type.Value;
+if method == 1
+    normFactor = mean(acceptor(normrange)./donor(normrange));
+elseif method == 2
+    normFactor = 1;
+else 
+    return
+end
+
+frametime = str2double(h.Mia_NB.Image.Frame.String);
+AoverD = (acceptor./donor)./normFactor;
+time = (0:(numel(donor)-1))*frametime;
+figure
+hold on 
+plot(time, AoverD);
+xlabel('time [s]');
+ylabel('normalized A/D');
+hold off
+
+f = figure;
+im=axes(f);
+AoverDim = medfilt2(AIm./DIm./normFactor,[5,5]);
+imagesc(im, flipud(AoverDim));
+axis equal
+im.XLim= [0,size(AoverDim,2)];
+im.YLim= [0,size(AoverDim,1)];
+colormap(im, jet);
+colorbar(im)
+
+
+
+function Do_Coloc(~,~)
+% Function for calculating intensity based FRET
+global MIAData
+h = guidata(findobj('Tag','Mia'));
+
+%if the 'get background from ROI' button on the ROI tab was pushed, or if a
+%background count rate was entered in the corresponding edit boxes, images
+%are background corrected, and thus the Pearson's calculation also.
+
+if size(MIAData.Data,1) > 1
+    switch h.Mia_Image.Calculations.Coloc_Type.Value
+        case 1 %Pearson's correlation coefficient
+            % Calculate a Pearson's correlation coefficient for the corrected images within the AROI           
+            Image = h.Plots.Image(1,2).CData; % channel 1 corrected image
+            if iscell(MIAData.AR)
+                AROI = MIAData.AR{1,2}; %for now top right AROI
+            else
+                AROI = true(size(Image));
+            end
+            Image = Image(AROI); %linear array of only the included pixels
+            Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
+            Image2 = Image2(AROI); %linear array of only the included pixels
+            if ~h.Mia_Image.Calculations.Coloc_weighting.Value
+                %% Calculations without intensity weighting
+                %% Mean Pearson's coefficient
+                mean_1 = mean2(Image);  % the mean intensity of image1 in the ROI
+                std_1 = std2(Image);
+                mean_2 = mean2(Image2);
+                std_2 = std2(Image2);
+                ImageP = Image.*Image2;
+                n = numel(Image); %number of included pixels
+                Pearson = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                h.Mia_Image.Calculations.Coloc_Pearsons.String = ['mean Pearson`s: ',num2str(Pearson)];
+                
+                %% Image of the Pearson's coefficeint
+                % to be developed
+                % spatially average the image via gaussian filtering
+                %             stdeviation = str2double(h.Mia_Image.Calculations.Coloc_avg.String);
+                %             Image = imgaussfilt(Image,stdeviation,'Padding','symmetric');
+                %             Image2 = imgaussfilt(Image2,stdeviation,'Padding','symmetric');
+                
+                %% Pearson's coefficient vs. intensity G or R
+                bins = linspace(min(min(Image),min(Image2)),max(max(Image),max(Image2)),50);
+                for i = 1:(numel(bins)-1)
+                    %green
+                    im =   Image(Image>=bins(i) & Image<bins(i+1));
+                    im2 = Image2(Image>=bins(i) & Image<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    IntG(i) = mean(bins(i:i+1));
+                    ccG(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorG(i) = sqrt(ccG(i))/sqrt(n);
+                    
+                    %red
+                    im =   Image(Image2>=bins(i) & Image2<bins(i+1));
+                    im2 = Image2(Image2>=bins(i) & Image2<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    IntR(i) = mean(bins(i:i+1));
+                    ccR(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorR(i) = sqrt(ccR(i))/sqrt(n);
+                end
+                %% Pearson's coefficient vs. G/R
+                GoverR = Image./Image2;
+                bins = linspace(min(GoverR),max(GoverR),50);
+                for i = 1:(numel(bins)-1)
+                    im =   Image(GoverR>=bins(i) & GoverR<bins(i+1));
+                    im2 = Image2(GoverR>=bins(i) & GoverR<bins(i+1));
+                    mean_1 = mean(im);  % the mean intensity of image1 in the ROI
+                    std_1 = std(im);
+                    mean_2 = mean(im2);
+                    std_2 = std(im2);
+                    ImageP = im.*im2;
+                    n = numel(im); %number of included pixels
+                    GR(i) = mean(bins(i:i+1));
+                    ccGR(i) = (sum(ImageP) - n.*mean_1.*mean_2)/((n-1).*std_1.*std_2);
+                    ErrorGR(i) = sqrt(ccGR(i))/sqrt(n);
+                end
+            else
+                %plak hier de corresponderende berekening als wél intensity weighting wordt gedaan
+            end
+            %% plotting everything
+            f = figure;
+            ax1 = axes(f);
+            errorbar(ax1,IntG,ccG,ErrorG,'g');
+            hold on
+            errorbar(ax1,IntR,ccR,ErrorR,'r');
+            xlabel(ax1,'Intensity (a.u.)');
+            ylabel(ax1,'Correlation coefficient');
+            ax1.YLim = [-0.05,1.05];
+            ax2 = axes('Position',ax1.Position,'Color','none');
+            errorbar(ax2, GR,ccGR,ErrorGR, 'Color','k');
+            ax2.Color = 'none';
+            ax2.XAxisLocation = 'top';
+            ax2.YAxisLocation = 'right';
+            ax2.XLim = [0,ax2.XLim(2)];
+            ax2.YLim = [-0.05,1.05];
+            xlabel(ax2, 'Intensity ratio G/R');
+            
+            %     case 2 %Manders
+            %     case 3 %Costes
+        case 4 %Van Steensel
+            Do_2D_XCor([],[],2)
+            %     case 5 %Li
+            %     case 6 %object based (particle localization)
+        otherwise
+            msgbox('not implemented yet')
+            h.Mia_Image.Calculations.Coloc_Type.Value = 1;
+    end
+    
+
+    
+else
+    msgbox('load 2-color data!')
+end
 

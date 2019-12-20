@@ -4,7 +4,7 @@ IRFPattern = xdata{2};
 Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
-c = xdata{6};
+c = param(14);%xdata{6}; %IRF shift
 ignore = xdata{7};
 G = xdata{8};
 conv_type = xdata{end}; %%% linear or circular convolution
@@ -16,7 +16,7 @@ for i = 1:2
     %irf = circshift(IRFPattern{i},[c, 0]);
     irf = shift_by_fraction(IRFPattern{i},c);
     irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-    irf = irf-min(irf(irf~=0));
+    irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
     %A shift in the scatter is not needed in the model
@@ -39,13 +39,13 @@ sc_par = param(8);
 sc_per = param(9);
 bg_par = param(10);
 bg_per = param(11);
-I0 = param(14);
+I0 = param(15);
 %%% Calculate the parallel Intensity Decay
 rt = 1+(2-3*l1).*(((r0-r_inf).*exp(-(1:n)./rho1) + r_inf).*exp(-(1:n)./rho2));
 x_par1 = exp(-(1:n)./tau(1));
 x_par2 = exp(-(1:n)./tau(2));
 %%% combine the two components
-x_par = I0*G*rt.*(A*x_par1 + (1-A)*x_par2);
+x_par = (I0/G)*rt.*(A*x_par1 + (1-A)*x_par2);
 switch conv_type
     case 'linear'
         z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
@@ -83,4 +83,4 @@ z_per = z_per.*(1-bg_per)+bg_per*sum(z_per)./numel(z_per);%z_per = z_per.*sum(y(
 z_per = z_per';
 
 %%% Construct Stacked Result
-z = [z_par z_per];
+z = [z_par./G z_per];

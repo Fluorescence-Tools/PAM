@@ -43,7 +43,13 @@ addpath(genpath(['.' filesep 'functions']));
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.PCF,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:7 9 13:17]));
+    if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+        delete(toolbar_items([2:7 9 13:17]));
+    else %%% 2018b and upward
+        %%% just remove the tool bar since the options are now in the axis
+        %%% (e.g. axis zoom etc)
+        delete(toolbar_items);
+    end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Menubar %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%      
@@ -1323,7 +1329,11 @@ switch mode
             end
         end
     case 7 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel
@@ -1646,7 +1656,11 @@ switch mode
         %%% Save new plots
         guidata(h.PCF,h);
     case 6 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel

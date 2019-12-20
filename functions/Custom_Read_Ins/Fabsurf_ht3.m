@@ -83,7 +83,7 @@ for i=1:numel(FileName)
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-    [MT, MI, SyncRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2);
+    [MT, MI, SyncRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),5E7,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2,h.MT.Use_Chunkwise_Read_In.Value);
     
     if ~isMFD %%% imagetime corresponds to measurement time
         ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
@@ -137,7 +137,8 @@ for i=1:numel(FileName)
 end
 FileInfo.ClockPeriod = FileInfo.SyncPeriod;
 FileInfo.MeasurementTime = Totaltime*FileInfo.ClockPeriod; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
-FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+FileInfo.MI_Bins = ceil(1E12*FileInfo.SyncPeriod./FileInfo.Resolution);
+%FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
 FileInfo.TACRange = FileInfo.SyncPeriod;
 for i=1:(numel(FileInfo.ImageTimes)-1)
     FileInfo.LineTimes(i,:) = linspace(FileInfo.ImageTimes(i),FileInfo.ImageTimes(i+1),FileInfo.Lines+1);

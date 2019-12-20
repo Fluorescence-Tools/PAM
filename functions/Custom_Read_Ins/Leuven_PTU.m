@@ -165,6 +165,7 @@ for i=1:numel(FileName)
         h.MT.Use_Lifetime.Value = 0;
         UserValues.Settings.Pam.Use_Lifetime = 0;
         UserValues.Settings.Pam.Use_Image = 0;
+        h.Image.Tab.Parent = [];
         FileInfo.Lines = 1; %Leave here
     end
 end
@@ -182,7 +183,7 @@ if ~isempty(Header.LineStart) % Image PTU data
 end
 
 %% Thresholding or histogramming function 
-thresh = 1;
+thresh = 0;
 histog = 0;
 
 % FileInfo.ClockPeriod is the macrotime clock in seconds
@@ -255,5 +256,5 @@ if histog == 1 % make a count rate vs lifetime plot
 end
 
 LSUserValues(1);
-Calculate_Settings = PAM ('Calculate_Settings');
-Calculate_Settings(h.MT.Use_Image,[]);
+% Calculate_Settings = PAM ('Calculate_Settings');
+% Calculate_Settings(h.MT.Use_Image,[]);

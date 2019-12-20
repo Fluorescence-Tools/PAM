@@ -130,7 +130,7 @@ void Simulate_Diffusion(
                     New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*D[state]*normal(mt); // Go one step in x direction
                     New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*D[state]*normal(mt); // Go one step in y direction
                 }
-                if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + D[state]*normal(mt); } // Go one step in z direction, if not 2D
+                if (Box[2] > 0) { New_Pos[2] = Pos[2] + D[state]*normal(mt); } // Go one step in z direction, if not 2D
                 else { Box[2] = 0; } // Puts particle inside plane
 
                 /// Particle exits border /////////////////////////////////////////
@@ -378,7 +378,7 @@ void Simulate_Diffusion(
                             binomial_distribution<unsigned char> binomial_aniso(1,p_aniso[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]] ]); //define distribution
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
                             // convolute Microtime with IRF
-                            Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
+                            Microtimes[NPhotons[0]] += (unsigned short) (IRF(mt) + 0.5); /// PIE Laser pulse for microtime, IRF
                             Microtimes[NPhotons[0]] += (unsigned short)(j*(int)(MI_Bins/4)); /// PIE Laser pulse for microtime
                             if (Microtimes[NPhotons[0]] < 1) {Microtimes[NPhotons[0]] = 1;};
                             // Microtime checkup

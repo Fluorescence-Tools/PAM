@@ -37,7 +37,13 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.FCSFit,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:7 9 13:17]))
+    if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+        delete(toolbar_items([2:7 9 13:17]));
+    else %%% 2018b and upward
+        %%% just remove the tool bar since the options are now in the axis
+        %%% (e.g. axis zoom etc)
+        delete(toolbar_items);
+    end
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
@@ -104,7 +110,6 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Tag','Fit',...
         'Label','...Fit',...
         'Callback',@Do_FCSFit);
-    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -683,7 +688,7 @@ end
     FCSMeta.Fits=[];
     FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
     FCSMeta.FitInProgress = 0;    
-    FCSMeta.DataType = 'FCS';
+    FCSMeta.DataType = 'FCS averaged';
     
     h.CurrentGui = 'FCS';
     guidata(h.FCSFit,h); 
@@ -712,15 +717,40 @@ if nargin > 3 %%% called from file history
         FileName{i} = [FileName{i} ext];
     end
 else
-    %%% Choose files to load
-    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
-                                          '*.cor','Averaged correlation based on .txt. filetype';...
-                                          '*.mcor','Individual correlation curves based on matlab filetype';...
-                                          '*.cor','Individual correlation curves based on .txt. filetype';...
-                                          '*.his','FRET efficiency data from BurstBrowser (*.his)';},...
-                                          'Choose a referenced data file',...
+    %%% there is an issue with selecting multiple files on MacOS Catalina,
+    %%% where only the first filter (.mcor) works, and no other file types 
+    %%% can be selected.
+    %%% As a workaround, we avoid using the system file selection for now.
+    %%% 11/2019    
+    if ~ismac | ~(ismac & strcmp(get_macos_version(),'10.15'))
+        %%% Choose files to load
+        [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
+                                          '*.cor','Averaged correlation based on text filetype (*.cor)';...
+                                          '*.mcor','Individual correlation curves based on matlab filetype (*.mcor)';...
+                                          '*.cor','Individual correlation curves based on text filetype (*.cor)';...
+                                          '*.his','FRET efficiency data from BurstBrowser (*.his)';...
+                                          '*.fcs','FCS Files from Zeiss ZEN software (*.fcs) - Averaged';...
+                                          '*.fcs','FCS Files from Zeiss ZEN software (*.fcs) - Individual Curves';...
+                                          '*.cor','FCS Files from Kistine Software (Seidel lab) (*.cor)'},...
+                                          'Choose FCS data files',...
                                           UserValues.File.FCSPath,... 
                                           'MultiSelect', 'on');
+    else
+        %%% use workaround
+        %%% Choose files to load
+        [FileName, path, Type] = uigetfile_with_preview({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
+                                          '*.cor','Averaged correlation based on text filetype (*.cor)';...
+                                          '*.mcor','Individual correlation curves based on matlab filetype (*.mcor)';...
+                                          '*.cor','Individual correlation curves based on text filetype (*.cor)';...
+                                          '*.his','FRET efficiency data from BurstBrowser (*.his)';...
+                                          '*.fcs','FCS Files from Zeiss ZEN software (*.fcs) - Averaged';...
+                                          '*.fcs','FCS Files from Zeiss ZEN software (*.fcs) - Individual Curves';...
+                                          '*.cor','FCS Files from Kistine Software (Seidel lab) (*.cor)'},...
+                                          'Choose FCS data files',...
+                                          UserValues.File.FCSPath,... 
+                                          '',... % empty callback
+                                          true); % Multiselect on
+    end
     %%% Tranforms to cell array, if only one file was selected
     if ~iscell(FileName)
         FileName = {FileName};
@@ -770,8 +800,8 @@ switch Type
                 Text = Text{1};
                 Data.Header = Text{1};
                 Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 1 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 2 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
@@ -875,7 +905,7 @@ switch Type
     case {5}   %% 2color FRET data from BurstBrowser
         FCSMeta.DataType = 'FRET';
         bin = UserValues.FCSFit.FRETbin;
-        x = (-0.1:bin:ceil(1.1/bin)*bin)';
+        x = (-0.25:bin:ceil(1.25/bin)*bin)';
         for i=1:numel(FileName)
             %%% Reads files
             E = load(fullfile(PathName{i},FileName{i}),'-mat'); 
@@ -924,6 +954,171 @@ switch Type
         end
         %%% change the gui
         SwitchGUI(h,'FRET');
+    case {6,7}   %% FCS data from Zeiss microscopes (*.fcs file)
+        switch Type
+            case 6
+                FCSMeta.DataType = 'FCS averaged';
+            case 5
+                FCSMeta.DataType = 'FCS individual';
+        end
+        for i=1:numel(FileName)
+            %%% Reads file (file contains all sub-measurements)
+            [AC, mCountRate, Duration] = read_zeiss_fcs_file(fullfile(PathName{i},FileName{i}));
+            %%% convert the data into FCSFit data structure
+            % AC contains for each measurement: time, AC1, AC1_std, AC2, AC2_std, CC, CC_std
+            % std (i.e. error) is 1 for all since it is not computed by the
+            % software, instead we will recalculate it here based on the
+            % individual measurements
+            % Not all channels are used/correlated, find out how many
+            % channels we have and make a "file" for each
+            chan_used = find(AC{1}(1,2:2:end) ~= 0);
+            for c = chan_used
+                Cor_Times = AC{1}(:,1);
+                Cor_Array = [];
+                Counts = [];
+                for j = 1:numel(AC)
+                    Cor_Array = [Cor_Array, AC{j}(:,2*c)];
+                    Counts = [Counts, mCountRate{j}(c)];
+                end
+                Data = struct;
+                Data.Cor_Array = Cor_Array;
+                Data.Cor_Times = Cor_Times*1e-6;
+                Data.Cor_Average = mean(Cor_Array,2);
+                if ( size(Cor_Array,2) > 1 ) && ( Type == 6) % average to obtain error bars
+                    Data.Cor_SEM = std(Cor_Array,[],2)./sqrt(size(Cor_Array,2)); % this is the standard error of the mean
+                    % adjust the SEM based on the student's t distribution
+                    p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
+                    Data.Cor_SEM = Data.Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2)-1);
+                else % set std to one, individual sub-measurements are loaded
+                    Data.Cor_SEM = ones(size(Cor_Array,1),1);
+                end
+                Data.Counts = repmat(mean(Counts),[1,2]);
+                Data.Valid = ones(1,size(Cor_Array,2));
+                Data.Header = '';
+                %%% add file to file history
+                h.FileHistory.add_file(fullfile(PathName{i},FileName{i}));
+                %%% Updates global parameters
+                switch c
+                    case 1 % ACF1
+                        ch = 'ACF1';
+                    case 2 % ACF2
+                        ch = 'ACF2';
+                    case 3 % CCF
+                        ch = 'CCF';
+                end
+                switch Type
+                    case 6
+                        FCSData.Data{end+1} = Data;
+                        FCSData.FileName{end+1} = [ch ' - ' FileName{i}(1:end-4)];
+                        FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                        FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+                        FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
+                        FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+                        FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
+                        %%% Creates new plots
+                        FCSMeta.Plots{end+1,1} = errorbar(...
+                            FCSMeta.Data{end,1},...
+                            FCSMeta.Data{end,2},...
+                            FCSMeta.Data{end,3},...
+                            'Parent',h.FCS_Axes);
+                        FCSMeta.Plots{end,2} = line(...
+                            'Parent',h.FCS_Axes,...
+                            'XData',FCSMeta.Data{end,1},...
+                            'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                        FCSMeta.Plots{end,3} = line(...
+                            'Parent',h.Residuals_Axes,...
+                            'XData',FCSMeta.Data{end,1},...
+                            'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                        FCSMeta.Plots{end,4} = line(...
+                            'Parent',h.FCS_Axes,...
+                            'XData',FCSMeta.Data{end,1},...
+                            'YData',FCSMeta.Data{end,2});
+                        FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
+                    case 7
+                        %%% Creates entry for each individual curve
+                        for j=1:size(Data.Cor_Array,2)
+                            FCSData.Data{end+1} = Data;              
+                            FCSData.FileName{end+1} = [ch ' - ' FileName{i}(1:end-4) ' Curve ' num2str(j)];
+                            FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
+                            FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+                            %%% Creates new plots
+                            FCSMeta.Plots{end+1,1} = errorbar(...
+                                FCSMeta.Data{end,1},...
+                                FCSMeta.Data{end,2},...
+                                FCSMeta.Data{end,3},...
+                                'Parent',h.FCS_Axes);
+                            FCSMeta.Plots{end,2} = line(...
+                                'Parent',h.FCS_Axes,...
+                                'XData',FCSMeta.Data{end,1},...
+                                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                            FCSMeta.Plots{end,3} = line(...
+                                'Parent',h.Residuals_Axes,...
+                                'XData',FCSMeta.Data{end,1},...
+                                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                            FCSMeta.Plots{end,4} = line(...
+                                'Parent',h.FCS_Axes,...
+                                'XData',FCSMeta.Data{end,1},...
+                                'YData',FCSMeta.Data{end,2});
+                            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
+                        end
+                end
+            end
+        end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
+    case {8} % Kristine files from Seidel lab
+        FCSMeta.DataType = 'FCS averaged';
+        for i=1:numel(FileName)
+            %%% Reads file (file contains all sub-measurements)
+            [C, mCountRate, Duration] = read_kristine_fcs_file(fullfile(PathName{i},FileName{i}));
+            %%% convert the data into FCSFit data structure
+            % C contains for each measurement: time, C, C_std
+
+            Cor_Times = C(:,1);
+            Cor_Array = C(:,2)-1; % substract one
+            
+            Data = struct;
+            Data.Cor_Array = Cor_Array;
+            Data.Cor_Times = Cor_Times*1e-3;
+            Data.Cor_Average = Cor_Array;
+            Data.Cor_SEM = C(:,3);
+
+            Data.Counts = repmat(mCountRate,[1,2]);
+            Data.Valid = ones(1,size(Cor_Array,2));
+            Data.Header = '';
+            %%% add file to file history
+            h.FileHistory.add_file(fullfile(PathName{i},FileName{i}));
+            %%% Updates global parameters
+            FCSData.Data{end+1} = Data;
+            FCSData.FileName{end+1} = FileName{i}(1:end-4);
+            FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+            FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
+            FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+            FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
+            %%% Creates new plots
+            FCSMeta.Plots{end+1,1} = errorbar(...
+                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,2},...
+                FCSMeta.Data{end,3},...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Plots{end,2} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,3} = line(...
+                'Parent',h.Residuals_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,4} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',FCSMeta.Data{end,2});
+            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
+        end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
 end
 
 %%% Updates table and plot data and style to new size
@@ -1172,8 +1367,8 @@ switch mode
         Columns=cell(3*numel(FCSMeta.Model.Params)+5,1);
         Columns{1} = '<HTML><b>File</b>';
         Columns{2}='<HTML><b>Active</b>';
-        Columns{3}='<HTML><b>Counts [khz]</b>';
-        Columns{4}='<HTML><b>Brightness [khz]</b>';
+        Columns{3}='<HTML><b>Counts [kHz]</b>';
+        Columns{4}='<HTML><b>Brightness [kHz]</b>';
         for i=1:numel(FCSMeta.Model.Params)
             Columns{3*i+2}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
             Columns{3*i+3}='<HTML><b>F</b>';
@@ -1238,8 +1433,8 @@ switch mode
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-4),false];  
-        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
+        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 1 %%% Updates tables when new data is loaded
@@ -1274,7 +1469,7 @@ switch mode
             end
         end
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 2 %%% Updates table after fit
@@ -1292,15 +1487,58 @@ switch mode
         %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
-    case 3 %%% Individual cells callbacks 
+    case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
-        h.Fit_Table.CellEditCallback=[];
+        h.Fit_Table.CellEditCallback=[];        
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %%% detect click of "All" row, in which case the callback
+            %%% should finish to update the values
+            %%% problem in 2018a: Updating the other values causes the cell
+            %%% selection to drop, making it impossible to set another
+            %%% value.
+            %%% The "All" row thus only updates if the user types a
+            %%% different value, causing the EditCallback to fire.
+            if ~isempty(e.Indices) && e.Indices(1) == size(h.Fit_Table.Data,1)-2
+                %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
+            else
+                if isempty(e.Indices) % sometime, indices is empty
+                    h.Fit_Table.CellEditCallback={@Update_Table,3};
+                    return;
+                end
+                %%% if a lower boundary/upperboundary field of a logical
+                %%% quantity was clicked (i.e. active/fixed/global)
+                %%% make sure to deselect the field to prevent the user
+                %%% from typing a value
+                deselect = 0;
+                if e.Indices(1) > size(h.Fit_Table.Data,1)-2 %%% clicked lb/ub field
+                    if e.Indices(2) == 2 %%% clicked the "active" column
+                        deselect = 1;
+                    elseif e.Indices(2) == size(h.Fit_Table.Data,2) % clicked chi2 field
+                        deselect = 1;
+                    elseif mod(e.Indices(2)-5,3) ~= 0 % clicked fixed or global field
+                        deselect = 1;
+                    end
+                end
+                if deselect
+                    %%% deselection of field is only possible by assigning
+                    %%% a dummy to the data and re-assigning the original
+                    %%% data afterwards
+                    temp = h.Fit_Table.Data;
+                    h.Fit_Table.Data = repmat({'dummy'},size(h.Fit_Table.Data));
+                    h.Fit_Table.Data = temp;
+                end
+                %%% re-assign callback and exit
                 h.Fit_Table.CellEditCallback={@Update_Table,3};
                 return;
             end
-            NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+            % previously, the following code was called that caused the GUI to get stuck in version 2018a and upwards
+            %if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %    h.Fit_Table.CellEditCallback={@Update_Table,3};
+            %    return;
+            %end
+            %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
         end
         if isprop(e,'NewData')
             NewData = e.NewData;
@@ -1461,9 +1699,13 @@ switch mode
         end
         switch e.Indices(2)
             case 1 %%% Changes file color
-                NewColor = uisetcolor;
-                if numel(NewColor) == 1%NewColor == 0
-                    return;
+                if ~isdeployed
+                    NewColor = uisetcolor;
+                    if size(NewColor) == 1
+                        return;
+                    end
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    NewColor = color_setter(); % open dialog to input color
                 end
                 for i=File
                     h.Style_Table.Data{i,1} = num2str(NewColor);
@@ -1578,6 +1820,15 @@ function Update_Plots(~,~)
 h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData UserValues
 
+%%% if use weights is changed, change axis label on residuals
+if gcbo == h.Fit_Weights
+    if h.Fit_Weights.Value == 0
+        h.Residuals_Axes.YLabel.String = 'residuals';
+    else
+        h.Residuals_Axes.YLabel.String = {'weighted'; 'residuals'};
+    end
+end
+
 Min=str2double(h.Fit_Min.String);
 Max=str2double(h.Fit_Max.String);
 %%% input check
@@ -1594,8 +1845,11 @@ if ~strcmp(FCSMeta.DataType,'FRET')
         Min = 0;
     end
 else
-    if (Min < -0.1)
-        Min = -0.1;
+    if (Min < -0.25)
+        Min = -0.25;
+    end
+    if (Max > 1.25)
+        Max = 1.25;
     end
 end
 if (Max < 0)
@@ -1637,6 +1891,8 @@ UserValues.FCSFit.NormalizationMethod = Normalization_Method;
 UserValues.FCSFit.Conf_Interval = Conv_Interval;
 UserValues.FCSFit.Hide_Legend = h.Hide_Legend.Value;
 LSUserValues(1);
+
+cellfun(@delete,FCSMeta.Plots(:,5:end)); FCSMeta.Plots(:,5:end) = [];
 
 YMax=0; YMin=0; RMax=0; RMin=0;
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
@@ -1694,8 +1950,16 @@ for i=1:size(FCSMeta.Plots,1)
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
             FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
-            FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
-            FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
+            %%% find offset parameter (should be named y0)
+            offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+            if isempty(offset_idx)
+                disp('No offset parameter found. Make sure that it is named "y0" in the model definition.');
+                FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
+                FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
+            else
+                FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;  
+                FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(offset_idx))/B;
+            end
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
@@ -1710,7 +1974,27 @@ for i=1:size(FCSMeta.Plots,1)
         if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
-            FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
+            if isempty(offset_idx)
+                FCSMeta.Plots{i,2}.YData=OUT/B;
+            else
+                FCSMeta.Plots{i,2}.YData=(OUT-P(offset_idx))/B;
+            end
+        end
+        if strcmp(FCSMeta.DataType,'FRET') %%% individual populations as dashed lines
+            hold(h.FCS_Axes,'on');
+            active = find(P(1:3:end)); % find the active plots with nonzero amplitude
+            color= FCSMeta.Plots{i,2}.Color;
+            linewidth = FCSMeta.Plots{i,2}.LineWidth;
+            ax = FCSMeta.Plots{i,2}.Parent;
+            p = P; p(1:3:end) = 0;
+            for a = active'
+                param = p;
+                param(3*(a-1)+1) = P(3*(a-1)+1);
+                OUT = real(feval(FCSMeta.Model.Function,param,x));
+                FCSMeta.Plots{i,4+a} = plot(ax,x,OUT/B,'LineStyle','--','Color',color,'LineWidth',linewidth);
+            end
+        else
+            cellfun(@delete,FCSMeta.Plots(i,5:end));
         end
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
@@ -1899,7 +2183,8 @@ switch mode
                 'XTickLabel',XTickLabels,...
                 'Layer','bottom',...
                 'Units','points',...
-                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)]);    
+                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)],...
+                'LineWidth',1.5);    
             if h.Export_Residuals.Value
                 H.Residuals=axes(...
                     'Parent',H.Fig,...
@@ -1909,7 +2194,8 @@ switch mode
                     'XTickLabel',[],...
                     'Layer','bottom',...
                     'Units','points',...
-                    'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)]);
+                    'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)],...
+                    'LineWidth',1.5);
             else
                 H.FCS.Position(4) = H.FCS.Position(4)+Size(3)+1.5*FontSize;
             end
@@ -1920,7 +2206,8 @@ switch mode
                 'FontSize', FontSize,...
                 'Layer','bottom',...
                 'Units','points',...
-                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)]);    
+                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)],...
+                'LineWidth',1.5);    
             if h.Export_Residuals.Value
                 H.Residuals=axes(...
                     'Parent',H.Fig,...
@@ -1929,7 +2216,8 @@ switch mode
                     'XTickLabel',[],...
                     'Layer','bottom',...
                     'Units','points',...
-                    'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)]);
+                    'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)],...
+                    'LineWidth',1.5);
             else
                 H.FCS.Position(4) = H.FCS.Position(4)+Size(3)+1.5*FontSize;
             end
@@ -1937,14 +2225,28 @@ switch mode
             
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
-        if h.Fit_Errorbars.Value
-            UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
-        else
-            UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
-        end
-        %UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        % if h.Fit_Errorbars.Value
+        %     UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
+        % else
+        %    UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
+        % end
+        % UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        % H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
         
-        H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
+        if h.Fit_Errorbars.Value
+            UseCurves = [1,2];
+        else
+            UseCurves = [4,2];
+        end
+
+        CopyCurves = FCSMeta.Plots(Active,UseCurves);
+        H.FCS_Plots = [];
+        for i = Active'
+            for j = UseCurves
+                H.FCS_Plots(i,j) = copyobj(FCSMeta.Plots{i,j},H.FCS);
+            end
+        end
+
         if h.Export_FitsLegend.Value
                H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none'); 
         else
@@ -1955,18 +2257,31 @@ switch mode
                         LegendString{i} = LegendString{i}(7:end);
                     end
                     if h.Fit_Errorbars.Value
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end-1:-2:1),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     else
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:1),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     end
 
                 end
             end
         end
+        if strcmp(FCSMeta.DataType,'FRET')
+            %%% add invidividual plots
+            UseCurves = [5:size(FCSMeta.Plots,2)];
+            N = numel(H.FCS_Legend.String);
+            for i = Active'
+                for j = UseCurves
+                    copyobj(FCSMeta.Plots{i,j},H.FCS);
+                end
+            end
+            H.FCS_Legend.String = H.FCS_Legend.String(1:N);
+        end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
         end
-        %% Sets axes parameters
+        %% Sets axes parameters   
+        set(H.FCS.Children,'LineWidth',1.5);
+        set(H.Residuals.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
             linkaxes([H.FCS,H.Residuals],'x');
         end
@@ -1982,8 +2297,13 @@ switch mode
         end
         if h.Export_Residuals.Value
             H.Residuals.YLim=h.Residuals_Axes.YLim;
-            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
-        end
+            switch h.Fit_Weights.Value
+                case 1
+                    H.Residuals.YLabel.String = {'weighted'; 'residuals'};
+                case 0
+                    H.Residuals.YLabel.String = {'residuals'};
+            end
+        end        
         %% Toggles box and grid
         if h.Export_Grid.Value
             grid(H.FCS,'on');
@@ -2015,7 +2335,7 @@ switch mode
                 H.Residuals.Box = 'off';
             end
         end
-      
+        
         H.Fig.Color = [1 1 1];
         %%% Copies figure handles to workspace
         assignin('base','H',H);
@@ -2067,7 +2387,7 @@ switch mode
             end
         end
         FitResult = horzcat(Params,horzcat(FitResult{:}));
-        Mat2clip(FitResult);
+        Mat2clip(FitResult');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2142,20 +2462,59 @@ if sum(Global)==0
                 method = h.Conf_Interval_Method.Value;
                 alpha = 0.05; %95% confidence interval
                 if method == 1
+                    %%% NOTE: nlparci confidence intervals are always
+                    %%% symmetric, which can lead to non-sensical values
+                    %%% for the error estimate (i.e. 10 +- 20).
+                    %%% 
+                    %%% One could also use nlinfit here to get access to
+                    %%% the covariance matrix directly (instead of relying
+                    %%% on the jacobian), but I found the two methods to be
+                    %%% consistent.
                     ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                 elseif method == 2
+                    disp('Running MCMC... This could take a minute.');tic;
                     confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
-                    proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+                    proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/100)';
+                    if any(isnan(proposal))
+                        %%% nlparci may return NaN values. Set to 1% of the fit value
+                        proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
+                    end
                     %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
                     loglikelihood = @(x) (-1/2)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-                    v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
-                    perc = tinv(1-alpha/2,v);
-                    ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+                    while acceptance < 0.01
+                        disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+                        disp('Running again with more narrow proposal distribution.');
+                        proposal = proposal/10;
+                        [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+                    end
+                    %%% MCMC samples the posterior distribution, which can
+                    %%% be asymmetric. In this case, the standard deviation
+                    %%% is the wrong quantity, instead asymmetric
+                    %%% confidence intervals can be reported based on the
+                    %%% percentiles of the distribution!
+                    
+                    %%% New asymmetric confidence interval estimate
+                    ConfInt(~Fixed(i,:),:) = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+                    
+                    %%% This was the error estimate based on the standard
+                    %%% deviation:
+                    % v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
+                    % perc = tinv(1-alpha/2,v);
+                    % ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+                    
+                    disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
+                    % print variables to workspace
+                    assignin('base',['Samples' num2str(i)],samples(1:spacing:end,:));
+                    assignin('base',['acceptance' num2str(i)],acceptance);                    
                 end
-                FCSMeta.Confidence_Intervals{i} = ConfInt;
+                FCSMeta.Confidence_Intervals{i} = ConfInt;  
+                %%% we can also make a prediction for the curve based on
+                %%% the confidence intervals, using the following code:
+                % [y,delta] = nlpredci(@(x,xdat) Fit_Single(x,{xdat,EData,i,Fixed(i,:)}).*EData,XData,Fitted_Params,weighted_residuals,'jacobian',full(jacobian));
+                % figure;semilogx(XData,y-delta);hold on;semilogx(XData,y+delta);
             end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
@@ -2205,19 +2564,42 @@ else
         if method == 1
             ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
         elseif method == 2
+            disp('Running MCMC... This could take a minute.');tic;
             confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
             proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+            if any(isnan(proposal))
+                %%% nlparci may return NaN values. Set to 1% of the fit value
+                proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
+            end
             %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
             loglikelihood = @(x) (-1/2)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+            while acceptance < 0.01
+                    disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+                    disp('Running again with more narrow proposal distribution.');
+                    proposal = proposal/10;
+                    [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+            end
+            %%% New asymmetric confidence interval estimate
+            ConfInt = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+            
             %v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom is equal to the number of samples
-            perc = 1.96;%tinv(1-alpha/2,v);
-            ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*(samples(1:spacing:end,:)))'];
+            % perc = 1.96;%tinv(1-alpha/2,v);
+            % ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+            
+            disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
+            % print variables to workspace
+            assignin('base','GlobalSamples',samples(1:spacing:end,1:sum(Global)));
+            assignin('base','LocalSamples',samples(1:spacing:end,sum(Global)+1:end));        
+            assignin('base','acceptance',acceptance);
+            if acceptance < 0.01
+                disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
+            end
         end
         GlobConfInt = ConfInt(1:sum(Global),:);
-        ConfInt(1:sum(Global),:) = [];
+        ConfInt(1:sum(Global),:) = [];        
         for i = find(Active)'
             FCSMeta.Confidence_Intervals{i} = zeros(size(FCSMeta.Params,1),2);
             FCSMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
@@ -2407,7 +2789,7 @@ switch obj
     case h.LoadSession
         %%% get file
         [FileName,PathName] = uigetfile({'*.fcs','FCSFit Session (*.fcs)'},'Load FCSFit Session',UserValues.File.FCSPath,'MultiSelect','off');
-        if FileName == 0
+        if numel(FileName) == 1 && FileName == 0
             return;
         end
         %%% Saves pathname to uservalues
@@ -2466,6 +2848,7 @@ switch obj
         if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
             h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
             h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(end-2,7:3:end) = num2cell(sum(cell2mat(data.GlobalState),1) > 0);
             h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
             Update_Plots;
         end
@@ -2496,7 +2879,7 @@ function Create_Plots(~,~)
 global UserValues FCSMeta FCSData
 h = guidata(findobj('Tag','FCSFit'));
 switch FCSMeta.DataType
-    case {'FCS averaged','FCS individual'} %%% Correlation files
+    case {'FCS averaged','FCS individual','FCS'} %%% Correlation files
         for i=1:numel(FCSData.FileName)
             %%% Creates new plots
             FCSMeta.Plots{end+1,1} = errorbar(...

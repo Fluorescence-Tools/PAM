@@ -1,9 +1,17 @@
-function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,Chunkwise)
 
 %%% Input parameters:
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
+%%% Chunkwise: Data read-in in consecutive chunks and maximum Data limit
+if nargin < 7 % Chunkwise not specified
+    Chunkwise = false;
+end
+
 fid=fopen(FileName,'r');
+fseek(fid,0,1);
+filesize = ftell(fid);
+fseek(fid,0,-1);
 
 Progress(0/NumFiles,ProgressAxes,ProgressText,['Processing Header of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
@@ -36,7 +44,8 @@ rtTimeHarp260NT3 = hex2dec('00010305');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode
 rtTimeHarp260NT2 = hex2dec('00010205');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
 rtTimeHarp260PT3 = hex2dec('00010306');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
 rtTimeHarp260PT2 = hex2dec('00010206');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-
+rtMultiHarpNT3   = hex2dec('00010307');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $07 (MultiHarp150N)
+rtMultiHarpNT2   = hex2dec('00010207');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarp150N)
 % Globals for subroutines
 TTResultFormat_TTTRRecType = 0;
 TTResult_NumberOfRecords = 0;
@@ -124,10 +133,10 @@ while 1
                 %%% Catch case where length of TagString exceeds length of
                 %%% UsrHeadName character array
                 if eval(['size(' TagIdent ',2) < numel(TagString)'])
-                    eval([TagIdent '(:,end:numel(TagString)) = '' '''])
+                    eval([TagIdent '(:,end:numel(TagString)) = '' '';']);
                 end
             end
-            eval([EvalName '=TagString;']);
+            try;eval([EvalName '=TagString;']);end;
         case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
@@ -156,10 +165,18 @@ Header.SyncRate = 1/MeasDesc_GlobalResolution;
 Header.Resolution = MeasDesc_Resolution./1E-12; % give in picoseconds
 Header.MeasurementTime = MeasDesc_AcquisitionTime; % in milliseconds
 nRecords = TTResult_NumberOfRecords;
-%%% check for file type
+%%% empty assignments for image-related fields
+Header.FrameStart = [];
+Header.LineStart = [];
+Header.LineStop = [];
 
+if any(TTResultFormat_TTTRRecType == [rtTimeHarp260PT3,rtHydraHarpT3,rtHydraHarp2T3,rtMultiHarpNT3])  % read out the number of microtime bins
+    Header.MI_Bins = ceil(MeasDesc_GlobalResolution./MeasDesc_Resolution);
+end
+
+%%% check for file type
 switch TTResultFormat_TTTRRecType
-    case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3}
+    case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3,rtMultiHarpNT3}
         if TTResultFormat_TTTRRecType == rtHydraHarpT3
             %%% HydraHarp T3 V1 file format
             Version = 1;
@@ -171,6 +188,9 @@ switch TTResultFormat_TTTRRecType
             Version = 2;
         elseif TTResultFormat_TTTRRecType == rtTimeHarp260PT3
             %%% TimeHarp 260 pico T3 file format
+            Version = 2;
+        elseif TTResultFormat_TTTRRecType == rtMultiHarpNT3
+            %%% MultiHarp150 T3 file format
             Version = 2;
         else
             disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
@@ -232,6 +252,10 @@ switch TTResultFormat_TTTRRecType
             % Select the custom Leuven_PTU read-in routine and custom datatype!
             Header.LineStartMarker = 2; %linestarts and -stops are both in here!
             Header.FrameStartMarker = 1; %framestarts and -stops are both in here!
+        elseif strcmp(CreatorSW_Name,'Imspector')
+            Header.LineStartMarker = 1;
+            Header.LineStopMarker = 2;
+            Header.FrameStartMarker = 3;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -264,8 +288,26 @@ switch TTResultFormat_TTTRRecType
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                fileChunks = ceil(filesize/NoE);
+                T3Record = zeros(NoE/4*(fileChunks-1),1);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record = [T3Record;fread(fid, NoE/4, 'ubit32')];
+            end
+        else
+            T3Record = fread(fid, Inf, 'ubit32');     % all 32 bits
+        end
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
@@ -291,7 +333,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection = zeros(1,length(nsync));
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
@@ -328,7 +370,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        nsync = int16(bitand(T3Record,65535));
+        nsync = uint32(bitand(T3Record,65535));
         
         Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         

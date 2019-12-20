@@ -2,12 +2,11 @@
 Simple 2D RICS model. 
 -> One 2D diffusion component.
 -> No Triplet/blinking terms. 
--> No Shift between correlations.
+-> No Shift between color channels.
 
      |Offset|+|gamma|  / |N|*...
-      |Diffusion xy    chi shift         psi shift              w_r                |...
-      |Diffusion z     chi shift         psi shift              w_z                |...
-      |Scanning distance of pixels   / w_r^2  + 4D*(chi shift     + psi shift)|;
+      |Diffusion xy    xi shift         psi shift              w_r                |...
+      |Scanning distance of pixels   / w_r^2  + 4D*(xi shift     + psi shift)|;
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N                 = 1;	LB = 0;     UB = Inf;   
 Param(2): D[&mu;m<sup>2</sup>/s]          = 10;	LB = 0;     UB = Inf;

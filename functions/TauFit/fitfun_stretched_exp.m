@@ -4,14 +4,14 @@ IRFPattern = xdata{2}; %for convolution
 Scatter = xdata{3}; %for accounting for scatter in the actual decay
 p = xdata{4};
 y = xdata{5};
-c = xdata{6}; %IRF shift
+c = param(end);%xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
 %irf = circshift(IRFPattern,[c, 0]);
 irf = shift_by_fraction(IRFPattern,c);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
+irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
 %A shift in the scatter is not needed in the model
