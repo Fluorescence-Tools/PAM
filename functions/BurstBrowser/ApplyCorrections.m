@@ -238,6 +238,8 @@ if any(BurstData{file}.BAMethod == [3,4])
     NBB= BurstData{file}.DataArray(:,indNBB);
     NBG = BurstData{file}.DataArray(:,indNBG);
     NBR = BurstData{file}.DataArray(:,indNBR);
+    NGR = BurstData{file}.DataArray(:,indNGR);
+    NRR = BurstData{file}.DataArray(:,indNRR);
     
     %%% Read out corrections
     gamma_bg = BurstData{file}.Corrections.Gamma_BG;
@@ -256,11 +258,19 @@ if any(BurstData{file}.BAMethod == [3,4])
     NBB = NBB - Dur.*BG_BB;
     NBG = NBG - Dur.*BG_BG;
     NBR = NBR - Dur.*BG_BR;
+    NGR = NGR - Dur.*BG_GR;
+    NRR = NRR - Dur.*BG_RR;
     
     %%% change name of variable E to EGR
     EGR = E;
     %%% Apply CrossTalk and DirectExcitation Corrections
-    NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
+    new_correction_BR = false
+    if new_correction_BR %%% produces identical results but is "easier" to compute
+        NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(NGR-de_gr.*NRR);
+    else
+        % use correction according to 3C-PDA paper SI
+        NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
+    end
     NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
     %%% Recalculate FRET Efficiency and Stoichiometry
     E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR);
