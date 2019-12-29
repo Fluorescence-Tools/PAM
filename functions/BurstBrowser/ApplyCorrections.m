@@ -238,6 +238,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     NBB= BurstData{file}.DataArray(:,indNBB);
     NBG = BurstData{file}.DataArray(:,indNBG);
     NBR = BurstData{file}.DataArray(:,indNBR);
+    NGG = BurstData{file}.DataArray(:,indNGG);
     NGR = BurstData{file}.DataArray(:,indNGR);
     NRR = BurstData{file}.DataArray(:,indNRR);
     
@@ -258,6 +259,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     NBB = NBB - Dur.*BG_BB;
     NBG = NBG - Dur.*BG_BG;
     NBR = NBR - Dur.*BG_BR;
+    NGG = NGG - Dur.*BG_GG;
     NGR = NGR - Dur.*BG_GR;
     NRR = NRR - Dur.*BG_RR;
     
@@ -266,7 +268,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     %%% Apply CrossTalk and DirectExcitation Corrections
     new_correction_BR = true
     if new_correction_BR %%% produces identical results but is "easier" to compute
-        NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(NGR-de_gr.*NRR);
+        NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(NGR-de_gr.*NRR-ct_gr.*NGG);
     else
         % use correction according to 3C-PDA paper SI (in the paper, the gamma_gr factor in the last term was erroneously missing)
         NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*gamma_gr.*NGG;
