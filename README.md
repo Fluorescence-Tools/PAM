@@ -1,6 +1,17 @@
 PAM - PIE Analysis with MATLAB 
 =================================
 
+**PAM** is a software package for quantitative analysis of fluorescence microscopy and spectroscopy data, with a focus on experiments using pulsed interleaved excitation. PAM combines many advanced fluorescence methods, including:
+
+* Fluorescence fluctuation spectroscopy techniques (FCS, FCCS, Pair-Correlation)
+* Single-molecule Förster resonance energy transfer (smFRET) of freely-diffusing molecules in solution with or without multiparameter fluorescence detection (MFD)
+* Fluorescence lifetime imaging microscopy (FLIM) using the phasor approach
+* Image analysis and fluctuation imaging (ICS, RICS, tICS, N&B)
+
+For details, please the the associated publication:
+
+[Schrimpf, W., Barth, A., Hendrix, J. & Lamb, D. C. PAM: A framework for integrated analysis of imaging, single-molecule, and ensemble fluorescence data. *Biophysical journal* 114, 1518-1528 (2018)](https://www.sciencedirect.com/science/article/pii/S0006349518302959)
+
 The program can be downloaded from the homepage of Prof. Don C. Lamb - http://www.cup.uni-muenchen.de/pc/lamb/ - or through *GitLab* - https://gitlab.com/PAM-PIE.
 
 The **manual** can be found at [http://pam.readthedocs.io](http://pam.readthedocs.io).
@@ -37,7 +48,7 @@ Installing and updating the open-source version of PAM
 ========================================================
 
 The open source version of PAM requires a valid licence for MATLAB (2014b or newer).
-Certain features further need access to tool boxes (curve fitting, image processing, statistics and machine learning, parallel computing) to work.
+Certain features further need access to tool boxes (curve fitting, optimization, image processing, statistics and machine learning, parallel computing) to work.
 
 You can obtain and update **PAM** either through direct download from *Gitlab*, using the command line through *Git*, or by using the MATLAB *Git* integration.
 
