@@ -2026,11 +2026,11 @@ for i=1:size(FCSMeta.Plots,1)
             end
         else % substract offset
             if Plot_Errorbars
-                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(offset_idx)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(offset_idx)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
             else
-                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
-                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(offset_idx)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(offset_idx)))/B]);
             end
         end
         RMax=max([RMax, max(Residuals(XMin:XMax))]);
