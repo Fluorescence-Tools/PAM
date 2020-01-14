@@ -1652,7 +1652,7 @@ switch mode
                     h.AllTab.Main_Axes.XLabel.String = 'Proximity Ratio';
                 case 'log(FD/FA)'
                     Prox = real(log10(PDAData.Data{i}.NG(valid)./PDAData.Data{i}.NF(valid)));
-                    minX = min(Prox); maxX = max(Prox);
+                    minX = min(Prox(isfinite(Prox))); maxX = max(Prox(isfinite(Prox)));
                     h.AllTab.Main_Axes.XLabel.String = 'log(FD/FA)';
                 case {'FRET efficiency','Distance'}
                     NF_cor = PDAData.Data{i}.NF(valid) - PDAData.timebin(i)*PDAMeta.BGacc(i);
@@ -1673,8 +1673,8 @@ switch mode
                 %%% if we called from the XAxis popupmenu, update axis limit editboxes
                 h.SettingsTab.MainAxisLimtsLow_Edit.String = num2str(minX);
                 h.SettingsTab.MainAxisLimtsHigh_Edit.String = num2str(maxX);
-            elseif any(gco == [h.SettingsTab.MainAxisLimtsLow_Edit,h.SettingsTab.MainAxisLimtsHigh_Edit])
-                %%% if we called from theaxis limit edit boxes, overwrite limit here
+            else %if any(gco == [h.SettingsTab.MainAxisLimtsLow_Edit,h.SettingsTab.MainAxisLimtsHigh_Edit])
+                %%% if we called from the axis limit edit boxes (or somewhere else), overwrite limit here
                 minX_edit = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
                 maxX_edit = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);                
                 if isfinite(minX_edit)
@@ -1743,8 +1743,8 @@ switch mode
             PDAMeta.Plots.Data_All{i}.YData(1) = mini;
             PDAMeta.Plots.Data_All{i}.YData(end) = maxi;
             PDAMeta.Plots.Data_All{i}.YData = PDAMeta.Plots.Data_All{i}.YData./sum(PDAMeta.Plots.Data_All{i}.YData);
-            set(h.AllTab.Main_Axes, 'XLim', lims)
-            set(h.AllTab.Res_Axes, 'XLim', lims)
+            set(h.AllTab.Main_Axes, 'XLim', [minX,maxX])
+            set(h.AllTab.Res_Axes, 'XLim', [minX,maxX])
             % residuals plot
             PDAMeta.Plots.Res_All{i} = stairs(h.AllTab.Res_Axes,...
                 xProx,...
