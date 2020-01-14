@@ -1429,6 +1429,15 @@ for i = 1:numel(FileName)
                 PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
                 PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
             end
+            if isfield(SavedData,'XAxisMethod')
+                %%% XAxisMethod and limits have been saved
+                if i == 1 % first file, use xAxisMethod and limits of this file
+                    h.SettingsTab.XAxisUnit_Menu.Value = find(strcmp(SavedData.XAxisMethod,h.SettingsTab.XAxisUnit_Menu.String));
+                    % set the limits
+                    h.SettingsTab.MainAxisLimtsLow_Edit.String = num2str(SavedData.XAxisLimitLow);
+                    h.SettingsTab.MainAxisLimtsHigh_Edit.String = num2str(SavedData.XAxisLimitHigh);
+                end
+            end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -1511,6 +1520,9 @@ for i = 1:numel(PDAData.FileName)
     SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
     SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
     SavedData.MaxS = str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String);
+    SavedData.XAxisMethod = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
+    SavedData.XAxisLimitLow = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
+    SavedData.XAxisLimitHigh = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
@@ -1632,7 +1644,7 @@ switch mode
             ProxRatio = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             Sto = (PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid))./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NR(valid));
             BSD = PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid);
-            % calculate corrected quantities
+            % calculate derived quantities
             switch xAxisUnit
                 case 'Proximity Ratio'
                     Prox = ProxRatio;
@@ -1878,11 +1890,35 @@ switch mode
                      valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
                 end
             end
-            Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
-            hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
+            ProxRatio = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
+            % calculate derived quantities
+            switch xAxisUnit
+                case 'Proximity Ratio'
+                    Prox = ProxRatio;                    
+                    h.AllTab.Main_Axes.XLabel.String = 'Proximity Ratio';
+                case 'log(FD/FA)'
+                    Prox = real(log10(PDAData.Data{i}.NG(valid)./PDAData.Data{i}.NF(valid)));
+                    h.SingleTab.Main_Axes.XLabel.String = 'log(FD/FA)';
+                case {'FRET efficiency','Distance'}
+                    NF_cor = PDAData.Data{i}.NF(valid) - PDAData.timebin(i)*PDAMeta.BGacc(i);
+                    ND_cor = PDAData.Data{i}.NG(valid) - PDAData.timebin(i)*PDAMeta.BGdonor(i);
+                    % Schuler-type correction of photon counts for direct excitation
+                    NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                    Prox = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                    h.SingleTab.Main_Axes.XLabel.String = 'FRET efficiency';
+                    if strcmp(xAxisUnit,'Distance')
+                        % convert to distance
+                        Prox = real(PDAMeta.R0(i)*(1./Prox-1).^(1/6));
+                        h.SingleTab.Main_Axes.XLabel.String = 'Distance [A]';
+                    end
+            end
+            minX = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
+            maxX = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);
+            
+            hProx = histcounts(Prox, linspace(minX,maxX,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
             % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
             % histcounts bins as 0 <= N < 0.02
-            xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
+            xProx = linspace(minX,maxX,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
             % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
             % the last element is to allow proper display of the 50th bin
             
