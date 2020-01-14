@@ -1547,7 +1547,7 @@ if reset == 1
 end
 
 % determine x-axis unit
-xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
+PDAMeta.xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
 
 % check if plot is active
 Active = find(cell2mat(h.FitTab.Table.Data(1:end-3,1)))';
@@ -1645,7 +1645,7 @@ switch mode
             Sto = (PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid))./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NR(valid));
             BSD = PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid);
             % calculate derived quantities
-            switch xAxisUnit
+            switch PDAMeta.xAxisUnit
                 case 'Proximity Ratio'
                     Prox = ProxRatio;
                     minX = 0; maxX = 1;
@@ -1661,7 +1661,7 @@ switch mode
                     NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                     Prox = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);
                     h.AllTab.Main_Axes.XLabel.String = 'FRET efficiency';
-                    if strcmp(xAxisUnit,'Distance')
+                    if strcmp(PDAMeta.xAxisUnit,'Distance')
                         % convert to distance
                         Prox = real(PDAMeta.R0(i)*(1./Prox-1).^(1/6));
                         h.AllTab.Main_Axes.XLabel.String = 'Distance [A]';
@@ -1892,7 +1892,7 @@ switch mode
             end
             ProxRatio = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             % calculate derived quantities
-            switch xAxisUnit
+            switch PDAMeta.xAxisUnit
                 case 'Proximity Ratio'
                     Prox = ProxRatio;                    
                     h.AllTab.Main_Axes.XLabel.String = 'Proximity Ratio';
@@ -1906,7 +1906,7 @@ switch mode
                     NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                     Prox = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);
                     h.SingleTab.Main_Axes.XLabel.String = 'FRET efficiency';
-                    if strcmp(xAxisUnit,'Distance')
+                    if strcmp(PDAMeta.xAxisUnit,'Distance')
                         % convert to distance
                         Prox = real(PDAMeta.R0(i)*(1./Prox-1).^(1/6));
                         h.SingleTab.Main_Axes.XLabel.String = 'Distance [A]';
@@ -2446,7 +2446,9 @@ else
     PDAMeta.lifetime_PDA = false;
 end
 PDAMeta.GridRes_PofT = str2double(UserValues.PDA.GridRes_PofT);
-xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
+PDAMeta.xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
+PDAMeta.xAxisLimLow = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
+PDAMeta.xAxisLimHigh = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');
@@ -2666,7 +2668,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 for j = 1:numel(eps_grid)
                     %for a particular value of E
                     P_temp = PNF(:,:,j);
-                    switch xAxisUnit
+                    switch PDAMeta.xAxisUnit
                         case 'Proximity Ratio'
                             E_temp = NF(:,:,j)./N(:,:,j);
                             minE = 0; maxE = 1;
@@ -2692,7 +2694,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             % see: Nettels, D. et al. Excited-state annihilation reduces power dependence of single-molecule FRET experiments. Physical Chemistry Chemical Physics 17, 32304-32315 (2015).
                             NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                             E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
-                            if strcmp(xAxisUnit,'Distance')
+                            if strcmp(PDAMeta.xAxisUnit,'Distance')
                                 % convert to distance
                                 E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                             end
@@ -2726,7 +2728,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     for g = 0:NBG
                         for r = 0:NBR
                             P_temp = PBG(g+1)*PBR(r+1)*PNF(1:end-g-r,:,j); %+1 since also zero is included
-                            switch xAxisUnit
+                            switch PDAMeta.xAxisUnit
                                 case 'Proximity Ratio'
                                     E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
                                     minE = 0; maxE = 1; 
@@ -2752,7 +2754,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                     % see: Nettels, D. et al. Excited-state annihilation reduces power dependence of single-molecule FRET experiments. Physical Chemistry Chemical Physics 17, 32304-32315 (2015).
                                     NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                                     E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
-                                    if strcmp(xAxisUnit,'Distance')
+                                    if strcmp(PDAMeta.xAxisUnit,'Distance')
                                         % convert to distance
                                         E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                                     end
@@ -2810,7 +2812,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
             if NBG == 0 && NBR == 0
                 %for a particular value of E
                 P_temp = PNF_donly;
-                switch xAxisUnit
+                switch PDAMeta.xAxisUnit
                     case 'Proximity Ratio'
                         E_temp = NF(:,:,1)./N(:,:,1);
                         minE = 0; maxE = 1; 
@@ -2824,7 +2826,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                         ND_cor = N(:,:,1)-NF(:,:,1);
                         NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                         E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
-                        if strcmp(xAxisUnit,'Distance')
+                        if strcmp(PDAMeta.xAxisUnit,'Distance')
                             % convert to distance
                             E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                         end
@@ -2851,7 +2853,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     for r = 0:NBR
                         P_temp = PBG(g+1)*PBR(r+1)*PNF_donly(1:end-g-r,:); %+1 since also zero is included
                         E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
-                        switch xAxisUnit
+                        switch PDAMeta.xAxisUnit
                             case 'Proximity Ratio'
                                 E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
                                 minE = 0; maxE = 1;
@@ -2865,7 +2867,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 ND_cor = N(1:end-g-r,:,1)-NF(1:end-g-r,:,1);
                                 NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                                 E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
-                                if strcmp(xAxisUnit,'Distance')
+                                if strcmp(PDAMeta.xAxisUnit,'Distance')
                                     % convert to distance
                                     E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                                 end
@@ -5026,12 +5028,26 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
             BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
             BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
             BSD_bg = BSD-BG_gg-BG_gr;
-            PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+            switch PDAMeta.xAxisUnit
+                case 'Proximity Ratio'
+                    PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+                case 'log(FD/FA)'
+                    NF = binornd(BSD_bg,eps)+BG_gr;
+                    PRH{k,j} = real(log10((BSD-NF)./NF));
+                case {'FRET efficiency','Distance'}                    
+                    NF = binornd(BSD_bg,eps);
+                    ND = BSD-NF-BG_gg-BG_gr;
+                    NF = NF-cr*ND-de*(gamma*ND+NF);
+                    PRH{k,j} = NF./(gamma*ND+NF);
+                    if strcmp(PDAMeta.xAxisUnit,'Distance')
+                        PRH{k,j} = real(R0*(1./PRH{k,j}-1).^(1/6));
+                    end
+            end
         end
     end
     H_res_dummy = zeros(numel(PDAMeta.hProx{file}),5);
     for j = PDAMeta.Comp{file}
-        H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1))./sampling;
+        H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     end
     hFit = zeros(numel(PDAMeta.hProx{file}),1);
     for j = PDAMeta.Comp{file}
@@ -5076,7 +5092,22 @@ else %%% dynamic model
     else
         PRH = MonteCarlo_2states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling);
     end
-    hFit = histcounts(PRH,linspace(0,1,Nobins+1))./sampling;
+    switch PDAMeta.xAxisUnit
+        case 'Proximity Ratio'
+            % already PRH, do nothing
+        case 'log(FD/FA)'
+            NF = PRH.*repmat(BSD,[sampling,1]);
+            PRH = real(log10((repmat(BSD,[sampling,1])-NF)./NF));
+        case {'FRET efficiency','Distance'}                    
+            NF = PRH.*repmat(BSD,[sampling,1]);
+            ND = repmat(BSD,[sampling,1])-NF-BG_gg-BG_gr;
+            NF = NF-cr*ND-de*(gamma*NG+NF);
+            PRH = NF./(gamma*NG+NF);
+            if strcmp(PDAMeta.xAxisUnit,'Distance')
+                PRH = real(R0*(1./PRH-1).^(1/6));
+            end
+    end
+    hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     hFit = hFit';
 end
 
@@ -5137,7 +5168,7 @@ if sum(PDAMeta.Global) == 0
 end
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
-if h.SettingsTab.LiveUpdate.Value && sum(PDAMeta.Global) == 0
+if h.SettingsTab.LiveUpdate.Value && ~PDAMeta.FittingGlobal
     Update_Plots([],[],5)
 end
 
