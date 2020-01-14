@@ -673,6 +673,19 @@ if isempty(h.GlobalPDAFit)
         'Position',[0.2 0.825 0.05 0.15],...
         'Callback',{@Update_Plots,3,1},...
         'Tag','NumberOfBins_Edit');
+    h.SettingsTab.XAxisUnit_Menu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', [1,1,1],...
+        'ForegroundColor', [0,0,0],...
+        'Value',2,...
+        'Units','normalized',...
+        'String',{'Proximity Ratio','FRET efficiency','Distance'},...
+        'TooltipString','<html>Choose the quantity to be used for the x-axis.<br>Proximity Ratio: Apparent FRET efficiency from uncorrected photon counts.<br>FRET efficiency: Corrected FRET efficiency.<br>Distance: Distance in Angstrom calculated from the corrected FRET efficiency.</html>',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,3,1},...
+        'Position',[0.255 0.825 0.14 0.15],...
+        'Tag','ScaleNumberOfPhotons_Checkbox');
     h.SettingsTab.NumberOfPhotMin_Text = uicontrol(...
         'Style','text',...
         'Parent',h.SettingsTab.Panel,...
@@ -2307,6 +2320,7 @@ else
     PDAMeta.lifetime_PDA = false;
 end
 PDAMeta.GridRes_PofT = str2double(UserValues.PDA.GridRes_PofT);
+xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');
@@ -2469,7 +2483,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 %epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
                 
                 %%% new: use linear distribution of eps since the
-                %%% conversion of P(R) to P(eps) returns a probility
+                %%% conversion of P(R) to P(eps) returns a probability
                 %%% density, that would have to be converted to a
                 %%% probability by multiplying with the bin width.
                 %%% Instead, usage of a linear grid of eps ensures that the
@@ -2526,8 +2540,34 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 for j = 1:numel(eps_grid)
                     %for a particular value of E
                     P_temp = PNF(:,:,j);
-                    E_temp = NF(:,:,j)./N(:,:,j);
-                    [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                    switch xAxisUnit
+                        case 'Proximity Ratio'
+                            E_temp = NF(:,:,j)./N(:,:,j);
+                            minE = 0; maxE = 1;                            
+                        case {'FRET efficiency','Distance'}
+                            % Background correction
+                            NF_cor = NF(:,:,j);
+                            ND_cor = N(:,:,j)-NF(:,:,j);
+                            % crosstalk and direct excitation correction
+                            % (direct excitation based on Schuler method
+                            % using the corrected total number of photon
+                            % and the direct excitation factor as defined
+                            % for PDA as p_de =
+                            % eps_A^lambdaD/(eps_A^lambdaD+eps_D^lambdaD),
+                            % i.e. the probability that the acceptor is
+                            % excited by the donor laser using the
+                            % exctinction coefficients at the donor
+                            % excitation wavelength.
+                            % see: Nettels, D. et al. Excited-state annihilation reduces power dependence of single-molecule FRET experiments. Physical Chemistry Chemical Physics 17, 32304-32315 (2015).
+                            NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                            E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
+                            if strcmp(xAxisUnit,'Distance')
+                                % convert to distance
+                                E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                            end
+                            minE = min(E_temp); maxE = max(E_temp);
+                    end
+                    [~,~,bin] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                     validd = (bin ~= 0);
                     P_temp = P_temp(:);
                     bin = bin(validd);
@@ -2553,8 +2593,34 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     for g = 0:NBG
                         for r = 0:NBR
                             P_temp = PBG(g+1)*PBR(r+1)*PNF(1:end-g-r,:,j); %+1 since also zero is included
-                            E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
-                            [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                            switch xAxisUnit
+                                case 'Proximity Ratio'
+                                    E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
+                                    minE = 0; maxE = 1;                            
+                                case {'FRET efficiency','Distance'}
+                                    % Background correction
+                                    NF_cor = NF(1:end-g-r,:,j);
+                                    ND_cor = N(1:end-g-r,:,j)-NF(1:end-g-r,:,j);
+                                    % crosstalk and direct excitation correction
+                                    % (direct excitation based on Schuler method
+                                    % using the corrected total number of photon
+                                    % and the direct excitation factor as defined
+                                    % for PDA as p_de =
+                                    % eps_A^lambdaD/(eps_A^lambdaD+eps_D^lambdaD),
+                                    % i.e. the probability that the acceptor is
+                                    % excited by the donor laser using the
+                                    % exctinction coefficients at the donor
+                                    % excitation wavelength.
+                                    % see: Nettels, D. et al. Excited-state annihilation reduces power dependence of single-molecule FRET experiments. Physical Chemistry Chemical Physics 17, 32304-32315 (2015).
+                                    NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                                    E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
+                                    if strcmp(xAxisUnit,'Distance')
+                                        % convert to distance
+                                        E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                                    end
+                                    minE = min(E_temp); maxE = max(E_temp);
+                            end
+                            [~,~,bin{count}] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                             validd{count} = (bin{count} ~= 0);
                             P_temp = P_temp(:);
                             bin{count} = bin{count}(validd{count});
@@ -2604,8 +2670,22 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
             if NBG == 0 && NBR == 0
                 %for a particular value of E
                 P_temp = PNF_donly;
-                E_temp = NF(:,:,1)./N(:,:,1);
-                [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                switch xAxisUnit
+                    case 'Proximity Ratio'
+                        E_temp = NF(:,:,1)./N(:,:,1);
+                        minE = 0; maxE = 1;                            
+                    case {'FRET efficiency','Distance'}
+                        NF_cor = NF(:,:,1);
+                        ND_cor = N(:,:,1)-NF(:,:,1);
+                        NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                        E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
+                        if strcmp(xAxisUnit,'Distance')
+                            % convert to distance
+                            E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                        end
+                        minE = min(E_temp); maxE = max(E_temp);
+                end
+                [~,~,bin] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                 validd = (bin ~= 0);
                 P_temp = P_temp(:);
                 bin = bin(validd);
@@ -2624,6 +2704,21 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     for r = 0:NBR
                         P_temp = PBG(g+1)*PBR(r+1)*PNF_donly(1:end-g-r,:); %+1 since also zero is included
                         E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
+                        switch xAxisUnit
+                            case 'Proximity Ratio'
+                                E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
+                                minE = 0; maxE = 1;                            
+                            case {'FRET efficiency','Distance'}
+                                NF_cor = NF(1:end-g-r,:,1);
+                                ND_cor = N(1:end-g-r,:,1)-NF(1:end-g-r,:,1);
+                                NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                                E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
+                                if strcmp(xAxisUnit,'Distance')
+                                    % convert to distance
+                                    E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                                end
+                                minE = min(E_temp); maxE = max(E_temp);
+                        end
                         [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
                         validd{count} = (bin{count} ~= 0);
                         P_temp = P_temp(:);
