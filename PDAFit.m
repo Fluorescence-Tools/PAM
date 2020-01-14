@@ -680,7 +680,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', [0,0,0],...
         'Value',2,...
         'Units','normalized',...
-        'String',{'Proximity Ratio','FRET efficiency','Distance'},...
+        'String',{'Proximity Ratio','FRET efficiency','log(FD/FA)','Distance'},...
         'TooltipString','<html>Choose the quantity to be used for the x-axis.<br>Proximity Ratio: Apparent FRET efficiency from uncorrected photon counts.<br>FRET efficiency: Corrected FRET efficiency.<br>Distance: Distance in Angstrom calculated from the corrected FRET efficiency.</html>',...
         'FontSize',12,...
         'Callback',{@Update_Plots,3,1},...
@@ -1501,6 +1501,9 @@ if reset == 1
     PDAMeta.PreparationDone(:) = 0;
 end
 
+% determine x-axis unit
+xAxisUnit = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
+
 % check if plot is active
 Active = find(cell2mat(h.FitTab.Table.Data(1:end-3,1)))';
 
@@ -1553,6 +1556,13 @@ switch mode
             'FontSmoothing','on',...
             'Visible','off');
         for i = 1:n
+            %%%read corretions
+            PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
+            PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
+            PDAMeta.crosstalk(i) = cell2mat(h.ParametersTab.Table.Data(i,3));
+            PDAMeta.R0(i) = cell2mat(h.ParametersTab.Table.Data(i,6));
+            PDAMeta.directexc(i) = cell2mat(h.ParametersTab.Table.Data(i,2));
+            PDAMeta.gamma(i) = cell2mat(h.ParametersTab.Table.Data(i,1));
             %colors
             normal = color(i,:);
             light = (normal+1)./2;
@@ -1586,14 +1596,38 @@ switch mode
                 end
             end
             %%% Calculate proximity ratio histogram
-            Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
+            ProxRatio = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             Sto = (PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid))./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NR(valid));
             BSD = PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid);
+            % calculate corrected quantities
+            switch xAxisUnit
+                case 'Proximity Ratio'
+                    Prox = ProxRatio;
+                    minX = 0; maxX = 1;
+                    h.AllTab.Main_Axes.XLabel.String = 'Proximity Ratio';
+                case 'log(FD/FA)'
+                    Prox = real(log10(PDAData.Data{i}.NG(valid)./PDAData.Data{i}.NF(valid)));
+                    minX = min(Prox); maxX = max(Prox);
+                    h.AllTab.Main_Axes.XLabel.String = 'log(FD/FA)';
+                case {'FRET efficiency','Distance'}
+                    NF_cor = PDAData.Data{i}.NF(valid) - PDAData.timebin(i)*PDAMeta.BGacc(i);
+                    ND_cor = PDAData.Data{i}.NG(valid) - PDAData.timebin(i)*PDAMeta.BGdonor(i);
+                    % Schuler-type correction of photon counts for direct excitation
+                    NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                    Prox = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);
+                    h.AllTab.Main_Axes.XLabel.String = 'FRET efficiency';
+                    if strcmp(xAxisUnit,'Distance')
+                        % convert to distance
+                        Prox = real(PDAMeta.R0(i)*(1./Prox-1).^(1/6));
+                        h.AllTab.Main_Axes.XLabel.String = 'Distance [A]';
+                    end
+                    minX = min(Prox); maxX = max(Prox);
+            end
             PDAMeta.BSD{i} = BSD;
-            PDAMeta.hProx{i} = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)); 
+            PDAMeta.hProx{i} = histcounts(Prox, linspace(minX,maxX,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)); 
             % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
             % histcounts bins as 0 <= N < 0.02
-            xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
+            xProx = linspace(minX,maxX,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
             % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
             % the last element is to allow proper display of the 50th bin
             
@@ -1702,7 +1736,7 @@ switch mode
                 'LineWidth',2);
             % ES scatter plots
             PDAMeta.Plots.ES_All{i} = plot(h.AllTab.ES_Axes,...
-                Prox,...
+                ProxRatio,...
                 Sto,...
                 'Color',normal,...
                 'MarkerSize',2,...
@@ -2543,7 +2577,12 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     switch xAxisUnit
                         case 'Proximity Ratio'
                             E_temp = NF(:,:,j)./N(:,:,j);
-                            minE = 0; maxE = 1;                            
+                            minE = 0; maxE = 1;
+                        case 'log(FD/FA)'
+                            E_temp = real(log10((N(:,:,j)-NF(:,:,j))./NF(:,:,j)));
+                            %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                            minE = h.AllTab.Main_Axes.XLim(1);
+                            maxE = h.AllTab.Main_Axes.XLim(2);
                         case {'FRET efficiency','Distance'}
                             % Background correction
                             NF_cor = NF(:,:,j);
@@ -2563,9 +2602,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                             if strcmp(xAxisUnit,'Distance')
                                 % convert to distance
-                                E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                                E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                             end
-                            minE = min(E_temp); maxE = max(E_temp);
+                            %minE = min(E_temp); maxE = max(E_temp);
+                            minE = h.AllTab.Main_Axes.XLim(1);
+                            maxE = h.AllTab.Main_Axes.XLim(2);
                     end
                     [~,~,bin] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                     validd = (bin ~= 0);
@@ -2596,7 +2637,12 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             switch xAxisUnit
                                 case 'Proximity Ratio'
                                     E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
-                                    minE = 0; maxE = 1;                            
+                                    minE = 0; maxE = 1; 
+                                case 'log(FD/FA)'
+                                    E_temp = real(log10((N(1:end-g-r,:,1)-NF(1:end-g-r,:,1)+g)./(NF(1:end-g-r,:,1)+r)));
+                                    %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                                    minE = h.AllTab.Main_Axes.XLim(1);
+                                    maxE = h.AllTab.Main_Axes.XLim(2);
                                 case {'FRET efficiency','Distance'}
                                     % Background correction
                                     NF_cor = NF(1:end-g-r,:,j);
@@ -2616,9 +2662,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                     E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                                     if strcmp(xAxisUnit,'Distance')
                                         % convert to distance
-                                        E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                                        E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                                     end
-                                    minE = min(E_temp); maxE = max(E_temp);
+                                    %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                                    minE = h.AllTab.Main_Axes.XLim(1);
+                                    maxE = h.AllTab.Main_Axes.XLim(2);
                             end
                             [~,~,bin{count}] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                             validd{count} = (bin{count} ~= 0);
@@ -2646,7 +2694,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
                                 PN_trans = PN_trans(:);
                                 PN_trans = PN_trans(validd{count});
-                                P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
+                                P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                                 count = count+1;
                             end
                         end
@@ -2657,7 +2705,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
                                 PN_trans = PN_trans(:);
                                 PN_trans = PN_trans(validd{count});
-                                P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
+                                P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                                 count = count+1;
                             end
                         end
@@ -2673,7 +2721,12 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 switch xAxisUnit
                     case 'Proximity Ratio'
                         E_temp = NF(:,:,1)./N(:,:,1);
-                        minE = 0; maxE = 1;                            
+                        minE = 0; maxE = 1; 
+                    case 'log(FD/FA)'
+                        E_temp = real(log10((N(:,:,1)-NF(:,:,1))./NF(:,:,1)));
+                        %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                        minE = h.AllTab.Main_Axes.XLim(1);
+                        maxE = h.AllTab.Main_Axes.XLim(2);
                     case {'FRET efficiency','Distance'}
                         NF_cor = NF(:,:,1);
                         ND_cor = N(:,:,1)-NF(:,:,1);
@@ -2681,9 +2734,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                         E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                         if strcmp(xAxisUnit,'Distance')
                             % convert to distance
-                            E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                            E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                         end
-                        minE = min(E_temp); maxE = max(E_temp);
+                        %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                        minE = h.AllTab.Main_Axes.XLim(1);
+                        maxE = h.AllTab.Main_Axes.XLim(2);
                 end
                 [~,~,bin] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                 validd = (bin ~= 0);
@@ -2707,7 +2762,12 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                         switch xAxisUnit
                             case 'Proximity Ratio'
                                 E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
-                                minE = 0; maxE = 1;                            
+                                minE = 0; maxE = 1;
+                            case 'log(FD/FA)'
+                                E_temp = real(log10((N(1:end-g-r,:,1)-NF(1:end-g-r,:,1)+g)./(NF(1:end-g-r,:,1)+r)));
+                                %minE = min(E_temp(:)); maxE = max(E_temp(:));
+                                minE = h.AllTab.Main_Axes.XLim(1);
+                                maxE = h.AllTab.Main_Axes.XLim(2);
                             case {'FRET efficiency','Distance'}
                                 NF_cor = NF(1:end-g-r,:,1);
                                 ND_cor = N(1:end-g-r,:,1)-NF(1:end-g-r,:,1);
@@ -2715,9 +2775,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                                 if strcmp(xAxisUnit,'Distance')
                                     % convert to distance
-                                    E_temp = PDAMeta.R0(i)*(1./E_temp-1)^(1/6);                                
+                                    E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
                                 end
-                                minE = min(E_temp); maxE = max(E_temp);
+                                %minE = min(E_temp); maxE = max(E_temp);
+                                minE = h.AllTab.Main_Axes.XLim(1);
+                                maxE = h.AllTab.Main_Axes.XLim(2);
                         end
                         [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
                         validd{count} = (bin{count} ~= 0);
@@ -3948,7 +4010,8 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
         %%% Laurence, T. A. & Chromy, B. A. Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7, 338?339 (2010).
         log_term = -2*PDAMeta.hProx{i}.*log(hFit./PDAMeta.hProx{i});
         log_term(isnan(log_term)) = 0;
-        dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term;
+        log_term(~isfinite(log_term)) = 0;
+        dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term; dev_mle(dev_mle<0) = 0;
         w_res = sign(hFit-PDAMeta.hProx{i}).*sqrt(dev_mle);
 end
 usedBins = sum(PDAMeta.hProx{i} ~= 0);
@@ -4001,7 +4064,9 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = (-1/2)*sum(w_res.^2); %%% loglikelihood is the negative of chi2 divided by two
         case 1 %%% Assume poissonian error on data, MLE poissonian
             %%% compute loglikelihood without normalization to P(x|x)
-            log_term = PDAMeta.hProx{i}.*log(hFit);log_term(isnan(log_term)) = 0;
+            log_term = PDAMeta.hProx{i}.*log(hFit);
+            log_term(isnan(log_term)) = 0;
+            log_term(~isfinite(log_term)) = 0;
             loglikelihood = sum(log_term-hFit);
     end
     chi2 = loglikelihood;
@@ -5000,7 +5065,9 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = (-1/2)*sum(w_res.^2); %%% loglikelihood is the negative of chi2 divided by two
         case 1 %%% Assume poissonian error on data, MLE poissonian
             %%% compute loglikelihood without normalization to P(x|x)            
-            log_term = PDAMeta.hProx{i}.*log(hFit');log_term(isnan(log_term)) = 0;
+            log_term = PDAMeta.hProx{i}.*log(hFit');
+            log_term(isnan(log_term)) = 0;
+            log_term(~isfinite(log_term)) = 0;
             loglikelihood = sum(log_term-hFit');
     end
     chi2 = loglikelihood;
