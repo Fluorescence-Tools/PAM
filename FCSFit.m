@@ -2370,13 +2370,14 @@ switch mode
                 FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
                 FitResult{i}{1} = FCSData.FileName{i};
                 FitResult{i}{2} = str2double(h.Fit_Table.Data{i,end});
-                for j = 3:(size(FCSMeta.Params,1)+2)
-                    FitResult{i}{j} = FCSMeta.Params(j-2,i);
+                FitResult{i}{3} = str2double(h.Fit_Table.Data{i,4});
+                for j = 4:(size(FCSMeta.Params,1)+3)
+                    FitResult{i}{j} = FCSMeta.Params(j-3,i);
                 end
             end
         end
         [~,ModelName,~] = fileparts(FCSMeta.Model.Name);
-        Params = vertcat({ModelName;'Chi2'},FCSMeta.Model.Params);
+        Params = vertcat({ModelName;'Chi2';'Mol. Bright. [kHz]'},FCSMeta.Model.Params);
         if h.Conf_Interval.Value
             if isfield(FCSMeta,'Confidence_Intervals')
                 for i = 1:numel(FCSData.FileName)
