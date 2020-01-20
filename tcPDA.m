@@ -674,7 +674,17 @@ if isempty(h)
         'Parent',handles.tab_fit_table,...
         'Value',1,...
         'Callback',@update_corrections);
-    
+    handles.dynamic_model_checkbox = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Position',[0.4025,0.84,0.125,0.03],...
+        'String','Dyn?',...
+        'Tag','dynamic_model_checkbox',...
+        'FontSize',10,...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_fit_table,...
+        'Value',0,...
+        'Callback',@update_corrections);
     handles.FitMethod_popupmenu = uicontrol('Style','popupmenu',...
         'Units','normalized',...
         'Position',[0.25,0.96,0.3,0.03],...
@@ -1530,6 +1540,7 @@ tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabe
 tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
 tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
 tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
+tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox;
 if tcPDAstruct.BrightnessCorrection
     %%% Prepare PofN for Brightness Reference
     if ~isfield(tcPDAstruct,'BrightnessReference')
@@ -1808,13 +1819,24 @@ switch (selected_tab)
                     tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
                 end
             end
-             
-            if ~handles.use_2cPDAData_checkbox.Value
-                %%% no global fit
-                fitfun = @(x) determine_MLE_3color(x) + evaluate_prior(x);
-            else
-                %%% global fit using two color data set
-                fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);                
+            
+            if ~tcPDAstruct.dynamic_model
+                if ~handles.use_2cPDAData_checkbox.Value
+                    %%% no global fit
+                    fitfun = @(x) determine_MLE_3color(x) + evaluate_prior(x);
+                else
+                    %%% global fit using two color data set
+                    fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);                
+                end
+            else % dynamic model
+                if ~handles.use_2cPDAData_checkbox.Value
+                    %%% no global fit
+                    fitfun = @(x) determine_MLE_3color_dynamic(x) + evaluate_prior(x);
+                else
+                    %%% global fit using two color data set
+                    disp('Global fit of 2+3 color data is not implemented for dynamic models.');
+                    return;
+                end
             end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Simplex'

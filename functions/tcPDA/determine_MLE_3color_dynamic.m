@@ -23,49 +23,11 @@ if ~tcPDAstruct.use_stochasticlabeling
         simga_Rbg_Rgr(i) = fitpar((i-1)*10+9);
         simga_Rbr_Rgr(i) = fitpar((i-1)*10+10);
     end
-elseif tcPDAstruct.use_stochasticlabeling
-    %%% use stochastic labeling correction
-    %%% this means: every population gets a second population with equal
-    %%% RGR but switched RBG and RBR. The fraction of this population is
-    %%% given by as well
-    
-    %%% stochastic labeling can be a fit parameter
-    if ~tcPDAstruct.fix_stochasticlabeling
-        fraction_stochasticlabeling = fitpar(end);
-        fitpar(end) = [];
-    else
-        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
-    end
-    
-    N_gauss = numel(fitpar)/10;
-    
-    for i = 1:N_gauss
-        %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
-        Rgr(2*i-1) = fitpar((i-1)*10+2);
-        sigma_Rgr(2*i-1) = fitpar((i-1)*10+3);
-        Rbg(2*i-1) = fitpar((i-1)*10+4);
-        sigma_Rbg(2*i-1) = fitpar((i-1)*10+5);
-        Rbr(2*i-1) = fitpar((i-1)*10+6);
-        sigma_Rbr(2*i-1) = fitpar((i-1)*10+7);
-        simga_Rbg_Rbr(2*i-1) = fitpar((i-1)*10+8);
-        simga_Rbg_Rgr(2*i-1) = fitpar((i-1)*10+9);
-        simga_Rbr_Rgr(2*i-1) = fitpar((i-1)*10+10);
-        %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*10+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
-        Rgr(2*i) = fitpar((i-1)*10+2);
-        sigma_Rgr(2*i) = fitpar((i-1)*10+3);
-        Rbg(2*i) = fitpar((i-1)*10+6); %%% switched with RBR
-        sigma_Rbg(2*i) = fitpar((i-1)*10+7);%%% switched with sigma_RBR
-        Rbr(2*i) = fitpar((i-1)*10+4);%%% switched with RBG
-        sigma_Rbr(2*i) = fitpar((i-1)*10+5);%%% switched with sigma_RBG
-        simga_Rbg_Rbr(2*i) = fitpar((i-1)*10+8);
-        simga_Rbg_Rgr(2*i) = fitpar((i-1)*10+10); %%% switched with sigma_Rbr_Rgr
-        simga_Rbr_Rgr(2*i) = fitpar((i-1)*10+9); %%% switched with sigma_Rbg_Rgr
-    end
-    N_gauss = 2*N_gauss;
+else
+    disp('Stochastic labeling is not implemented for dynamics.');
+    P_result = Inf;
+    return;    
 end
-A = A./sum(A);
 
 %read corrections
 corrections = tcPDAstruct.corrections;
@@ -88,56 +50,32 @@ for j=1:N_gauss
         %COV = nearestSPD(COV);
        [COV] = fix_covariance_matrix(COV);
        [~,err] = cholcov(COV,0);
-    end
-    
-    param.MU = MU;
-    param.COV = COV;
-    P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param);
+    end    
+    param{j}.MU = MU;
+    param{j}.COV = COV;
 end
 
+% evaluate dynamics
+k12 = A(1);
+k21 = A(2);
+P_res{1} = posterior_dynamic(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{1},param{2},k12,k21);
+
+if N_gauss > 2 %%% add static species
+    for j=3:N_gauss
+        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{j});
+    end
+end
+% remove second population (included in dynamics)
+P_res(2) = [];
+
+% adjust the amplitudes
+A = [1, A(3:end)]; % assign amplitude of 1 to dynamic system
+A = A./sum(A);
+
 if tcPDAstruct.BrightnessCorrection
-        %%% If brightness correction is to be performed, determine the relative
-        %%% brightness based on current distance and correction factors
-        PNGX_scaled = cell(N_gauss,1);
-        PNBX_scaled = cell(N_gauss,1);
-        for c = 1:N_gauss
-            [Qr_g,Qr_b] = calc_relative_brightness(Rgr(c),Rbg(c),Rbr(c));
-            %%% Rescale the PN;
-            PNGX_scaled{c} = scalePN(tcPDAstruct.BrightnessReference.PNG,Qr_g);
-            PNGX_scaled{c} = smooth(PNGX_scaled{c},10);
-            PNGX_scaled{c} = PNGX_scaled{c}./sum(PNGX_scaled{c});
-            PNBX_scaled{c} = scalePN(tcPDAstruct.BrightnessReference.PNB,Qr_b);
-            PNBX_scaled{c} = smooth(PNBX_scaled{c},10);
-            PNBX_scaled{c} = PNBX_scaled{c}./sum(PNBX_scaled{c});
-        end
-        %%% calculate the relative probabilty
-        PGX_norm = sum(horzcat(PNGX_scaled{:}),2);
-        PBX_norm = sum(horzcat(PNBX_scaled{:}),2);
-        for c = 1:N_gauss
-            PNGX_scaled{c}(PGX_norm~=0) = PNGX_scaled{c}(PGX_norm~=0)./PGX_norm(PGX_norm~=0);
-            PNBX_scaled{c}(PBX_norm~=0) = PNBX_scaled{c}(PBX_norm~=0)./PBX_norm(PBX_norm~=0);
-            %%% We don't want zero probabilities here!
-            PNGX_scaled{c}(PNGX_scaled{c} == 0) = eps;
-            PNBX_scaled{c}(PNBX_scaled{c} == 0) = eps;
-            %%% Treat case where measured bursts have higher photon number than
-            %%% reference
-            %%% -> Set probability to 1/N_gauss then
-            if numel(PNGX_scaled{c}) < max(tcPDAstruct.fgg+tcPDAstruct.fgr)
-                PNGX_scaled{c}(numel(PNGX_scaled{c})+1 : max(tcPDAstruct.fgg+tcPDAstruct.fgr)) = 1/N_gauss;
-            end
-            if numel(PNBX_scaled{c}) < max(tcPDAstruct.fbb+tcPDAstruct.fbg+tcPDAstruct.fbr)
-                PNBX_scaled{c}(numel(PNBX_scaled{c})+1 :  max(tcPDAstruct.fbb+tcPDAstruct.fbg+tcPDAstruct.fbr)) = 1/N_gauss;
-            end
-            %%% Treat case of zero photons
-            PNGX_scaled{c} = [1/N_gauss;PNGX_scaled{c}];
-            PNBX_scaled{c} = [1/N_gauss;PNBX_scaled{c}];
-        end
-        
-        
-        
-        for c = 1:N_gauss
-            P_res{c} = P_res{c} + log(PNGX_scaled{c}(1+tcPDAstruct.fgg+tcPDAstruct.fgr)) + log(PNBX_scaled{c}(1+tcPDAstruct.fbb+tcPDAstruct.fbg+tcPDAstruct.fbr)); % +1 for zero photon case
-        end
+    disp('Brightness correction not implemented for dynamics.');
+    P_result = Inf;
+    return;
 end
 
 %%% combine the likelihoods of the Gauss
