@@ -112,7 +112,7 @@ n_data = numel(tcPDAstruct.fbb);
 tcPDAstruct.BIC = 2*P_result + n_param*log(n_data);
 tcPDAstruct.logL = -P_result;
 
-function P_res = posterior_dynamic(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,param2)
+function P_res = posterior_dynamic(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,param2,k12,k21)
 global tcPDAstruct UserValues
 %%% evaluates the loglikelihood that param produce data
 %%%
@@ -157,7 +157,7 @@ NBGgr = corrections.background.NBGgr;
 %%% calculate expected E values for states
 EBG = 1./(1+(Rbg./corrections.R0_bg).^6);
 EBR = 1./(1+(Rbr./corrections.R0_br).^6);
-EGR = 1./(1+(XRgr./corrections.R0_gr).^6);
+EGR = 1./(1+(Rgr./corrections.R0_gr).^6);
 
 PGR = 1-(1+corrections.ct_gr+(((corrections.de_gr/(1-corrections.de_gr)) + EGR) * corrections.gamma_gr)./(1-EGR)).^(-1);
 
@@ -190,9 +190,7 @@ PBR = Pout_R./P_total;
 %%% evaluate dynamic distribution
 dT = 1; % time bin in milliseconds
 N = 25;
-k1 = param.k12;
-k2 = param.k21;
-PofT = calc_dynamic_distribution(dT,N,k1,k2);
+PofT = calc_dynamic_distribution(dT,N,k12,k21);
 %%% calculate relative brightnesses
 for i = 1:2
     [Qr_g(i),Qr_b(i)] = calc_relative_brightness(Rgr(i),Rbg(i),Rbr(i));
