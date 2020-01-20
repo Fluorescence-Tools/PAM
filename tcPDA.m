@@ -1540,7 +1540,7 @@ tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabe
 tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
 tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
 tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
-tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox;
+tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
 if tcPDAstruct.BrightnessCorrection
     %%% Prepare PofN for Brightness Reference
     if ~isfield(tcPDAstruct,'BrightnessReference')
