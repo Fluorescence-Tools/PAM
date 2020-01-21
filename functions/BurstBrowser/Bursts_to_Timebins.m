@@ -1,7 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Slice Bursts in time bins for  PDA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration)
+function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration,MI)
+if nargin < 4
+    export_lifetime = false;
+else
+    export_lifetime = true;
+end
 if duration == 0 % burstwise, simply return channel information
     PDAdata = CH;
     duration = cellfun(@(x) x(end)-x(1),MT);
@@ -31,11 +36,18 @@ n_bins = sum(cellfun(@numel,bins));
 cumsum_bins = cellfun(@(x) [0; cumsum(x)],bins,'UniformOutput',false);
 
 %get channel information --> This is the only relavant information for PDA!
-PDAdata = cell(n_bins,1);
+if ~export_lifetime
+    PDAdata = cell(n_bins,1);
+else
+    PDAdata = cell(n_bins,2);
+end
 index = 1;
 for i = 1:numel(CH)
     for j = 2:numel(cumsum_bins{i})
         PDAdata{index,1} = CH{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
+        if export_lifetime
+            PDAdata{index,2} = MI{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
+        end
         index = index + 1;
     end
 end

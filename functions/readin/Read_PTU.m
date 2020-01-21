@@ -4,6 +4,10 @@ function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,File
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
 %%% Chunkwise: Data read-in in consecutive chunks and maximum Data limit
+if nargin < 7 % Chunkwise not specified
+    Chunkwise = false;
+end
+
 fid=fopen(FileName,'r');
 fseek(fid,0,1);
 filesize = ftell(fid);
@@ -129,7 +133,7 @@ while 1
                 %%% Catch case where length of TagString exceeds length of
                 %%% UsrHeadName character array
                 if eval(['size(' TagIdent ',2) < numel(TagString)'])
-                    eval([TagIdent '(:,end:numel(TagString)) = '' '''])
+                    eval([TagIdent '(:,end:numel(TagString)) = '' '';']);
                 end
             end
             try;eval([EvalName '=TagString;']);end;

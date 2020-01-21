@@ -17,7 +17,7 @@
 
 using namespace std;
 // using namespace tr1;
-void Simulate_States(const double SimTime, double *dwell_mean, int time_windows, double *time_in_states, double * p_eq)        
+void Simulate_States(const double SimTime, double *dwell_mean, const int time_windows, double *time_in_states, double * p_eq)        
 {
     /// Counting variable definition
     int i;
@@ -53,9 +53,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     const double SimTime = mxGetScalar(prhs[0]);
     double * dwell_mean = mxGetPr(prhs[1]);
-    int time_windows = (int)mxGetScalar(prhs[2]);
+    const int time_windows = mxGetScalar(prhs[2]);
     double * p_eq = mxGetPr(prhs[3]);
-    const mwSize NP[]={(unsigned long)time_windows*2,1};
+    const mwSize NP[]={(mwSize)time_windows*2,1};
     double * time_in_states = (double*) mxCalloc(2*time_windows, sizeof(double));
     Simulate_States(SimTime, dwell_mean, time_windows, time_in_states, p_eq);
     plhs[0] = mxCreateNumericMatrix(time_windows,2,mxDOUBLE_CLASS,mxREAL);

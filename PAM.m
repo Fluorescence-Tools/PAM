@@ -33,13 +33,14 @@ s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' file
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );
 s.addText( 30, 50, 'PAM - PIE Analysis with MATLAB', 'FontSize', 30, 'Color', [1 1 1] );
-s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
+s.addText( 30, 80, 'v1.3', 'FontSize', 20, 'Color', [1 1 1] );
 s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 
 %%% Disables negative values for log plot warning
 warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
+warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
 %%% Loads user profile
 Profiles=LSUserValues(0);
 for i = 1:numel(Profiles)
@@ -954,6 +955,9 @@ h.Burst.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.Burst.BurstLifetime_Bu
 h.Burst.BurstLifetime_Button_Menu_StorePhasorReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
     'Label','Store current Phasor Reference in *.bur file',...
     'Callback',{@Store_IRF_Scat_inBur,2});
+h.Burst.BurstLifetime_Button_Menu_StoreDonorOnlyReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
+    'Label','Store current Donor-only Reference in *.bur file',...
+    'Callback',{@Store_IRF_Scat_inBur,3});
 
 %%% Button to start burstwise Lifetime Fitting
 h.Burst.BurstLifetime_Button = uicontrol(...
@@ -1056,6 +1060,32 @@ h.Burst.NirFilter_Text1 = uicontrol(...
     'Callback',[],...
     'Position',[0.82 0.4 0.18 0.07],...
     'TooltipString',sprintf('Specify the Time Constant for Filter Calculation (e.g. 100 or 100;200 or 100:100:1000)'));
+h.Burst.ConstantDuration_Checkbox = uicontrol(...
+    'Parent',h.Burst.SubPanel_Settings,...
+    'Tag','ConstantDuration_Checkbox',...
+    'Style', 'checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',1,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Total duration',...
+    'Position',[0.05 0.3 0.9 0.08],...
+    'TooltipString',sprintf('Instead of calculating PIE channel count rates by dividing number of photons\nby the duration in the PIE channel, the number of photons is divided by the APBS duration'),...
+    'Callback',@Calculate_Settings);
+% h.Burst.RescaleToBackground_Checkbox = uicontrol(...
+%     'Parent',h.Burst.SubPanel_Settings,...
+%     'Tag','RescaleToBackground_Checkbox',...
+%     'Style', 'checkbox',...
+%     'Units','normalized',...
+%     'FontSize',12,...
+%     'Value',0,...
+%     'BackgroundColor', Look.Back,...
+%     'ForegroundColor', Look.Fore,...
+%     'String','Rescale to background',...
+%     'Position',[0.05 0.2 0.9 0.08],...
+%     'TooltipString',sprintf('If a background measurement was saved into PAM memory,\nthe burst search parameters are rescaled to stay above the background'),...
+%     'Callback',@Calculate_Settings);
 %%%Table for PIE channel assignment
 h.Burst.BurstPIE_Table = uitable(...
     'Parent',h.Burst.MainPanel,...
@@ -2196,7 +2226,8 @@ h.Image.Axes = axes(...
     'Parent',h.Image.Panel,...
     'Tag','Image_Axes',...
     'Units','normalized',...
-    'Position',[0.01 0.01 0.7 0.98]);
+    'Position',[0.01 0.01 0.7 0.98],...
+    'DataAspectRatio',[1,1,1]);
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
@@ -2660,6 +2691,12 @@ h.PIE.PhasorReference = uimenu(...
     'Label','Save Phasor Reference for selected PIE Channel',...
     'Tag','PIE_Phasor_Ref',...
     'Callback',@SaveLoadIrfScat);
+%%% Saves the current Measurement as Donor-only reference for the Channel
+h.PIE.DonorOnlyReference = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save Donor-only Reference for selected PIE Channel',...
+    'Tag','PIE_DonorOnly_Ref',...
+    'Callback',@SaveLoadIrfScat);
 %%% PIE Channel list
 h.PIE.List = uicontrol(...
     'Parent',h.PIE.Panel,...
@@ -2929,7 +2966,7 @@ h.Export.List = uicontrol(...
     'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
-    'Position',[0.01 0.01 0.6 0.98]);
+    'Position',[0.01 0.61 0.98 0.38]);
 %%% Table containig the PIE channels to export
 h.Export.PIE = uitable(...
     'Parent',h.Export.Panel,...
@@ -2943,7 +2980,7 @@ h.Export.PIE = uitable(...
     'ColumnWidth',{15},...
     'ColumnEditable',true,...
     'Data',false(numel(UserValues.PIE.Name)+1,1),...
-    'Position',[0.62 0.61 0.36 0.38]);
+    'Position',[0.01 0.01 0.60 0.58]);
 %%% Changes the size of the ROW names
 drawnow
 Export_PIE = findjobj(h.Export.PIE);
@@ -2963,9 +3000,9 @@ h.Export.Text{end+1} = uicontrol(...
     'Parent',h.Export.Panel,...
     'Style','text',...
     'Units','normalized',...
-    'FontSize',12,...
+    'FontSize',14,...
     'HorizontalAlignment','left',...
-    'String','Manage export',...
+    'String','Manage export:',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.52 0.2 0.07]);
@@ -3325,7 +3362,7 @@ else
     %%% compiled application
     %%% custom file types are embedded
     %%% names are in associated text file
-    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'rt');
+    fid = fopen([PathToApp filesep 'functions' filesep 'Custom_Read_Ins' filesep 'Custom_Read_Ins.txt'],'rt');
     if fid == -1
         disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
         Custom_Methods = {'none'};
@@ -3576,8 +3613,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                         else
                             PamMeta.Image{i} = im;
                             h.Image.Colorbar.YLabel.String = 'Counts';
-                        end
-                        
+                        end                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3653,29 +3689,29 @@ for i=find(UserValues.PIE.Detector==0)
     PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
     PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
         trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
-        if UserValues.Settings.Pam.Use_Image
+        if UserValues.Settings.Pam.Use_Image && any(mode == 3)
             PamMeta.Image{i}=PamMeta.Image{i}+PamMeta.Image{j};
             if UserValues.Settings.Pam.Use_Lifetime
                 PamMeta.Lifetime{i}=PamMeta.Lifetime{i}+PamMeta.Lifetime{j};
             end
         end
-        if UserValues.Settings.Pam.Use_TimeTrace
+        if UserValues.Settings.Pam.Use_TimeTrace && any(mode == 1)
             PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
         end
-        if UserValues.Settings.Pam.Use_PCH
+        if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
             PamMeta.TracePCH{i} = PamMeta.TracePCH{i} + PamMeta.TracePCH{j};
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
-    if UserValues.Settings.Pam.Use_Lifetime
+    if UserValues.Settings.Pam.Use_Lifetime && any(mode == 3)
         PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
     end
-    if UserValues.Settings.Pam.Use_PCH
+    if UserValues.Settings.Pam.Use_PCH && any(mode == 2)
         PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
         PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
     end
@@ -3686,7 +3722,7 @@ end
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calculate_Settings(obj,~)
-global UserValues PamMeta
+global UserValues PamMeta FileInfo
 h = guidata(findobj('Tag','Pam'));
 Display=0;
 %%% If Calculate image was clicked
@@ -3702,14 +3738,17 @@ if obj == h.MT.Use_Image
         h.MT.Settings_Tab.Parent = [];
         h.Image.Tab.Parent = h.MT.Tab;
         h.MT.Settings_Tab.Parent =  h.MT.Tab;
-        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
+        h.MT.Tab.SelectedTab = h.Image.Tab;
     else
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    %if UserValues.Settings.Pam.Use_Image
-        Update_Display([],[],3);
-    %end
+    % define axis limits for image plot
+    h.Image.Axes.DataAspectRatio = [1,1,1];
+    h.Image.Axes.XLim = [0.5, FileInfo.Pixels+0.5];
+    h.Image.Axes.YLim = [0.5, FileInfo.Pixels+0.5];  
+    resetplotview(h.Image.Axes,'SaveCurrentView');
+    Update_Display([],[],3);
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
@@ -4263,9 +4302,10 @@ end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
 if any(mode==3)
-    switch h.Image.Type.Value
-        %%% Intensity image
-        case 1
+    h.Image.Axes.DataAspectRatio=[1 1 1];
+    switch h.Image.Type.Value        
+        %%% Intensity image        
+        case 1            
             h.Plots.Image.CData=PamMeta.Image{Sel};
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
@@ -4316,7 +4356,7 @@ if any(mode==3)
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
                 h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
-            end
+            end            
     end
     switch h.Image.Type.Value %label the colorbar correctly
         case 1
@@ -4332,8 +4372,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-    h.Image.Axes.XLim=[0.5 size(PamMeta.Image{Sel},2)+0.5];
-    h.Image.Axes.YLim=[0.5 size(PamMeta.Image{Sel},1)+0.5];
+%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
+%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
+%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
+%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4347,16 +4389,15 @@ if any(mode==4)
         h.Plots.MI_All(numel(PamMeta.MI_Hist)+1:end)=[];
         cellfun(@delete,Unused)
     end
-    axes(h.MI.All_Axes);
-    xlim([1 FileInfo.MI_Bins]);
+    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];       
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
-        if ~isempty(h.Plots.MI_All{i})
+        if ~isempty(h.Plots.MI_All{i}) && isvalid(h.Plots.MI_All{i})
             %%% Only changes YData of plot to increase speed
             h.Plots.MI_All{i}.YData=PamMeta.MI_Hist{i};
         else
             %%% Plots new lineseries, if none exists
-            h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
+            h.Plots.MI_All{i}=handle(plot(h.MI.All_Axes,PamMeta.MI_Hist{i}));
         end
         %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
         h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:);
@@ -4856,6 +4897,7 @@ switch e.Key
         UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
         UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
+        UserValues.PIE.DonorOnlyReference{end+1} = zeros(1,4096);
         UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
@@ -6288,7 +6330,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 elseif any(h.Cor.Type.Value == [4,5])
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
-                %%% Calculates average and standard error of mean (without tinv_table yet
+                %%% Calculates average and standard error of mean (without
+                %%% tinv_table yet)
                 if size(Cor_Array,2)>1
                     Cor_Average=mean(Cor_Array,2);
                     %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
@@ -6296,7 +6339,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Amplitude=sum(Cor_Array,1);
                     Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
                     Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-                    
+                    % Code for adjusting the standord error of the mean
+                    % with the student's t distribution
+                    % p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
+                    % Cor_SEM = Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2));
                 else
                     Cor_Average=Cor_Array;
                     Cor_SEM=Cor_Array;
@@ -6937,8 +6983,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     Det=UserValues.Detector.Det(h.MI.Phasor_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI.Phasor_Det.Value);
     %%% Selects filename to save
-    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',UserValues.File.PhasorPath);
-    
+    [~,fn,~] = fileparts(FileInfo.FileName{1});
+    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',[FileInfo.Path filesep fn '.phr']);
+    % Update PhasorPath
+    UserValues.File.PhasorPath = PathName; 
     if ~all(FileName==0)
         Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Reference):');
         
@@ -7630,6 +7678,17 @@ if any(BAMethod == [1 2]) %total of 6 channels
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
     
     Progress(0.8,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:6
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:3
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Chan = zeros(Number_of_Bursts,6);
     for i = 1:6
@@ -7740,6 +7799,16 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     TBX_TGX(:,1) = TBX_TGX(:,1)./1E-3;
     TBX_TRR(:,1) = TBX_TRR(:,1)./1E-3;
     
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:12
+            Duration_per_Chan(:,i) = Duration;
+        end
+        for i = 1:6
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     Countrate_per_Chan = zeros(Number_of_Bursts,12);
     for i = 1:12
         Countrate_per_Chan(:,i) = Number_of_Photons_per_Chan(:,i)./Duration_per_Chan(:,i);
@@ -7790,11 +7859,20 @@ elseif any(BAMethod == [5,6]) %only 3 channels
     TGX_TRR(:,2) = TGX_TRR(:,1)./Duration;
     TGG_TGR(:,1) = TGG_TGR(:,1)./1E-3;
     TGX_TRR(:,1) = TGX_TRR(:,1)./1E-3;
+    
+    % take the APBS burst duration as the duration
+    if h.Burst.ConstantDuration_Checkbox.Value
+        for i = 1:4
+            Duration_per_Color(:,i) = Duration;
+        end
+    end
+    
     %Countrate per chan
     Countrate_per_Color = zeros(Number_of_Bursts,3);
     for i = 1:3
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
+    
     
 end
 
@@ -7973,7 +8051,7 @@ elseif any (BAMethod == [5,6])
         '|TGG-TGR| Filter',...
         'FRET 2CDE Filter',...
         'Duration [ms]',...
-        'Mean Macrotime [ms]',...
+        'Mean Macrotime [s]',...
         'Count rate [kHz]',...
         'Count rate (GG) [kHz]',...
         'Count rate (GR) [kHz]',...
@@ -7995,6 +8073,7 @@ end
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
+BurstData.TotalDuration = h.Burst.ConstantDuration_Checkbox.Value; %1 if all count rates are calculated with the total duration.
 %%% Store also the FileInfo in BurstData
 BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later
@@ -8268,6 +8347,8 @@ BAMethod = BurstData.BAMethod;
 BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
+% Initialize variables as dummies
+Macrotime = cell(0); Channel = cell(0);
 load(fullfile(Path,[File '.bps']),'-mat');
 %Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
 %Channel = cellfun(@double,Channel,'UniformOutput',false);
@@ -9177,12 +9258,35 @@ switch obj
         
         for i = 1:numel(Sel)
             if isempty(UserValues.PIE.Combined{Sel(i)})
-                %%% Update IRF of selected channel
+                %%% Update Phasor Reference of selected channel
                 det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
                 UserValues.PIE.PhasorReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
                 UserValues.PIE.PhasorReferenceLifetime(Sel(i)) = lt;
             else
                 uiwait(msgbox('Phasor Reference cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
+        end
+        LSUserValues(1);
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.PIE.DonorOnlyReference
+        % Saves the current PIE channel as IRF pattern
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving Donor-Only Reference';
+        h.Progress.Axes.Color=[1 0 0];
+        %%% Find selected channels
+        Sel=h.PIE.List.Value;       
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update Donor-Only reference of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.DonorOnlyReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+            else
+                uiwait(msgbox('Donor-Only Reference cannot be saved for combined channels!', 'Important', 'modal'))
                 return
             end
         end
@@ -9463,6 +9567,13 @@ switch BurstData.BAMethod
                 TauFitData.PhasorReferenceLifetime(1) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_GGpar,idx_GGperp]));
                 TauFitData.PhasorReferenceLifetime(2) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_RRpar,idx_RRperp]));
             end
+        end
+        
+        %%% Read Out the Donor-Only Reference
+        TauFitData.DonorOnlyReference_Par = cell(1); TauFitData.DonorOnlyReference_Per = cell(1);
+        try
+            TauFitData.DonorOnlyReference_Par{1} = BurstData.DonorOnlyReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+            TauFitData.DonorOnlyReference_Per{1} = BurstData.DonorOnlyReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
         end
         
         %%% Generate XData
@@ -9792,9 +9903,25 @@ if any(mode==2)
     end
 end
 
+if any(mode==3)
+    %% Save the Donor-Only Reference
+    %%% Read out the Microtime Histograms of the Donor-Only References for the donor channels
+    switch BurstData.BAMethod
+        case {1,2}
+            DonorOnlyReference_GGpar = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            DonorOnlyReference_GGperp = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+             try
+                BurstData.DonorOnlyReference = {DonorOnlyReference_GGpar; DonorOnlyReference_GGperp};
+             end
+        case {5}
+            DonorOnlyReference = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            BurstData.DonorOnlyReference = {DonorOnlyReference_GG};
+        end
+end
+
 if ~strcmp(obj,'nothing')
     % function is called from right clicking the Burstwise lifetime button
-    save(BurstData.FileName,'BurstData');
+    save(BurstData.FileName,'BurstData','-append');
     Progress(1,h.Progress.Axes,h.Progress.Text);
     h.Progress.Text.String = FileInfo.FileName{1};
 end
@@ -11542,10 +11669,9 @@ if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
         disp('No file loaded.');
         return;
-    end
-    
+    end    
     [~,FileName,~] = fileparts(FileInfo.FileName{1});
-    FilePath = [FileInfo.Path filesep FileName '.txt'];
+    FilePath = [FileInfo.Path filesep FileName '.txt'];    
     %%% open file
     [fid,err] = fopen(FilePath,'w');
     if fid == -1

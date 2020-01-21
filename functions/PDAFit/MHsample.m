@@ -1,4 +1,4 @@
-function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure)
+function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure,plot_interval)
 %%% Performs Metropolis-Hastings-Sampling of posterior distribution
 %%% Input parameters:
 %%% nsamples    -   Number of Samples to draw
@@ -32,6 +32,9 @@ if nargin > 8
     Display = 1;
     if nargin < 11 %%% no parent figure specified
         parent_figure = [];
+    end
+    if nargin < 12
+        plot_interval = 10;
     end
 else
     Display = 0;
@@ -112,14 +115,14 @@ while count < (nsamples) && (Stop == 0)
             samples(count,:) = param;
             prob(count) = Posterior_new;
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,100) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         else %%% value not accepted based on posterior, keep old value
             samples(count,:) = samples(count-1,:);
             prob(count) = prob(count-1);
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,100) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         end
@@ -127,7 +130,7 @@ while count < (nsamples) && (Stop == 0)
         samples(count,:) = samples(count-1,:);
         prob(count) = prob(count-1);
         acceptance = acc/count;
-        if (Display ~= 0) && (mod(count,100) == 0)
+        if (Display ~= 0) && (mod(count,plot_interval) == 0)
             UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
         end
     end
@@ -151,7 +154,7 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     if isempty(parent_figure)
         %%% create a figure
         parent_figure = figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8],'Color',UserValues.Look.Back);
-        whitebg(parent_figure, UserValues.Look.Axes);
+        whitebg(parent_figure, UserValues.Look.Back);
     else
         handles = guidata(parent_figure);
         delete(parent_figure.Children);

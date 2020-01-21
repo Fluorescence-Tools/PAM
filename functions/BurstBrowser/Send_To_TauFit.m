@@ -47,6 +47,7 @@ switch BurstData{file}.BAMethod
         c{1} = [1,2]; %% GG
         c{2} = [5,6]; %% RR
         c{3} = [3,4];
+        c{4} = [1,2];
     case {3,4}
         %%% 3color MFD
         c{1} = [1,2]; %% BB
@@ -57,6 +58,15 @@ switch BurstData{file}.BAMethod
         c{2} = [3,3];
 end
 for chan = 1:size(c,2)
+    
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            if chan == 4
+                %%% for donor-only species, update valid and overwrite
+                %%% MI_total and CH_total
+                [MI_total, CH_total] = donor_only_cuts();
+            end
+    end
     MI_par = MI_total(CH_total == c{chan}(1));
     MI_perp = MI_total(CH_total == c{chan}(2));
     
@@ -90,5 +100,25 @@ if ~isfield(BurstData{file}.FileInfo,'Resolution')
 elseif isfield(BurstData{file}.FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData{file}.FileInfo.Resolution/1000;
 end
+if isfield(BurstData,'DonorOnlyReference')
+    TauFitData.DonorOnlyReference = BurstData{file}.DonorOnlyReference;
+else
+    TauFitData.DonorOnlyReference = cell(size(BurstData{file}.IRF));
+end
 TauFit(obj,[]);
 Progress(1,h.Progress_Axes,h.Progress_Text);
+
+function [MI_total, CH_total] = donor_only_cuts()
+%%%% perform donor-only species selection and return cut photons
+global BurstData BurstTCSPCData BurstMeta UserValues
+file = BurstMeta.SelectedFile;
+indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry (raw)'));
+Smin = UserValues.BurstBrowser.Settings.S_Donly_Min;
+Smax = UserValues.BurstBrowser.Settings.S_Donly_Max;
+% perform threshold based on raw stoichiometry, identical to crosstalk
+% determination
+valid = (BurstData{file}.DataArray(:,indS)>Smin) & (BurstData{file}.DataArray(:,indS)<Smax);
+MI_total = BurstTCSPCData{file}.Microtime(valid);
+MI_total = vertcat(MI_total{:});
+CH_total = BurstTCSPCData{file}.Channel(valid);
+CH_total = vertcat(CH_total{:});

@@ -170,10 +170,14 @@ if ~exist('limits','var')
     y_boundaries(2) = max([y_boundaries(2) max(ylimits(:,2))]);
 elseif exist('limits','var') %%% called with absolute limits
     %%% obey specified limits!
-    x_boundaries(1) = limits{1}(1);
-    x_boundaries(2) = limits{1}(2);
-    y_boundaries(1) = limits{2}(1);
-    y_boundaries(2) = limits{2}(2);
+    if ~isempty(limits{1})
+        x_boundaries(1) = limits{1}(1);
+        x_boundaries(2) = limits{1}(2);
+    end
+    if ~isempty(limits{2})
+        y_boundaries(1) = limits{2}(1);
+        y_boundaries(2) = limits{2}(2);
+    end
 %     x_boundaries(1) = max([x_boundaries(1) limits{1}(1)]);
 %     x_boundaries(2) = min([x_boundaries(2) limits{1}(2)]);
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
@@ -293,13 +297,13 @@ else
     %%% hide image plot
     BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
     % overlay contour plots
-    %colors = lines(numel(H));
-    colors = [UserValues.BurstBrowser.Display.ColorLine1;...
-            UserValues.BurstBrowser.Display.ColorLine2;...
-            UserValues.BurstBrowser.Display.ColorLine3;...
-            UserValues.BurstBrowser.Display.ColorLine4;...
-            UserValues.BurstBrowser.Display.ColorLine5;...
-            UserValues.BurstBrowser.Display.ColorLine6];
+    colors = lines(numel(H));
+    %colors = [UserValues.BurstBrowser.Display.ColorLine1;...
+            %UserValues.BurstBrowser.Display.ColorLine2;...
+            %UserValues.BurstBrowser.Display.ColorLine3;...
+            %UserValues.BurstBrowser.Display.ColorLine4;...
+            %UserValues.BurstBrowser.Display.ColorLine5;...
+            %UserValues.BurstBrowser.Display.ColorLine6];
     colors = repmat(colors,[10,1]); % replicate in case there are more than 6 species selected
     for i = numel(H):-1:1
         level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);

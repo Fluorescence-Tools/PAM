@@ -10,7 +10,7 @@ global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
-if isfield(BurstData{file},'Phasor')
+if isfield(BurstData{file},'Phasor') && any(strcmp(BurstData{file}.NameArray,'Phasor: gD'))
     do_phasor = true;
 else
     do_phasor = false;
@@ -157,7 +157,7 @@ mean_tau_species_R = mean(tau_species_R,1);
 bin_centers_cor = 1-mean_tau_species_R;
 mean_E_resampled = mean(E_resampled,1);
 % get percentiles
-alpha = 0.001;
+alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(bin_centers_cor)/100;
 %upper_bound = prctile(tau_int_R,100-alpha/(numel(bin_edges)-1),1);
 upper_bound = mean(tau_int_R,1) + std(tau_int_R,0,1)*norminv(1-alpha/(numel(bin_edges)-1)/100);
 
@@ -184,12 +184,14 @@ if do_phasor
         %%% circle center
         v = [0.5-mean_g_static(i);(-1)*mean_s_static(i)]; v = v./norm(v);
         %%% get confidence interval scaling of standard deviation
-        ci = norminv(1-alpha/(numel(bin_edges)-1)/100);
-        %%% define g and s coordinates of confidence intervals
-        g_ci_lower(i) = mean_g_static(i) + v(1)*std_phasor_radial(i)*ci;
-        g_ci_upper(i) = mean_g_static(i) - v(1)*std_phasor_radial(i)*ci;
-        s_ci_lower(i) = mean_s_static(i) + v(2)*std_phasor_radial(i)*ci;
-        s_ci_upper(i) = mean_s_static(i) - v(2)*std_phasor_radial(i)*ci;
+        if sampling ~=0
+            ci = norminv(1-alpha/(numel(bin_edges)-1)/100);
+            %%% define g and s coordinates of confidence intervals
+            g_ci_lower(i) = mean_g_static(i) + v(1)*std_phasor_radial(i)*ci;
+            g_ci_upper(i) = mean_g_static(i) - v(1)*std_phasor_radial(i)*ci;
+            s_ci_lower(i) = mean_s_static(i) + v(2)*std_phasor_radial(i)*ci;
+            s_ci_upper(i) = mean_s_static(i) - v(2)*std_phasor_radial(i)*ci;
+        end
         
         old = false;
         if old 
@@ -207,32 +209,33 @@ if do_phasor
             std_phasor_radial(i) = std(gs_rot(1,:));
             std_phasor_tangential(i) = std(gs_rot(2,:));            
         end
-        
     end
 end
 %% plot smoothed dynamic FRET line
 [H,x,y] = histcounts2(E,tauD,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
 H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
-colormap(f,colormap(h.BurstBrowser));
+hfig = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
+colormap(hfig,colormap(h.BurstBrowser));
 ax = gca;
 ax.CLimMode = 'auto';
 ax.CLim(1) = 0;
 ax.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 % plot patch to phase contour plot out
-patch([0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
+patch([0,1.2,1.2,0],[-0.1,-0.1,1.1,1.1],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
 %%% add static FRET line
-plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-plot(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-
-plot(mean_tau,bin_centers,'--k','LineWidth',2);
-scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
+plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData,'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
+plot(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
+if sampling ~=0
+    patch([0,0,fliplr(upper_bound(isfinite(upper_bound)))],[min(bin_centers_cor(isfinite(upper_bound))),max(bin_centers_cor(isfinite(upper_bound))),fliplr(bin_centers_cor(isfinite(upper_bound)))],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+    scatter(mean_tau_static_R,bin_centers_cor,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+end
+plot(mean_tau,bin_centers,'-d','LineWidth',2,'MarkerSize',10,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
+% scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
 %plot(mean_tau_static,bin_centers,'-g','LineWidth',2);
-scatter(mean_tau_static_R,bin_centers_cor,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+
 %plot(upper_bound(isfinite(upper_bound)),bin_centers_cor(isfinite(upper_bound)),':g','LineWidth',2);
 %area([0,0,fliplr(upper_bound(isfinite(upper_bound)))],[0,max(bin_centers_cor(isfinite(upper_bound))),fliplr(bin_centers_cor(isfinite(upper_bound)))],'FaceColor',0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
-patch([0,0,fliplr(upper_bound(isfinite(upper_bound)))],[min(bin_centers_cor(isfinite(upper_bound))),max(bin_centers_cor(isfinite(upper_bound))),fliplr(bin_centers_cor(isfinite(upper_bound)))],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
 set(gca,'Color',[1,1,1]);
 
 ax.XLim = [0,1.2];
@@ -242,9 +245,26 @@ xlabel('\tau_{D,A}/\tau_{D,0}');
 ylabel('FRET Efficiency');
 set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
 
-
+switch UserValues.BurstBrowser.Display.PlotType
+            case {'Contour','Scatter'}
+                if sampling ~= 0
+                    [~,icons] = legend('CI','Binned CI','Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
+                    icons(4).FaceAlpha = 0.25;
+                    icons(5).Children.MarkerSize = 10;
+                else
+                    legend('Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
+                end
+            case {'Image','Hex'}
+                if sampling ~= 0
+                    [~,icons] = legend('CI','Binned CI','Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
+                    icons(4).FaceAlpha = 0.25;
+                    icons(5).Children.MarkerSize = 10;
+                else
+                    legend('Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
+                end
+end
 %% "transformed" FRET line so that static is horizontal
-transformed = true;
+transformed = false;
 if transformed    
     %%% transform quantities
     % species-weighted tau, normalized to tauD0
@@ -270,8 +290,8 @@ if transformed
     %%% plot
     [H,x,y] = histcounts2(var_tauDA,tauDA,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-.15,.5],'YBinLimits',[-0.1,1.1]);
     H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-    f2 = figure('Color',[1,1,1],'Position',[f.Position(1)+f.Position(3),100,600,600]); hold on;
-    contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
+    f2 = figure('Color',[1,1,1],'Position',[hfig.Position(1)+hfig.Position(3),100,600,600]); hold on;
+    contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
     colormap(f2,colormap(h.BurstBrowser));
     ax = gca;
     ax.CLimMode = 'auto';
@@ -283,26 +303,43 @@ if transformed
     % plot patch to phase contour plot out
     xlim = ax.XLim;
     ylim = ax.YLim;
-    patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
+    patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
     %%% add static FRET line
     tau_line = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections.DonorLifetime;
     E_line = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData;    
-    plot(1-E_line,(1-E_line).*(tau_line-(1-E_line)),'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+    plot(1-E_line,(1-E_line).*(tau_line-(1-E_line)),'-','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
     tau_line = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime;
     E_line = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData; 
-    plot(1-E_line,(1-E_line).*(tau_line-(1-E_line)),'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-    
-    plot(data_mean_tauDA,data_mean_var_tauDA,'--k','LineWidth',2);
-    scatter(data_mean_tauDA,data_mean_var_tauDA,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
-    scatter(mean_tauDA_static,mean_var_tauDA_static,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
-    
-    patch([max(mean_tauDA_static(isfinite(upper_bound_var))),mean_tauDA_static(isfinite(upper_bound_var)),min(mean_tauDA_static(isfinite(upper_bound_var)))],[ylim(1),upper_bound_var(isfinite(upper_bound_var)),ylim(1)],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+    plot(1-E_line,(1-E_line).*(tau_line-(1-E_line)),'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
+    if sampling ~=0
+       patch([max(mean_tauDA_static(isfinite(upper_bound_var))),mean_tauDA_static(isfinite(upper_bound_var)),min(mean_tauDA_static(isfinite(upper_bound_var)))],[ylim(1),upper_bound_var(isfinite(upper_bound_var)),ylim(1)],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+       scatter(mean_tauDA_static,mean_var_tauDA_static,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+    end
+    plot(data_mean_tauDA,data_mean_var_tauDA,'-d','LineWidth',2,'MarkerSize',10,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
+%     plot(data_mean_tauDA,data_mean_var_tauDA,'--k','LineWidth',2);
+%     scatter(data_mean_tauDA,data_mean_var_tauDA,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
     set(gca,'Color',[1,1,1]);
-
     xlabel('\tau_{D,A}/\tau_{D,0}');
     ylabel('var(\tau_{D,A})');
     set(gca,'FontSize',24,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top');
-
+    switch UserValues.BurstBrowser.Display.PlotType
+            case {'Contour','Scatter'}
+                if sampling ~= 0
+                    [~,icons] = legend('CI','Binned CI','Binned var(\tau_{D,A})','Location','northeast');
+                    icons(4).FaceAlpha = 0.25;
+                    icons(5).Children.MarkerSize = 10;
+                else
+                    legend('Binned var(\tau_{D,A})','Location','northeast')
+                end
+            case {'Image','Hex'}
+                if sampling ~= 0
+                    [~,icons] = legend('CI','Binned CI','Binned var(\tau_{D,A})','Location','northeast');
+                    icons(4).FaceAlpha = 0.25;
+                    icons(5).Children.MarkerSize = 10;
+                else
+                    legend('Binned var(\tau_{D,A})','Location','northeast')
+                end
+    end
 end 
 
 %% phasor plot with averaging
@@ -313,28 +350,31 @@ if do_phasor
     ylim = [max([0,min(s_phasor)-0.1*min_max]),min([0.75,max(s_phasor)+0.1*min_max])];
     [H,x,y] = histcounts2(s_phasor,g_phasor,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',ylim,'YBinLimits',xlim);
     H = H./max(H(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
-    f = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
-    contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
-    colormap(f,colormap(h.BurstBrowser));
+    hfig = figure('Color',[1,1,1],'Position',[100,100,600,600]); hold on;
+    contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
+    colormap(hfig,colormap(h.BurstBrowser));
     ax = gca;
     ax.CLimMode = 'auto';
     ax.CLim(1) = 0;
     ax.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
     % plot patch to phase contour plot out
-    patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none');
+    patch([xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
     %%% add phasor circle
     add_universal_circle(ax,1);
+    circle = gca;
+    circle.Children.HandleVisibility = off;
     % conf int
     %scatter(mean_g_static,mean_s_static,80,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
     % filter NaNs
-    g_ci = [g_ci_lower,fliplr(g_ci_upper)];
-    s_ci = [s_ci_lower,fliplr(s_ci_upper)];
-    valid = isfinite(g_ci) & isfinite(s_ci);
-    g_ci = g_ci(valid);
-    s_ci = s_ci(valid);
-    patch(g_ci,s_ci,0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+    if sampling ~= 0
+        g_ci = [g_ci_lower,fliplr(g_ci_upper)];
+        s_ci = [s_ci_lower,fliplr(s_ci_upper)];
+        valid = isfinite(g_ci) & isfinite(s_ci);
+        g_ci = g_ci(valid);
+        s_ci = s_ci(valid);
+        patch(g_ci,s_ci,0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
+    end
     set(gca,'Color',[1,1,1]);
-
     % FRET-averaged phasor    
     %smooth_g = sgolayfilt(mean_g, 3, 5);
     %smooth_s = sgolayfilt(mean_s, 3, 5);
@@ -342,19 +382,40 @@ if do_phasor
     plot(mean_g,mean_s,'--k','LineWidth',2);
     color = autumn(numel(bin_centers));   
     scatter(mean_g,mean_s,100,color,'diamond','filled','MarkerEdgeColor',[0,0,0],'LineWidth',2);
-
     ax.XLim = xlim;
     ax.YLim = ylim;
-
     xlabel('g');
     ylabel('s');
-    set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top','Units','pixel');
-       
+    set(gca,'FontSize',24,'LineWidth',2,'Box','on','DataAspectRatio',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Layer','top','Units','pixel'); 
     %%% add a second axis for the colorbar of the FRET efficiency
-    ax_cbar = axes('Parent',f,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
+    ax_cbar = axes('Parent',hfig,'Units','pixel','Position',[ax.Position(1)+ax.Position(3)-100, ax.Position(2)+ax.Position(4)-30, 100, 30],...
         'Visible','off');
     colormap(ax_cbar,autumn);
-    cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',16);
-    cbar.Position = [421   446   109    18];
+    cbar = colorbar(ax_cbar,'NorthOutside','Units','pixel','LineWidth',2,'FontSize',18);
+    cbar.Position = [ax.Position(1)*5.2   ax.Position(2)*6.4   109    18];
     cbar.Label.String = 'E';
 end
+
+%%% Combine the Original FileName and the parameter names
+if isfield(BurstData{file},'FileNameSPC')
+    if strcmp(BurstData{file}.FileNameSPC,'_m1')
+        FileName = BurstData{file}.FileNameSPC(1:end-3);
+    else
+        FileName = BurstData{file}.FileNameSPC;
+    end
+else
+    FileName = BurstData{file}.FileName(1:end-4);
+end
+
+if BurstData{file}.SelectedSpecies(1) ~= 0
+    SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+    if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+        SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    end
+else
+    SpeciesName = '';
+end
+FigureName = [FileName SpeciesName '_E-tau'];
+%%% remove spaces
+FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};

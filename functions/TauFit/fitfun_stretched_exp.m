@@ -4,7 +4,7 @@ IRFPattern = xdata{2}; %for convolution
 Scatter = xdata{3}; %for accounting for scatter in the actual decay
 p = xdata{4};
 y = xdata{5};
-c = xdata{6}; %IRF shift
+c = param(end);%xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!

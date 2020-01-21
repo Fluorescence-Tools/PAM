@@ -138,21 +138,21 @@ switch mode
         %%% fFCS Tab
         BurstMeta.Plots.fFCS.IRF_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Microtime_Species1_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0,0,1],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.Microtime_Species2_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0 1 0],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.Microtime_Species3_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[1 0 0],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.Microtime_Species2_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0.4667 0.6745 0.1882],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.Microtime_Species3_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0.6353 0.0784 0.1843],'LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Microtime_DOnly_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0.75 0 0.75],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.Microtime_Total_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
         
         BurstMeta.Plots.fFCS.IRF_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Microtime_Species1_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0,0,1],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.Microtime_Species2_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0 1 0],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.Microtime_Species3_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[1 0 0],'LineStyle','-','LineWidth',1,'Visible','off');
+        BurstMeta.Plots.fFCS.Microtime_Species2_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0.4667 0.6745 0.1882],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.Microtime_Species3_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0.6353 0.0784 0.1843],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.Microtime_DOnly_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0.75 0 0.75],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.Microtime_Total_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
         
         BurstMeta.Plots.fFCS.FilterPar_Species1 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0,0,1],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.FilterPar_Species2 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0 1 0],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.FilterPar_Species3 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[1 0 0],'LineStyle','-','LineWidth',1,'Visible','off');
+        BurstMeta.Plots.fFCS.FilterPar_Species2 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0.4667 0.6745 0.1882],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.FilterPar_Species3 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0.6353 0.0784 0.1843],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.FilterPar_IRF = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.FilterPar_DOnly = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0.75 0 0.75],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.Reconstruction_Par = plot(h.axes_fFCS_ReconstructionPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
@@ -160,16 +160,16 @@ switch mode
         BurstMeta.Plots.fFCS.Weighted_Residuals_Par = plot(h.axes_fFCS_ReconstructionParResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
         
         BurstMeta.Plots.fFCS.FilterPerp_Species1 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0,0,1],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.FilterPerp_Species2 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0 1 0],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.FilterPerp_Species3 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[1 0 0],'LineStyle','-','LineWidth',1,'Visible','off');
+        BurstMeta.Plots.fFCS.FilterPerp_Species2 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0.4667 0.6745 0.1882],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.FilterPerp_Species3 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0.6353 0.0784 0.1843],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.FilterPerp_IRF = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.FilterPerp_DOnly = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0.75 0 0.75],'LineStyle','-','LineWidth',1,'Visible','off');
         BurstMeta.Plots.fFCS.Reconstruction_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Weighted_Residuals_Perp = plot(h.axes_fFCS_ReconstructionPerpResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.result_1x1 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0,0,1],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.result_2x2 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0 1 0],'LineStyle','-','LineWidth',1);
-        BurstMeta.Plots.fFCS.result_3x3 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[1 0 0],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.result_2x2 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0.4667 0.6745 0.1882],'LineStyle','-','LineWidth',1);
+        BurstMeta.Plots.fFCS.result_3x3 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0.6353 0.0784 0.1843],'LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.result_1x2 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0,1,1],'LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.result_2x1 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[0 0.5 0.5],'LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.result_1x3 = plot(h.axes_fFCS_Result,[0 1],[0 0],'Color',[1,0,1],'LineStyle','-','LineWidth',1,'Visible','off');
@@ -209,6 +209,9 @@ switch mode
         BurstMeta.Plots.gamma_threecolor_lifetime(1) = imagesc(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime);axis(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'tight');
         [~,BurstMeta.Plots.gamma_threecolor_lifetime(2)] = contourf(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Visible','off');
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime = plot(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(1) = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(2) = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(3) = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','--','LineWidth',3,'Visible','off');
         
         ChangePlotType(h.PlotContourLines,[]);
         ChangePlotType(h.PlotTypePopumenu,[]);

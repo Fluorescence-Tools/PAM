@@ -67,64 +67,64 @@ __global__ void eval_prob_3c_bg(
 {
     /* index is an identifier number of every single thread running on the gpu */
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-
+    
     /* 
      * Every thread calculates one burst over all points of the grid
     */
+    if (idx < n_bins){
+        /* Calculate the probability */
+        /* Loop over all the probabilities */
+        for (int i=0; i < p_rows; i++) {
 
-    /* Calculate the probability */
-    /* Loop over all the probabilities */
-    for (int i=0; i < p_rows; i++) {
+            /* blue-red = blue-blue - blue-green */        
+            float prob[3] = {p_bb[i], p_bg[i], 1 - p_bb[i] - p_bg[i]};
 
-        /* blue-red = blue-blue - blue-green */        
-        float prob[3] = {p_bb[i], p_bg[i], 1 - p_bb[i] - p_bg[i]};
+            float P_binomial = 0;
+            float P_trinomial = 0;
 
-        float P_binomial = 0;
-        float P_trinomial = 0;
+            /* trinomal calculation */
+            int bg_bb;
+            for (int a=0; a <= MIN(fbb[idx], NBGbb) ; a++) {
+                bg_bb = a;
+                int bg_bg;
+                for (int b=0; b <= MIN(fbg[idx], NBGbg) ; b++) {
+                    bg_bg = b;
+                    int bg_br;
+                    for (int c=0; c <= MIN(fbr[idx], NBGbr) ; c++) {
+                        bg_br = c;
+                        const unsigned int bursts[3] = {
+                            (unsigned int) fbb[idx] - bg_bb,
+                            (unsigned int) fbg[idx] - bg_bg,
+                            (unsigned int) fbr[idx] - bg_br};
 
-        /* trinomal calculation */
-        int bg_bb;
-        for (int a=0; a <= MIN(fbb[idx], NBGbb) ; a++) {
-            bg_bb = a;
-            int bg_bg;
-            for (int b=0; b <= MIN(fbg[idx], NBGbg) ; b++) {
-                bg_bg = b;
-                int bg_br;
-                for (int c=0; c <= MIN(fbr[idx], NBGbr) ; c++) {
-                    bg_br = c;
-                    const unsigned int bursts[3] = {
-                        (unsigned int) fbb[idx] - bg_bb,
-                        (unsigned int) fbg[idx] - bg_bg,
-                        (unsigned int) fbr[idx] - bg_br};
-
-                    P_trinomial += BGbb[bg_bb] *       
-                            BGbg[bg_bg] *
-                            BGbr[bg_br] *         
-                            ran_multinomial_pdf(3,prob,bursts);
+                        P_trinomial += BGbb[bg_bb] *       
+                                BGbg[bg_bg] *
+                                BGbr[bg_br] *         
+                                ran_multinomial_pdf(3,prob,bursts);
+                    }
                 }
             }
-        }
 
-        /* binomial calculation */
-        int bg_gg;
-        for (int a=0; a <= MIN(fgg[idx], NBGgg) ; a++) {
-            bg_gg = a;
-            int bg_gr;
-            for (int b=0; b <= MIN(fgr[idx], NBGgr) ; b++) {
-               bg_gr = b;
-               /* Subtract Background counts for FRET evaluation */
-               P_binomial += BGgg[bg_gg] *
-                       BGgr[bg_gr] *
-                       ran_binomial_pdf((unsigned int)(fgr[idx] - bg_gr),
-                       p_gr[i], 
-                       (unsigned int) (fgr[idx] - bg_gr + fgg[idx] - bg_gg) );
+            /* binomial calculation */
+            int bg_gg;
+            for (int a=0; a <= MIN(fgg[idx], NBGgg) ; a++) {
+                bg_gg = a;
+                int bg_gr;
+                for (int b=0; b <= MIN(fgr[idx], NBGgr) ; b++) {
+                   bg_gr = b;
+                   /* Subtract Background counts for FRET evaluation */
+                   P_binomial += BGgg[bg_gg] *
+                           BGgr[bg_gr] *
+                           ran_binomial_pdf((unsigned int)(fgr[idx] - bg_gr),
+                           p_gr[i], 
+                           (unsigned int) (fgr[idx] - bg_gr + fgg[idx] - bg_gg) );
+                }
             }
+
+            /* multiply both */
+            likelihood[idx*p_rows + i] += P_trinomial*P_binomial;
         }
-
-        /* multiply both */
-        likelihood[idx*p_rows + i] += P_trinomial*P_binomial;
     }
-
 }
 
 

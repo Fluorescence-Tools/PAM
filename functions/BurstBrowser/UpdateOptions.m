@@ -227,5 +227,13 @@ switch obj
         UpdatePlot([],[],h);
         UpdateLifetimePlots([],[],h);
         PlotLifetimeInd([],[],h);
+    case h.Dog_Mode
+        if strcmp(h.Dog_Mode.Checked,'off')       
+            h.Dog_Mode.Checked = 'on';
+            UserValues.BurstBrowser.Dog_Mode = true;
+        else
+            h.Dog_Mode.Checked = 'off';
+            UserValues.BurstBrowser.Dog_Mode = false;
+        end
 end
 LSUserValues(1);

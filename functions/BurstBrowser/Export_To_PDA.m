@@ -12,6 +12,8 @@ else
     files = BurstMeta.SelectedFile;
 end
 
+export_lifetime = true;
+
 k = 0;
 sel_file =  BurstMeta.SelectedFile;
 for i = 1:numel(files)
@@ -35,7 +37,9 @@ for i = 1:numel(files)
     %%% find selected bursts
     MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
     CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
-    
+    if export_lifetime
+        MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
+    end
     % Timebin can be a single number or a range e.g. "0.2,0.5,1", without the " "
     Timebin = str2num(h.TimeBinPDAEdit.String).*1E-3;
     
@@ -44,7 +48,11 @@ for i = 1:numel(files)
         duration = timebin./BurstData{file}.ClockPeriod;
         
         if timebin ~= 0
-            PDAdata = Bursts_to_Timebins(MT,CH,duration);
+            if ~export_lifetime
+                PDAdata = Bursts_to_Timebins(MT,CH,duration);
+            else
+                PDAdata = Bursts_to_Timebins(MT,CH,duration,MI);
+            end
         elseif timebin == 0 %burstwise, get duration array
             [PDAdata, dur] = Bursts_to_Timebins(MT,CH,duration);
             dur = double(dur).*BurstData{file}.ClockPeriod;
@@ -71,12 +79,12 @@ for i = 1:numel(files)
                 PDA.NF = zeros(total,1);
                 PDA.NR = zeros(total,1);
                 
-                PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata);
-                PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata);
-                PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata);
-                PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata);
-                PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata);
-                PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata);
+                PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata(:,1));
+                PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata(:,1));
+                PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata(:,1));
+                PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata(:,1));
+                PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata(:,1));
+                PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata(:,1));
                 
                 PDA.NG = PDA.NGP + PDA.NGS;
                 PDA.NF = PDA.NFP + PDA.NFS;
@@ -102,15 +110,26 @@ for i = 1:numel(files)
                     NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
                     PDA.BrightnessReference.N = NGP + NGS;
                 end
+                
+                if h.PDA_ExportLifetime.Value
+                    PDA.MI_GP = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
+                    PDA.MI_GS = cellfun(@(x,y) y(x==2),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
+                    PDA.MI_G = cellfun(@(x,y) [x;y],PDA.MI_GP,PDA.MI_GS,'UniformOutput',false);
+                    PDA.IRF_GP = BurstData{file}.IRF{1};
+                    PDA.IRF_GS = BurstData{file}.IRF{2};
+                    PDA.IRF_G = PDA.IRF_GP + PDA.IRF_GS;
+                    PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
+                    PDA.PIE = BurstData{file}.PIE;
+                end
                 save(newfilename, 'PDA', 'timebin')
             case 5 %noMFD
                 PDA.NG = zeros(total,1);
                 PDA.NF = zeros(total,1);
                 PDA.NR = zeros(total,1);
                 
-                PDA.NG = cellfun(@(x) sum((x==1)),PDAdata);
-                PDA.NF = cellfun(@(x) sum((x==2)),PDAdata);
-                PDA.NR = cellfun(@(x) sum((x==3)),PDAdata);
+                PDA.NG = cellfun(@(x) sum((x==1)),PDAdata(:,1));
+                PDA.NF = cellfun(@(x) sum((x==2)),PDAdata(:,1));
+                PDA.NR = cellfun(@(x) sum((x==3)),PDAdata(:,1));
                 
                 PDA.Corrections = BurstData{file}.Corrections;
                 PDA.Background = BurstData{file}.Background;
@@ -124,6 +143,12 @@ for i = 1:numel(files)
                     NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
                     PDA.BrightnessReference.N = NG;
                 end
+                if h.PDA_ExportLifetime.Value
+                    PDA.MI_G = cellfun(@(x,y) y(x==1),PDAdata(:,1),PDAdata(:,2),'UniformOutput',false);
+                    PDA.IRF_G = BurstData{file}.IRF{1};
+                    PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
+                    PDA.PIE = BurstData{file}.PIE;
+                end
                 save(newfilename, 'PDA', 'timebin')
             case {3,4}
                 %%% ask user for either 3CPDA or two color subpopulation
@@ -135,18 +160,18 @@ for i = 1:numel(files)
                 end
                 switch choice
                     case 1
-                        NBBP = cellfun(@(x) sum((x==1)),PDAdata);
-                        NBBS = cellfun(@(x) sum((x==2)),PDAdata);
-                        NBGP = cellfun(@(x) sum((x==3)),PDAdata);
-                        NBGS = cellfun(@(x) sum((x==4)),PDAdata);
-                        NBRP = cellfun(@(x) sum((x==5)),PDAdata);
-                        NBRS = cellfun(@(x) sum((x==6)),PDAdata);
-                        NGGP = cellfun(@(x) sum((x==7)),PDAdata);
-                        NGGS = cellfun(@(x) sum((x==8)),PDAdata);
-                        NGRP = cellfun(@(x) sum((x==9)),PDAdata);
-                        NGRS = cellfun(@(x) sum((x==10)),PDAdata);
-                        NRRP = cellfun(@(x) sum((x==11)),PDAdata);
-                        NRRS = cellfun(@(x) sum((x==12)),PDAdata);
+                        NBBP = cellfun(@(x) sum((x==1)),PDAdata(:,1));
+                        NBBS = cellfun(@(x) sum((x==2)),PDAdata(:,1));
+                        NBGP = cellfun(@(x) sum((x==3)),PDAdata(:,1));
+                        NBGS = cellfun(@(x) sum((x==4)),PDAdata(:,1));
+                        NBRP = cellfun(@(x) sum((x==5)),PDAdata(:,1));
+                        NBRS = cellfun(@(x) sum((x==6)),PDAdata(:,1));
+                        NGGP = cellfun(@(x) sum((x==7)),PDAdata(:,1));
+                        NGGS = cellfun(@(x) sum((x==8)),PDAdata(:,1));
+                        NGRP = cellfun(@(x) sum((x==9)),PDAdata(:,1));
+                        NGRS = cellfun(@(x) sum((x==10)),PDAdata(:,1));
+                        NRRP = cellfun(@(x) sum((x==11)),PDAdata(:,1));
+                        NRRS = cellfun(@(x) sum((x==12)),PDAdata(:,1));
                         
                         tcPDAstruct.NBB = NBBP + NBBS;
                         tcPDAstruct.NBG = NBGP + NBGS;
@@ -203,12 +228,12 @@ for i = 1:numel(files)
                                 newfilename = [newfilename(1:end-4) '_BR.pda'];
                         end
                         
-                        PDA.NGP = cellfun(@(x) sum((x==chan(1))),PDAdata);
-                        PDA.NGS = cellfun(@(x) sum((x==chan(2))),PDAdata);
-                        PDA.NFP = cellfun(@(x) sum((x==chan(3))),PDAdata);
-                        PDA.NFS = cellfun(@(x) sum((x==chan(4))),PDAdata);
-                        PDA.NRP = cellfun(@(x) sum((x==chan(5))),PDAdata);
-                        PDA.NRS = cellfun(@(x) sum((x==chan(6))),PDAdata);
+                        PDA.NGP = cellfun(@(x) sum((x==chan(1))),PDAdata(:,1));
+                        PDA.NGS = cellfun(@(x) sum((x==chan(2))),PDAdata(:,1));
+                        PDA.NFP = cellfun(@(x) sum((x==chan(3))),PDAdata(:,1));
+                        PDA.NFS = cellfun(@(x) sum((x==chan(4))),PDAdata(:,1));
+                        PDA.NRP = cellfun(@(x) sum((x==chan(5))),PDAdata(:,1));
+                        PDA.NRS = cellfun(@(x) sum((x==chan(6))),PDAdata(:,1));
                         
                         %PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
                         %PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);

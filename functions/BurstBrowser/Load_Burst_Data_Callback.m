@@ -219,16 +219,27 @@ end
 BurstMeta.SelectedFile = 1;
 
 %%% reset lifetime ind selection to normal
-if numel(h.lifetime_ind_popupmenu.String) > 4
-    h.lifetime_ind_popupmenu.String = h.lifetime_ind_popupmenu.String(1:4);
-    h.lifetime_ind_popupmenu.Value = 1;
+switch BurstData{1}.BAMethod
+    case {1,2,5}
+        if numel(h.lifetime_ind_popupmenu.String) > 4
+            h.lifetime_ind_popupmenu.String = h.lifetime_ind_popupmenu.String(1:4);
+            h.lifetime_ind_popupmenu.Value = 1;
+        end
+    case {3,4}
+         if numel(h.lifetime_ind_popupmenu.String) > 6
+            h.lifetime_ind_popupmenu.String = h.lifetime_ind_popupmenu.String(1:6);
+            h.lifetime_ind_popupmenu.Value = 1;
+        end
 end
 %%% check if phasor data is present
-if any(strcmp(BurstData{1}.NameArray,'Phasor: gD'))
-    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>D</sub> vs s<sub>D</sub></html>';
-end
-if any(strcmp(BurstData{1}.NameArray,'Phasor: gA'))
-    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>A</sub> vs s<sub>A</sub></html>';
+switch BurstData{1}.BAMethod
+    case {1,2,5}
+        if any(strcmp(BurstData{1}.NameArray,'Phasor: gD'))
+            h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>D</sub> vs s<sub>D</sub></html>';
+        end
+        if any(strcmp(BurstData{1}.NameArray,'Phasor: gA'))
+            h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>A</sub> vs s<sub>A</sub></html>';
+        end
 end
     
 %%% Set Parameter list after all parameters are defined
@@ -265,8 +276,8 @@ UpdateCuts();
 
 ChangePlotType(h.PlotContourLines) 
 ChangePlotType(h.PlotTypePopumenu) 
-
 Update_fFCS_GUI(gcbo,[]);
+UpdateGUIOptions(h.LifetimeMode_Menu,[],h);
 
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;

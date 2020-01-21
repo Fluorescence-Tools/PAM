@@ -21,6 +21,7 @@ BurstMeta.fFCS.Result.Cor_Times = [];
 BurstMeta.fFCS.Result.Cor_Average = [];
 BurstMeta.fFCS.Result.Cor_SEM = [];
 BurstMeta.fFCS.Result.Cor_Array = [];
+BurstMeta.fFCS.Result.MetaData = [];
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
@@ -80,8 +81,14 @@ for i=1:NumChans
                 end
                 %%% Calculates the maximum inter-photon time in clock ticks
                 Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+                
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
+                
+                %%% estimate average count rates
+                counts_per_channel = [sum(cellfun(@sum,Weights1)) sum(cellfun(@sum,Weights2))];
+                duration = sum((cellfun(@(x,y) max(x(end),y(end)),MT1,MT2) - cellfun(@(x,y) min(x(1),y(1)),MT1,MT2))).*BurstData{file}.ClockPeriod;
+                Counts = counts_per_channel./duration/1000; % average countrate in kHz
             elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) %%% Full correlation
                 Weights1_dummy = filters_par{i}(MIpar);
                 Weights2_dummy = filters_perp{j}(MIperp);
@@ -104,6 +111,11 @@ for i=1:NumChans
                 end
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                
+                %%% estimate average count rates
+                counts_per_channel = [sum(cellfun(@sum,Weights1)) sum(cellfun(@sum,Weights2))];
+                duration = sum(cellfun(@(x,y) max(x(end),y(end)),Data1,Data2)).*BurstData{file}.ClockPeriod;
+                Counts = counts_per_channel./duration/1000; % average countrate in kHz  
             end
             Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
             
@@ -122,26 +134,29 @@ for i=1:NumChans
             Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j}];
             switch UserValues.BurstBrowser.Settings.fFCS_Mode
                 case {2} % burstwise with time window
+                    Method = 'burstwise with time window';
                     Current_FileName=[Current_FileName '_tw_' sprintf('%d',UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
                 case {1} % burstwise
+                    Method = 'burstwise';
                     Current_FileName=[Current_FileName '_bw.mcor'];
                 case {3} % total photon stream
+                    Method = 'total photon stream';
                     Current_FileName=[Current_FileName '_ps.mcor'];
                 case {4} % total photon stream + donor only
+                    Method = 'total photon stream + donor only';
                     Current_FileName=[Current_FileName '_ps_donly.mcor'];
             end
             BurstMeta.fFCS.Result.FileName{end+1} = Current_FileName;
             BurstMeta.fFCS.Result.Header{end+1} = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            BurstMeta.fFCS.Result.Counts{end+1} = [0,0];
+            BurstMeta.fFCS.Result.Counts{end+1} = Counts;%[0,0];
             BurstMeta.fFCS.Result.Valid{end+1} = 1:size(Cor_Array,2);
             BurstMeta.fFCS.Result.Cor_Times{end+1} = Cor_Times;
             BurstMeta.fFCS.Result.Cor_Average{end+1} = Cor_Average;
             BurstMeta.fFCS.Result.Cor_SEM{end+1} = Cor_SEM;
             BurstMeta.fFCS.Result.Cor_Array{end+1} = Cor_Array;
-            %Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [0 ,0];
-            %Valid = 1:size(Cor_Array,2);
-            %save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+            %%% store additional meta data describing the species selection
+            BurstMeta.fFCS.Result.MetaData{end+1} = BurstMeta.fFCS.MetaData;
+            BurstMeta.fFCS.Result.MetaData{end}.Method = Method;
             
             count = count +1;
             Progress(count/(NumChans^2),h.Progress_Axes,h.Progress_Text,'Correlating...');
@@ -156,7 +171,7 @@ switch UserValues.BurstBrowser.Settings.fFCS_Mode
         % but only up to timewindowsize/2 to avoid the edge artifacts
         max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < 1E-3*UserValues.BurstBrowser.Settings.Corr_TimeWindowSize/2, 1, 'last');
     otherwise
-        max_time = BurstMeta.fFCS.Result.Cor_Times{end}/2;
+        max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < BurstMeta.fFCS.Result.Cor_Times{1}(end)/2, 1, 'last');
 end
 if ~use_species3
     BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);

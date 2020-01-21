@@ -3,7 +3,7 @@ function [Suffix, Description] = Seidel_STED_PTU(FileName, Path, Type,h)
 %%% Outputs Suffix and Description for file selection querry
 if nargin == 0
     Suffix ='*.ptu';
-    Description ='PQ Hydraharp PTU Seidel-STED custom scanning format';
+    Description ='PQ Hydraharp PTU Seidel-STED custom scanning format (*.ptu)';
     return;
 end
 
@@ -121,7 +121,7 @@ for i=1:numel(FileName)
         FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
     end
     
-    if ~isempty(Header.LineStart) % Image PTU data  
+    if ~isempty(Header.LineStart) && numel(Header.LineStart) == numel(Header.LineStop) % Image PTU data
         % cumulative n.o. frames
         % Header.Frames might contain NoF already
         f = size(Header.FrameStart,2);
@@ -153,8 +153,18 @@ for i=1:numel(FileName)
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Converting File ' num2str(i) ' of ' num2str(numel(FileName))]);
             % ask the user for the excitation period.
             % Assuming only the last scan is red.
-            period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'4'}));
-            lines = FileInfo.Pixels*period;
+            input_prompt = false;
+            if input_prompt
+                period = str2double(inputdlg({'Period length'},'Specify the period length',1,{'2'}));                
+            else
+                %%% if we assume a square ROI, we can get the period length
+                %%% from the apparent number of lines
+                period = size(lstart,2)./FileInfo.Pixels;
+                % lstart contains the apparent number of lines
+                % FileInfo.Pixels is the "true" number of lines assuming a
+                % square ROI.
+            end      
+            lines = FileInfo.Pixels*period; % lines per period. FileInfo.Pixels corresponds to the lines per image (assuming a square ROI)
             % transform the raw MT data to split up into duty cycle periods.
             % Currently, for each line the setup performs 3 scans with green
             % excitation and one scan with red excitation.
@@ -164,9 +174,9 @@ for i=1:numel(FileName)
                 if ~isempty(TcspcData.MT{j,1})
                     [Image,Bin] = CalculateImage(TcspcData.MT{j,1}*FileInfo.ClockPeriod, 4);
                     Bin = double(Bin);
-                    Frame = floor(Bin/(250*lines))+1;
+                    Frame = floor(Bin/(FileInfo.Pixels*lines))+1;
                     valid = Bin ~= 0;       
-                    Line = mod(ceil(Bin/250),lines);Line(Line == 0) = lines;
+                    Line = mod(ceil(Bin/FileInfo.Pixels),lines);Line(Line == 0) = lines;
                     %Line = floor(mod(Bin,250*1000)/250)+1;
                     Cycle = mod(Line-1,period);
                     for f = 1:size(lstart,1)
@@ -189,8 +199,7 @@ for i=1:numel(FileName)
             end
             FileInfo.LineTimes = FileInfo.LineTimes(:,1:period:end);
             FileInfo.LineStops = FileInfo.LineStops(:,1:period:end);
-            FileInfo.Lines = 250;
-            FileInfo.Pixels = 250;
+            FileInfo.Lines = FileInfo.Pixels;
         end
         
         %%% Enables image plotting
@@ -206,6 +215,13 @@ for i=1:numel(FileName)
         UserValues.Settings.Pam.Use_Image = 0;
         h.Image.Tab.Parent = [];
         FileInfo.Lines = 1; %Leave here
+        % duplicate the information to the "routing" channels so that it
+        % can be used a reference for PHasor
+        % consider 4 "routing" channels
+        for i = 2:4
+            TcspcData.MT(:,i) = TcspcData.MT(:,1);
+            TcspcData.MI(:,i) = TcspcData.MI(:,1);
+        end
     end
 end
 
@@ -214,5 +230,5 @@ FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcD
 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
 
 LSUserValues(1);
-% Calculate_Settings = PAM ('Calculate_Settings');
-% Calculate_Settings(h.MT.Use_Image,[]);
+Calculate_Settings = PAM ('Calculate_Settings');
+Calculate_Settings(h.MT.Use_Image,[]);

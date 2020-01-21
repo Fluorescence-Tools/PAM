@@ -4,7 +4,7 @@ IRFPattern = xdata{2};
 Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
-c = xdata{6};
+c = param(end);%xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
@@ -31,13 +31,15 @@ tauD0 = param(6);
 tauD0(tauD0==0) = 1; %%% set minimum lifetime to TACbin width
 
 %%% Determine distribution of lifetimes
-dR = 0.1;
+dR = .25;
 xR = floor(meanR-5*sigmaR):dR:ceil(meanR+5*sigmaR);
 xR = xR(xR > 0);
+
 c_gauss = zeros(numel(xR),n);
 for i = 1:numel(xR)
     c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((0:n-1)./tauD0).*(1+(R0./xR(i)).^6));
 end
+
 pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
 x = sum(c_gauss,1)./sum(pR);
 switch conv_type

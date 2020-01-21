@@ -127,10 +127,10 @@ function h = hexscatter( xdata, ydata, varargin )
     y = bsxfun(@plus, Y(:), sind(theta)*yscale)';
     
     if params.showzeros
-        h = patch(x, y, counts, 'edgeColor', ec);
+        h = patch(x, y, counts, 'edgeColor', ec, 'HandleVisibility','off');
     else
         jj = counts > 0;
-        h = patch(x(:,jj), y(:,jj), counts(jj), 'edgeColor', ec);
+        h = patch(x(:,jj), y(:,jj), counts(jj), 'edgeColor', ec, 'HandleVisibility','off');
     end
     
     if nargout == 0
