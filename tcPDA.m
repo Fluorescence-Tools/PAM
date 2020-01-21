@@ -2079,20 +2079,50 @@ global tcPDAstruct
 data = get(handles.fit_table,'Data');
 
 % get the amplitudes of the species and normalize
-Amp = zeros(tcPDAstruct.n_gauss,1);
-for i = 1:tcPDAstruct.n_gauss
-    Amp(i) = tcPDAstruct.fitdata.param{i}(1);
+if ~tcPDAstruct.dynamic_model
+    Amp = zeros(tcPDAstruct.n_gauss,1);
+    for i = 1:tcPDAstruct.n_gauss
+        Amp(i) = tcPDAstruct.fitdata.param{i}(1);
+    end
+    Amp = Amp./sum(Amp);
+    for i = 1:tcPDAstruct.n_gauss
+         tcPDAstruct.fitdata.param{i}(1) = Amp(i);
+    end
+    % order species by amplitude
+    [~,idx] = sort(Amp,'descend');
+    %Update fitparameter values only
+    for i = 1:tcPDAstruct.n_gauss    
+        data(((i-1)*11+1):(11*i-1),2) = num2cell(tcPDAstruct.fitdata.param{idx(i)});
+    end
+else
+    % do no normalization for now, as it would lead to different fits if
+    % restarted!
+    % (instead, normalization should be done later, or normalized
+    % amplitudes can be reported elsewhere)
+    %Update fitparameter values only
+    for i = 1:tcPDAstruct.n_gauss    
+        data(((i-1)*11+1):(11*i-1),2) = num2cell(tcPDAstruct.fitdata.param{i});
+    end
+%   % only normalize static species amplitudes
+%     if tcPDAstruct.n_gauss > 2
+%         Amp = zeros(tcPDAstruct.n_gauss-2,1);
+%         for i = 1:(tcPDAstruct.n_gauss-2)
+%             Amp(i) = tcPDAstruct.fitdata.param{i+2}(1);
+%         end
+%         Amp = [1;Amp]; % assign amplitude of 1 to dynamic species
+%         Amp = Amp./sum(Amp);
+%         for i = 1:(tcPDAstruct.n_gauss-2)
+%              tcPDAstruct.fitdata.param{i+2}(1) = Amp(i);
+%         end
+%         % order species by amplitude
+%         [~,idx] = sort(Amp,'descend');
+%         %Update fitparameter values only
+%         for i = 3:tcPDAstruct.n_gauss
+%             data(((i-1)*11+1):(11*i-1),2) = num2cell(tcPDAstruct.fitdata.param{idx(i-2)});
+%         end
+%     end
 end
-Amp = Amp./sum(Amp);
-for i = 1:tcPDAstruct.n_gauss
-     tcPDAstruct.fitdata.param{i}(1) = Amp(i);
-end
-% order species by amplitude
-[~,idx] = sort(Amp,'descend');
-%Update fitparameter values only
-for i = 1:tcPDAstruct.n_gauss    
-    data(((i-1)*11+1):(11*i-1),2) = num2cell(tcPDAstruct.fitdata.param{idx(i)});
-end
+
 
 set(handles.fit_table,'Data',data);
 
@@ -2475,10 +2505,6 @@ end
 function [ chi2 ] = determine_chi2_mc_dist_3d_cor(fitpar)
 global tcPDAstruct UserValues
 nbins = tcPDAstruct.nbins;
-%this ensures that the same random numbers are generated in each fitting
-%step to reduce stochastic noise
-rng('shuffle');
-
 %10 fit par:
 %1 Amplitude
 %3 Distances
@@ -2727,6 +2753,176 @@ for i = 1:N_gauss
     dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
     H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
 end
+
+H_res = zeros(nbins,nbins,nbins);
+for i = 1:N_gauss
+    H_res = H_res + A(i).*H_res_dummy{i};
+end
+
+%normalize
+H_res = (H_res./sum(sum(sum((H_res))))).*sum(sum(sum(H_meas)));
+
+sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
+dev = (H_res-H_meas)./sigma_est;
+chi2 = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
+tcPDAstruct.plots.chi2 = chi2;
+
+%%% chi2 estimate based on Poissonian statistics
+%chi2 = chi2poiss(H_res,H_meas);
+
+%store for plotting
+%2D BG BR
+%tcPDAstruct.plots.H_res_2d = sum(H_res,3);
+%tcPDAstruct.plots.dev_2d = (tcPDAstruct.H_meas_2d-tcPDAstruct.plots.H_res_2d)./sqrt(tcPDAstruct.H_meas_2d);
+%tcPDAstruct.plots.dev_2d(~isfinite(tcPDAstruct.plots.dev_2d)) = 0;
+%tcPDAstruct.plots.H_res_2d_individual = H_res_dummy;
+%1D GR
+%tcPDAstruct.plots.H_res_1d = squeeze(sum(sum(H_res,1),2));
+%tcPDAstruct.plots.dev_gr = (tcPDAstruct.H_meas_gr-tcPDAstruct.plots.H_res_1d)./sqrt(tcPDAstruct.H_meas_gr);
+%tcPDAstruct.plots.dev_gr(~isfinite(tcPDAstruct.plots.dev_gr)) = 0;
+
+tcPDAstruct.plots.A_3d = A;
+tcPDAstruct.plots.H_res_3d = H_res;
+tcPDAstruct.plots.H_res_3d_individual = H_res_dummy;
+tcPDAstruct.plots.H_res_3d_bg_br = squeeze(sum(H_res,3));
+tcPDAstruct.plots.H_res_3d_bg_gr = squeeze(sum(H_res,2));
+tcPDAstruct.plots.H_res_3d_br_gr = squeeze(sum(H_res,1));
+tcPDAstruct.plots.H_res_3d_bg = squeeze(sum(sum(H_res,2),3));
+tcPDAstruct.plots.H_res_3d_br = squeeze(sum(sum(H_res,1),3));
+tcPDAstruct.plots.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
+%[tcPDAstruct.plots.chi2, tcPDAstruct.plots.dev_3d] = chi2poiss(H_res,H_meas);
+
+%%% Update Fit Parameter in global struct
+for i = 1:numel(fitpar)/10
+    tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
+end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
+
+function [ chi2 ] = determine_chi2_mc_dist_3d_cor_dynamic(fitpar)
+global tcPDAstruct UserValues
+nbins = tcPDAstruct.nbins;
+%10 fit par:
+%1 Amplitude
+%3 Distances
+%3 sigma
+%3 elements of cov mat
+
+if ~tcPDAstruct.use_stochasticlabeling
+    %%% No stochastic labeling correction
+    N_gauss = numel(fitpar)/10; 
+
+    for i = 1:N_gauss
+        A(i) =fitpar((i-1)*10+1);
+        Rgr(i) = fitpar((i-1)*10+2);
+        sigma_Rgr(i) = fitpar((i-1)*10+3);
+        Rbg(i) = fitpar((i-1)*10+4);
+        sigma_Rbg(i) = fitpar((i-1)*10+5);
+        Rbr(i) = fitpar((i-1)*10+6);
+        sigma_Rbr(i) = fitpar((i-1)*10+7);
+        simga_Rbg_Rbr(i) = fitpar((i-1)*10+8);
+        simga_Rbg_Rgr(i) = fitpar((i-1)*10+9);
+        simga_Rbr_Rgr(i) = fitpar((i-1)*10+10);
+    end
+elseif tcPDAstruct.use_stochasticlabeling
+    disp('Stochastic labeling correction is not implemented yet for dynamic model.');
+    chi2 = Inf;
+    return;
+end
+
+%read corrections
+mBG_bb = tcPDAstruct.corrections.BG_bb;
+mBG_bg = tcPDAstruct.corrections.BG_bg;
+mBG_br = tcPDAstruct.corrections.BG_br;
+mBG_gg = tcPDAstruct.corrections.BG_gg;
+mBG_gr = tcPDAstruct.corrections.BG_gr;
+cr_gr = tcPDAstruct.corrections.ct_gr;
+cr_bg = tcPDAstruct.corrections.ct_bg;
+cr_br = tcPDAstruct.corrections.ct_br;
+de_bg = tcPDAstruct.corrections.de_bg;
+de_br = tcPDAstruct.corrections.de_br;
+de_gr = tcPDAstruct.corrections.de_gr;
+gamma_gr = tcPDAstruct.corrections.gamma_gr;
+gamma_br = tcPDAstruct.corrections.gamma_br;
+gamma_bg = gamma_br/gamma_gr;
+
+R0_bg = tcPDAstruct.corrections.R0_bg;
+R0_br = tcPDAstruct.corrections.R0_br;
+R0_gr = tcPDAstruct.corrections.R0_gr;
+sampling = tcPDAstruct.sampling;
+BSD_BX = tcPDAstruct.BSD_BX;
+BSD_GX = tcPDAstruct.BSD_GX;
+%valid = Cut_Data([],[]);
+dur = tcPDAstruct.duration(tcPDAstruct.valid);
+H_meas = tcPDAstruct.H_meas;
+
+pe_b = 1-de_br-de_bg; %probability of blue excitation
+total_rolls = numel(BSD_BX);
+
+
+if tcPDAstruct.BrightnessCorrection
+   disp('Brightness correction not implemented yet for dynamic model.');
+   chi2 = Inf;
+   return;
+end
+%initialize data
+PrGR = cell(sampling,N_gauss);
+PrBG = cell(sampling,N_gauss);
+PrBR = cell(sampling,N_gauss);
+
+% assign distances and fix covariance matrices
+MU = cell(1,N_gauss);
+COV = cell(1,N_gauss);
+for j=1:N_gauss
+    MU{j} = [Rbg(j), Rbr(j), Rgr(j)];
+    COV{j} =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
+        simga_Rbg_Rbr(j),sigma_Rbr(j).^2,simga_Rbr_Rgr(j);...
+        simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
+    [~,err] = cholcov(COV{j},0);
+    while err ~= 0 % any(eig(COV)< 0)
+        %COV = nearestSPD(COV);
+       [COV{j}] = fix_covariance_matrix(COV{j});
+       [~,err] = cholcov(COV{j},0);
+    end
+end
+
+% evaluate dynamics
+mu1 = MU{1}; mu2 = MU{2};
+covar1 = COV{1}; covar2 = COV{2};
+k12 = A(1); k21 = A(2);
+% convert fraction of time to intensity-fraction using brightnesses
+[Qr_g(1),Qr_b(1)] = calc_relative_brightness(mu1(3),mu1(1),mu1(2));
+[Qr_g(2),Qr_b(2)] = calc_relative_brightness(mu2(3),mu2(1),mu2(2)); 
+for i = 1:sampling % make parfor again
+    [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamic(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
+                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+end
+if N_gauss > 2 % add static populations
+    for j=3:N_gauss
+        mu = MU{j}; covar = COV{j};
+        parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+            [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
+                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+        end
+    end
+end
+
+H_res_dummy = cell(N_gauss,1);
+for i = 1:N_gauss
+    if tcPDAstruct.dynamic_model && i == 2
+        H_res_dummy{i} = zeros(nbins,nbins,nbins); % second species does not exist
+    else
+        dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+        dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
+        dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
+        dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
+        H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
+    end
+end
+
+A = [1;0; A(3:end)]; % assign amplitude of 1 to dynamic population (second population is empty);
+A = A./sum(A);
 
 H_res = zeros(nbins,nbins,nbins);
 for i = 1:N_gauss
@@ -3763,9 +3959,11 @@ switch (selected_tab)
             %%% add stochastic fraction as a fit parameter
             fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
         end
-        
-        chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
-        
+        if handles.dynamic_model_checkbox.Value == 0
+            chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
+        else
+            chi2 = determine_chi2_mc_dist_3d_cor_dynamic(fitpar);
+        end
         if isfield(tcPDAstruct,'twocolordata')
             plot_2cPDAData(2);
         end
@@ -3882,7 +4080,7 @@ x_axis_stairs = [x_axis - (x_axis(2)-x_axis(1))/2 1];
 fontsize_label = 14;
 fontsize_ticks = 12;
 axes_bg_color = [1 1 1];
-
+linewidth_surf = 0.75;
 if ismac
     fontsize_label = 1.25*fontsize_label;
     fontsize_ticks = 1.25*fontsize_ticks;
@@ -3895,7 +4093,7 @@ data = squeeze(sum(input,3));
 fit = tcPDAstruct.plots.H_res_3d_bg_br;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3922,7 +4120,7 @@ data = squeeze(sum(input,2));
 fit = tcPDAstruct.plots.H_res_3d_bg_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3948,7 +4146,7 @@ data = squeeze(sum(input,1));
 fit = tcPDAstruct.plots.H_res_3d_br_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -5815,7 +6013,7 @@ if N_gauss > 2 %%% add static species
         P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{j});
     end
 end
-% remove second population (included in dynamics)
+% remove second population (included in binary dynamics)
 P_res(2) = [];
 
 % adjust the amplitudes
