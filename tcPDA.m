@@ -1741,31 +1741,36 @@ switch (selected_tab)
         
         plotfun = @(x,optimvalues,state,varargin) UpdateFitProgress(x,optimvalues,state,varargin,@plot_after_fit,@UpdateFitTable);
         if get(handles.MLE_checkbox,'Value') == 0
+            if tcPDAstruct.dynamic_model
+                fitfun = @(x) determine_chi2_mc_dist_3d_cor_dynamic(x);
+            else
+                fitfun = @(x) determine_chi2_mc_dist_3d_cor(x);
+            end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Pattern Search'
                     plotfun = @(optimvalues,flag) UpdateFitProgress(optimvalues,flag,[],[],@plot_after_fit,@UpdateFitTable);
                     opts = psoptimset('Cache','on','Display','iter','PlotFcns',plotfun);%@psplotchange);%,'UseParallel','always');
-                    fitpar = patternsearch(@(x) determine_chi2_mc_dist_3d_cor(x), fitpar, [],[],A,b,LB,UB,[],opts);
+                    fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
                 case 'Simplex'
                     fitopts = optimset('MaxFunEvals', 1E6,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fminsearchbnd(@(x) determine_chi2_mc_dist_3d_cor(x), fitpar,LB,UB,fitopts);
+                    fitpar = fminsearchbnd(fitfun, fitpar,LB,UB,fitopts);
                 case 'Gradient-based'
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fmincon(@(x) determine_chi2_mc_dist_3d_cor(x), fitpar,[],[],A,b,LB,UB,[],fitopts);
+                    fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                 case 'Surrogate Optimization'
                     opts = optimoptions('surrogateopt','PlotFcn','surrogateoptplot','InitialPoints',fitpar,'MaxFunctionEvaluations',1E4);
-                    fitpar = surrogateopt(@(x) determine_chi2_mc_dist_3d_cor(x),LB,UB,opts);
+                    fitpar = surrogateopt(fitfun,LB,UB,opts);
                     fitpar = fitpar';
                 case 'Genetic Algorithm'
                     opts = optimoptions('ga','PlotFcn',@gaplotbestf);
-                    fitpar = ga(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),[],[],[],[],LB,UB,[],opts);
+                    fitpar = ga(fitfun,numel(fitpar),[],[],[],[],LB,UB,[],opts);
                     fitpar = fitpar';
                 case 'Simulated Annealing'
                     opts = optimoptions('simulannealbnd','Display','iter','InitialTemperature',100,'MaxTime',300,'PlotFcn','saplotbestf');
-                    fitpar = simulannealbnd(@(x) determine_chi2_mc_dist_3d_cor(x),fitpar,LB,UB,opts);
+                    fitpar = simulannealbnd(fitfun,fitpar,LB,UB,opts);
                 case 'Particle Swarm'
                     opts = optimoptions('particleswarm','HybridFcn',[],'Display','iter','PlotFcn','pswplotbestf');
-                    fitpar = particleswarm(@(x) determine_chi2_mc_dist_3d_cor(x),numel(fitpar),LB,UB,opts);
+                    fitpar = particleswarm(fitfun,numel(fitpar),LB,UB,opts);
                     fitpar = fitpar';
             end
          else
