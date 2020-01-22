@@ -266,7 +266,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     %%% change name of variable E to EGR
     EGR = E;
     %%% Apply CrossTalk and DirectExcitation Corrections
-    new_correction_BR = true
+    new_correction_BR = true;
     if new_correction_BR %%% produces identical results but is "easier" to compute
         NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(NGR-de_gr.*NRR-ct_gr.*NGG);
     else
