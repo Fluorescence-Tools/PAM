@@ -3901,6 +3901,7 @@ tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
 tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
 %read correction table
 corrections = get(handles.corrections_table,'data');
 [tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
