@@ -2196,10 +2196,12 @@ end
 %%% unhide used plots
 if ~handles.checkbox_stochasticlabeling.Value
     if n_gauss > 1
-        for i = 1:n_gauss
-            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
+        if handles.dynamic_model_checkbox.Value
+            %%% last plot contains dynamic distribution
+            n_gauss = n_gauss + 1;
         end
         for i = 1:n_gauss
+            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
             handles.plots.handles_H_res_2d_individual(i).Visible = 'on';
             handles.plots.handles_H_res_3d_individual_bg_br(i).Visible = 'on';
             handles.plots.handles_H_res_3d_individual_bg_gr(i).Visible = 'on';
@@ -2916,7 +2918,8 @@ end
 H_res_dummy = cell(N_gauss,1);
 for i = 1:N_gauss
     if tcPDAstruct.dynamic_model && i == 2
-        H_res_dummy{i} = zeros(nbins,nbins,nbins); % second species does not exist
+        % second species does not exist        
+        H_res_dummy{i} = zeros(nbins,nbins,nbins); 
     else
         dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
         dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
@@ -2926,7 +2929,7 @@ for i = 1:N_gauss
     end
 end
 
-A = [1;0; A(3:end)]; % assign amplitude of 1 to dynamic population (second population is empty);
+A = [1;0; A(3:end)']; % assign amplitude of 1 to dynamic population (second population is empty);
 A = A./sum(A);
 
 H_res = zeros(nbins,nbins,nbins);
@@ -2945,6 +2948,36 @@ tcPDAstruct.plots.chi2 = chi2;
 %%% chi2 estimate based on Poissonian statistics
 %chi2 = chi2poiss(H_res,H_meas);
 
+
+if strcmp(get(gcbo,'Tag'),'button_view_curve') && tcPDAstruct.dynamic_model
+    %%% add pseudo-static species as second population (only for display purpose)
+    for j=1:2
+        mu = MU{j}; covar = COV{j};
+        parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+            [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
+                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+        end
+    end    
+    H_pseudostatic = cell(2,1);
+    for i = 1:2
+        dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+        dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
+        dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
+        dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
+        H_pseudostatic{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
+    end
+    %%% get amplitudes of pseudo-static populations
+    %%% evaluate dynamic distribution
+    dT = tcPDAstruct.timebin; % time bin in milliseconds
+    N = 100;
+    PofT = calc_dynamic_distribution(dT,N,k12,k21); % Probability of state 1 occupancy
+    H_res_dummy{end+1} = (H_res_dummy{1} - PofT(end)*H_pseudostatic{1} - PofT(1)*H_pseudostatic{2})./(1-PofT(1)-PofT(end)); % dynamic part
+    H_res_dummy{1} = H_pseudostatic{1};
+    H_res_dummy{2} = H_pseudostatic{2};
+    A(2) = PofT(1);
+    A(1) = PofT(end);
+    A(end+1) = 1-PofT(1)-PofT(end); % amplitude of dynamic part
+end
 %store for plotting
 %2D BG BR
 %tcPDAstruct.plots.H_res_2d = sum(H_res,3);
@@ -3578,6 +3611,7 @@ else
     %%% normal order
     plots = 1:10;
 end
+
 % 1d plot
 if isfield(tcPDAstruct.plots,'H_res_gr')
     set(handles.plots.handle_1d_fit,'YData',[tcPDAstruct.plots.H_res_gr;tcPDAstruct.plots.H_res_gr(end)],'XData',tcPDAstruct.x_axis_stair);
@@ -6142,7 +6176,7 @@ PBG = Pout_G./P_total;
 PBR = Pout_R./P_total;
 
 %%% evaluate dynamic distribution
-dT = 1; % time bin in milliseconds
+dT = tcPDAstruct.timebin; % time bin in milliseconds
 N = 25;
 PofT = calc_dynamic_distribution(dT,N,k12,k21);
 %%% calculate relative brightnesses
