@@ -61,7 +61,10 @@ else
     end
     switch gof_type
         case 1
-            handles.fit_progress_text.String = sprintf('red. \\chi^2 = %.2f',tcPDAstruct.plots.chi2);
+            for i = 1:numel(tcPDAstruct.plots)
+                chi2(i) = tcPDAstruct.plots{i}.chi2;
+            end
+            handles.fit_progress_text.String = sprintf('red. \\chi^2 = %.2f',mean(chi2));
         case 2
             handles.fit_progress_text.String = sprintf('-logL = %.2f',best);
     end

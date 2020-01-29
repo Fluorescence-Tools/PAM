@@ -1185,6 +1185,10 @@ if ~isequal(FileName,0)
 else
     return;
 end
+if ~iscell(FileName)
+    FileName = {FileName};
+end
+
 LSUserValues(1);
 tcPDAstruct = [];%clearvars -global tcPDAstruct
 
@@ -1196,8 +1200,10 @@ for i = 1:numel(FileName)
              dat = load_from_txt(fullfile(PathName,FileName{i}));
     end
     tcPDAstruct.Data{i} = dat.tcPDAstruct;
-    timebin_string{i} = sprintf('%d ms',dat.tcPDAstruct.timebin);
+    timebin_string{i} = sprintf('%.2f ms',dat.tcPDAstruct.timebin);
 end
+tcPDAstruct.FileName = FileName;
+tcPDAstruct.PathName = PathName;
 tcPDAstruct.FullFileName = fullfile(PathName,FileName{1});
 handles.Figure.Name = ['tcPDA - Loaded file: ' FileName{1}];
 
@@ -1239,7 +1245,7 @@ else
     tcPDAstruct.N_max = tcPDAstruct.Data{1}.N_max;
 end
 if ~isfield(tcPDAstruct,'n_gauss')
-    tcPDAstruct.n_gauss = 1;
+    tcPDAstruct.n_gauss = 2;
 else
     tcPDAstruct.n_gauss = tcPDAstruct.Data{1}.n_gauss;
 end
@@ -1592,7 +1598,7 @@ handles.plots.handle_3d_data_gr.YData = squeeze(sum(sum(input,1),2));
     
 function fit_tcPDA(handles)
 global tcPDAstruct UserValues
-if ~isfield(tcPDAstruct,'NBB')
+if ~isfield(tcPDAstruct.Data{1},'NBB')
     return;
 end
 handles.BIC_text.String = '';
@@ -1799,11 +1805,13 @@ switch (selected_tab)
         
         %%% Apply cuts
         [valid] = Cut_Data([],[]);
-        tcPDAstruct.fbb = tcPDAstruct.NBB(valid);
-        tcPDAstruct.fbg = tcPDAstruct.NBG(valid);
-        tcPDAstruct.fbr = tcPDAstruct.NBR(valid);
-        tcPDAstruct.fgg = tcPDAstruct.NGG(valid);
-        tcPDAstruct.fgr = tcPDAstruct.NGR(valid);
+        for i = 1:numel(tcPDAstruct.Data)
+            tcPDAstruct.fbb{i} = tcPDAstruct.Data{i}.NBB(valid{i});
+            tcPDAstruct.fbg{i} = tcPDAstruct.Data{i}.NBG(valid{i});
+            tcPDAstruct.fbr{i} = tcPDAstruct.Data{i}.NBR(valid{i});
+            tcPDAstruct.fgg{i} = tcPDAstruct.Data{i}.NGG(valid{i});
+            tcPDAstruct.fgr{i} = tcPDAstruct.Data{i}.NGR(valid{i});
+        end
         tcPDAstruct.valid = valid;
         
         plotfun = @(x,optimvalues,state,varargin) UpdateFitProgress(x,optimvalues,state,varargin,@plot_after_fit,@UpdateFitTable);
@@ -1864,29 +1872,33 @@ switch (selected_tab)
             else %%% using GPU
                 if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
                     %%% prepare gpuArrays
-                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
-                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
-                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
-                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
-                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
-                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
-                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
-                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
-                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
-                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
-                    
-                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
-                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
-                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
-                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
-                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
-                    
-                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
-                    tcPDAstruct.CUDAKernel.likelihood_dyn = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*24,1))); %%% 24 = bin number for dynamic model
+                    for i = 1:numel(tcPDAstruct.Data)
+                        tcPDAstruct.CUDAKernel.BG_bb{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbb{i}));
+                        tcPDAstruct.CUDAKernel.BG_bg{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbg{i}));
+                        tcPDAstruct.CUDAKernel.BG_br{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbr{i}));
+                        tcPDAstruct.CUDAKernel.BG_gg{i} = gpuArray(single(tcPDAstruct.corrections.background.BGgg{i}));
+                        tcPDAstruct.CUDAKernel.BG_gr{i} = gpuArray(single(tcPDAstruct.corrections.background.BGgr{i}));
+                        tcPDAstruct.CUDAKernel.NBGbb{i} = gpuArray(tcPDAstruct.corrections.background.NBGbb{i});
+                        tcPDAstruct.CUDAKernel.NBGbg{i} = gpuArray(tcPDAstruct.corrections.background.NBGbg{i});
+                        tcPDAstruct.CUDAKernel.NBGbr{i} = gpuArray(tcPDAstruct.corrections.background.NBGbr{i});
+                        tcPDAstruct.CUDAKernel.NBGgg{i} = gpuArray(tcPDAstruct.corrections.background.NBGgg{i});
+                        tcPDAstruct.CUDAKernel.NBGgr{i} = gpuArray(tcPDAstruct.corrections.background.NBGgr{i});
+
+                        tcPDAstruct.CUDAKernel.fbb{i} = gpuArray(int32(tcPDAstruct.fbb{i}));
+                        tcPDAstruct.CUDAKernel.fbg{i} = gpuArray(int32(tcPDAstruct.fbg{i}));
+                        tcPDAstruct.CUDAKernel.fbr{i} = gpuArray(int32(tcPDAstruct.fbr{i}));
+                        tcPDAstruct.CUDAKernel.fgg{i} = gpuArray(int32(tcPDAstruct.fgg{i}));
+                        tcPDAstruct.CUDAKernel.fgr{i} = gpuArray(int32(tcPDAstruct.fgr{i}));
+
+                        tcPDAstruct.CUDAKernel.likelihood{i} = gpuArray(single(zeros(numel(tcPDAstruct.fbb{i})*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                        tcPDAstruct.CUDAKernel.likelihood_dyn{i} = gpuArray(single(zeros(numel(tcPDAstruct.fbb{i})*24,1))); %%% 24 = bin number for dynamic model
+                        numElements(i) = numel(tcPDAstruct.fbb{i});
+                    end
                     %%% initialize kernel
                     path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
                     tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
-                    numElements = numel(tcPDAstruct.fbb);
+                    % take maximum number of bursts for kernel
+                    numElements = max(numElements); %numel(tcPDAstruct.fbb);
                     tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
                     tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
                 end
@@ -3018,7 +3030,7 @@ for f = 1:numel(tcPDAstruct.Data)
     sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
     dev = (H_res-H_meas)./sigma_est;
     chi2(f) = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
-    tcPDAstruct.plots{f}.chi2 = chi2;
+    tcPDAstruct.plots{f}.chi2 = chi2(f);
 
     %%% chi2 estimate based on Poissonian statistics
     %chi2 = chi2poiss(H_res,H_meas);
@@ -3069,6 +3081,7 @@ end
 
 
 %[tcPDAstruct.plots.chi2, tcPDAstruct.plots.dev_3d] = chi2poiss(H_res,H_meas);
+chi2 = mean(chi2);
 
 %%% Update Fit Parameter in global struct
 for i = 1:numel(fitpar)/10
@@ -3152,12 +3165,8 @@ corrections = tcPDAstruct.corrections;
 corrections.gamma_bg = corrections.gamma_br/corrections.gamma_gr;
 
 corrections.steps = 4;
-%valid = Cut_Data([],[]);
-dur = tcPDAstruct.duration(tcPDAstruct.valid);
-%H_meas = tcPDAstruct.H_meas;
 corrections.pe_b = 1-corrections.de_br-corrections.de_bg; %probability of blue excitation
 
-P_res = cell(N_gauss,1);
 for j=1:N_gauss
     MU = [Rbg(j), Rbr(j), Rgr(j)];
     COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
@@ -3170,12 +3179,21 @@ for j=1:N_gauss
        [~,err] = cholcov(COV,0);
     end
     
-    param.MU = MU;
-    param.COV = COV;
-    P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param);
+    param{j}.MU = MU;
+    param{j}.COV = COV;
 end
+    
 
-if tcPDAstruct.BrightnessCorrection
+P_result = zeros(numel(tcPDAstruct.Data),1);
+for f = 1:numel(tcPDAstruct.Data) 
+    dur = tcPDAstruct.Data{f}.duration(tcPDAstruct.valid{f});
+    P_res = cell(N_gauss,1);
+    
+    for j = 1:N_gauss
+        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param,f);
+    end
+    
+    if tcPDAstruct.BrightnessCorrection
         %%% If brightness correction is to be performed, determine the relative
         %%% brightness based on current distance and correction factors
         PNGX_scaled = cell(N_gauss,1);
@@ -3212,27 +3230,30 @@ if tcPDAstruct.BrightnessCorrection
             PNGX_scaled{c} = [1/N_gauss;PNGX_scaled{c}];
             PNBX_scaled{c} = [1/N_gauss;PNBX_scaled{c}];
         end
-        
-        
-        
+
+
+
         for c = 1:N_gauss
             P_res{c} = P_res{c} + log(PNGX_scaled{c}(1+tcPDAstruct.fgg+tcPDAstruct.fgr)) + log(PNBX_scaled{c}(1+tcPDAstruct.fbb+tcPDAstruct.fbg+tcPDAstruct.fbr)); % +1 for zero photon case
         end
-end
+    end
 
-%%% combine the likelihoods of the Gauss
-PA = A;
-P_res = horzcat(P_res{:});
-P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb),1);
-Lmax = max(P_res,[],2);
-P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
-%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
-%%% Reset these values to -Inf
-P_res(isnan(P_res)) = -Inf;
-P_result = sum(P_res);
-%%% since the algorithm minimizes, it is important to minimize the negative
-%%% log likelihood, i.e. maximize the likelihood
-P_result = (-1)*double(P_result);
+    %%% combine the likelihoods of the Gauss
+    PA = A;
+    P_res = horzcat(P_res{:});
+    P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb),1);
+    Lmax = max(P_res,[],2);
+    P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
+    %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+    %%% Reset these values to -Inf
+    P_res(isnan(P_res)) = -Inf;
+    P_res = sum(P_res);
+    %%% since the algorithm minimizes, it is important to minimize the negative
+    %%% log likelihood, i.e. maximize the likelihood
+    P_res = (-1)*double(P_res);
+    P_result(f) = P_res;
+end
+P_result = sum(P_result);
 
 if tcPDAstruct.use_stochasticlabeling
     %%% reset N_gauss to number of populations
@@ -3270,7 +3291,7 @@ for j=1:tcPDAstruct.n_gauss
 end
 neg_logL = -logPrior;
 
-function P_res = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param)
+function P_res = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param,file)
 global tcPDAstruct UserValues
 %%% evaluates the loglikelihood that param produce data
 %%%
@@ -3355,7 +3376,7 @@ PBR = Pout_R./P_total;
 
 %%% initialize arrays
 %P = cell(numel(PR),1);
-if strcmp(tcPDAstruct.timebin,'burstwise')
+if strcmp(tcPDAstruct.Data{file}.timebin,'burstwise')
     %%% burstwise, indivual backgrounds used
 %     parfor l = 1:numel(PR)
 %         P{l} = eval_prob_3c_mex(fbb,fbg,fbr,fgg,fgr,PBB(l),PBG(l),PGR(l)); 
@@ -3367,7 +3388,7 @@ if strcmp(tcPDAstruct.timebin,'burstwise')
                 PBB(l),PBG(l),PGR(l));
         end
         P = horzcat(P{:});
-elseif isnumeric(tcPDAstruct.timebin)
+elseif isnumeric(tcPDAstruct.Data{file}.timebin)
     %% CUDA
     if (gpuDeviceCount > 0) && ~tcPDAstruct.GPU_locked
         if UserValues.tcPDA.UseCUDAKernel %%% use CUDAKernel implementation
@@ -3375,12 +3396,12 @@ elseif isnumeric(tcPDAstruct.timebin)
             PBB_gpu = gpuArray(single(PBB));
             PBG_gpu = gpuArray(single(PBG));
             PGR_gpu = gpuArray(single(PGR));
-            P = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood,...
-                tcPDAstruct.CUDAKernel.fbb,tcPDAstruct.CUDAKernel.fbg,tcPDAstruct.CUDAKernel.fbr,tcPDAstruct.CUDAKernel.fgg,tcPDAstruct.CUDAKernel.fgr,...
-                tcPDAstruct.CUDAKernel.NBGbb,tcPDAstruct.CUDAKernel.NBGbg,tcPDAstruct.CUDAKernel.NBGbr,tcPDAstruct.CUDAKernel.NBGgg,tcPDAstruct.CUDAKernel.NBGgr,...
-                tcPDAstruct.CUDAKernel.BG_bb,tcPDAstruct.CUDAKernel.BG_bg,tcPDAstruct.CUDAKernel.BG_br,tcPDAstruct.CUDAKernel.BG_gg,tcPDAstruct.CUDAKernel.BG_gr,...
-                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB),numel(fbb));
-            P = reshape(gather(P),numel(PBB),numel(fbb))';
+            P = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood{file},...
+                tcPDAstruct.CUDAKernel.fbb{file},tcPDAstruct.CUDAKernel.fbg{file},tcPDAstruct.CUDAKernel.fbr{file},tcPDAstruct.CUDAKernel.fgg{file},tcPDAstruct.CUDAKernel.fgr{file},...
+                tcPDAstruct.CUDAKernel.NBGbb{file},tcPDAstruct.CUDAKernel.NBGbg{file},tcPDAstruct.CUDAKernel.NBGbr{file},tcPDAstruct.CUDAKernel.NBGgg{file},tcPDAstruct.CUDAKernel.NBGgr{file},...
+                tcPDAstruct.CUDAKernel.BG_bb{file},tcPDAstruct.CUDAKernel.BG_bg{file},tcPDAstruct.CUDAKernel.BG_br{file},tcPDAstruct.CUDAKernel.BG_gg{file},tcPDAstruct.CUDAKernel.BG_gr{file},...
+                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB),numel(fbb{file}));
+            P = reshape(gather(P),numel(PBB),numel(fbb{file}))';
             %%% clear data from GPU to avoid memory leak
             clear PBB_gpu PBG_gpu PGR_gpu
         else %%% use mex file CUDA implementation
@@ -3431,7 +3452,7 @@ elseif isnumeric(tcPDAstruct.timebin)
     end
 end
 %P = horzcat(P{:});
-P = log(P) + repmat(log(PR'),numel(fbb),1);
+P = log(P) + repmat(log(PR'),numel(fbb{file}),1);
 Lmax = max(P,[],2);
 P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
 %P_res = sum(P);
@@ -3928,8 +3949,25 @@ function save_fitstate(handles,obj)
 global tcPDAstruct UserValues
 switch obj
     case handles.button_save_fitstate
-        %tcPDAstruct.nbins = UserValues.tcPDA.nbins;
-        save(tcPDAstruct.FullFileName,'tcPDAstruct');
+        for i = 1:numel(tcPDAstruct.FileName)
+            tcPDAdata = tcPDAstruct.Data{i};
+            %%% add fields
+            tcPDAdata.sampling = tcPDAstruct.sampling;
+            tcPDAdata.use_stochasticlabeling = tcPDAstruct.use_stochasticlabeling;
+            tcPDAdata.fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+            tcPDAdata.fix_stochasticlabeling = tcPDAstruct.fix_stochasticlabeling;
+            tcPDAdata.N_min = tcPDAstruct.N_min;
+            tcPDAdata.N_max = tcPDAstruct.N_max;
+            tcPDAdata.n_gauss = tcPDAstruct.n_gauss;
+            tcPDAdata.nbins = tcPDAstruct.nbins;
+            tcPDAdata.norm_likelihood = tcPDAstruct.norm_likelihood;
+            tcPDAdata.use_2color_data = tcPDAstruct.use_2color_data;
+            tcPDAdata.fitdata = tcPDAstruct.fitdata;
+            tcPDAdata.corrections = tcPDAstruct.corrections;
+            
+            fn = fullfile(tcPDAstruct.PathName,tcPDAstruct.FileName{i});
+            save_tcPDAstruct(fn,tcPDAdata);
+        end
     case handles.button_save_fitstate_external
         fit_data = tcPDAstruct.fitdata;
         corrections = handles.corrections_table.Data;
@@ -3946,6 +3984,8 @@ switch obj
         save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','N_min','N_max','use_stochasticlabeling','fraction_stochasticlabeling','fix_stochasticlabeling');
 end
 
+function save_tcPDAstruct(fn,tcPDAstruct)
+save(fn,'tcPDAstruct');
 function load_fitstate(handles)
 global tcPDAstruct UserValues
 
@@ -4131,7 +4171,11 @@ switch (selected_tab)
                     tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
                 end
             end
-            determine_MLE_3color(fitpar);
+            if handles.dynamic_model_checkbox.Value == 0
+                determine_MLE_3color(fitpar);
+            else
+                determine_MLE_3color_dynamic(fitpar);
+            end
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
             %%% clean up
             if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
@@ -6073,6 +6117,12 @@ end
 function [ P_result ] = determine_MLE_3color_dynamic(fitpar)
 global tcPDAstruct
 
+if tcPDAstruct.BrightnessCorrection
+    disp('Brightness correction not implemented for dynamics.');
+    P_result = Inf;
+    return;
+end
+
 %10 fit par:
 %1 Amplitude
 %3 Distances
@@ -6082,7 +6132,6 @@ global tcPDAstruct
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
     N_gauss = numel(fitpar)/10; 
-
     for i = 1:N_gauss
         A(i) =fitpar((i-1)*10+1);
         Rgr(i) = fitpar((i-1)*10+2);
@@ -6106,12 +6155,8 @@ corrections = tcPDAstruct.corrections;
 corrections.gamma_bg = corrections.gamma_br/corrections.gamma_gr;
 
 corrections.steps = 4;
-%valid = Cut_Data([],[]);
-dur = tcPDAstruct.duration(tcPDAstruct.valid);
-%H_meas = tcPDAstruct.H_meas;
 corrections.pe_b = 1-corrections.de_br-corrections.de_bg; %probability of blue excitation
 
-P_res = cell(N_gauss,1);
 for j=1:N_gauss
     MU = [Rbg(j), Rbr(j), Rgr(j)];
     COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
@@ -6130,40 +6175,41 @@ end
 % evaluate dynamics
 k12 = A(1);
 k21 = A(2);
-P_res{1} = posterior_dynamic(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{1},param{2},k12,k21);
+P_result = zeros(numel(tcPDAstruct.Data),1);
+for f = 1:numel(tcPDAstruct.Data)
+    dur = tcPDAstruct.Data{f}.duration(tcPDAstruct.valid{f});
+    dT = tcPDAstruct.Data{f}.timebin; % time bin in milliseconds
+    P_res = cell(N_gauss,1);
+    P_res{1} = posterior_dynamic(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{1},param{2},k12,k21,dT,f);
 
-if N_gauss > 2 %%% add static species
-    for j=3:N_gauss
-        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{j});
+    if N_gauss > 2 %%% add static species
+        for j=3:N_gauss
+            P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{j},f);
+        end
     end
+    % remove second population (included in binary dynamics)
+    P_res(2) = [];
+
+    % adjust the amplitudes
+    A = [1, A(3:end)]; % assign amplitude of 1 to dynamic system
+    A = A./sum(A);
+    
+    %%% combine the likelihoods of the Gauss
+    PA = A;
+    P_res = horzcat(P_res{:});
+    P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb{f}),1);
+    Lmax = max(P_res,[],2);
+    P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
+    %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+    %%% Reset these values to -Inf
+    P_res(isnan(P_res)) = -Inf;
+    P_res = sum(P_res);
+    %%% since the algorithm minimizes, it is important to minimize the negative
+    %%% log likelihood, i.e. maximize the likelihood
+    P_res = (-1)*double(P_res);
+    P_result(f) = P_res;
 end
-% remove second population (included in binary dynamics)
-P_res(2) = [];
-
-% adjust the amplitudes
-A = [1, A(3:end)]; % assign amplitude of 1 to dynamic system
-A = A./sum(A);
-
-if tcPDAstruct.BrightnessCorrection
-    disp('Brightness correction not implemented for dynamics.');
-    P_result = Inf;
-    return;
-end
-
-%%% combine the likelihoods of the Gauss
-PA = A;
-P_res = horzcat(P_res{:});
-P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb),1);
-Lmax = max(P_res,[],2);
-P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
-%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
-%%% Reset these values to -Inf
-P_res(isnan(P_res)) = -Inf;
-P_result = sum(P_res);
-%%% since the algorithm minimizes, it is important to minimize the negative
-%%% log likelihood, i.e. maximize the likelihood
-P_result = (-1)*double(P_result);
-
+P_result = sum(P_result);
 if tcPDAstruct.use_stochasticlabeling
     %%% reset N_gauss to number of populations
     N_gauss = N_gauss/2;
@@ -6184,7 +6230,7 @@ n_data = numel(tcPDAstruct.fbb);
 tcPDAstruct.BIC = 2*P_result + n_param*log(n_data);
 tcPDAstruct.logL = -P_result;
 
-function P_res = posterior_dynamic(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,param2,k12,k21)
+function P_res = posterior_dynamic(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,param2,k12,k21,dT,file)
 global tcPDAstruct UserValues
 %%% evaluates the loglikelihood that param produce data
 %%%
@@ -6260,7 +6306,6 @@ PBG = Pout_G./P_total;
 PBR = Pout_R./P_total;
 
 %%% evaluate dynamic distribution
-dT = tcPDAstruct.timebin; % time bin in milliseconds
 N = 25;
 PofT = calc_dynamic_distribution(dT,N,k12,k21);
 %%% calculate relative brightnesses
@@ -6282,12 +6327,12 @@ PBR_mix = PBR_mix(2:end-1);
 PGR_mix = PGR_mix(2:end-1);
 
 %%% evaluate dynamic part
-if strcmp(tcPDAstruct.timebin,'burstwise')
+if strcmp(tcPDAstruct.Data{1}.timebin,'burstwise')
     %%% burstwise, indivual backgrounds used
     disp('Burstwise datasets do not support fitting of kinetics yet.');
     P_res = Inf;
     return;
-elseif isnumeric(tcPDAstruct.timebin)
+elseif isnumeric(tcPDAstruct.Data{1}.timebin)
     %% CUDA
     if (gpuDeviceCount > 0) && ~tcPDAstruct.GPU_locked
         if UserValues.tcPDA.UseCUDAKernel %%% use CUDAKernel implementation
@@ -6295,12 +6340,12 @@ elseif isnumeric(tcPDAstruct.timebin)
             PBB_gpu = gpuArray(single(PBB_mix));
             PBG_gpu = gpuArray(single(PBG_mix));
             PGR_gpu = gpuArray(single(PGR_mix));
-            P_dyn = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood_dyn,...
-                tcPDAstruct.CUDAKernel.fbb,tcPDAstruct.CUDAKernel.fbg,tcPDAstruct.CUDAKernel.fbr,tcPDAstruct.CUDAKernel.fgg,tcPDAstruct.CUDAKernel.fgr,...
-                tcPDAstruct.CUDAKernel.NBGbb,tcPDAstruct.CUDAKernel.NBGbg,tcPDAstruct.CUDAKernel.NBGbr,tcPDAstruct.CUDAKernel.NBGgg,tcPDAstruct.CUDAKernel.NBGgr,...
-                tcPDAstruct.CUDAKernel.BG_bb,tcPDAstruct.CUDAKernel.BG_bg,tcPDAstruct.CUDAKernel.BG_br,tcPDAstruct.CUDAKernel.BG_gg,tcPDAstruct.CUDAKernel.BG_gr,...
-                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB_mix),numel(fbb));
-            P_dyn = reshape(gather(P_dyn),numel(PBB_mix),numel(fbb))';
+            P_dyn = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood_dyn{file},...
+                tcPDAstruct.CUDAKernel.fbb{file},tcPDAstruct.CUDAKernel.fbg{file},tcPDAstruct.CUDAKernel.fbr{file},tcPDAstruct.CUDAKernel.fgg{file},tcPDAstruct.CUDAKernel.fgr{file},...
+                tcPDAstruct.CUDAKernel.NBGbb{file},tcPDAstruct.CUDAKernel.NBGbg{file},tcPDAstruct.CUDAKernel.NBGbr{file},tcPDAstruct.CUDAKernel.NBGgg{file},tcPDAstruct.CUDAKernel.NBGgr{file},...
+                tcPDAstruct.CUDAKernel.BG_bb{file},tcPDAstruct.CUDAKernel.BG_bg{file},tcPDAstruct.CUDAKernel.BG_br{file},tcPDAstruct.CUDAKernel.BG_gg{file},tcPDAstruct.CUDAKernel.BG_gr{file},...
+                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB_mix),numel(fbb{file}));
+            P_dyn = reshape(gather(P_dyn),numel(PBB_mix),numel(fbb{file}))';
             %%% clear data from GPU to avoid memory leak
             clear PBB_gpu PBG_gpu PGR_gpu
         else %%% use mex file CUDA implementation
@@ -6344,12 +6389,12 @@ elseif isnumeric(tcPDAstruct.timebin)
 end
 
 %% add pseudo-static populations
-P_static1 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1);
-P_static2 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param2);
+P_static1 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,file);
+P_static2 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param2,file);
 
 %%% recombined static and dynamic arrays
 P = [P_static2 log(P_dyn) P_static1]; % t1=0 -> state2, t1=1 -> state1
-P = P + repmat(log(PofT),numel(fbb),1);
+P = P + repmat(log(PofT),numel(fbb{file}),1);
 Lmax = max(P,[],2);
 P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PofT))),2));
 %%% Treat case when all burst produced zero probability
