@@ -64,8 +64,6 @@ if isempty(h)
         'Callback',@load_data,...
         'Tag','Load_Button');
     
-    
-    
     %define tabs
     handles.tabgroup = uitabgroup(...
     'Parent',handles.Figure,...
@@ -118,6 +116,31 @@ if isempty(h)
     'title','1D PDA data',...
     'BackgroundColor', UserValues.Look.Back,...
     'Tag','tab_2cPDAData'); 
+    
+    % define file selection popupmenu
+    handles.file_selection_text = uicontrol('Style','text',...
+        'Units','normalized',...
+        'Position',[0.6,0.975,0.05,0.02],...
+        'String','Timebin:',...
+        'Tag','file_selection_text',...
+        'HorizontalAlignmen','right',...
+        'FontSize',10,...
+        'BackgroundColor',0.95*[1,1,1],...
+        'ForegroundColor',[0,0,0],...
+        'Parent',handles.Figure);
+    handles.fileselection_dropdownmenu = uicontrol('Style','popupmenu',...
+        'Units','normalized',...
+        'Position',[0.65,0.975,0.05,0.025],...
+        'String',{''},...
+        'FontSize',10,...       
+        'Tag','fileselection_dropdownmenu',...
+        'String',{''},...
+        'Value',1,...
+        'Visible','on',...
+        'BackgroundColor',UserValues.Look.Control,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.Figure,...
+        'Callback',@PlotData);
     
     %%% fit progress axes
     handles.fit_progress_panel = uibuttongroup(...
@@ -1061,7 +1084,7 @@ switch hObject
         UserValues.tcPDA.nbins = str2double(get(handles.nbins_edit,'String'));
         tcPDAstruct.nbins = UserValues.tcPDA.nbins;
         calculate_histograms();
-        PlotData(handles);
+        PlotData([],[],handles);
         view_curve(handles);
     case handles.checkbox_stochasticlabeling
         reset_plot([],[],handles);
@@ -1131,28 +1154,30 @@ function calculate_histograms()
 global tcPDAstruct
 nbins = tcPDAstruct.nbins;
 
-tcPDAstruct.H_meas = histcn([tcPDAstruct.EBG,tcPDAstruct.EBR,tcPDAstruct.EGR],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
-tcPDAstruct.H_meas(:,:,end-1) = tcPDAstruct.H_meas(:,:,end-1) + tcPDAstruct.H_meas(:,:,end);
-tcPDAstruct.H_meas(:,end-1,:) = tcPDAstruct.H_meas(:,end-1,:) + tcPDAstruct.H_meas(:,end,:);
-tcPDAstruct.H_meas(end-1,:,:) = tcPDAstruct.H_meas(end-1,:,:) + tcPDAstruct.H_meas(end,:,:);
-tcPDAstruct.H_meas = tcPDAstruct.H_meas(1:nbins,1:nbins,1:nbins);
+for i = 1:numel(tcPDAstruct.Data)
+    H_meas = histcn([tcPDAstruct.EBG{i},tcPDAstruct.EBR{i},tcPDAstruct.EGR{i}],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+    H_meas(:,:,end-1) = H_meas(:,:,end-1) + H_meas(:,:,end);
+    H_meas(:,end-1,:) = H_meas(:,end-1,:) + H_meas(:,end,:);
+    H_meas(end-1,:,:) = H_meas(end-1,:,:) + H_meas(end,:,:);
+    tcPDAstruct.H_meas{i} = H_meas(1:nbins,1:nbins,1:nbins);
 
-tcPDAstruct.H_meas_gr = squeeze(sum(sum(tcPDAstruct.H_meas,1),2));
-tcPDAstruct.H_meas_2d = sum(tcPDAstruct.H_meas,3);
-tcPDAstruct.x_axis = linspace(0,1,nbins+1) + 1/2/nbins;%%% xaxis for 2d plots (centered on bins)
-tcPDAstruct.x_axis(end) = []; %%% remove last elements since it is outside plot
-tcPDAstruct.x_axis_bar = tcPDAstruct.x_axis; %%% xaxis for bar plot
-tcPDAstruct.x_axis_stair = linspace(0,1,nbins+1); %%% xaxis for stair plot
+    tcPDAstruct.H_meas_gr{i} = squeeze(sum(sum(tcPDAstruct.H_meas{i},1),2));
+    tcPDAstruct.H_meas_2d{i} = sum(tcPDAstruct.H_meas{i},3);
+    tcPDAstruct.x_axis = linspace(0,1,nbins+1) + 1/2/nbins;%%% xaxis for 2d plots (centered on bins)
+    tcPDAstruct.x_axis(end) = []; %%% remove last elements since it is outside plot
+    tcPDAstruct.x_axis_bar = tcPDAstruct.x_axis; %%% xaxis for bar plot
+    tcPDAstruct.x_axis_stair = linspace(0,1,nbins+1); %%% xaxis for stair plot
 
-% calculate photon count distribution
-N_total = tcPDAstruct.NBB+tcPDAstruct.NBG+tcPDAstruct.NBR+tcPDAstruct.NGG+tcPDAstruct.NGR;
-tcPDAstruct.PN = histcounts(N_total,0:1:max(N_total));
+    % calculate photon count distribution
+    N_total = tcPDAstruct.Data{i}.NBB+tcPDAstruct.Data{i}.NBG+tcPDAstruct.Data{i}.NBR+tcPDAstruct.Data{i}.NGG+tcPDAstruct.Data{i}.NGR;
+    tcPDAstruct.PN{i} = histcounts(N_total,0:1:max(N_total));
+end
 
 function load_data(hObject,~)
 global tcPDAstruct UserValues
 LSUserValues(0);
 handles = guidata(hObject);
-[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM (*.tcpda)';'*.txt','Text-based tcPDA file (*.txt)'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM (*.tcpda)';'*.txt','Text-based tcPDA file (*.txt)'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'on');
 
 if ~isequal(FileName,0)
     UserValues.tcPDA.PathName = PathName;
@@ -1163,55 +1188,80 @@ end
 LSUserValues(1);
 tcPDAstruct = [];%clearvars -global tcPDAstruct
 
-switch FilterIndex
-    case 1
-        load('-mat',fullfile(PathName,FileName)); %%% overwrites existing tcPDAstruct
-    case 2
-        load_from_txt(fullfile(PathName,FileName));
+for i = 1:numel(FileName)
+    switch FilterIndex
+        case 1
+             dat = load('-mat',fullfile(PathName,FileName{i})); %%% overwrites existing tcPDAstruct
+        case 2
+             dat = load_from_txt(fullfile(PathName,FileName{i}));
+    end
+    tcPDAstruct.Data{i} = dat.tcPDAstruct;
+    timebin_string{i} = sprintf('%d ms',dat.tcPDAstruct.timebin);
 end
+tcPDAstruct.FullFileName = fullfile(PathName,FileName{1});
+handles.Figure.Name = ['tcPDA - Loaded file: ' FileName{1}];
 
-tcPDAstruct.FullFileName = fullfile(PathName,FileName);
-handles.Figure.Name = ['tcPDA - Loaded file: ' FileName];
+handles.fileselection_dropdownmenu.String = timebin_string;
 
-%initialize values
-if ~isfield(tcPDAstruct,'sampling')
+%initialize values (take from first data set)
+if ~isfield(tcPDAstruct.Data{1},'sampling')
     tcPDAstruct.sampling = UserValues.tcPDA.sampling;
+else
+    tcPDAstruct.sampling = tcPDAstruct.Data{1}.sampling;
 end
-if ~isfield(tcPDAstruct,'use_stochasticlabeling')
+
+if ~isfield(tcPDAstruct.Data{1},'use_stochasticlabeling')
     tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+else
+    tcPDAstruct.use_stochasticlabeling = tcPDAstruct.Data{1}.use_stochasticlabeling;
 end
-if ~isfield(tcPDAstruct,'fraction_stochasticlabeling')
+if ~isfield(tcPDAstruct.Data{1},'fraction_stochasticlabeling')
     tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+else
+    tcPDAstruct.fraction_stochasticlabeling = tcPDAstruct.Data{1}.fraction_stochasticlabeling;
 end
-if ~isfield(tcPDAstruct,'fix_stochasticlabeling')
+if ~isfield(tcPDAstruct.Data{1},'fix_stochasticlabeling')
     tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
+else
+    tcPDAstruct.fix_stochasticlabeling = tcPDAstruct.Data{1}.fix_stochasticlabeling;
 end
 %if ~isfield(tcPDAstruct,'MLE')
 %    tcPDAstruct.MLE = 0;
 %end
 if ~isfield(tcPDAstruct,'N_min')
     tcPDAstruct.N_min = 0;
+else
+    tcPDAstruct.N_min = tcPDAstruct.Data{1}.N_min;
 end
 if ~isfield(tcPDAstruct,'N_max')
     tcPDAstruct.N_max = Inf;
+else
+    tcPDAstruct.N_max = tcPDAstruct.Data{1}.N_max;
 end
 if ~isfield(tcPDAstruct,'n_gauss')
     tcPDAstruct.n_gauss = 1;
+else
+    tcPDAstruct.n_gauss = tcPDAstruct.Data{1}.n_gauss;
 end
 if ~isfield(tcPDAstruct,'nbins')
     tcPDAstruct.nbins = 50;
+else
+    tcPDAstruct.nbins = tcPDAstruct.Data{1}.nbins;
 end
 if ~isfield(tcPDAstruct,'norm_likelihood')
     tcPDAstruct.norm_likelihood = 0;
-end
-if ~isfield(tcPDAstruct,'norm_likelihood')
-    tcPDAstruct.norm_likelihood = 0;
+else
+    tcPDAstruct.norm_likelihood = tcPDAstruct.Data{1}.norm_likelihood;
 end
 if ~isfield(tcPDAstruct,'use_2color_data')
     tcPDAstruct.use_2color_data = 0;
+else
+    tcPDAstruct.use_2color_data = tcPDAstruct.Data{1}.use_2color_data;
 end
 if ~isfield(tcPDAstruct,'live_plot_update')
     tcPDAstruct.live_plot_update = 1;
+else
+    tcPDAstruct.live_plot_update = tcPDAstruct.Data{1}.live_plot_update;
 end
 %%% set gui values
 handles.sampling_edit.String = num2str(tcPDAstruct.sampling);
@@ -1227,7 +1277,7 @@ handles.table_2cPDAData.Data = [];
 handles.norm_likelihood_checkbox.Value = tcPDAstruct.norm_likelihood;
 handles.use_2cPDAData_checkbox.Value = tcPDAstruct.use_2color_data;
 handles.live_plot_update_checkbox.Value = tcPDAstruct.live_plot_update;
-if ~isfield(tcPDAstruct,'fitdata')
+if ~isfield(tcPDAstruct.Data{1},'fitdata')
     value_dummy = [1,50,2,50,2,50,2,0,0,0]';
     fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
     LB_dummy = [0,0,0,0,0,0,0,-Inf,-Inf,-Inf]';
@@ -1244,7 +1294,6 @@ if ~isfield(tcPDAstruct,'fitdata')
         tcPDAstruct.fitdata.prior_center{i} = tcPDAstruct.fitdata.param{i};
         tcPDAstruct.fitdata.prior_sigma{i} = 0.1*tcPDAstruct.fitdata.param{i};
     end
-else
     if ~isfield(tcPDAstruct.fitdata,'use_prior')
         for i = 1:5
             tcPDAstruct.fitdata.use_prior{i} = false(10,1);
@@ -1252,35 +1301,38 @@ else
             tcPDAstruct.fitdata.prior_sigma{i} = 0.1*tcPDAstruct.fitdata.param{i};
         end
     end
+else
+    tcPDAstruct.fitdata = tcPDAstruct.Data{1}.fitdata;
 end
-if isfield(tcPDAstruct,'corrections') %%% Update Corrections in GUI
-    if isfield(tcPDAstruct.corrections,'BG_bb') %%% has been opened before in tcPDA since background was added up
-        data = {tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
-            tcPDAstruct.corrections.de_gr, tcPDAstruct.corrections.de_bg, tcPDAstruct.corrections.de_br,...
-            tcPDAstruct.corrections.gamma_gr, tcPDAstruct.corrections.gamma_br,...
-            tcPDAstruct.corrections.BG_bb, tcPDAstruct.corrections.BG_bg, tcPDAstruct.corrections.BG_br,...
-            tcPDAstruct.corrections.BG_gg, tcPDAstruct.corrections.BG_gr,...
-            tcPDAstruct.corrections.R0_gr, tcPDAstruct.corrections.R0_bg, tcPDAstruct.corrections.R0_br}';
+
+if isfield(tcPDAstruct.Data{1},'corrections') %%% Update Corrections in GUI
+    if isfield(tcPDAstruct.Data{1}.corrections,'BG_bb') %%% has been opened before in tcPDA since background was added up
+        data = {tcPDAstruct.Data{1}.corrections.ct_gr, tcPDAstruct.Data{1}.corrections.ct_bg, tcPDAstruct.Data{1}.corrections.ct_br,...
+            tcPDAstruct.Data{1}.corrections.de_gr, tcPDAstruct.Data{1}.corrections.de_bg, tcPDAstruct.Data{1}.corrections.de_br,...
+            tcPDAstruct.Data{1}.corrections.gamma_gr, tcPDAstruct.Data{1}.corrections.gamma_br,...
+            tcPDAstruct.Data{1}.corrections.BG_bb, tcPDAstruct.Data{1}.corrections.BG_bg, tcPDAstruct.Data{1}.corrections.BG_br,...
+            tcPDAstruct.Data{1}.corrections.BG_gg, tcPDAstruct.Data{1}.corrections.BG_gr,...
+            tcPDAstruct.Data{1}.corrections.R0_gr, tcPDAstruct.Data{1}.corrections.R0_bg, tcPDAstruct.Data{1}.corrections.R0_br}';
     else
         if isfield(tcPDAstruct,'background')
-            tcPDAstruct.background.BG_bb = tcPDAstruct.background.Background_BBpar + tcPDAstruct.background.Background_BBperp;
-            tcPDAstruct.background.BG_bg = tcPDAstruct.background.Background_BGpar + tcPDAstruct.background.Background_BGperp;
-            tcPDAstruct.background.BG_br = tcPDAstruct.background.Background_BRpar + tcPDAstruct.background.Background_BRperp;
-            tcPDAstruct.background.BG_gg = tcPDAstruct.background.Background_GGpar + tcPDAstruct.background.Background_GGperp;
-            tcPDAstruct.background.BG_gr = tcPDAstruct.background.Background_GRpar + tcPDAstruct.background.Background_GRperp;
-            data = {tcPDAstruct.corrections.CrossTalk_GR, tcPDAstruct.corrections.CrossTalk_BG, tcPDAstruct.corrections.CrossTalk_BR,...
+            tcPDAstruct.background.BG_bb = tcPDAstruct.Data{1}.background.Background_BBpar + tcPDAstruct.Data{1}.background.Background_BBperp;
+            tcPDAstruct.background.BG_bg = tcPDAstruct.Data{1}.background.Background_BGpar + tcPDAstruct.Data{1}.background.Background_BGperp;
+            tcPDAstruct.background.BG_br = tcPDAstruct.Data{1}.background.Background_BRpar + tcPDAstruct.Data{1}.background.Background_BRperp;
+            tcPDAstruct.background.BG_gg = tcPDAstruct.Data{1}.background.Background_GGpar + tcPDAstruct.Data{1}.background.Background_GGperp;
+            tcPDAstruct.background.BG_gr = tcPDAstruct.Data{1}.background.Background_GRpar + tcPDAstruct.Data{1}.background.Background_GRperp;
+            data = {tcPDAstruct.Data{1}.corrections.CrossTalk_GR, tcPDAstruct.Data{1}.corrections.CrossTalk_BG, tcPDAstruct.Data{1}.corrections.CrossTalk_BR,...
                 UserValues.tcPDA.corrections.de_gr, UserValues.tcPDA.corrections.de_bg, UserValues.tcPDA.corrections.de_br,...
-                tcPDAstruct.corrections.Gamma_GR, tcPDAstruct.corrections.Gamma_BR,...
-                tcPDAstruct.background.BG_bb, tcPDAstruct.background.BG_bg, tcPDAstruct.background.BG_br,...
-                tcPDAstruct.background.BG_gg, tcPDAstruct.background.BG_gr,...
-                tcPDAstruct.corrections.FoersterRadius, tcPDAstruct.corrections.FoersterRadiusBG, tcPDAstruct.corrections.FoersterRadiusBR}';
+                tcPDAstruct.Data{1}.corrections.Gamma_GR, tcPDAstruct.Data{1}.corrections.Gamma_BR,...
+                tcPDAstruct.Data{1}.background.BG_bb, tcPDAstruct.Data{1}.background.BG_bg, tcPDAstruct.Data{1}.background.BG_br,...
+                tcPDAstruct.Data{1}.background.BG_gg, tcPDAstruct.Data{1}.background.BG_gr,...
+                tcPDAstruct.Data{1}.corrections.FoersterRadius, tcPDAstruct.Data{1}.corrections.FoersterRadiusBG, tcPDAstruct.Data{1}.corrections.FoersterRadiusBR}';
         else
-            data = {tcPDAstruct.corrections.CrossTalk_GR, tcPDAstruct.corrections.CrossTalk_BG, tcPDAstruct.corrections.CrossTalk_BR,...
+            data = {tcPDAstruct.Data{1}.corrections.CrossTalk_GR, tcPDAstruct.Data{1}.corrections.CrossTalk_BG, tcPDAstruct.Data{1}.corrections.CrossTalk_BR,...
                 UserValues.tcPDA.corrections.de_gr, UserValues.tcPDA.corrections.de_bg, UserValues.tcPDA.corrections.de_br,...
-                tcPDAstruct.corrections.Gamma_GR, tcPDAstruct.corrections.Gamma_BR,...
+                tcPDAstruct.Data{1}.corrections.Gamma_GR, tcPDAstruct.Data{1}.corrections.Gamma_BR,...
                 UserValues.tcPDA.corrections.BG_bb, UserValues.tcPDA.corrections.BG_bg, UserValues.tcPDA.corrections.BG_br,...
                 UserValues.tcPDA.corrections.BG_gg, UserValues.tcPDA.corrections.BG_gr,...
-                tcPDAstruct.corrections.FoersterRadius, tcPDAstruct.corrections.FoersterRadiusBG, tcPDAstruct.corrections.FoersterRadiusBR}';
+                tcPDAstruct.Data{1}.corrections.FoersterRadius, tcPDAstruct.Data{1}.corrections.FoersterRadiusBG, tcPDAstruct.Data{1}.corrections.FoersterRadiusBR}';
         end
     end
     handles.corrections_table.Data = data;
@@ -1297,11 +1349,12 @@ if isfield(tcPDAstruct,'corrections') %%% Update Corrections in GUI
     fields_to_remove = fields(~cell2mat(cellfun(@(x) any(strcmp(x,fields_to_keep)),fields,'UniformOutput',false)));
     tcPDAstruct.corrections = rmfield(tcPDAstruct.corrections,fields_to_remove);
 end
+tcPDAstruct.selected = 1;
 
 Cut_Data([],[]);
 calculate_histograms();
 popupmenu_ngauss_callback(handles.popupmenu_ngauss,[])
-PlotData(handles);
+PlotData([],[],handles);
 reset_plot([],[],handles);
 update_2cPDAData_table();
 plot_2cPDAData(1);
@@ -1350,36 +1403,39 @@ tcPDAstruct.duration = ones(size(data_matrix,1),1).*timebin;
 
 function [valid] = Cut_Data(Obj,~)
 global tcPDAstruct
-if ~isfield(tcPDAstruct,'NBB')
+if ~isfield(tcPDAstruct.Data{1},'NBB')
     return;
 end
 handles = guidata(gcbo);
-N_total = tcPDAstruct.NBB+tcPDAstruct.NBG+tcPDAstruct.NBR+tcPDAstruct.NGG+tcPDAstruct.NGR;
-N_min = str2double(handles.min_n_edit.String);
-N_max = str2double(handles.max_n_edit.String);
-valid = (N_total >= N_min) & (N_total <= N_max);
+for i = 1:numel(tcPDAstruct.Data)
+    N_total = tcPDAstruct.Data{i}.NBB+tcPDAstruct.Data{i}.NBG+tcPDAstruct.Data{i}.NBR+tcPDAstruct.Data{i}.NGG+tcPDAstruct.Data{i}.NGR;
+    N_min = str2double(handles.min_n_edit.String);
+    N_max = str2double(handles.max_n_edit.String);
+    valid = (N_total >= N_min) & (N_total <= N_max);
 
-if N_max > max(N_total)
-    handles.max_n_edit.String = num2str(max(N_total));
+    if N_max > max(N_total)
+        handles.max_n_edit.String = num2str(max(N_total));
+    end
+    if N_min < 0
+        handles.min_n_edit.String = num2str(0);
+    end
+    tcPDAstruct.N_min = N_min;
+    tcPDAstruct.N_max = N_max;
+
+    tcPDAstruct.BSD_GX{i} = tcPDAstruct.Data{i}.NGG(valid)+tcPDAstruct.Data{i}.NGR(valid);
+    tcPDAstruct.BSD_BX{i} = tcPDAstruct.Data{i}.NBB(valid)+tcPDAstruct.Data{i}.NBG(valid)+tcPDAstruct.Data{i}.NBR(valid);
+    tcPDAstruct.EGR{i} = tcPDAstruct.Data{i}.NGR(valid)./tcPDAstruct.BSD_GX{i};
+    tcPDAstruct.EBG{i} = tcPDAstruct.Data{i}.NBG(valid)./tcPDAstruct.BSD_BX{i};
+    tcPDAstruct.EBR{i} = tcPDAstruct.Data{i}.NBR(valid)./tcPDAstruct.BSD_BX{i}; 
+    validd{i} = valid;
 end
-if N_min < 0
-    handles.min_n_edit.String = num2str(0);
-end
-tcPDAstruct.N_min = N_min;
-tcPDAstruct.N_max = N_max;
-
-tcPDAstruct.BSD_GX = tcPDAstruct.NGG(valid)+tcPDAstruct.NGR(valid);
-tcPDAstruct.BSD_BX = tcPDAstruct.NBB(valid)+tcPDAstruct.NBG(valid)+tcPDAstruct.NBR(valid);
-tcPDAstruct.EGR = tcPDAstruct.NGR(valid)./tcPDAstruct.BSD_GX;
-tcPDAstruct.EBG = tcPDAstruct.NBG(valid)./tcPDAstruct.BSD_BX;
-tcPDAstruct.EBR = tcPDAstruct.NBR(valid)./tcPDAstruct.BSD_BX;
-
+valid = validd;
 %disp(sprintf('N = %d',sum(valid)));
 if ~isempty(Obj) % Called from gui
     calculate_histograms();
     
     %%% Update Data
-    PlotData(handles);
+    PlotData([],[],handles);
     
     view_curve(handles);
 end
@@ -1413,12 +1469,16 @@ ax.YLim(2) = 1.05*max([max(handles.plots.handle_3d_data_br.YData),max(handles.pl
 ax = handle(handles.axes_3d(6));
 ax.YLim(2) = 1.05*max([max(handles.plots.handle_3d_data_gr.YData),max(handles.plots.handle_3d_fit_gr.YData)]);
 
-function PlotData(handles)
+function PlotData(~,~,handles)
 global tcPDAstruct
-
+if nargin < 3
+    handles = guidata(gcbo);
+end
+selected = handles.fileselection_dropdownmenu.Value;
+tcPDAstruct.selected = selected;
 %Update 1D GR
 handles.plots.handle_1d_data.XData =tcPDAstruct.x_axis_bar;
-handles.plots.handle_1d_data.YData =tcPDAstruct.H_meas_gr;
+handles.plots.handle_1d_data.YData =tcPDAstruct.H_meas_gr{selected};
 handles.plots.handle_1d_dev.XData = tcPDAstruct.x_axis_stair;
 handles.plots.handle_1d_dev.YData =zeros(size(tcPDAstruct.x_axis));
 %%% hide fit results
@@ -1427,7 +1487,7 @@ set(handles.plots.handles_H_res_1d_individual,'Visible','off');
 %Update 2D plot
 handles.plots.handle_2d_data.XData = tcPDAstruct.x_axis;
 handles.plots.handle_2d_data.YData = tcPDAstruct.x_axis;
-handles.plots.handle_2d_data.ZData = tcPDAstruct.H_meas_2d;
+handles.plots.handle_2d_data.ZData = tcPDAstruct.H_meas_2d{selected};
 handles.plots.handle_2d_dev.XData = tcPDAstruct.x_axis;
 handles.plots.handle_2d_dev.YData = tcPDAstruct.x_axis;
 handles.plots.handle_2d_dev.ZData = zeros(numel(tcPDAstruct.x_axis));
@@ -1437,14 +1497,21 @@ plot4d(handles);
 UpdateAxesLimits(handles);
 
 % update PN axis
-handles.plots.PN.XData = 0:1:(numel(tcPDAstruct.PN)-1);
-handles.plots.PN.YData = tcPDAstruct.PN;
-handles.axes_PN.Title.String = sprintf('Photon count distribution (N = %d)',sum(tcPDAstruct.PN));
+handles.plots.PN.XData = 0:1:(numel(tcPDAstruct.PN{selected})-1);
+handles.plots.PN.YData = tcPDAstruct.PN{selected};
+handles.axes_PN.Title.String = sprintf('Photon count distribution (N = %d)',sum(tcPDAstruct.PN{selected}));
+
+if gcbo == handles.fileselection_dropdownmenu && isfield(tcPDAstruct,'plots')
+    % also update results plot
+    plot_after_fit(handles);
+end
 
 function plot4d(handles)
 %plots three 2D and three 1D projections of 3 dimensional data array
 global tcPDAstruct
-input = tcPDAstruct.H_meas;
+selected = handles.fileselection_dropdownmenu.Value;
+
+input = tcPDAstruct.H_meas{selected};
 x_axis = tcPDAstruct.x_axis;
 x_axis_bar = tcPDAstruct.x_axis_bar;
 
@@ -1917,149 +1984,152 @@ view_curve(handles);
 
 function calculate_background()
 global tcPDAstruct
-if ~strcmp('burstwise',tcPDAstruct.timebin)
-    %%% equal timebins, i.e. background correction possible
-    %%% evaluate the background probabilities
-    BGbb = poisspdf(0:1:max(tcPDAstruct.NBB),tcPDAstruct.corrections.BG_bb*tcPDAstruct.timebin);
-    BGbg = poisspdf(0:1:max(tcPDAstruct.NBG),tcPDAstruct.corrections.BG_bg*tcPDAstruct.timebin);
-    BGbr = poisspdf(0:1:max(tcPDAstruct.NBR),tcPDAstruct.corrections.BG_br*tcPDAstruct.timebin);
-    BGgg = poisspdf(0:1:max(tcPDAstruct.NGG),tcPDAstruct.corrections.BG_gg*tcPDAstruct.timebin);
-    BGgr = poisspdf(0:1:max(tcPDAstruct.NGR),tcPDAstruct.corrections.BG_gr*tcPDAstruct.timebin);
-    method = 'cdf';
-    switch method
-        case 'pdf'
-            %determine boundaries for background inclusion
-            threshold = 1E-2;
-            NBGbb = find(BGbb > threshold,1,'last');
-            NBGbg = find(BGbg > threshold,1,'last');
-            NBGbr = find(BGbr > threshold,1,'last');
-            NBGgg = find(BGgg > threshold,1,'last');
-            NBGgr = find(BGgr > threshold,1,'last');
-            BGbb = BGbb(1:NBGbb);
-            BGbg = BGbg(1:NBGbg);
-            BGbr = BGbr(1:NBGbr);
-            BGgg = BGgg(1:NBGgg);
-            BGgr = BGgr(1:NBGgr);
-            %BGbb(BGbb<1E-2) = [];
-            %BGbg(BGbg<1E-2) = [];
-            %BGbr(BGbr<1E-2) = [];
-            %BGgg(BGgg<1E-2) = [];
-            %BGgr(BGgr<1E-2) = [];
-        case 'cdf'
-            %%% evaluate the background probabilities
-            CDF_BGbb = poisscdf(0:1:max(tcPDAstruct.NBB),tcPDAstruct.corrections.BG_bb*tcPDAstruct.timebin);
-            CDF_BGbg = poisscdf(0:1:max(tcPDAstruct.NBG),tcPDAstruct.corrections.BG_bg*tcPDAstruct.timebin);
-            CDF_BGbr = poisscdf(0:1:max(tcPDAstruct.NBR),tcPDAstruct.corrections.BG_br*tcPDAstruct.timebin);
-            CDF_BGgg = poisscdf(0:1:max(tcPDAstruct.NGG),tcPDAstruct.corrections.BG_gg*tcPDAstruct.timebin);
-            CDF_BGgr = poisscdf(0:1:max(tcPDAstruct.NGR),tcPDAstruct.corrections.BG_gr*tcPDAstruct.timebin);
-            %determine boundaries for background inclusion
-            threshold = 0.95;
-            BGbb((find(CDF_BGbb>threshold,1,'first')+1):end) = [];
-            BGbg((find(CDF_BGbg>threshold,1,'first')+1):end) = [];
-            BGbr((find(CDF_BGbr>threshold,1,'first')+1):end) = [];
-            BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
-            BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+if ~strcmp('burstwise',tcPDAstruct.Data{1}.timebin)
+    for i = 1:numel(tcPDAstruct.Data)
+        %%% equal timebins, i.e. background correction possible
+        %%% evaluate the background probabilities
+        BGbb = poisspdf(0:1:max(tcPDAstruct.Data{i}.NBB),tcPDAstruct.corrections.BG_bb*tcPDAstruct.Data{i}.timebin);
+        BGbg = poisspdf(0:1:max(tcPDAstruct.Data{i}.NBG),tcPDAstruct.corrections.BG_bg*tcPDAstruct.Data{i}.timebin);
+        BGbr = poisspdf(0:1:max(tcPDAstruct.Data{i}.NBR),tcPDAstruct.corrections.BG_br*tcPDAstruct.Data{i}.timebin);
+        BGgg = poisspdf(0:1:max(tcPDAstruct.Data{i}.NGG),tcPDAstruct.corrections.BG_gg*tcPDAstruct.Data{i}.timebin);
+        BGgr = poisspdf(0:1:max(tcPDAstruct.Data{i}.NGR),tcPDAstruct.corrections.BG_gr*tcPDAstruct.Data{i}.timebin);
+        method = 'cdf';
+        switch method
+            case 'pdf'
+                %determine boundaries for background inclusion
+                threshold = 1E-2;
+                NBGbb = find(BGbb > threshold,1,'last');
+                NBGbg = find(BGbg > threshold,1,'last');
+                NBGbr = find(BGbr > threshold,1,'last');
+                NBGgg = find(BGgg > threshold,1,'last');
+                NBGgr = find(BGgr > threshold,1,'last');
+                BGbb = BGbb(1:NBGbb);
+                BGbg = BGbg(1:NBGbg);
+                BGbr = BGbr(1:NBGbr);
+                BGgg = BGgg(1:NBGgg);
+                BGgr = BGgr(1:NBGgr);
+                %BGbb(BGbb<1E-2) = [];
+                %BGbg(BGbg<1E-2) = [];
+                %BGbr(BGbr<1E-2) = [];
+                %BGgg(BGgg<1E-2) = [];
+                %BGgr(BGgr<1E-2) = [];
+            case 'cdf'
+                %%% evaluate the background probabilities
+                CDF_BGbb = poisscdf(0:1:max(tcPDAstruct.Data{i}.NBB),tcPDAstruct.corrections.BG_bb*tcPDAstruct.Data{i}.timebin);
+                CDF_BGbg = poisscdf(0:1:max(tcPDAstruct.Data{i}.NBG),tcPDAstruct.corrections.BG_bg*tcPDAstruct.Data{i}.timebin);
+                CDF_BGbr = poisscdf(0:1:max(tcPDAstruct.Data{i}.NBR),tcPDAstruct.corrections.BG_br*tcPDAstruct.Data{i}.timebin);
+                CDF_BGgg = poisscdf(0:1:max(tcPDAstruct.Data{i}.NGG),tcPDAstruct.corrections.BG_gg*tcPDAstruct.Data{i}.timebin);
+                CDF_BGgr = poisscdf(0:1:max(tcPDAstruct.Data{i}.NGR),tcPDAstruct.corrections.BG_gr*tcPDAstruct.Data{i}.timebin);
+                %determine boundaries for background inclusion
+                threshold = 0.95;
+                BGbb((find(CDF_BGbb>threshold,1,'first')+1):end) = [];
+                BGbg((find(CDF_BGbg>threshold,1,'first')+1):end) = [];
+                BGbr((find(CDF_BGbr>threshold,1,'first')+1):end) = [];
+                BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
+                BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+        end
+        BGbb = BGbb./sum(BGbb);
+        BGbg = BGbg./sum(BGbg);
+        BGbr = BGbr./sum(BGbr);
+        BGgg = BGgg./sum(BGgg);
+        BGgr = BGgr./sum(BGgr);
+        NBGbb = numel(BGbb)-1;
+        NBGbg = numel(BGbg)-1;
+        NBGbr = numel(BGbr)-1;
+        NBGgg = numel(BGgg)-1;
+        NBGgr = numel(BGgr)-1;
+        %%% store in corrections structure
+        tcPDAstruct.corrections.background.BGbb{i} = BGbb;
+        tcPDAstruct.corrections.background.BGbg{i} = BGbg;
+        tcPDAstruct.corrections.background.BGbr{i} = BGbr;
+        tcPDAstruct.corrections.background.BGgg{i} = BGgg;
+        tcPDAstruct.corrections.background.BGgr{i} = BGgr;
+        tcPDAstruct.corrections.background.NBGbb{i} = NBGbb;
+        tcPDAstruct.corrections.background.NBGbg{i} = NBGbg;
+        tcPDAstruct.corrections.background.NBGbr{i} = NBGbr;
+        tcPDAstruct.corrections.background.NBGgg{i} = NBGgg;
+        tcPDAstruct.corrections.background.NBGgr{i} = NBGgr;
     end
-    BGbb = BGbb./sum(BGbb);
-    BGbg = BGbg./sum(BGbg);
-    BGbr = BGbr./sum(BGbr);
-    BGgg = BGgg./sum(BGgg);
-    BGgr = BGgr./sum(BGgr);
-    NBGbb = numel(BGbb)-1;
-    NBGbg = numel(BGbg)-1;
-    NBGbr = numel(BGbr)-1;
-    NBGgg = numel(BGgg)-1;
-    NBGgr = numel(BGgr)-1;
-    %%% store in corrections structure
-    tcPDAstruct.corrections.background.BGbb = BGbb;
-    tcPDAstruct.corrections.background.BGbg = BGbg;
-    tcPDAstruct.corrections.background.BGbr = BGbr;
-    tcPDAstruct.corrections.background.BGgg = BGgg;
-    tcPDAstruct.corrections.background.BGgr = BGgr;
-    tcPDAstruct.corrections.background.NBGbb = NBGbb;
-    tcPDAstruct.corrections.background.NBGbg = NBGbg;
-    tcPDAstruct.corrections.background.NBGbr = NBGbr;
-    tcPDAstruct.corrections.background.NBGgg = NBGgg;
-    tcPDAstruct.corrections.background.NBGgr = NBGgr;
-elseif strcmp('burstwise',tcPDAstruct.timebin)
+elseif strcmp('burstwise',tcPDAstruct.Data{1}.timebin)
     %%% Background inclusion only possible if seperate
     %%% Poissonian Distributions are evaluated for every burst
     %%% duration
-    
-    %%% evaluate up to the maximum to consider (i.e. the
-    %%% global maximum number of counts in a channel)
-    nBursts = numel(tcPDAstruct.NBB);
-    method = 'pdf';
-    switch method
-        case 'pdf'
-            BGbb = poisspdf(repmat(0:1:max(tcPDAstruct.NBB),nBursts,1),repmat(tcPDAstruct.corrections.BG_bb.*tcPDAstruct.duration,1,max(tcPDAstruct.NBB)+1));
-            BGbg = poisspdf(repmat(0:1:max(tcPDAstruct.NBG),nBursts,1),repmat(tcPDAstruct.corrections.BG_bg.*tcPDAstruct.duration,1,max(tcPDAstruct.NBG)+1));
-            BGbr = poisspdf(repmat(0:1:max(tcPDAstruct.NBR),nBursts,1),repmat(tcPDAstruct.corrections.BG_br.*tcPDAstruct.duration,1,max(tcPDAstruct.NBR)+1));
-            BGgg = poisspdf(repmat(0:1:max(tcPDAstruct.NGG),nBursts,1),repmat(tcPDAstruct.corrections.BG_gg.*tcPDAstruct.duration,1,max(tcPDAstruct.NGG)+1));
-            BGgr = poisspdf(repmat(0:1:max(tcPDAstruct.NGR),nBursts,1),repmat(tcPDAstruct.corrections.BG_gr.*tcPDAstruct.duration,1,max(tcPDAstruct.NGR)+1));
-            %determine boundaries for background inclusion
-            BGbb(BGbb<1E-2) = 0;
-            BGbg(BGbg<1E-2) = 0;
-            BGbr(BGbr<1E-2) = 0;
-            BGgg(BGgg<1E-2) = 0;
-            BGgr(BGgr<1E-2) = 0;
-            %%% find the first column that is completely zero
-            BGbb = BGbb(:,1:find( (sum(BGbb,1)==0),1,'first'));
-            BGbg = BGbg(:,1:find( (sum(BGbg,1)==0),1,'first'));
-            BGbr = BGbr(:,1:find( (sum(BGbr,1)==0),1,'first'));
-            BGgg = BGgg(:,1:find( (sum(BGgg,1)==0),1,'first'));
-            BGgr = BGgr(:,1:find( (sum(BGgr,1)==0),1,'first'));
-        case 'cdf'
-            BGbb = poisscdf(repmat(0:1:max(tcPDAstruct.NBB),nBursts,1),repmat(tcPDAstruct.corrections.BG_bb.*tcPDAstruct.duration,1,max(tcPDAstruct.NBB)+1));
-            BGbg = poisscdf(repmat(0:1:max(tcPDAstruct.NBG),nBursts,1),repmat(tcPDAstruct.corrections.BG_bg.*tcPDAstruct.duration,1,max(tcPDAstruct.NBG)+1));
-            BGbr = poisscdf(repmat(0:1:max(tcPDAstruct.NBR),nBursts,1),repmat(tcPDAstruct.corrections.BG_br.*tcPDAstruct.duration,1,max(tcPDAstruct.NBR)+1));
-            BGgg = poisscdf(repmat(0:1:max(tcPDAstruct.NGG),nBursts,1),repmat(tcPDAstruct.corrections.BG_gg.*tcPDAstruct.duration,1,max(tcPDAstruct.NGG)+1));
-            BGgr = poisscdf(repmat(0:1:max(tcPDAstruct.NGR),nBursts,1),repmat(tcPDAstruct.corrections.BG_gr.*tcPDAstruct.duration,1,max(tcPDAstruct.NGR)+1));
-            %determine boundaries for background inclusion
-            % Cover 90% of probability density
-            BGbb(BGbb>0.9) = 1;
-            BGbg(BGbg>0.9) = 1;
-            BGbr(BGbr>0.9) = 1;
-            BGgg(BGgg>0.9) = 1;
-            BGgr(BGgr>0.9) = 1;
-            %%% find the first column that is equal to nBursts
-            BGbb = BGbb(:,1:find( (sum(BGbb,1)==nBursts),1,'first'));
-            BGbg = BGbg(:,1:find( (sum(BGbg,1)==nBursts),1,'first'));
-            BGbr = BGbr(:,1:find( (sum(BGbr,1)==nBursts),1,'first'));
-            BGgg = BGgg(:,1:find( (sum(BGgg,1)==nBursts),1,'first'));
-            BGgr = BGgr(:,1:find( (sum(BGgr,1)==nBursts),1,'first'));
+    for i = 1:numel(tcPDAstruct.Data)
+        %%% evaluate up to the maximum to consider (i.e. the
+        %%% global maximum number of counts in a channel)
+        nBursts = numel(tcPDAstruct.NBB{i});
+        method = 'pdf';
+        switch method
+            case 'pdf'
+                BGbb = poisspdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBB),nBursts,1),repmat(tcPDAstruct.corrections.BG_bb.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBB)+1));
+                BGbg = poisspdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBG),nBursts,1),repmat(tcPDAstruct.corrections.BG_bg.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBG)+1));
+                BGbr = poisspdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBR),nBursts,1),repmat(tcPDAstruct.corrections.BG_br.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBR)+1));
+                BGgg = poisspdf(repmat(0:1:max(tcPDAstruct.Data{i}.NGG),nBursts,1),repmat(tcPDAstruct.corrections.BG_gg.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NGG)+1));
+                BGgr = poisspdf(repmat(0:1:max(tcPDAstruct.Data{i}.NGR),nBursts,1),repmat(tcPDAstruct.corrections.BG_gr.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NGR)+1));
+                %determine boundaries for background inclusion
+                BGbb(BGbb<1E-2) = 0;
+                BGbg(BGbg<1E-2) = 0;
+                BGbr(BGbr<1E-2) = 0;
+                BGgg(BGgg<1E-2) = 0;
+                BGgr(BGgr<1E-2) = 0;
+                %%% find the first column that is completely zero
+                BGbb = BGbb(:,1:find( (sum(BGbb,1)==0),1,'first'));
+                BGbg = BGbg(:,1:find( (sum(BGbg,1)==0),1,'first'));
+                BGbr = BGbr(:,1:find( (sum(BGbr,1)==0),1,'first'));
+                BGgg = BGgg(:,1:find( (sum(BGgg,1)==0),1,'first'));
+                BGgr = BGgr(:,1:find( (sum(BGgr,1)==0),1,'first'));
+            case 'cdf'
+                BGbb = poisscdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBB),nBursts,1),repmat(tcPDAstruct.corrections.BG_bb.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBB)+1));
+                BGbg = poisscdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBG),nBursts,1),repmat(tcPDAstruct.corrections.BG_bg.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBG)+1));
+                BGbr = poisscdf(repmat(0:1:max(tcPDAstruct.Data{i}.NBR),nBursts,1),repmat(tcPDAstruct.corrections.BG_br.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NBR)+1));
+                BGgg = poisscdf(repmat(0:1:max(tcPDAstruct.Data{i}.NGG),nBursts,1),repmat(tcPDAstruct.corrections.BG_gg.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NGG)+1));
+                BGgr = poisscdf(repmat(0:1:max(tcPDAstruct.Data{i}.NGR),nBursts,1),repmat(tcPDAstruct.corrections.BG_gr.*tcPDAstruct.Data{i}.duration,1,max(tcPDAstruct.Data{i}.NGR)+1));
+                %determine boundaries for background inclusion
+                % Cover 90% of probability density
+                BGbb(BGbb>0.9) = 1;
+                BGbg(BGbg>0.9) = 1;
+                BGbr(BGbr>0.9) = 1;
+                BGgg(BGgg>0.9) = 1;
+                BGgr(BGgr>0.9) = 1;
+                %%% find the first column that is equal to nBursts
+                BGbb = BGbb(:,1:find( (sum(BGbb,1)==nBursts),1,'first'));
+                BGbg = BGbg(:,1:find( (sum(BGbg,1)==nBursts),1,'first'));
+                BGbr = BGbr(:,1:find( (sum(BGbr,1)==nBursts),1,'first'));
+                BGgg = BGgg(:,1:find( (sum(BGgg,1)==nBursts),1,'first'));
+                BGgr = BGgr(:,1:find( (sum(BGgr,1)==nBursts),1,'first'));
+        end
+        %%% renormalize
+        BGbb = BGbb./(repmat(sum(BGbb,2),1,size(BGbb,2)));
+        BGbg = BGbg./(repmat(sum(BGbg,2),1,size(BGbg,2)));
+        BGbr = BGbr./(repmat(sum(BGbr,2),1,size(BGbr,2)));
+        BGgg = BGgg./(repmat(sum(BGgg,2),1,size(BGgg,2)));
+        BGgr = BGgr./(repmat(sum(BGgr,2),1,size(BGgr,2)));
+        %%% find boundaries of how many background counts to
+        %%% consider in each burst
+        NBGbb = zeros(nBursts,1);
+        NBGbg = zeros(nBursts,1);
+        NBGbr = zeros(nBursts,1);
+        NBGgg = zeros(nBursts,1);
+        NBGgr = zeros(nBursts,1);
+        for u = 1:nBursts
+            NBGbb(u) = find(BGbb(u,:) ~= 0,1,'last')-1;
+            NBGbg(u) = find(BGbg(u,:) ~= 0,1,'last')-1;
+            NBGbr(u) = find(BGbr(u,:) ~= 0,1,'last')-1;
+            NBGgg(u) = find(BGgg(u,:) ~= 0,1,'last')-1;
+            NBGgr(u) = find(BGgr(u,:) ~= 0,1,'last')-1;
+        end
+        %%% store in corrections structure
+        tcPDAstruct.corrections.background.BGbb{i} = BGbb;
+        tcPDAstruct.corrections.background.BGbg{i} = BGbg;
+        tcPDAstruct.corrections.background.BGbr{i} = BGbr;
+        tcPDAstruct.corrections.background.BGgg{i} = BGgg;
+        tcPDAstruct.corrections.background.BGgr{i} = BGgr;
+        tcPDAstruct.corrections.background.NBGbb{i} = NBGbb;
+        tcPDAstruct.corrections.background.NBGbg{i} = NBGbg;
+        tcPDAstruct.corrections.background.NBGbr{i} = NBGbr;
+        tcPDAstruct.corrections.background.NBGgg{i} = NBGgg;
+        tcPDAstruct.corrections.background.NBGgr{i} = NBGgr;
     end
-    %%% renormalize
-    BGbb = BGbb./(repmat(sum(BGbb,2),1,size(BGbb,2)));
-    BGbg = BGbg./(repmat(sum(BGbg,2),1,size(BGbg,2)));
-    BGbr = BGbr./(repmat(sum(BGbr,2),1,size(BGbr,2)));
-    BGgg = BGgg./(repmat(sum(BGgg,2),1,size(BGgg,2)));
-    BGgr = BGgr./(repmat(sum(BGgr,2),1,size(BGgr,2)));
-    %%% find boundaries of how many background counts to
-    %%% consider in each burst
-    NBGbb = zeros(nBursts,1);
-    NBGbg = zeros(nBursts,1);
-    NBGbr = zeros(nBursts,1);
-    NBGgg = zeros(nBursts,1);
-    NBGgr = zeros(nBursts,1);
-    for u = 1:nBursts
-        NBGbb(u) = find(BGbb(u,:) ~= 0,1,'last')-1;
-        NBGbg(u) = find(BGbg(u,:) ~= 0,1,'last')-1;
-        NBGbr(u) = find(BGbr(u,:) ~= 0,1,'last')-1;
-        NBGgg(u) = find(BGgg(u,:) ~= 0,1,'last')-1;
-        NBGgr(u) = find(BGgr(u,:) ~= 0,1,'last')-1;
-    end
-    %%% store in corrections structure
-    tcPDAstruct.corrections.background.BGbb = BGbb;
-    tcPDAstruct.corrections.background.BGbg = BGbg;
-    tcPDAstruct.corrections.background.BGbr = BGbr;
-    tcPDAstruct.corrections.background.BGgg = BGgg;
-    tcPDAstruct.corrections.background.BGgr = BGgr;
-    tcPDAstruct.corrections.background.NBGbb = NBGbb;
-    tcPDAstruct.corrections.background.NBGbg = NBGbg;
-    tcPDAstruct.corrections.background.NBGbr = NBGbr;
-    tcPDAstruct.corrections.background.NBGgg = NBGgg;
-    tcPDAstruct.corrections.background.NBGgr = NBGgr;
 end
             
 function update_fit_params(hObject,eventdata)
@@ -2221,12 +2291,12 @@ else
     n_gauss = n_gauss*2;
     plots = [1,6,2,7,3,8,4,9,5,10];
     for i = 1:n_gauss
-        handles.plots.handles_H_res_2d_individual(plots(i)).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_br(plots(i)).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_br_gr(plots(i)).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg(plots(i)).Visible= 'on';
-        handles.plots.handles_H_res_3d_individual_br(plots(i)).Visible= 'on';
+        handles.plots.handles_H_res_2d_individual(plot_order(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_br(plot_order(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_gr(plot_order(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_br_gr(plot_order(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg(plot_order(i)).Visible= 'on';
+        handles.plots.handles_H_res_3d_individual_br(plot_order(i)).Visible= 'on';
     end
 end
 
@@ -2858,25 +2928,12 @@ R0_bg = tcPDAstruct.corrections.R0_bg;
 R0_br = tcPDAstruct.corrections.R0_br;
 R0_gr = tcPDAstruct.corrections.R0_gr;
 sampling = tcPDAstruct.sampling;
-BSD_BX = tcPDAstruct.BSD_BX;
-BSD_GX = tcPDAstruct.BSD_GX;
-%valid = Cut_Data([],[]);
-dur = tcPDAstruct.duration(tcPDAstruct.valid);
-H_meas = tcPDAstruct.H_meas;
-
-pe_b = 1-de_br-de_bg; %probability of blue excitation
-total_rolls = numel(BSD_BX);
-
 
 if tcPDAstruct.BrightnessCorrection
    disp('Brightness correction not implemented yet for dynamic model.');
    chi2 = Inf;
    return;
 end
-%initialize data
-PrGR = cell(sampling,N_gauss);
-PrBG = cell(sampling,N_gauss);
-PrBR = cell(sampling,N_gauss);
 
 % assign distances and fix covariance matrices
 MU = cell(1,N_gauss);
@@ -2901,103 +2958,116 @@ k12 = A(1); k21 = A(2);
 % convert fraction of time to intensity-fraction using brightnesses
 [Qr_g(1),Qr_b(1)] = calc_relative_brightness(mu1(3),mu1(1),mu1(2));
 [Qr_g(2),Qr_b(2)] = calc_relative_brightness(mu2(3),mu2(1),mu2(2)); 
-for i = 1:sampling % make parfor again
-    [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamic(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
-                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
-end
-if N_gauss > 2 % add static populations
-    for j=3:N_gauss
-        mu = MU{j}; covar = COV{j};
-        parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
-            [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
-                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+    
+for f = 1:numel(tcPDAstruct.Data)
+    Amp = A;
+    BSD_BX = tcPDAstruct.BSD_BX{f};
+    BSD_GX = tcPDAstruct.BSD_GX{f};
+    %valid = Cut_Data([],[]);
+    dur = tcPDAstruct.Data{f}.duration(tcPDAstruct.valid{f});
+    H_meas = tcPDAstruct.H_meas{f};
+
+    pe_b = 1-de_br-de_bg; %probability of blue excitation
+    total_rolls = numel(BSD_BX);
+
+    %initialize data
+    PrGR = cell(sampling,N_gauss);
+    PrBG = cell(sampling,N_gauss);
+    PrBR = cell(sampling,N_gauss);
+
+    for i = 1:sampling % make parfor again
+        [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamic(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
+                    total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+    end
+    if N_gauss > 2 % add static populations
+        for j=3:N_gauss
+            mu = MU{j}; covar = COV{j};
+            parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+                [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
+                    total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+            end
         end
     end
-end
 
-H_res_dummy = cell(N_gauss,1);
-for i = 1:N_gauss
-    if tcPDAstruct.dynamic_model && i == 2
-        % second species does not exist        
-        H_res_dummy{i} = zeros(nbins,nbins,nbins); 
-    else
-        dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
-        dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
-        dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
-        dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
-        H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
-    end
-end
-
-A = [1;0; A(3:end)']; % assign amplitude of 1 to dynamic population (second population is empty);
-A = A./sum(A);
-
-H_res = zeros(nbins,nbins,nbins);
-for i = 1:N_gauss
-    H_res = H_res + A(i).*H_res_dummy{i};
-end
-
-%normalize
-H_res = (H_res./sum(sum(sum((H_res))))).*sum(sum(sum(H_meas)));
-
-sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
-dev = (H_res-H_meas)./sigma_est;
-chi2 = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
-tcPDAstruct.plots.chi2 = chi2;
-
-%%% chi2 estimate based on Poissonian statistics
-%chi2 = chi2poiss(H_res,H_meas);
-
-
-if strcmp(get(gcbo,'Tag'),'button_view_curve') && tcPDAstruct.dynamic_model
-    %%% add pseudo-static species as second population (only for display purpose)
-    for j=1:2
-        mu = MU{j}; covar = COV{j};
-        parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
-            [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
-                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+    H_res_dummy = cell(N_gauss,1);
+    for i = 1:N_gauss
+        if tcPDAstruct.dynamic_model && i == 2
+            % second species does not exist        
+            H_res_dummy{i} = zeros(nbins,nbins,nbins); 
+        else
+            dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+            dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
+            dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
+            dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
+            H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
         end
-    end    
-    H_pseudostatic = cell(2,1);
-    for i = 1:2
-        dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
-        dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
-        dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
-        dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
-        H_pseudostatic{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
     end
-    %%% get amplitudes of pseudo-static populations
-    %%% evaluate dynamic distribution
-    dT = tcPDAstruct.timebin; % time bin in milliseconds
-    N = 100;
-    PofT = calc_dynamic_distribution(dT,N,k12,k21); % Probability of state 1 occupancy
-    H_res_dummy{end+1} = (H_res_dummy{1} - PofT(end)*H_pseudostatic{1} - PofT(1)*H_pseudostatic{2})./(1-PofT(1)-PofT(end)); % dynamic part
-    H_res_dummy{1} = H_pseudostatic{1};
-    H_res_dummy{2} = H_pseudostatic{2};
-    A(2) = PofT(1);
-    A(1) = PofT(end);
-    A(end+1) = 1-PofT(1)-PofT(end); % amplitude of dynamic part
-end
-%store for plotting
-%2D BG BR
-%tcPDAstruct.plots.H_res_2d = sum(H_res,3);
-%tcPDAstruct.plots.dev_2d = (tcPDAstruct.H_meas_2d-tcPDAstruct.plots.H_res_2d)./sqrt(tcPDAstruct.H_meas_2d);
-%tcPDAstruct.plots.dev_2d(~isfinite(tcPDAstruct.plots.dev_2d)) = 0;
-%tcPDAstruct.plots.H_res_2d_individual = H_res_dummy;
-%1D GR
-%tcPDAstruct.plots.H_res_1d = squeeze(sum(sum(H_res,1),2));
-%tcPDAstruct.plots.dev_gr = (tcPDAstruct.H_meas_gr-tcPDAstruct.plots.H_res_1d)./sqrt(tcPDAstruct.H_meas_gr);
-%tcPDAstruct.plots.dev_gr(~isfinite(tcPDAstruct.plots.dev_gr)) = 0;
+    
+    if size(Amp,1) < size(Amp,2); Amp = Amp'; end
+    Amp = [1;0; Amp(3:end)]; % assign amplitude of 1 to dynamic population (second population is empty);
+    Amp = Amp./sum(Amp);
 
-tcPDAstruct.plots.A_3d = A;
-tcPDAstruct.plots.H_res_3d = H_res;
-tcPDAstruct.plots.H_res_3d_individual = H_res_dummy;
-tcPDAstruct.plots.H_res_3d_bg_br = squeeze(sum(H_res,3));
-tcPDAstruct.plots.H_res_3d_bg_gr = squeeze(sum(H_res,2));
-tcPDAstruct.plots.H_res_3d_br_gr = squeeze(sum(H_res,1));
-tcPDAstruct.plots.H_res_3d_bg = squeeze(sum(sum(H_res,2),3));
-tcPDAstruct.plots.H_res_3d_br = squeeze(sum(sum(H_res,1),3));
-tcPDAstruct.plots.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
+    H_res = zeros(nbins,nbins,nbins);
+    for i = 1:N_gauss
+        H_res = H_res + Amp(i).*H_res_dummy{i};
+    end
+
+    %normalize
+    H_res = (H_res./sum(sum(sum((H_res))))).*sum(sum(sum(H_meas)));
+
+    sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
+    dev = (H_res-H_meas)./sigma_est;
+    chi2(f) = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
+    tcPDAstruct.plots{f}.chi2 = chi2;
+
+    %%% chi2 estimate based on Poissonian statistics
+    %chi2 = chi2poiss(H_res,H_meas);
+
+    
+    
+    if strcmp(get(gcbo,'Tag'),'button_view_curve') && tcPDAstruct.dynamic_model
+        %%% add pseudo-static species as second population (only for display purpose)
+        for j=1:2
+            mu = MU{j}; covar = COV{j};
+            parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+                [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(mu,covar,...
+                    total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+            end
+        end    
+        H_pseudostatic = cell(2,1);
+        for i = 1:2
+            dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+            dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
+            dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
+            dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
+            H_pseudostatic{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
+        end
+        %%% get amplitudes of pseudo-static populations
+        %%% evaluate dynamic distribution
+        dT = tcPDAstruct.Data{f}.timebin; % time bin in milliseconds
+        N = 100;
+        PofT = calc_dynamic_distribution(dT,N,k12,k21); % Probability of state 1 occupancy
+        H_res_dummy{end+1} = (H_res_dummy{1} - PofT(end)*H_pseudostatic{1} - PofT(1)*H_pseudostatic{2})./(1-PofT(1)-PofT(end)); % dynamic part
+        H_res_dummy{1} = H_pseudostatic{1};
+        H_res_dummy{2} = H_pseudostatic{2};
+        Amp(2) = PofT(1);
+        Amp(1) = PofT(end);
+        Amp(end+1) = 1-PofT(1)-PofT(end); % amplitude of dynamic part
+    end
+    
+    %store for plotting
+    tcPDAstruct.plots{f}.A_3d = Amp;
+    tcPDAstruct.plots{f}.H_res_3d = H_res;
+    tcPDAstruct.plots{f}.H_res_3d_individual = H_res_dummy;
+    tcPDAstruct.plots{f}.H_res_3d_bg_br = squeeze(sum(H_res,3));
+    tcPDAstruct.plots{f}.H_res_3d_bg_gr = squeeze(sum(H_res,2));
+    tcPDAstruct.plots{f}.H_res_3d_br_gr = squeeze(sum(H_res,1));
+    tcPDAstruct.plots{f}.H_res_3d_bg = squeeze(sum(sum(H_res,2),3));
+    tcPDAstruct.plots{f}.H_res_3d_br = squeeze(sum(sum(H_res,1),3));
+    tcPDAstruct.plots{f}.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
+end
+
+
 %[tcPDAstruct.plots.chi2, tcPDAstruct.plots.dev_3d] = chi2poiss(H_res,H_meas);
 
 %%% Update Fit Parameter in global struct
@@ -3597,6 +3667,7 @@ global tcPDAstruct
 if ~isfield(tcPDAstruct,'plots')
     return;
 end
+
 plottype = handles.plottype_dropdownmenu.String{handles.plottype_dropdownmenu.Value};
 if tcPDAstruct.use_stochasticlabeling
     %%% we have to reorder the plots to match the coloring scheme
@@ -3606,36 +3677,37 @@ if tcPDAstruct.use_stochasticlabeling
     %%% Addit.:  ,2, ,4, ,6, ,8, ,10
     %%% the first 5 plots are for the normal populations, the last 5 for
     %%% the additonal populations, i.e. map to:
-    plots = [1,6,2,7,3,8,4,9,5,10];
+    plot_order = [1,6,2,7,3,8,4,9,5,10];
 else
     %%% normal order
-    plots = 1:10;
+    plot_order = 1:10;
 end
 
+plots = tcPDAstruct.plots{tcPDAstruct.selected};
 % 1d plot
-if isfield(tcPDAstruct.plots,'H_res_gr')
-    set(handles.plots.handle_1d_fit,'YData',[tcPDAstruct.plots.H_res_gr;tcPDAstruct.plots.H_res_gr(end)],'XData',tcPDAstruct.x_axis_stair);
-    if (size(tcPDAstruct.plots.H_res_1d_individual,2) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_1d_individual,2)
-            set(handles.plots.handles_H_res_1d_individual(i),'YData',tcPDAstruct.plots.A_gr(i).*[tcPDAstruct.plots.H_res_1d_individual(:,i);tcPDAstruct.plots.H_res_1d_individual(end,i)],'XData',tcPDAstruct.x_axis_stair);
+if isfield(plots,'H_res_gr')
+    set(handles.plots.handle_1d_fit,'YData',[plots.H_res_gr;plots.H_res_gr(end)],'XData',tcPDAstruct.x_axis_stair);
+    if (size(plots.H_res_1d_individual,2) > 1)
+        for i = 1:size(plots.H_res_1d_individual,2)
+            set(handles.plots.handles_H_res_1d_individual(i),'YData',plots.A_gr(i).*[plots.H_res_1d_individual(:,i);plots.H_res_1d_individual(end,i)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
-    set(handles.plots.handle_1d_dev,'YData',[tcPDAstruct.plots.dev_gr;tcPDAstruct.plots.dev_gr(end)],'XData',tcPDAstruct.x_axis_stair);
+    set(handles.plots.handle_1d_dev,'YData',[plots.dev_gr;plots.dev_gr(end)],'XData',tcPDAstruct.x_axis_stair);
 end
 
-if isfield(tcPDAstruct.plots,'H_res_2d')
+if isfield(plots,'H_res_2d')
     switch plottype
         case 'mesh'
-            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
-                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+            if (size(plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plot_order(i)),'ZData',plots.A_2d(i).*plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
                         'Visible','on');
                 end
             end
-            set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_2d_fit,'ZData',plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
             
-            set(handles.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
-            set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
+            set(handles.plots.handle_2d_dev,'ZData',plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.axes_2d_res,'zlim',[min(min(plots.dev_2d)) max(max(plots.dev_2d))]);
             colormap(handles.axes_2d,'parula');
             colorbar(handles.axes_2d,'off')
 
@@ -3649,13 +3721,13 @@ if isfield(tcPDAstruct.plots,'H_res_2d')
             handles.axes_2d.Position(3) = 0.85;
         case 'colormap'
             % set CData of data plot to w_res
-            set(handles.plots.handle_2d_data,'CData',tcPDAstruct.plots.dev_2d,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.plots.handle_2d_data,'CData',plots.dev_2d,'EdgeColor',[0,0,0],'FaceAlpha',1);
             % hide mesh plot and 2d dev
             set(handles.plots.handle_2d_fit,'Visible','off');
             set(handles.plots.handle_2d_dev,'Visible','off');
-            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
-                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'Visible','off');
+            if (size(plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plot_order(i)),'Visible','off');
                 end
             end
             set(handles.axes_2d,'CLim',[-5 5]);
@@ -3670,47 +3742,47 @@ if isfield(tcPDAstruct.plots,'H_res_2d')
     end
 end
 
-if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
+if isfield(plots,'H_res_3d_bg_br')
     switch plottype
         case 'mesh'
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plot_order(i)),'ZData',plots.A_3d(i).*squeeze(sum(plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
                         'Visible','on');
                 end
             end
-            set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_fit_bg_br,'ZData',plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
             set(handles.plots.handle_3d_data_bg_br,'CData',handles.plots.handle_3d_data_bg_br.ZData,'EdgeColor','none','FaceAlpha',0.6);
             set(handles.axes_3d(1),'CLimMode','auto');
             colormap(handles.axes_3d(1),'parula');
             
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plot_order(i)),'ZData',plots.A_3d(i).*squeeze(sum(plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
                         'Visible','on');
                 end
             end
-            set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_fit_bg_gr,'ZData',plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
             set(handles.plots.handle_3d_data_bg_gr,'CData',handles.plots.handle_3d_data_bg_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
             set(handles.axes_3d(2),'CLimMode','auto');
             colormap(handles.axes_3d(2),'parula');
             
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plot_order(i)),'ZData',plots.A_3d(i).*squeeze(sum(plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
                         'Visible','on');
                 end
             end
-            set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_fit_br_gr,'ZData',plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
             set(handles.plots.handle_3d_data_br_gr,'CData',handles.plots.handle_3d_data_br_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
             set(handles.axes_3d(3),'CLimMode','auto');
             colormap(handles.axes_3d(3),'parula');
             
             colorbar(handles.axes_3d(3),'off');
         case 'colormap'
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'Visible','off');
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plot_order(i)),'Visible','off');
                 end
             end
             set(handles.plots.handle_3d_fit_bg_br,'Visible','off');
@@ -3723,9 +3795,9 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
             set(handles.axes_3d(1),'CLim',[-5,5]);
             colormap(handles.axes_3d(1),handles.colormap);
             
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'Visible','off');
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plot_order(i)),'Visible','off');
                 end
             end
             set(handles.plots.handle_3d_fit_bg_gr,'Visible','off');
@@ -3738,9 +3810,9 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
             set(handles.axes_3d(2),'CLim',[-5,5]);
             colormap(handles.axes_3d(2),handles.colormap);
             
-            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'Visible','off');
+            if (size(plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plot_order(i)),'Visible','off');
                 end
             end
             set(handles.plots.handle_3d_fit_br_gr,'Visible','off');
@@ -3757,33 +3829,33 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
             c.Position(1) = 0.98; c.Position(3) = 0.012;
     end
     
-    set(handles.plots.handle_3d_fit_bg,'YData',[tcPDAstruct.plots.H_res_3d_bg;tcPDAstruct.plots.H_res_3d_bg(end)],'XData',tcPDAstruct.x_axis_stair);
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
-            set(handles.plots.handles_H_res_3d_individual_bg(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+    set(handles.plots.handle_3d_fit_bg,'YData',[plots.H_res_3d_bg;plots.H_res_3d_bg(end)],'XData',tcPDAstruct.x_axis_stair);
+    if (size(plots.H_res_3d_individual,1) > 1)
+        for i = 1:size(plots.H_res_3d_individual,1)
+            temp = squeeze(sum(sum(plots.H_res_3d_individual{i},2),3));
+            set(handles.plots.handles_H_res_3d_individual_bg(plot_order(i)),'YData',plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
-    set(handles.plots.handle_3d_fit_br,'YData',[tcPDAstruct.plots.H_res_3d_br,tcPDAstruct.plots.H_res_3d_br(end)],'XData',tcPDAstruct.x_axis_stair);
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
-            set(handles.plots.handles_H_res_3d_individual_br(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
+    set(handles.plots.handle_3d_fit_br,'YData',[plots.H_res_3d_br,plots.H_res_3d_br(end)],'XData',tcPDAstruct.x_axis_stair);
+    if (size(plots.H_res_3d_individual,1) > 1)
+        for i = 1:size(plots.H_res_3d_individual,1)
+            temp = squeeze(sum(sum(plots.H_res_3d_individual{i},1),3));
+            set(handles.plots.handles_H_res_3d_individual_br(plot_order(i)),'YData',plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
-    set(handles.plots.handle_3d_fit_gr,'YData',[tcPDAstruct.plots.H_res_3d_gr;tcPDAstruct.plots.H_res_3d_gr(end)],'XData',tcPDAstruct.x_axis_stair);
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+    set(handles.plots.handle_3d_fit_gr,'YData',[plots.H_res_3d_gr;plots.H_res_3d_gr(end)],'XData',tcPDAstruct.x_axis_stair);
+    if (size(plots.H_res_3d_individual,1) > 1)
         if tcPDAstruct.use_stochasticlabeling
-            for i = 1:2:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',(1/tcPDAstruct.fraction_stochasticlabeling)*tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            for i = 1:2:size(plots.H_res_3d_individual,1)
+                temp = squeeze(sum(sum(plots.H_res_3d_individual{i},1),2));
+                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',(1/tcPDAstruct.fraction_stochasticlabeling)*plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
             end
         else
-            for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-                temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-                set(handles.plots.handles_H_res_3d_individual_gr(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            for i = 1:size(plots.H_res_3d_individual,1)
+                temp = squeeze(sum(sum(plots.H_res_3d_individual{i},1),2));
+                set(handles.plots.handles_H_res_3d_individual_gr(i),'YData',plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
             end
         end
     end
@@ -3930,6 +4002,7 @@ chi2 = view_curve(handles);
 
 function chi2 = view_curve(handles)
 global tcPDAstruct UserValues
+selected = tcPDAstruct.selected;
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
@@ -3946,12 +4019,13 @@ corrections = get(handles.corrections_table,'data');
     tcPDAstruct.corrections.R0_gr, tcPDAstruct.corrections.R0_bg, tcPDAstruct.corrections.R0_br] = deal(corrections{:});
 
 [tcPDAstruct.valid] = Cut_Data([],[]);
-tcPDAstruct.fbb = tcPDAstruct.NBB(tcPDAstruct.valid);
-tcPDAstruct.fbg = tcPDAstruct.NBG(tcPDAstruct.valid);
-tcPDAstruct.fbr = tcPDAstruct.NBR(tcPDAstruct.valid);
-tcPDAstruct.fgg = tcPDAstruct.NGG(tcPDAstruct.valid);
-tcPDAstruct.fgr = tcPDAstruct.NGR(tcPDAstruct.valid);
-
+for i = 1:numel(tcPDAstruct.Data)
+    tcPDAstruct.fbb{i} = tcPDAstruct.Data{i}.NBB(tcPDAstruct.valid{i});
+    tcPDAstruct.fbg{i} = tcPDAstruct.Data{i}.NBG(tcPDAstruct.valid{i});
+    tcPDAstruct.fbr{i} = tcPDAstruct.Data{i}.NBR(tcPDAstruct.valid{i});
+    tcPDAstruct.fgg{i} = tcPDAstruct.Data{i}.NGG(tcPDAstruct.valid{i});
+    tcPDAstruct.fgr{i} = tcPDAstruct.Data{i}.NGR(tcPDAstruct.valid{i});
+end
 %read initial fit values
 fit_data = get(handles.fit_table,'data');
 n_gauss = get(handles.popupmenu_ngauss,'value');
@@ -4025,29 +4099,34 @@ switch (selected_tab)
             else %%% using GPU
                 if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
                     %%% prepare gpuArrays
-                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
-                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
-                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
-                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
-                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
-                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
-                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
-                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
-                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
-                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+                    for i = 1:numel(tcPDAstruct.Data)
+                        tcPDAstruct.CUDAKernel.BG_bb{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbb{i}));
+                        tcPDAstruct.CUDAKernel.BG_bg{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbg{i}));
+                        tcPDAstruct.CUDAKernel.BG_br{i} = gpuArray(single(tcPDAstruct.corrections.background.BGbr{i}));
+                        tcPDAstruct.CUDAKernel.BG_gg{i} = gpuArray(single(tcPDAstruct.corrections.background.BGgg{i}));
+                        tcPDAstruct.CUDAKernel.BG_gr{i} = gpuArray(single(tcPDAstruct.corrections.background.BGgr{i}));
+                        tcPDAstruct.CUDAKernel.NBGbb{i} = gpuArray(tcPDAstruct.corrections.background.NBGbb{i});
+                        tcPDAstruct.CUDAKernel.NBGbg{i} = gpuArray(tcPDAstruct.corrections.background.NBGbg{i});
+                        tcPDAstruct.CUDAKernel.NBGbr{i} = gpuArray(tcPDAstruct.corrections.background.NBGbr{i});
+                        tcPDAstruct.CUDAKernel.NBGgg{i} = gpuArray(tcPDAstruct.corrections.background.NBGgg{i});
+                        tcPDAstruct.CUDAKernel.NBGgr{i} = gpuArray(tcPDAstruct.corrections.background.NBGgr{i});
+
+                        tcPDAstruct.CUDAKernel.fbb{i} = gpuArray(int32(tcPDAstruct.fbb{i}));
+                        tcPDAstruct.CUDAKernel.fbg{i} = gpuArray(int32(tcPDAstruct.fbg{i}));
+                        tcPDAstruct.CUDAKernel.fbr{i} = gpuArray(int32(tcPDAstruct.fbr{i}));
+                        tcPDAstruct.CUDAKernel.fgg{i} = gpuArray(int32(tcPDAstruct.fgg{i}));
+                        tcPDAstruct.CUDAKernel.fgr{i} = gpuArray(int32(tcPDAstruct.fgr{i}));
+
+                        tcPDAstruct.CUDAKernel.likelihood{i} = gpuArray(single(zeros(numel(tcPDAstruct.fbb{i})*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                        tcPDAstruct.CUDAKernel.likelihood_dyn{i} = gpuArray(single(zeros(numel(tcPDAstruct.fbb{i})*24,1))); %%% 24 = bin number for dynamic model
                     
-                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
-                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
-                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
-                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
-                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
-                    
-                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
-                    
+                        numElements(i) = numel(tcPDAstruct.fbb{i});
+                    end
                     %%% initialize kernel
                     path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
                     tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
-                    numElements = numel(tcPDAstruct.fbb);
+                    % use maximum number of bursts of all loaded files
+                    numElements = max(numElements);%numel(tcPDAstruct.fbb);
                     tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
                     tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
                 end
@@ -4068,19 +4147,19 @@ switch (selected_tab)
         chi2 = 0;
 end
 if isfield(tcPDAstruct,'plots')
-    handles.text_chi2.String = sprintf('Chi2 = %.2f',tcPDAstruct.plots.chi2);
+    handles.text_chi2.String = sprintf('Chi2 = %.2f',tcPDAstruct.plots{tcPDAstruct.selected}.chi2);
 end
 plot_after_fit(handles);
 
 function pushbutton_view_curve(hObject,eventdata)
 global tcPDAstruct
 handles = guidata(hObject);
-if ~isfield(tcPDAstruct,'NBB')
+if ~isfield(tcPDAstruct.Data{1},'NBB')
     return;
 end
 chi2 = view_curve(handles);
 
-disp(['Chi2 = ' num2str(tcPDAstruct.plots.chi2)]);
+disp(['Chi2 = ' num2str(mean(chi2))]);
 
 function pushbutton_load_fitstate(hObject,eventdata)
 handles = guidata(hObject);
@@ -4233,7 +4312,7 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plot_order(i)},'LineWidth',2);
     end
 end
 
@@ -4283,7 +4362,7 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plot_order(i)},'LineWidth',2);
     end
 end
 data = tcPDAstruct.plots.H_res_3d_br;
@@ -5096,7 +5175,8 @@ else %%% using GPU
         tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
 
         tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
-
+        tcPDAstruct.CUDAKernel.likelihood_dyn = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*24,1))); %%% 24 = bin number for dynamic model
+                    
         %%% initialize kernel
         path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
         tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
@@ -5108,8 +5188,12 @@ end
 
 priorfun = @(x) (-1)*evaluate_prior(x);
 if ~handles.use_2cPDAData_checkbox.Value
-    %%% no globa fit
-    probfun = @(x) (-1)*determine_MLE_3color(x); 
+    %%% no global fit
+    if ~handles.dynamic_model_checkbox.Value
+        probfun = @(x) (-1)*determine_MLE_3color(x);
+    else
+        probfun = @(x) (-1)*determine_MLE_3color_dynamic(x);
+    end
 else
     probfun = @(x) (-1)*determine_MLE_global(x); 
 end
