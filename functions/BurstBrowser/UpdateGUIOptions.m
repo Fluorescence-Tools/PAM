@@ -217,7 +217,7 @@ if obj == h.LifetimeMode_Menu
                 case 2
                     h.axes_EvsTauGG.YLabel.String = 'log(FGG/FGR)';
                     h.axes_EvsTauRR.YLabel.String = 'log(FGG/FGR)';
-                    h.axes_E_BtoGRvsTauBB.YLabel.String = 'log(FBBG/(FBG+FBR))';
+                    h.axes_E_BtoGRvsTauBB.YLabel.String = 'log(FBB/(FBG+FBR))';
                     h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
                     h.axes_EvsTauRR.XLabel.String = '\tau_{A} [ns]';
                     h.axes_E_BtoGRvsTauBB.XLabel.String = '\tau_{BB} [ns]';
