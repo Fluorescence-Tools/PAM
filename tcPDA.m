@@ -6271,66 +6271,83 @@ NBGgr = corrections.background.NBGgr;
 
 %% Dynamics
 %%% define the array of state occupancies (dynamic mixing)
-
-%%% calculate expected E values for states
-EBG = 1./(1+(Rbg./corrections.R0_bg).^6);
-EBR = 1./(1+(Rbr./corrections.R0_br).^6);
-EGR = 1./(1+(Rgr./corrections.R0_gr).^6);
-
-PGR = 1-(1+corrections.ct_gr+(((corrections.de_gr/(1-corrections.de_gr)) + EGR) * corrections.gamma_gr)./(1-EGR)).^(-1);
-
-EBG_R = EBG.*(1-EBR)./(1-EBG.*EBR);
-EBR_G = EBR.*(1-EBG)./(1-EBG.*EBR);
-E1A = EBG_R + EBR_G;
-
-pe_b = 1-corrections.de_bg - corrections.de_br;
-
-Pout_B = pe_b.*(1-E1A);
-
-Pout_G = pe_b.*(1-E1A).*corrections.ct_bg + ...
-    pe_b.*EBG_R.*(1-EGR).*corrections.gamma_bg + ...
-    corrections.de_bg.*(1-EGR).*corrections.gamma_bg;
-
-Pout_R = pe_b.*(1-E1A).*corrections.ct_br + ...
-    pe_b.*EBG_R.*(1-EGR).*corrections.gamma_bg.*corrections.ct_gr + ...
-    pe_b.*EBG_R.*EGR.*corrections.gamma_br + ...
-    pe_b.*EBR_G.*corrections.gamma_br + ...
-    corrections.de_bg.*(1-EGR).*corrections.gamma_bg.*corrections.ct_gr + ...
-    corrections.de_bg.*EGR.*corrections.gamma_br + ...
-    corrections.de_br.*corrections.gamma_br;
-
-P_total = Pout_B+Pout_G+Pout_R;
-
-PBB = Pout_B./P_total;
-PBG = Pout_G./P_total;
-PBR = Pout_R./P_total;
-
 %%% evaluate dynamic distribution
 N = 25;
-PofT = calc_dynamic_distribution(dT,N,k12,k21);
-%%% calculate relative brightnesses
-for i = 1:2
-    [Qr_g(i),Qr_b(i)] = calc_relative_brightness(Rgr(i),Rbg(i),Rbr(i));
-end
-%%% calculate mixed FRET efficiencies
 t = linspace(0,1,N+1); % cumulative time spent in each state
-PBB_mix = (t.*Qr_b(1).*PBB(1)+(1-t).*Qr_b(2).*PBB(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
-PBG_mix = (t.*Qr_b(1).*PBG(1)+(1-t).*Qr_b(2).*PBG(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
-PBR_mix = (t.*Qr_b(1).*PBR(1)+(1-t).*Qr_b(2).*PBR(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
-PGR_mix = (t.*Qr_g(1).*PGR(1)+(1-t).*Qr_g(2).*PGR(2))./(t.*Qr_g(1)+(1-t).*Qr_g(2));
+PofT = calc_dynamic_distribution(dT,N,k12,k21);
 
-% remove first and last bin as they will be treated as pseudo-static later,
-% including a correct treatment of the distribution width
-PBB_mix = PBB_mix(2:end-1);
-PBG_mix = PBG_mix(2:end-1);
-PBR_mix = PBR_mix(2:end-1);
-PGR_mix = PGR_mix(2:end-1);
+%%% distance distribution is implemented by sampling +-sigma for each distance
+include_width = true;
+if include_width
+    combinations = [-1,-1,-1; -1,-1,1; -1,1,-1; -1,1,1; 1,-1,-1; 1,-1,1; 1,1,-1; 1,1,1];
+    all_combinations = true;
+    if ~all_combinations
+        % only consider shift in the same direction
+        combinations = repmat(combinations,[1,1,2]);
+    elseif all_combinations
+        %%% consider all combinations (8^2=64)
+        temp = zeros(size(combinations,1),size(combinations,2),2);
+        for i = 1:size(combinations,1)
+            for j = 1:size(combinations,1)
+                temp((i-1)*8+j,:,1) = combinations(i,:);
+                temp((i-1)*8+j,:,2) = combinations(j,:);
+            end
+        end
+        combinations = temp;
+    end
+else
+    combinations = [0,0,0];
+end
+P_dyn = zeros(numel(fbb{file}),N-1,size(combinations,1));
+tic
+for i = 1:size(combinations,1)
+    Rbg_mod = Rbg + sigma_bg.*squeeze(combinations(i,1,:))';
+    Rbr_mod = Rbr + sigma_br.*squeeze(combinations(i,2,:))';
+    Rgr_mod = Rgr + sigma_gr.*squeeze(combinations(i,3,:))';
+    %%% calculate expected E values for states
+    [PBB,PBG,PBR,PGR] = distance_to_probability(Rbg_mod,Rbr_mod,Rgr_mod,corrections);
 
-%%% evaluate dynamic part
+    %%% calculate relative brightnesses
+    for i = 1:2
+        [Qr_g(i),Qr_b(i)] = calc_relative_brightness(Rgr(i),Rbg(i),Rbr(i));
+    end
+    %%% calculate mixed FRET efficiencies
+    PBB_mix = (t.*Qr_b(1).*PBB(1)+(1-t).*Qr_b(2).*PBB(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
+    PBG_mix = (t.*Qr_b(1).*PBG(1)+(1-t).*Qr_b(2).*PBG(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
+    PBR_mix = (t.*Qr_b(1).*PBR(1)+(1-t).*Qr_b(2).*PBR(2))./(t.*Qr_b(1)+(1-t).*Qr_b(2));
+    PGR_mix = (t.*Qr_g(1).*PGR(1)+(1-t).*Qr_g(2).*PGR(2))./(t.*Qr_g(1)+(1-t).*Qr_g(2));
+
+    % remove first and last bin as they will be treated as pseudo-static later,
+    % including a correct treatment of the distribution width
+    PBB_mix = PBB_mix(2:end-1);
+    PBG_mix = PBG_mix(2:end-1);
+    PBR_mix = PBR_mix(2:end-1);
+    PGR_mix = PGR_mix(2:end-1);
+
+    %%% evaluate dynamic part
+    P_dyn(:,:,i) = likelihood_3c_GPU(PBB_mix,PBG_mix,PGR_mix,fbb,fbg,fbr,fgg,fgr,NBGbb,NBGbg,NBGbr,NBGgg,NBGgr,BG_bb,BG_bg,BG_br,BG_gg,BG_gr,file);
+end
+P_dyn = mean(P_dyn,3);
+toc
+%% add pseudo-static populations
+P_static1 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,file);
+P_static2 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param2,file);
+
+%%% recombined static and dynamic arrays
+P = [P_static2 log(P_dyn) P_static1]; % t1=0 -> state2, t1=1 -> state1
+P = P + repmat(log(PofT),numel(fbb{file}),1);
+Lmax = max(P,[],2);
+P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PofT))),2));
+%%% Treat case when all burst produced zero probability
+P_res = P;
+P_res(isnan(P_res)) = -Inf;
+
+function P_dyn = likelihood_3c_GPU(PBB_mix,PBG_mix,PGR_mix,fbb,fbg,fbr,fgg,fgr,NBGbb,NBGbg,NBGbr,NBGgg,NBGgr,BG_bb,BG_bg,BG_br,BG_gg,BG_gr,file)
+global tcPDAstruct UserValues
 if strcmp(tcPDAstruct.Data{1}.timebin,'burstwise')
     %%% burstwise, indivual backgrounds used
     disp('Burstwise datasets do not support fitting of kinetics yet.');
-    P_res = Inf;
+    P_dyn = Inf;
     return;
 elseif isnumeric(tcPDAstruct.Data{1}.timebin)
     %% CUDA
@@ -6388,18 +6405,40 @@ elseif isnumeric(tcPDAstruct.Data{1}.timebin)
     end
 end
 
-%% add pseudo-static populations
-P_static1 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param1,file);
-P_static2 = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param2,file);
 
-%%% recombined static and dynamic arrays
-P = [P_static2 log(P_dyn) P_static1]; % t1=0 -> state2, t1=1 -> state1
-P = P + repmat(log(PofT),numel(fbb{file}),1);
-Lmax = max(P,[],2);
-P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PofT))),2));
-%%% Treat case when all burst produced zero probability
-P_res = P;
-P_res(isnan(P_res)) = -Inf;
+%%% transform distances to three-color outcome probabilities
+function [PBB,PBG,PBR,PGR] = distance_to_probability(Rbg,Rbr,Rgr,corrections)
+EBG = 1./(1+(Rbg./corrections.R0_bg).^6);
+EBR = 1./(1+(Rbr./corrections.R0_br).^6);
+EGR = 1./(1+(Rgr./corrections.R0_gr).^6);
+
+PGR = 1-(1+corrections.ct_gr+(((corrections.de_gr/(1-corrections.de_gr)) + EGR) * corrections.gamma_gr)./(1-EGR)).^(-1);
+
+EBG_R = EBG.*(1-EBR)./(1-EBG.*EBR);
+EBR_G = EBR.*(1-EBG)./(1-EBG.*EBR);
+E1A = EBG_R + EBR_G;
+
+pe_b = 1-corrections.de_bg - corrections.de_br;
+
+Pout_B = pe_b.*(1-E1A);
+
+Pout_G = pe_b.*(1-E1A).*corrections.ct_bg + ...
+    pe_b.*EBG_R.*(1-EGR).*corrections.gamma_bg + ...
+    corrections.de_bg.*(1-EGR).*corrections.gamma_bg;
+
+Pout_R = pe_b.*(1-E1A).*corrections.ct_br + ...
+    pe_b.*EBG_R.*(1-EGR).*corrections.gamma_bg.*corrections.ct_gr + ...
+    pe_b.*EBG_R.*EGR.*corrections.gamma_br + ...
+    pe_b.*EBR_G.*corrections.gamma_br + ...
+    corrections.de_bg.*(1-EGR).*corrections.gamma_bg.*corrections.ct_gr + ...
+    corrections.de_bg.*EGR.*corrections.gamma_br + ...
+    corrections.de_br.*corrections.gamma_br;
+
+P_total = Pout_B+Pout_G+Pout_R;
+
+PBB = Pout_B./P_total;
+PBG = Pout_G./P_total;
+PBR = Pout_R./P_total;
 
 function PofT = calc_dynamic_distribution(dT,N,k1,k2)
 %%% Calculates probability distribution of dynamic mixing of states for
