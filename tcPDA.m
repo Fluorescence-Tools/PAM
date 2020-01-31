@@ -21,6 +21,7 @@ for i = 1:10
     tcPDAstruct.fitdata.prior_center{i} = value_dummy;
     tcPDAstruct.fitdata.prior_sigma{i} = 0.1*value_dummy;
 end
+tcPDAstruct.FitInProgress = false;
 
 if isempty(h)
     %GUI definition
@@ -1834,7 +1835,7 @@ end
 handles.BIC_text.String = '';
 %%% Open Parallel Pool
 StartParPool();
-
+tcPDAstruct.FitInProgress = true;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
@@ -2249,6 +2250,7 @@ switch (selected_tab)
             end
         end
 end
+tcPDAstruct.FitInProgress = false;
 
 fitFig = findobj('Name','Optimization PlotFcns');
 if isempty(fitFig)
@@ -3273,7 +3275,7 @@ for f = 1:numel(tcPDAstruct.Data)
 
     
     
-    if strcmp(get(gcbo,'Tag'),'button_view_curve') && tcPDAstruct.dynamic_model
+    if ~tcPDAstruct.FitInProgress && tcPDAstruct.dynamic_model
         %%% add pseudo-static species as second population (only for display purpose)
         for j=1:2
             mu = MU{j}; covar = COV{j};
@@ -4432,7 +4434,7 @@ switch (selected_tab)
             else
                 determine_MLE_3color_dynamic(fitpar);
             end
-            handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+            handles.BIC_text.String = sprintf('logL = %.4E\nBIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
             %%% clean up
             if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
                 %%% using MLE -> reset GPU
