@@ -2875,7 +2875,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 minE = h.AllTab.Main_Axes.XLim(1);
                                 maxE = h.AllTab.Main_Axes.XLim(2);
                         end
-                        [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                        [~,~,bin{count}] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                         validd{count} = (bin{count} ~= 0);
                         P_temp = P_temp(:);
                         bin{count} = bin{count}(validd{count});
@@ -2895,7 +2895,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
                             PN_trans = PN_trans(:);
                             PN_trans = PN_trans(validd{count});
-                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            P_donly = P_donly + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                             count = count+1;
                         end
                     end
@@ -2906,7 +2906,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
                             PN_trans = PN_trans(:);
                             PN_trans = PN_trans(validd{count});
-                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            P_donly = P_donly + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                             count = count+1;
                         end
                     end
