@@ -2216,18 +2216,23 @@ switch (selected_tab)
         %fix covariance matrix again
         fitpar = fix_covariance_matrix_fitpar(fitpar);
         
-        %Update fitpar in tcPDAstruct
-        for i = 1:n_gauss
-            tcPDAstruct.fitdata.param{i} = fitpar(((i-1)*10+1):(10*i));
-        end
-        %update table
-        UpdateFitTable(handles);
         %%% update stochastic labeling fraction
         if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
             tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
             fitpar(end) = [];
             handles.edit_stochasticlabeling.String = num2str(fitpar(end));
         end
+        
+        %%% reapply sigma at fraction of R
+        fitpar_final = apply_sigma_at_fraction_of_R(fitpar);
+        
+        %Update fitpar in tcPDAstruct
+        for i = 1:n_gauss
+            tcPDAstruct.fitdata.param{i} = fitpar_final(((i-1)*10+1):(10*i));
+        end
+        %update table
+        UpdateFitTable(handles);
+        
         %%% update sigma at fraction of R in GUI
         %%% store the values
         if tcPDAstruct.fixSigmaAtFractionOfR && any(tcPDAstruct.fix_sigma == 0)
@@ -2235,10 +2240,10 @@ switch (selected_tab)
             edit_boxes = [handles.edit_FixSigmaFractionR;...
                             handles.edit_FixSigmaFractionR_BG;...
                             handles.edit_FixSigmaFractionR_BR];
-            for i = 1:numel(tcPDAstruct.fix_sigma)
+            for i = numel(tcPDAstruct.fix_sigma):-1:1
                 if ~tcPDAstruct.fix_sigma(i)
                     edit_boxes(i).String = num2str(fitpar(end));
-                    tcPDAstruct.sigma_fraction = fitpar(end);
+                    tcPDAstruct.sigma_fraction(i) = fitpar(end);
                     fitpar(end) = [];
                 end
             end
@@ -2863,11 +2868,18 @@ function fitpar = apply_sigma_at_fraction_of_R(fitpar)
 global tcPDAstruct
 if any(tcPDAstruct.fix_sigma == 0)
     sigma_fraction = tcPDAstruct.sigma_fraction;
-    sigma_fraction(tcPDAstruct.fix_sigma == 0) = fitpar(end-sum(tcPDAstruct.fix_sigma):end);
-    fitpar(end-sum(tcPDAstruct.fix_sigma):end) = [];
-
+    sigma_fraction(tcPDAstruct.fix_sigma == 0) = fitpar((end-sum(tcPDAstruct.fix_sigma == 0)+1):end);
+    fitpar((end-sum(tcPDAstruct.fix_sigma == 0)+1):end) = [];
+    
+    %%% ensure that fitpar and sigma_fraction have correct array orientation
+    if numel(sigma_fraction) > 1
+        if ~((size(fitpar,1) > size(fitpar,2)) && (size(sigma_fraction,1) > size(sigma_fraction,2)))
+            sigma_fraction = sigma_fraction';
+        end
+    end
+                
     %%% update corresponding sigmas
-    N_gauss = numel(fitpar)/10; 
+    N_gauss = floor(numel(fitpar)/10); % (at maximum, there are three more parameters than usual) 
     for i = 1:N_gauss
         fitpar((i-1)*10+[3,5,7]) = fitpar((i-1)*10+[2,4,6]).*sigma_fraction;
     end
@@ -3418,7 +3430,7 @@ for f = 1:numel(tcPDAstruct.Data)
     P_res = cell(N_gauss,1);
     
     for j = 1:N_gauss
-        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param,f);
+        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{f},f);
     end
     
     if tcPDAstruct.BrightnessCorrection
@@ -4356,7 +4368,7 @@ switch (selected_tab)
         %%% the stochastic labeling fraction at the end, 
         %%% followed by the fractions of sigmas dand the normal
         %%% parameters from the table.
-    %%% !!!
+        %%% !!!
         if handles.dynamic_model_checkbox.Value == 0
             chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
         else
