@@ -84,19 +84,42 @@ for t = 1:numel(timebin)
         NF = NFP + NFS;
         NR = NRP + NRS;
     end
-    valid = (NG+NF+NR) > threshold; NG = NG(valid); NF = NF(valid); NR = NR(valid);
+    valid = (NG+NF) > threshold; NG = NG(valid); NF = NF(valid); NR = NR(valid);
     NG = NG - timebin{t}.*(BurstData{file}.Background.Background_GGpar+BurstData{file}.Background.Background_GGperp);
     NF = NF - timebin{t}.*(BurstData{file}.Background.Background_GRpar+BurstData{file}.Background.Background_GRperp);
     NR = NR - timebin{t}.*(BurstData{file}.Background.Background_RRpar+BurstData{file}.Background.Background_RRperp);
-    NF = NF - BurstData{1, 1}.Corrections.CrossTalk_GR.*NG - BurstData{1, 1}.Corrections.DirectExcitation_GR.*NR;
-    Prox = NF./(BurstData{1, 1}.Corrections.Gamma_GR.*NG+NF);
+    NF = NF - BurstData{file}.Corrections.CrossTalk_GR.*NG - BurstData{file}.Corrections.DirectExcitation_GR.*NR;
+    Prox = NF./(BurstData{file}.Corrections.Gamma_GR.*NG+NF);
     
     Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
+    
+    if any(BurstData{file}.BAMethod == [3,4])
+        %%% also calculate E_B->G+R
+        NBB = cellfun(@(x) sum((x==1)),PDAdata)+ cellfun(@(x) sum((x==2)),PDAdata);
+        NBG = cellfun(@(x) sum((x==3)),PDAdata) + cellfun(@(x) sum((x==4)),PDAdata);
+        NBR = cellfun(@(x) sum((x==5)),PDAdata) + cellfun(@(x) sum((x==6)),PDAdata);
+        NGG = NGP + NGS; % require the raw photons in GG,GR,RR again
+        NGR = NFP + NFS;
+        NRR = NRP + NRS;
+        valid = (NBB+NBG+NBR) > threshold; 
+        NBB= NBB(valid); NBG = NBG(valid); NBR = NBR(valid); NGG = NGG(valid); NGR = NGR(valid); NRR = NRR(valid);
+        NBB = NBB - timebin{t}.*(BurstData{file}.Background.Background_BBpar+BurstData{file}.Background.Background_BBperp);
+        NBG = NBG - timebin{t}.*(BurstData{file}.Background.Background_BGpar+BurstData{file}.Background.Background_BGperp);
+        NBR = NBR - timebin{t}.*(BurstData{file}.Background.Background_BRpar+BurstData{file}.Background.Background_BRperp);
+        NBG = NBG - BurstData{file}.Corrections.DirectExcitation_BG.*NGG - BurstData{file}.Corrections.CrossTalk_BG.*NBB;
+        NBR = NBR - BurstData{file}.Corrections.DirectExcitation_BR.*NRR - BurstData{file}.Corrections.CrossTalk_BR.*NBB -...
+            BurstData{file}.Corrections.CrossTalk_GR.*(NBG-BurstData{file}.Corrections.CrossTalk_BG.*NBB) -...
+            BurstData{file}.Corrections.DirectExcitation_BG*(NGR-BurstData{file}.Corrections.DirectExcitation_GR.*NRR-BurstData{file}.Corrections.CrossTalk_GR.*NGG);
+        Prox3c = (NBG+NBR)./(NBB+NBG+NBR);
+        Hist3c{t} = histcounts(Prox3c,xProx); Hist3c{t} = Hist3c{t}./sum(Hist3c{t});
+    end    
     Progress(t/numel(timebin),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 end
 
 
 f1 = figure('Color',[1,1,1]);hold on;
+f1.Position(1) = 50;
+f1.Position(2) = 50;
 a = 3;
 for i = 1:numel(timebin)
     ha = stairs(xProx,[Hist{i},Hist{i}(end)]);
@@ -119,6 +142,7 @@ legend(leg,'Box','off');
 Hist = flipud(vertcat(Hist{1:6}));
 f2 = figure('Color',[1,1,1]);
 f2.Position(1) = f1.Position(1) +  f1.Position(3);
+f2.Position(1) = f1.Position(2);
 im = imagesc(xProx,fliplr(horzcat(timebin{1:6}))*1000,Hist);
 ax = gca;
 ax.YDir = 'normal';
@@ -127,3 +151,38 @@ xlabel('FRET efficiency');
 ylabel('time bin [ms]');
 ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),timebin,'UniformOutput',false)');
 Progress(1,h.Progress_Axes,h.Progress_Text);
+
+if any(BurstData{file}.BAMethod == [3,4])
+    pos = get(f1,'Position'); pos(1) = pos(1)+pos(3);
+    f1_3c = figure('Color',[1,1,1],'Position',pos);hold on;
+    a = 3;
+    for i = 1:numel(timebin)
+        ha = stairs(xProx,[Hist3c{i},Hist3c{i}(end)]);
+        set(ha, 'Linewidth', a)
+        a = a-0.33;
+    end
+    ax = gca;
+    ax.Color = [1,1,1];
+    ax.LineWidth = 1.5;
+    ax.FontSize = 20;
+    xlabel('FRET efficiency B->G+R');
+    ylabel('occurrence (norm.)');
+    xlim([-0.1,1.1]);
+    for i = 1:numel(timebin)
+        leg{i} = [num2str(timebin{i}*1000) ' ms'];
+    end
+    legend(leg,'Box','off');
+
+    %%% also make image plot
+    Hist3c = flipud(vertcat(Hist3c{1:6}));
+    f2_3c = figure('Color',[1,1,1]);
+    f2_3c.Position(1) = f1.Position(1) + f1_3c.Position(3);
+    im = imagesc(xProx,fliplr(horzcat(timebin{1:6}))*1000,Hist3c);
+    ax = gca;
+    ax.YDir = 'normal';
+    ax.FontSize = 20;
+    xlabel('FRET efficiency B->G+R');
+    ylabel('time bin [ms]');
+    ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),timebin,'UniformOutput',false)');
+    Progress(1,h.Progress_Axes,h.Progress_Text);
+end
