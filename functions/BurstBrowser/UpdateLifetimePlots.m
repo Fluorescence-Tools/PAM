@@ -539,11 +539,15 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     if ~h.MultiselectOnCheckbox.UserData
         valid = (datatoplot(:,idx_tauBB) > 0.01);
-        maxX = max([min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]) BurstData{file}.Corrections.DonorLifetimeBlue]);
+        if UserValues.BurstBrowser.Settings.LifetimeMode ~= 3
+            maxX = max([min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]) BurstData{file}.Corrections.DonorLifetimeBlue]);
+        end
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], YLim);
         datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A)];
     else
-        maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
+        if UserValues.BurstBrowser.Settings.LifetimeMode ~= 3
+            maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
+        end
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], YLim});
     end
     if(get(h.Hist_log10, 'Value'))
