@@ -1303,8 +1303,20 @@ switch hObject
     case handles.checkbox_FixSigmaFractionR
         if handles.checkbox_FixSigmaFractionR.Value
             set([handles.edit_FixSigmaFractionR,handles.checkbox_fix_FixSigmaFractionR, handles.checkbox_global_FixSigmaFractionR],'Visible','on');
+            if handles.checkbox_global_FixSigmaFractionR.Value == 0
+                set([handles.text_FixSigmaFractionR_BR,handles.edit_FixSigmaFractionR_BR, handles.checkbox_fix_FixSigmaFractionR_BR,...
+                    handles.text_FixSigmaFractionR_GR,...
+                    handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG],'Visible','on');
+            else
+                set([handles.text_FixSigmaFractionR_BR,handles.edit_FixSigmaFractionR_BR, handles.checkbox_fix_FixSigmaFractionR_BR,...
+                    handles.text_FixSigmaFractionR_GR,...
+                    handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG],'Visible','off');
+            end
         else
             set([handles.edit_FixSigmaFractionR,handles.checkbox_fix_FixSigmaFractionR, handles.checkbox_global_FixSigmaFractionR],'Visible','off');
+            set([handles.text_FixSigmaFractionR_BR,handles.edit_FixSigmaFractionR_BR, handles.checkbox_fix_FixSigmaFractionR_BR,...
+                    handles.text_FixSigmaFractionR_GR,...
+                    handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG],'Visible','off');
         end
     case handles.checkbox_global_FixSigmaFractionR
         if handles.checkbox_global_FixSigmaFractionR.Value == 0
@@ -1317,7 +1329,52 @@ switch hObject
                 handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG],'Visible','off');
         end
 end
+if any(hObject == [handles.checkbox_FixSigmaFractionR,handles.edit_FixSigmaFractionR,handles.checkbox_fix_FixSigmaFractionR,handles.checkbox_global_FixSigmaFractionR,...
+                handles.text_FixSigmaFractionR_BR,handles.edit_FixSigmaFractionR_BR, handles.checkbox_fix_FixSigmaFractionR_BR,...
+                handles.text_FixSigmaFractionR_GR,...
+                handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG])
+    % anything with fixing sigma at a fraction of R
+    UpdateTable_fixSigmaAtFractionOfR(handles);
+end
 LSUserValues(1);
+
+function UpdateTable_fixSigmaAtFractionOfR(handles)
+global tcPDAstruct
+tcPDAstruct.SigmaAtFractionOfR = handles.checkbox_FixSigmaFractionR.Value;
+if ~tcPDAstruct.SigmaAtFractionOfR %%% not active
+    return;
+end
+%%% read out the values
+tcPDAstruct.global_sigma = handles.checkbox_global_FixSigmaFractionR.Value;
+if tcPDAstruct.global_sigma
+    %%% same sigma fraction for all distances (GR,BG,BR)
+    tcPDAstruct.fix_sigma = handles.checkbox_fix_FixSigmaFractionR.Value;
+    tcPDAstruct.sigma_fraction = str2double(handles.edit_FixSigmaFractionR.String);
+else %%% individual sigma for all three distances
+    tcPDAstruct.fix_sigma = [handles.checkbox_fix_FixSigmaFractionR.Value,...
+        handles.checkbox_fix_FixSigmaFractionR_BG.Value,...
+        handles.checkbox_fix_FixSigmaFractionR_BR.Value];
+    tcPDAstruct.sigma_fraction = [str2double(handles.edit_FixSigmaFractionR.String);...
+        str2double(handles.edit_FixSigmaFractionR_BG.String);...
+        str2double(handles.edit_FixSigmaFractionR_BR.String)];
+end
+%%% update the values in the table
+fit_data = get(handles.fit_table,'data');
+n_gauss = get(handles.popupmenu_ngauss,'value');
+for i = 1:n_gauss %number of species
+   param = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,2));
+   %%% set sigma to fraction of R
+   param([3,5,7]) = param([2,4,6]).*tcPDAstruct.sigma_fraction;
+   %%% reassign to table
+   fit_data((i-1)*11+1:(i-1)*11+10,2) = num2cell(param);
+   
+   fixed = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,3));
+   %%% fix all
+   fixed([3,5,7]) = 1;
+   %%% reassign to table   
+   fit_data((i-1)*11+1:(i-1)*11+10,3) = num2cell(fixed);
+end
+set(handles.fit_table,'data',fit_data);
 
 function pushbutton_fit(hObject,eventdata)
 handles = guidata(hObject);
@@ -1787,6 +1844,7 @@ tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
 tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
 tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
 tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
+tcPDAstruct.fixSigmaAtFractionOfR = handles.checkbox_FixSigmaFractionR.Value;
 if tcPDAstruct.BrightnessCorrection
     %%% Prepare PofN for Brightness Reference
     if ~isfield(tcPDAstruct,'BrightnessReference')
@@ -1946,6 +2004,17 @@ switch (selected_tab)
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
         
+        if tcPDAstruct.fixSigmaAtFractionOfR && any(tcPDAstruct.fix_sigma == 0)
+            %%% sigma is set to fraction of R and not fixed
+            for i = 1:numel(tcPDAstruct.sigma_fraction)
+                if ~tcPDAstruct.fix_sigma(i) %%% add as fit parameter
+                    fitpar(end+1) = tcPDAstruct.sigma_fraction(i);
+                    fixed(end+1) = 0;
+                    LB(end+1) = 0;
+                    UB(end+1) = 1;
+                end
+            end
+        end
         if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
             %%% if stochastic labeling is used and not fixed
             %%% add stochastic fraction as a fit parameter
@@ -1953,8 +2022,13 @@ switch (selected_tab)
             fixed(end+1) = 0;
             LB(end+1) = 0;
             UB(end+1) = 1;
-        end
-            
+        end        
+        %%% !!!
+        %%% Fit parameter now contain (from the end to the start):
+        %%% the stochastic labeling fraction at the end, 
+        %%% followed by the fractions of sigmas dand the normal
+        %%% parameters from the table.
+        %%% !!!
         
         %fix by simply setting the same upper and lower border
         LB(fixed == 1) = fitpar(fixed == 1);
@@ -2151,8 +2225,24 @@ switch (selected_tab)
         %%% update stochastic labeling fraction
         if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
             tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
+            fitpar(end) = [];
             handles.edit_stochasticlabeling.String = num2str(fitpar(end));
-        end        
+        end
+        %%% update sigma at fraction of R in GUI
+        %%% store the values
+        if tcPDAstruct.fixSigmaAtFractionOfR && any(tcPDAstruct.fix_sigma == 0)
+            %%% sigma is set to fraction of R and not fixed
+            edit_boxes = [handles.edit_FixSigmaFractionR;...
+                            handles.edit_FixSigmaFractionR_BG;...
+                            handles.edit_FixSigmaFractionR_BR];
+            for i = 1:numel(tcPDAstruct.fix_sigma)
+                if ~tcPDAstruct.fix_sigma(i)
+                    edit_boxes(i).String = num2str(fitpar(end));
+                    tcPDAstruct.sigma_fraction = fitpar(end);
+                    fitpar(end) = [];
+                end
+            end
+        end
 end
 
 fitFig = findobj('Name','Optimization PlotFcns');
@@ -2332,12 +2422,14 @@ for i = 1:n_gauss%number of species
    tcPDAstruct.fitdata.prior_center{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,7));
    tcPDAstruct.fitdata.prior_sigma{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,8));
 end
+UpdateTable_fixSigmaAtFractionOfR(handles);
 
 function UpdateFitTable(handles)
 global tcPDAstruct
 %Read the old data from table
 data = get(handles.fit_table,'Data');
-
+tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
+tcPDAstruct.n_gauss = handles.popupmenu_ngauss.Value;
 % get the amplitudes of the species and normalize
 if ~tcPDAstruct.dynamic_model
     Amp = zeros(tcPDAstruct.n_gauss,1);
@@ -2383,7 +2475,6 @@ else
 %     end
 end
 
-
 set(handles.fit_table,'Data',data);
 
 if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
@@ -2423,9 +2514,13 @@ for i = 1:n_gauss
 end
 set(handles.fit_table,'RowName',NameCell,'Data',Data);
 if gcbo == handles.popupmenu_ngauss
+    UpdateTable_fixSigmaAtFractionOfR(handles);
+end
+if gcbo == handles.popupmenu_ngauss
     view_curve(handles);
 end
 reset_plot([],[],handles);
+
 
 
 function reset_plot(obj,~,handles)
@@ -2764,6 +2859,20 @@ if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
     tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
 end
 
+function fitpar = apply_sigma_at_fraction_of_R(fitpar)
+global tcPDAstruct
+if any(tcPDAstruct.fix_sigma == 0)
+    sigma_fraction = tcPDAstruct.sigma_fraction;
+    sigma_fraction(tcPDAstruct.fix_sigma == 0) = fitpar(end-sum(tcPDAstruct.fix_sigma):end);
+    fitpar(end-sum(tcPDAstruct.fix_sigma):end) = [];
+
+    %%% update corresponding sigmas
+    N_gauss = numel(fitpar)/10; 
+    for i = 1:N_gauss
+        fitpar((i-1)*10+[3,5,7]) = fitpar((i-1)*10+[2,4,6]).*sigma_fraction;
+    end
+end
+
 function [ chi2 ] = determine_chi2_mc_dist_3d_cor(fitpar)
 global tcPDAstruct UserValues
 nbins = tcPDAstruct.nbins;
@@ -2772,6 +2881,19 @@ nbins = tcPDAstruct.nbins;
 %3 Distances
 %3 sigma
 %3 elements of cov mat
+
+%%% stochastic labeling can be a fit parameter, remove first
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fraction_stochasticlabeling = fitpar(end);
+    fitpar(end) = [];
+else
+    fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+end
+
+%%% sigma coupled to distance
+if tcPDAstruct.SigmaAtFractionOfR
+    fitpar = apply_sigma_at_fraction_of_R(fitpar);
+end
 
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
@@ -2793,15 +2915,7 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% use stochastic labeling correction
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
-    %%% given by as well
-    
-    %%% stochastic labeling can be a fit parameter
-    if ~tcPDAstruct.fix_stochasticlabeling
-        fraction_stochasticlabeling = fitpar(end);
-        fitpar(end) = [];
-    else
-        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
-    end
+    %%% given by as well    
     
     N_gauss = numel(fitpar)/10;
     for i = 1:N_gauss
@@ -2851,208 +2965,132 @@ R0_bg = tcPDAstruct.corrections.R0_bg;
 R0_br = tcPDAstruct.corrections.R0_br;
 R0_gr = tcPDAstruct.corrections.R0_gr;
 sampling = tcPDAstruct.sampling;
-BSD_BX = tcPDAstruct.BSD_BX;
-BSD_GX = tcPDAstruct.BSD_GX;
-%valid = Cut_Data([],[]);
-dur = tcPDAstruct.duration(tcPDAstruct.valid);
-H_meas = tcPDAstruct.H_meas;
 
-pe_b = 1-de_br-de_bg; %probability of blue excitation
-total_rolls = numel(BSD_BX);
-
-
-if tcPDAstruct.BrightnessCorrection
-        %%% If brightness correction is to be performed, determine the relative
-        %%% brightness based on current distance and correction factors
-        BSDGX_scaled = cell(N_gauss,1);
-        BSDBX_scaled = cell(N_gauss,1);
-        for c = 1:N_gauss
-            [Qr_b,Qr_g] = calc_relative_brightness(Rgr(c),Rbg(c),Rbr(c));
-            %%% Rescale the PN;
-            PNGX_scaled = scalePN(tcPDAstruct.BrightnessReference.PNG,Qr_g);
-            PNBX_scaled = scalePN(tcPDAstruct.BrightnessReference.PNB,Qr_b);
-%             %%% fit PN_scaled to match PN of file
-%             PNGX_scaled = PNGX_scaled(1:max(tcPDAstruct.BSD_GX));
-%             PNBX_scaled = PNBX_scaled(1:max(tcPDAstruct.BSD_BX));
-            PNGX_scaled = PNGX_scaled./sum(PNGX_scaled).*numel(tcPDAstruct.BSD_GX);
-            PNBX_scaled = PNBX_scaled./sum(PNBX_scaled).*numel(tcPDAstruct.BSD_BX);
-            
-            PNGX_scaled = ceil(PNGX_scaled); % round to integer
-            PNBX_scaled = ceil(PNBX_scaled);
-            BSDGX_scaled{c} = zeros(sum(PNGX_scaled),1);
-            BSDBX_scaled{c} = zeros(sum(PNBX_scaled),1);
-            count = 0;
-            for i = 1:numel(PNGX_scaled)
-                BSDGX_scaled{c}(count+1:count+PNGX_scaled(i)) = i;
-                count = count+PNGX_scaled(i);
-            end
-            count = 0;
-            for i = 1:numel(PNBX_scaled)
-                BSDBX_scaled{c}(count+1:count+PNBX_scaled(i)) = i;
-                count = count+PNBX_scaled(i);
-            end
-            %%% BSD_scaled contains too many bursts now, remove randomly
-            BSDGX_scaled{c} = BSDGX_scaled{c}(randperm(numel(BSDGX_scaled{c})));
-            BSDGX_scaled{c} = BSDGX_scaled{c}(1:numel(tcPDAstruct.BSD_GX));
-            BSDBX_scaled{c} = BSDBX_scaled{c}(randperm(numel(BSDBX_scaled{c})));
-            BSDBX_scaled{c} = BSDBX_scaled{c}(1:numel(tcPDAstruct.BSD_BX));
-        end  
-end
-%initialize data
-PrGR = cell(sampling,N_gauss);
-PrBG = cell(sampling,N_gauss);
-PrBR = cell(sampling,N_gauss);
-
+% assign distances and fix covariance matrices
+MU = cell(1,N_gauss);
+COV = cell(1,N_gauss);
 for j=1:N_gauss
-    MU = [Rbg(j), Rbr(j), Rgr(j)];
-    COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
+    MU{j} = [Rbg(j), Rbr(j), Rgr(j)];
+    COV{j} =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
         simga_Rbg_Rbr(j),sigma_Rbr(j).^2,simga_Rbr_Rgr(j);...
         simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
-    [~,err] = cholcov(COV,0);
+    [~,err] = cholcov(COV{j},0);
     while err ~= 0 % any(eig(COV)< 0)
         %COV = nearestSPD(COV);
-       [COV] = fix_covariance_matrix(COV);
-       [~,err] = cholcov(COV,0);
+       [COV{j}] = fix_covariance_matrix(COV{j});
+       [~,err] = cholcov(COV{j},0);
     end
+end
+
+for f = 1:numel(tcPDAstruct.Data)
+    BSD_BX = tcPDAstruct.BSD_BX{f};
+    BSD_GX = tcPDAstruct.BSD_GX{f};
+    dur = tcPDAstruct.Data{f}.duration(tcPDAstruct.valid{f});
+    H_meas = tcPDAstruct.H_meas{f};
+
+    pe_b = 1-de_br-de_bg; %probability of blue excitation
+    total_rolls = numel(BSD_BX);
+
+
     if tcPDAstruct.BrightnessCorrection
-        BSD_BX = BSDBX_scaled{j};
-        BSD_GX = BSDGX_scaled{j};
+            %%% If brightness correction is to be performed, determine the relative
+            %%% brightness based on current distance and correction factors
+            BSDGX_scaled = cell(N_gauss,1);
+            BSDBX_scaled = cell(N_gauss,1);
+            for c = 1:N_gauss
+                [Qr_b,Qr_g] = calc_relative_brightness(Rgr(c),Rbg(c),Rbr(c));
+                %%% Rescale the PN;
+                PNGX_scaled = scalePN(tcPDAstruct.BrightnessReference.PNG,Qr_g);
+                PNBX_scaled = scalePN(tcPDAstruct.BrightnessReference.PNB,Qr_b);
+    %             %%% fit PN_scaled to match PN of file
+    %             PNGX_scaled = PNGX_scaled(1:max(tcPDAstruct.BSD_GX));
+    %             PNBX_scaled = PNBX_scaled(1:max(tcPDAstruct.BSD_BX));
+                PNGX_scaled = PNGX_scaled./sum(PNGX_scaled).*numel(tcPDAstruct.BSD_GX);
+                PNBX_scaled = PNBX_scaled./sum(PNBX_scaled).*numel(tcPDAstruct.BSD_BX);
+
+                PNGX_scaled = ceil(PNGX_scaled); % round to integer
+                PNBX_scaled = ceil(PNBX_scaled);
+                BSDGX_scaled{c} = zeros(sum(PNGX_scaled),1);
+                BSDBX_scaled{c} = zeros(sum(PNBX_scaled),1);
+                count = 0;
+                for i = 1:numel(PNGX_scaled)
+                    BSDGX_scaled{c}(count+1:count+PNGX_scaled(i)) = i;
+                    count = count+PNGX_scaled(i);
+                end
+                count = 0;
+                for i = 1:numel(PNBX_scaled)
+                    BSDBX_scaled{c}(count+1:count+PNBX_scaled(i)) = i;
+                    count = count+PNBX_scaled(i);
+                end
+                %%% BSD_scaled contains too many bursts now, remove randomly
+                BSDGX_scaled{c} = BSDGX_scaled{c}(randperm(numel(BSDGX_scaled{c})));
+                BSDGX_scaled{c} = BSDGX_scaled{c}(1:numel(tcPDAstruct.BSD_GX));
+                BSDBX_scaled{c} = BSDBX_scaled{c}(randperm(numel(BSDBX_scaled{c})));
+                BSDBX_scaled{c} = BSDBX_scaled{c}(1:numel(tcPDAstruct.BSD_BX));
+            end  
     end
-    parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
-        [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(MU,COV,total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
-        
-        %         r = mvnrnd(MU,COV,total_rolls);
-        %         %distance distribution
-        %         E1 = 1./(1+(r(:,1)./R0_bg).^6);
-        %         E2 = 1./(1+(r(:,2)./R0_br).^6);
-        %         EGR = 1./(1+(r(:,3)./R0_gr).^6);
-        %
-        %         PGR = 1-(1+cr_gr+(((de_gr/(1-de_gr)) + EGR) * gamma_gr)./(1-EGR)).^(-1);
-        %
-        %         EBG_R = E1.*(1-E2)./(1-E1.*E2);
-        %         EBR_G = E2.*(1-E1)./(1-E1.*E2);
-        %         E1A = EBG_R + EBR_G;
-        %
-        %
-        %         PB = pe_b.*(1-E1A);
-        %
-        %         PG = pe_b.*(1-E1A).*cr_bg + ...
-        %             pe_b.*EBG_R.*(1-EGR).*gamma_bg + ...
-        %             de_bg.*(1-EGR).*gamma_bg;
-        %
-        %         PR = pe_b.*(1-E1A).*cr_br + ...
-        %             pe_b.*EBG_R.*(1-EGR).*gamma_bg.*cr_gr + ...
-        %             pe_b.*EBG_R.*EGR.*gamma_br + ...
-        %             pe_b.*EBR_G.*gamma_br + ...
-        %             de_bg.*(1-EGR).*gamma_bg.*cr_gr + ...
-        %             de_bg.*EGR.*gamma_br + ...
-        %             de_br.*gamma_br;
-        %
-        %         P_total = PB+PG+PR;
-        %
-        %         PBB = PB./P_total;
-        %         PBG = PG./P_total;
-        %         PBR = PR./P_total;
-        %
-        % %         PBB = (pe_b*(1-E1A))./ ...
-        % %             (...
-        % %             pe_b*(1-E1A) + ...
-        % %             pe_b*EBG_R.*(1-EGR)*gamma_bg + ...
-        % %             de_bg*(1-EGR)*gamma_bg + ...
-        % %             pe_b*(1-E1A)*cr_bg + ...
-        % %             pe_b*(1-E1A)*cr_br + ...
-        % %             de_bg*(1-EGR)*gamma_bg*cr_gr + ...
-        % %             de_bg*EGR*gamma_br + ...
-        % %             de_br*gamma_br + ...
-        % %             pe_b*EBR_G*gamma_br + ...
-        % %             pe_b*EBG_R.*EGR*gamma_br +...
-        % %             pe_b*EBG_R.*(1-EGR)*gamma_bg*cr_gr);
-        % %         PBG = (...
-        % %              pe_b*EBG_R.*(1-EGR)*gamma_bg + ...
-        % %              de_bg*(1-EGR)*gamma_bg + ...
-        % %              pe_b*(1-E1A)*cr_bg)./...
-        % %             (...
-        % %             pe_b*(1-E1A) + ...
-        % %             pe_b*EBG_R.*(1-EGR)*gamma_bg + ...
-        % %             de_bg*(1-EGR)*gamma_bg + ...
-        % %             pe_b*(1-E1A)*cr_bg + ...
-        % %             pe_b*(1-E1A)*cr_br + ...
-        % %             de_bg*(1-EGR)*gamma_bg*cr_gr + ...
-        % %             de_bg*EGR*gamma_br + ...
-        % %             de_br*gamma_br + ...
-        % %             pe_b*EBR_G*gamma_br + ...
-        % %             pe_b*EBG_R.*EGR*gamma_br +...
-        % %             pe_b*EBG_R.*(1-EGR)*gamma_bg*cr_gr);
-        % %
-        % %         PBR = 1- PBB - PBG;
-        %
-        %         %background correction
-        %         BG_bb = poissrnd(mBG_bb.*dur);
-        %         BG_bg = poissrnd(mBG_bg.*dur);
-        %         BG_br = poissrnd(mBG_br.*dur);
-        %         BG_gg = poissrnd(mBG_gg.*dur);
-        %         BG_gr = poissrnd(mBG_gr.*dur);
-        %
-        %         %PRH GR
-        %         BSD_GX_bg = BSD_GX-BG_gg-BG_gr;
-        
-        %PrGR{i,j} = (binornd(BSD_GX_bg,PGR)+BG_gr)./BSD_GX;
-        
-        %         %PRH BG BR
-        %         BSD_BX_bg = BSD_BX - (BG_bb+BG_bg+BG_br);
-        %         PRH = mnrnd(BSD_BX_bg,[PBB,PBG,PBR]); %sorted by NB NG NR
-        
-        % PrBG{i,j} = (PRH(:,2)+BG_bg)./BSD_BX;
-        %PrBR{i,j} = (PRH(:,3)+BG_br)./BSD_BX;
+    %initialize data
+    PrGR = cell(sampling,N_gauss);
+    PrBG = cell(sampling,N_gauss);
+    PrBR = cell(sampling,N_gauss);
+
+    for j=1:N_gauss
+        MU = [Rbg(j), Rbr(j), Rgr(j)];
+        COV =[sigma_Rbg(j).^2, simga_Rbg_Rbr(j) ,simga_Rbg_Rgr(j);...
+            simga_Rbg_Rbr(j),sigma_Rbr(j).^2,simga_Rbr_Rgr(j);...
+            simga_Rbg_Rgr(j),simga_Rbr_Rgr(j),sigma_Rgr(j).^2];
+        [~,err] = cholcov(COV,0);
+        while err ~= 0 % any(eig(COV)< 0)
+            %COV = nearestSPD(COV);
+           [COV] = fix_covariance_matrix(COV);
+           [~,err] = cholcov(COV,0);
+        end
+        if tcPDAstruct.BrightnessCorrection
+            BSD_BX = BSDBX_scaled{j};
+            BSD_GX = BSDGX_scaled{j};
+        end
+        parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+            [PrBG{i,j}, PrBR{i,j}, PrGR{i,j}] = sim_hist_mc_dist_3d_cor_optim_mex(MU,COV,total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+        end
     end
+
+    H_res_dummy = cell(N_gauss,1);
+    for i = 1:N_gauss
+        dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
+        dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
+        dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
+        dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
+        H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
+    end
+
+    H_res = zeros(nbins,nbins,nbins);
+    for i = 1:N_gauss
+        H_res = H_res + A(i).*H_res_dummy{i};
+    end
+
+    %normalize
+    H_res = (H_res./sum(sum(sum((H_res))))).*sum(sum(sum(H_meas)));
+
+    sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
+    dev = (H_res-H_meas)./sigma_est;
+    chi2(f) = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
+    tcPDAstruct.plots{f}.chi2 = chi2(f);
+
+    %%% chi2 estimate based on Poissonian statistics
+    %chi2 = chi2poiss(H_res,H_meas);
+
+    tcPDAstruct.plots{f}.A_3d = A;
+    tcPDAstruct.plots{f}.H_res_3d = H_res;
+    tcPDAstruct.plots{f}.H_res_3d_individual = H_res_dummy;
+    tcPDAstruct.plots{f}.H_res_3d_bg_br = squeeze(sum(H_res,3));
+    tcPDAstruct.plots{f}.H_res_3d_bg_gr = squeeze(sum(H_res,2));
+    tcPDAstruct.plots{f}.H_res_3d_br_gr = squeeze(sum(H_res,1));
+    tcPDAstruct.plots{f}.H_res_3d_bg = squeeze(sum(sum(H_res,2),3));
+    tcPDAstruct.plots{f}.H_res_3d_br = squeeze(sum(sum(H_res,1),3));
+    tcPDAstruct.plots{f}.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
 end
 
-H_res_dummy = cell(N_gauss,1);
-for i = 1:N_gauss
-    dummy = histcn([vertcat(PrBG{:,i}),vertcat(PrBR{:,i}),vertcat(PrGR{:,i})],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
-    dummy(:,:,end-1) = dummy(:,:,end-1) + dummy(:,:,end);
-    dummy(:,end-1,:) = dummy(:,end-1,:) + dummy(:,end,:);
-    dummy(end-1,:,:) = dummy(end-1,:,:) + dummy(end,:,:);
-    H_res_dummy{i} = dummy(1:nbins,1:nbins,1:nbins)./sampling;
-end
-
-H_res = zeros(nbins,nbins,nbins);
-for i = 1:N_gauss
-    H_res = H_res + A(i).*H_res_dummy{i};
-end
-
-%normalize
-H_res = (H_res./sum(sum(sum((H_res))))).*sum(sum(sum(H_meas)));
-
-sigma_est = sqrt(H_meas); sigma_est(sigma_est == 0) = 1;
-dev = (H_res-H_meas)./sigma_est;
-chi2 = sum(sum(sum(dev.^2)))./sum(sum(sum(H_meas~=0)));
-tcPDAstruct.plots.chi2 = chi2;
-
-%%% chi2 estimate based on Poissonian statistics
-%chi2 = chi2poiss(H_res,H_meas);
-
-%store for plotting
-%2D BG BR
-%tcPDAstruct.plots.H_res_2d = sum(H_res,3);
-%tcPDAstruct.plots.dev_2d = (tcPDAstruct.H_meas_2d-tcPDAstruct.plots.H_res_2d)./sqrt(tcPDAstruct.H_meas_2d);
-%tcPDAstruct.plots.dev_2d(~isfinite(tcPDAstruct.plots.dev_2d)) = 0;
-%tcPDAstruct.plots.H_res_2d_individual = H_res_dummy;
-%1D GR
-%tcPDAstruct.plots.H_res_1d = squeeze(sum(sum(H_res,1),2));
-%tcPDAstruct.plots.dev_gr = (tcPDAstruct.H_meas_gr-tcPDAstruct.plots.H_res_1d)./sqrt(tcPDAstruct.H_meas_gr);
-%tcPDAstruct.plots.dev_gr(~isfinite(tcPDAstruct.plots.dev_gr)) = 0;
-
-tcPDAstruct.plots.A_3d = A;
-tcPDAstruct.plots.H_res_3d = H_res;
-tcPDAstruct.plots.H_res_3d_individual = H_res_dummy;
-tcPDAstruct.plots.H_res_3d_bg_br = squeeze(sum(H_res,3));
-tcPDAstruct.plots.H_res_3d_bg_gr = squeeze(sum(H_res,2));
-tcPDAstruct.plots.H_res_3d_br_gr = squeeze(sum(H_res,1));
-tcPDAstruct.plots.H_res_3d_bg = squeeze(sum(sum(H_res,2),3));
-tcPDAstruct.plots.H_res_3d_br = squeeze(sum(sum(H_res,1),3));
-tcPDAstruct.plots.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
-%[tcPDAstruct.plots.chi2, tcPDAstruct.plots.dev_3d] = chi2poiss(H_res,H_meas);
+chi2 = mean(chi2);
 
 %%% Update Fit Parameter in global struct
 for i = 1:numel(fitpar)/10
@@ -3070,6 +3108,19 @@ nbins = tcPDAstruct.nbins;
 %3 Distances
 %3 sigma
 %3 elements of cov mat
+
+%%% stochastic labeling can be a fit parameter, remove first
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fraction_stochasticlabeling = fitpar(end);
+    fitpar(end) = [];
+else
+    fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+end
+
+%%% sigma coupled to distance
+if tcPDAstruct.SigmaAtFractionOfR
+    fitpar = apply_sigma_at_fraction_of_R(fitpar);
+end
 
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
@@ -3273,6 +3324,19 @@ global tcPDAstruct
 %3 sigma
 %3 elements of cov mat
 
+%%% stochastic labeling can be a fit parameter, remove first
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fraction_stochasticlabeling = fitpar(end);
+    fitpar(end) = [];
+else
+    fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+end
+
+%%% sigma coupled to distance
+if tcPDAstruct.SigmaAtFractionOfR
+    fitpar = apply_sigma_at_fraction_of_R(fitpar);
+end
+
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
     N_gauss = numel(fitpar)/10; 
@@ -3295,16 +3359,7 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
     
-    %%% stochastic labeling can be a fit parameter
-    if ~tcPDAstruct.fix_stochasticlabeling
-        fraction_stochasticlabeling = fitpar(end);
-        fitpar(end) = [];
-    else
-        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
-    end
-    
-    N_gauss = numel(fitpar)/10;
-    
+    N_gauss = numel(fitpar)/10;    
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
         A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
@@ -4222,6 +4277,8 @@ tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
 tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
+tcPDAstruct.fixSigmaAtFractionOfR = handles.checkbox_FixSigmaFractionR.Value;
+
 %read correction table
 corrections = get(handles.corrections_table,'data');
 [tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
@@ -4281,11 +4338,25 @@ switch (selected_tab)
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
         
+        if tcPDAstruct.fixSigmaAtFractionOfR && any(tcPDAstruct.fix_sigma == 0)
+            %%% sigma is set to fraction of R and not fixed
+            for i = 1:numel(tcPDAstruct.sigma_fraction)
+                if ~tcPDAstruct.fix_sigma(i) %%% add as fit parameter
+                    fitpar(end+1) = tcPDAstruct.sigma_fraction(i);
+                end
+            end
+        end
         if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
             %%% if stochastic labeling is used and not fixed
             %%% add stochastic fraction as a fit parameter
             fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
-        end
+        end        
+        %%% !!!
+        %%% Fit parameter now contain (from the end to the start):
+        %%% the stochastic labeling fraction at the end, 
+        %%% followed by the fractions of sigmas dand the normal
+        %%% parameters from the table.
+    %%% !!!
         if handles.dynamic_model_checkbox.Value == 0
             chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
         else
@@ -6301,6 +6372,19 @@ end
 %3 Distances
 %3 sigma
 %3 elements of cov mat
+
+%%% stochastic labeling can be a fit parameter, remove first
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fraction_stochasticlabeling = fitpar(end);
+    fitpar(end) = [];
+else
+    fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+end
+
+%%% sigma coupled to distance
+if tcPDAstruct.SigmaAtFractionOfR
+    fitpar = apply_sigma_at_fraction_of_R(fitpar);
+end
 
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
