@@ -5091,7 +5091,7 @@ else %%% dynamic model
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     if n_states == 3
         change_prob = cumsum(DynRates);
-        change_prob = change_prob ./ repmat(change_prob(end,:),3,1);%change_prob(end,:);
+        change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
     end
     dwell_mean = 1 ./ sum(DynRates./1000);
     for i = 1:n_states
@@ -5121,13 +5121,10 @@ else %%% dynamic model
             end
     end
     %%% Add static models
-    norm = 1;
     if numel(PDAMeta.Comp{file}) > n_states
         fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
         A = fitpar(:,1);
         PRH_stat = cell(sampling,5);
-%         norm = (sum(fitpar(PDAMeta.Comp{file}(n_states+1:end)))+1);
-%         fitpar(PDAMeta.Comp{file}(n_states+1:end)) = fitpar(PDAMeta.Comp{file}(n_states+1:end))./norm;
         for j = PDAMeta.Comp{file}(n_states+1:end)
             for k = 1:sampling
                 r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
@@ -5165,24 +5162,7 @@ else %%% dynamic model
     else
         hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     end
-%% Monte Carlo does not return state contributions so far so plotting individual contributions not possible?
-%     if n_states == 2
-%         % only the dynamic bursts
-%         PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
-%     elseif n_states == 3
-%         PDAMeta.hFit_onlyDyn{i} = (hFit_Dyn - sum(horzcat(hFit_Ind{1:n_states}),2))./norm;
-%     end
 end
-% 
-% if fitpar(end) > 0
-%     %%% Add donor only species
-%     PDAMeta.hFit_Donly{i} = fitpar(end)*PDAMeta.P_donly{i}';
-%     % the sum of areas will > 1 this way?
-%     hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
-%     for k = 1:numel(hFit_Ind)
-%         hFit_Ind{k} = hFit_Ind{k}*(1-fitpar(end));
-%     end
-% end
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
     case 2 %%% Assume gaussian error on data, normal chi2
