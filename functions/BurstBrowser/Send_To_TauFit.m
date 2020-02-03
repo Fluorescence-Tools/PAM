@@ -47,7 +47,11 @@ switch BurstData{file}.BAMethod
         c{1} = [1,2]; %% GG
         c{2} = [5,6]; %% RR
         c{3} = [3,4];
-        c{4} = [1,2];
+        % check if donor only exists
+        [MI_total_donor_only, CH_total_donor_only] = donor_only_cuts();
+        if ~isempty(MI_total_donor_only)
+            c{4} = [1,2];
+        end
     case {3,4}
         %%% 3color MFD
         c{1} = [1,2]; %% BB
@@ -64,7 +68,9 @@ for chan = 1:size(c,2)
             if chan == 4
                 %%% for donor-only species, update valid and overwrite
                 %%% MI_total and CH_total
-                [MI_total, CH_total] = donor_only_cuts();
+                %[MI_total, CH_total] = donor_only_cuts();
+                MI_total = MI_total_donor_only;
+                CH_total = CH_total_donor_only;
             end
     end
     MI_par = MI_total(CH_total == c{chan}(1));

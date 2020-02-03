@@ -1663,7 +1663,9 @@ switch mode
                     h.AllTab.Main_Axes.XLabel.String = 'FRET efficiency';
                     if strcmp(PDAMeta.xAxisUnit,'Distance')
                         % convert to distance
+                        valid = Prox >= 0;
                         Prox = real(PDAMeta.R0(i)*(1./Prox-1).^(1/6));
+                        Prox = Prox(valid);
                         h.AllTab.Main_Axes.XLabel.String = 'Distance [A]';
                     end
                     minX = min(Prox); maxX = max(Prox);
@@ -2695,8 +2697,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                             E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                             if strcmp(PDAMeta.xAxisUnit,'Distance')
+                                valid_distance = E_temp > 0;
                                 % convert to distance
-                                E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
+                                E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));
+                                E_temp = E_temp(valid_distance);
+                                P_temp = P_temp(valid_distance);
                             end
                             %minE = min(E_temp); maxE = max(E_temp);
                             minE = h.AllTab.Main_Axes.XLim(1);
@@ -2755,8 +2760,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                     NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                                     E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                                     if strcmp(PDAMeta.xAxisUnit,'Distance')
+                                        valid_distance = E_temp > 0;
                                         % convert to distance
-                                        E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
+                                        E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));
+                                        E_temp = E_temp(valid_distance);
+                                        P_temp = P_temp(valid_distance);
                                     end
                                     %minE = min(E_temp(:)); maxE = max(E_temp(:));
                                     minE = h.AllTab.Main_Axes.XLim(1);
@@ -2827,8 +2835,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                         NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                         E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                         if strcmp(PDAMeta.xAxisUnit,'Distance')
+                            valid_distance = E_temp > 0;
                             % convert to distance
-                            E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
+                            E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));
+                            E_temp = E_temp(valid_distance);
+                            P_temp = P_temp(valid_distance);                         
                         end
                         %minE = min(E_temp(:)); maxE = max(E_temp(:));
                         minE = h.AllTab.Main_Axes.XLim(1);
@@ -2868,14 +2879,17 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 NF_cor = NF_cor - PDAMeta.crosstalk(i)*ND_cor-PDAMeta.directexc(i)*(PDAMeta.gamma(i)*ND_cor+NF_cor);
                                 E_temp = NF_cor./(PDAMeta.gamma(i)*ND_cor+NF_cor);                           
                                 if strcmp(PDAMeta.xAxisUnit,'Distance')
+                                    valid_distance = E_temp > 0;
                                     % convert to distance
-                                    E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));                                
+                                    E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));
+                                    E_temp = E_temp(valid_distance);
+                                    P_temp = P_temp(valid_distance);                           
                                 end
                                 %minE = min(E_temp); maxE = max(E_temp);
                                 minE = h.AllTab.Main_Axes.XLim(1);
                                 maxE = h.AllTab.Main_Axes.XLim(2);
                         end
-                        [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                        [~,~,bin{count}] = histcounts(E_temp(:),linspace(minE,maxE,Nobins+1));
                         validd{count} = (bin{count} ~= 0);
                         P_temp = P_temp(:);
                         bin{count} = bin{count}(validd{count});
@@ -2895,7 +2909,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
                             PN_trans = PN_trans(:);
                             PN_trans = PN_trans(validd{count});
-                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            P_donly = P_donly + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                             count = count+1;
                         end
                     end
@@ -2906,7 +2920,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                             PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
                             PN_trans = PN_trans(:);
                             PN_trans = PN_trans(validd{count});
-                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            P_donly = P_donly + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
                             count = count+1;
                         end
                     end
