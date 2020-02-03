@@ -4069,7 +4069,6 @@ else %%% dynamic model
         % appear in the table. The area fractions are calculated in Update_Plots
         norm = (sum(fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2))+1);
         fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
-        
         for c = PDAMeta.Comp{i}(n_states+1:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = fitpar(3*c-2).*Pe;
@@ -5018,7 +5017,7 @@ end
 
 BSD = PDAMeta.BSD{file};
 
-H_meas = PDAMeta.hProx{file}';
+% H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
 
@@ -5026,7 +5025,6 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% normalize Amplitudes
     fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
     A = fitpar(:,1);
-    
     PRH = cell(sampling,5);
     for j = PDAMeta.Comp{file}
         if h.SettingsTab.Use_Brightness_Corr.Value
@@ -5092,7 +5090,7 @@ else %%% dynamic model
     sigmaR = fitpar(:,3);%[fitpar(1,3),fitpar(2,3)];
     if n_states == 3
         change_prob = cumsum(DynRates);
-        change_prob = change_prob ./ repmat(change_prob(end,:),3,1);%change_prob(end,:);
+        change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
     end
     dwell_mean = 1 ./ sum(DynRates./1000);
     for i = 1:n_states
@@ -5121,27 +5119,69 @@ else %%% dynamic model
                 PRH = real(R0*(1./PRH-1).^(1/6));
             end
     end
-    hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-    hFit = hFit';
+    %%% Add static models
+    if numel(PDAMeta.Comp{file}) > n_states
+        fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+        A = fitpar(:,1);
+        PRH_stat = cell(sampling,5);
+        for j = PDAMeta.Comp{file}(n_states+1:end)
+            for k = 1:sampling
+                r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
+                E = 1./(1+(r./R0).^6);
+                eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+                BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
+                BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
+                BSD_bg = BSD-BG_gg-BG_gr;
+                switch PDAMeta.xAxisUnit
+                    case 'Proximity Ratio'
+                        PRH_stat{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+                    case 'log(FD/FA)'
+                        NF = binornd(BSD_bg,eps)+BG_gr;
+                        PRH_stat{k,j} = real(log10((BSD-NF)./NF));
+                    case {'FRET efficiency','Distance'}                    
+                        NF = binornd(BSD_bg,eps);
+                        ND = BSD-NF-BG_gg-BG_gr;
+                        NF = NF-cr*ND-de*(gamma*ND+NF);
+                        PRH_stat{k,j} = NF./(gamma*ND+NF);
+                    if strcmp(PDAMeta.xAxisUnit,'Distance')
+                        PRH_stat{k,j} = real(R0*(1./PRH_stat{k,j}-1).^(1/6));
+                    end
+                end
+            end
+        end
+        PRH_dyn = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
+        if n_states == 2
+            PRH_combined = [PRH_dyn; PRH_dyn; zeros(3,numel(PDAMeta.hProx{file}))];
+        elseif n_states == 3
+            PRH_combined = [PRH_dyn; PRH_dyn; PRH_dyn; zeros(2,numel(PDAMeta.hProx{file}))];
+        end
+        for j = PDAMeta.Comp{file}(n_states+1:end)
+            PRH_combined(j,:) = histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
+        end
+        hFit = zeros(1,numel(PDAMeta.hProx{file}));
+        for j = PDAMeta.Comp{file}
+            hFit = hFit + A(j).*PRH_combined(j,:);
+        end
+    else
+        hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
+    end
 end
-
-
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
     case 2 %%% Assume gaussian error on data, normal chi2
-        error = sqrt(H_meas);
+        error = sqrt(PDAMeta.hProx{file});
         error(error == 0) = 1;
-        w_res = (H_meas-hFit)./error;
+        w_res = (PDAMeta.hProx{file}-hFit)./error;
     case 1 %%% Assume poissonian error on data, MLE poissonian
         %%%% see:
         %%% Laurence, T. A. & Chromy, B. A. Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7, 338?339 (2010).
-        log_term = -2*H_meas.*log(hFit./H_meas);
+        log_term = -2*PDAMeta.hProx{file}.*log(hFit./PDAMeta.hProx{file});
         log_term(isnan(log_term)) = 0;
         log_term(~isfinite(log_term)) = 0;
-        dev_mle = 2*(hFit-H_meas)+log_term; dev_mle(dev_mle < 0) = 0;
-        w_res = sign(hFit-H_meas).*sqrt(dev_mle);
+        dev_mle = 2*(hFit-PDAMeta.hProx{file})+log_term; dev_mle(dev_mle < 0) = 0;
+        w_res = sign(hFit-PDAMeta.hProx{file}).*sqrt(dev_mle);
 end
-usedBins = sum(H_meas ~= 0);
+usedBins = sum(PDAMeta.hProx{file} ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
     chi2 = sum((w_res.^2));
     if ~PDAMeta.FittingGlobal % return reduced chi2
@@ -5159,24 +5199,30 @@ end
 hFit_Ind = cell(6,1);
 for j = PDAMeta.Comp{file}
     if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-        hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
+        hFit_Ind{j} = sum(PDAMeta.hProx{file}).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1))';
     else
-        hFit_Ind{j} = hFit;
+        hFit_Ind{j} = hFit'; 
     end        
 end
 
-PDAMeta.w_res{file} = w_res';
-PDAMeta.hFit{file} = hFit';
+PDAMeta.w_res{file} = w_res;
+PDAMeta.hFit{file} = hFit;
 PDAMeta.chi2(file) = chi2;
 % this red. chi2 is for the single dataset,
 % correct when global fitting
 if PDAMeta.FittingGlobal % store reduced chi2
     PDAMeta.chi2(file) = PDAMeta.chi2(file)/(usedBins-numel(fitpar)-1);
 end
-for c = PDAMeta.Comp{file}
+comp = PDAMeta.Comp{file};
+if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+    % for three-state model, some rates may be fixed to zero,
+    % but the states should still be plotted
+    comp = [1,2,3,comp(comp > 3)];
+end
+for c = comp
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
 end
-PDAMeta.hFit_onlyDyn{file} = zeros(size(hFit));
+% PDAMeta.hFit_onlyDyn{file} = zeros(size(hFit));
 if sum(PDAMeta.Global) == 0
     set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 end
@@ -5208,6 +5254,7 @@ elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
             loglikelihood = sum(log_term-hFit');
     end
     chi2 = loglikelihood;
+    PDAMeta.chi2(i) = chi2;
 end
 
 %Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
