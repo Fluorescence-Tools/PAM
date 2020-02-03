@@ -5025,7 +5025,6 @@ if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% normalize Amplitudes
     fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
     A = fitpar(:,1);
-    
     PRH = cell(sampling,5);
     for j = PDAMeta.Comp{file}
         if h.SettingsTab.Use_Brightness_Corr.Value
@@ -5151,7 +5150,11 @@ else %%% dynamic model
             end
         end
         PRH_dyn = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-        PRH_combined = [PRH_dyn; PRH_dyn; zeros(3,numel(PDAMeta.hProx{file}))];
+        if n_states == 2
+            PRH_combined = [PRH_dyn; PRH_dyn; zeros(3,numel(PDAMeta.hProx{file}))];
+        elseif n_states == 3
+            PRH_combined = [PRH_dyn; PRH_dyn; PRH_dyn; zeros(2,numel(PDAMeta.hProx{file}))];
+        end
         for j = PDAMeta.Comp{file}(n_states+1:end)
             PRH_combined(j,:) = histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
         end
