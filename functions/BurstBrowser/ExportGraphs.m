@@ -195,11 +195,13 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
-        panel_copy.ShadowColor = [1 1 1];
-        %%% set Background Color to white
-        panel_copy.BackgroundColor = [1 1 1];
-        panel_copy.HighlightColor = [1 1 1];
+        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general],hfig);
+        panel_copy = hfig;
+        %panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
+        %panel_copy.ShadowColor = [1 1 1];
+        %%%% set Background Color to white
+        %panel_copy.BackgroundColor = [1 1 1];
+        %panel_copy.HighlightColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
@@ -592,14 +594,15 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        panel_copy = copyobj(h.LifetimePanelInd,hfig);
-        panel_copy.ShadowColor = [1 1 1];
+        copyobj([h.axes_lifetime_ind_1d_y,h.axes_lifetime_ind_1d_x,h.axes_lifetime_ind_2d],hfig);
+        panel_copy = hfig;
+        %panel_copy = copyobj(h.LifetimePanelInd,hfig);
+        %panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
-        panel_copy.BackgroundColor = [1 1 1];
-        panel_copy.HighlightColor = [1 1 1];
+        %panel_copy.BackgroundColor = [1 1 1];
+        %panel_copy.HighlightColor = [1 1 1];
         
-        color_bar = true;
-        
+        color_bar = true;        
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
