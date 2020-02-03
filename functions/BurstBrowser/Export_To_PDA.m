@@ -152,11 +152,13 @@ for i = 1:numel(files)
                 save(newfilename, 'PDA', 'timebin')
             case {3,4}
                 %%% ask user for either 3CPDA or two color subpopulation
-                [choice, ok] = listdlg('PromptString','Select Export Mode:',...
-                    'SelectionMode','single',...
-                    'ListString',{'3CPDA','GR','BG','BR'});
-                if ~ok
-                    return;
+                if ~exist('choice','var')
+                    [choice, ok] = listdlg('PromptString','Select Export Mode:',...
+                        'SelectionMode','single',...
+                        'ListString',{'3CPDA','GR','BG','BR'});
+                    if ~ok
+                        return;
+                    end
                 end
                 switch choice
                     case 1

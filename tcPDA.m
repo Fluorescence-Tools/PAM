@@ -1587,6 +1587,7 @@ if isfield(tcPDAstruct.Data{1},'corrections') %%% Update Corrections in GUI
     tcPDAstruct.corrections = rmfield(tcPDAstruct.corrections,fields_to_remove);
 end
 tcPDAstruct.selected = 1;
+tcPDAstruct.FitInProgress = false;
 
 Cut_Data([],[]);
 calculate_histograms();
@@ -1595,6 +1596,8 @@ PlotData([],[],handles);
 reset_plot([],[],handles);
 update_2cPDAData_table();
 plot_2cPDAData(1);
+UpdateTable_fixSigmaAtFractionOfR(handles)
+
 view_curve(handles);
 
 function load_from_txt(filename)
@@ -2224,12 +2227,14 @@ switch (selected_tab)
             handles.edit_stochasticlabeling.String = num2str(fitpar(end));
         end
         
-        %%% reapply sigma at fraction of R
-        fitpar_final = apply_sigma_at_fraction_of_R(fitpar);
-        
+        if tcPDAstruct.SigmaAtFractionOfR
+            %%% reapply sigma at fraction of R
+            fitpar_final = fitpar;
+            fitpar = apply_sigma_at_fraction_of_R(fitpar);
+        end
         %Update fitpar in tcPDAstruct
         for i = 1:n_gauss
-            tcPDAstruct.fitdata.param{i} = fitpar_final(((i-1)*10+1):(10*i));
+            tcPDAstruct.fitdata.param{i} = fitpar(((i-1)*10+1):(10*i));
         end
         %update table
         UpdateFitTable(handles);
@@ -2243,9 +2248,9 @@ switch (selected_tab)
                             handles.edit_FixSigmaFractionR_BR];
             for i = numel(tcPDAstruct.fix_sigma):-1:1
                 if ~tcPDAstruct.fix_sigma(i)
-                    edit_boxes(i).String = num2str(fitpar(end));
-                    tcPDAstruct.sigma_fraction(i) = fitpar(end);
-                    fitpar(end) = [];
+                    edit_boxes(i).String = num2str(fitpar_final(end));
+                    tcPDAstruct.sigma_fraction(i) = fitpar_final(end);
+                    fitpar_final(end) = [];
                 end
             end
         end
@@ -3271,10 +3276,8 @@ for f = 1:numel(tcPDAstruct.Data)
     tcPDAstruct.plots{f}.chi2 = chi2(f);
 
     %%% chi2 estimate based on Poissonian statistics
-    %chi2 = chi2poiss(H_res,H_meas);
+    %chi2(f) = chi2poiss(H_res,H_meas);
 
-    
-    
     if ~tcPDAstruct.FitInProgress && tcPDAstruct.dynamic_model
         %%% add pseudo-static species as second population (only for display purpose)
         for j=1:2
@@ -3300,9 +3303,10 @@ for f = 1:numel(tcPDAstruct.Data)
         H_res_dummy{end+1} = (H_res_dummy{1} - PofT(end)*H_pseudostatic{1} - PofT(1)*H_pseudostatic{2})./(1-PofT(1)-PofT(end)); % dynamic part
         H_res_dummy{1} = H_pseudostatic{1};
         H_res_dummy{2} = H_pseudostatic{2};
-        Amp(2) = PofT(1);
-        Amp(1) = PofT(end);
-        Amp(end+1) = 1-PofT(1)-PofT(end); % amplitude of dynamic part
+        Amp_dyn = Amp(1);
+        Amp(2) = PofT(1)*Amp_dyn;
+        Amp(1) = PofT(end)*Amp_dyn;
+        Amp(end+1) = (1-PofT(1)-PofT(end))*Amp_dyn; % amplitude of dynamic part
     end
     
     %store for plotting
@@ -4284,7 +4288,10 @@ chi2 = view_curve(handles);
 
 function chi2 = view_curve(handles)
 global tcPDAstruct UserValues
+
 selected = tcPDAstruct.selected;
+tcPDAstruct.FitInProgress = false;
+
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
@@ -4486,15 +4493,16 @@ if ~isfield(tcPDAstruct,'H_meas')
 end
 h=figure('Position',[200 375 1000 600],'Color',[1 1 1],'Units','pixels','Tag','Export_tcPDA');
 ha = tight_subplot_tab(2,3,[0.1 0.05],[0.08,0.05],[0.05,0.05],h);
-plot4d_export(tcPDAstruct.H_meas,ha);
+plot4d_export(tcPDAstruct.H_meas{tcPDAstruct.selected},ha);
 
 plot_results(handles)
 
 function plot4d_export(input,ha)
 %plots three 2D and three 1D projections of 3 dimensional data array
 global tcPDAstruct
+f = tcPDAstruct.selected;
 handles = guidata(gcbo);
-n_gauss = numel(tcPDAstruct.plots.H_res_3d_individual);
+n_gauss = numel(tcPDAstruct.plots{f}.H_res_3d_individual);
 
 x_axis = tcPDAstruct.x_axis;
 x_axis_stairs = [x_axis - (x_axis(2)-x_axis(1))/2 1];
@@ -4511,7 +4519,7 @@ w_res_limits = [-5 5];
 axes(ha(1));
 %%% calculate w_res
 data = squeeze(sum(input,3));
-fit = tcPDAstruct.plots.H_res_3d_bg_br;
+fit = tcPDAstruct.plots{f}.H_res_3d_bg_br;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
 surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
@@ -4538,7 +4546,7 @@ set(gca,'YGrid','on','XGrid','on','ZGrid','on');
 
 axes(ha(2));
 data = squeeze(sum(input,2));
-fit = tcPDAstruct.plots.H_res_3d_bg_gr;
+fit = tcPDAstruct.plots{f}.H_res_3d_bg_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
 surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
@@ -4564,7 +4572,7 @@ set(gca,'YGrid','on','XGrid','on','ZGrid','on');
 
 axes(ha(3));
 data = squeeze(sum(input,1));
-fit = tcPDAstruct.plots.H_res_3d_br_gr;
+fit = tcPDAstruct.plots{f}.H_res_3d_br_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
 surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',linewidth_surf);
@@ -4596,9 +4604,9 @@ htext = text(1.06,0.955,'w_{res}','Units','normalized','FontSize',fontsize_label
 %color = mat2cell(color,ones(size(color,1),1),size(color,2));
 color = handles.color_str;
 if ~tcPDAstruct.use_stochasticlabeling
-    plots = 1:10;
+    plot_order = 1:10;
 else
-    plots = [1,6,2,7,3,8,4,9,5,10];
+    plot_order = [1,6,2,7,3,8,4,9,5,10];
 end
 
 axes(ha(4));
@@ -4612,14 +4620,14 @@ hold on;
 %bar(tcPDAstruct.x_axis,tcPDAstruct.plots.H_res_3d_bg,'BarWidth',1,'EdgeColor','k','LineWidth',2,'FaceColor','none');
 if n_gauss > 1
     for i = 1:n_gauss
-        data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
+        data = tcPDAstruct.plots{f}.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots{f}.H_res_3d_individual{i},2),3));
         data(end+1) = data(end);
         stairs(x_axis_stairs,data,'Color',color{plot_order(i)},'LineWidth',2);
     end
 end
 
 
-data = tcPDAstruct.plots.H_res_3d_bg;
+data = tcPDAstruct.plots{f}.H_res_3d_bg;
 data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
@@ -4634,7 +4642,7 @@ ax_wres(1) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
 linkaxes([ax,ax_wres(1)],'x');
 linkprop([ax,ax_wres(1)],'XTick');
 data = squeeze(sum(sum(input,2),3));
-fit = tcPDAstruct.plots.H_res_3d_bg;
+fit = tcPDAstruct.plots{f}.H_res_3d_bg;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error; w_res(end+1) = w_res(end);
 stairs(ax_wres(1),x_axis_stairs,w_res,'k','LineWidth',2);
@@ -4662,12 +4670,12 @@ hold on;
 %bar(tcPDAstruct.x_axis,tcPDAstruct.plots.H_res_3d_br,'BarWidth',1,'EdgeColor','k','LineWidth',2,'FaceColor','none');
 if n_gauss > 1
     for i = 1:n_gauss
-        data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
+        data = tcPDAstruct.plots{f}.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots{f}.H_res_3d_individual{i},1),3));
         data(end+1) = data(end);
         stairs(x_axis_stairs,data,'Color',color{plot_order(i)},'LineWidth',2);
     end
 end
-data = tcPDAstruct.plots.H_res_3d_br;
+data = tcPDAstruct.plots{f}.H_res_3d_br;
 data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
@@ -4682,7 +4690,7 @@ ax_wres(2) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
 linkaxes([ax,ax_wres(2)],'x');
 linkprop([ax,ax_wres(2)],'XTick');
 data = squeeze(sum(sum(input,1),3));
-fit = tcPDAstruct.plots.H_res_3d_br;
+fit = tcPDAstruct.plots{f}.H_res_3d_br;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error; w_res(end+1) = w_res(end);
 stairs(ax_wres(2),x_axis_stairs,w_res,'k','LineWidth',2);
@@ -4710,7 +4718,7 @@ hold on;
 if ~tcPDAstruct.use_stochasticlabeling
     if n_gauss > 1  
         for i = 1:n_gauss
-            data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data = tcPDAstruct.plots{f}.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots{f}.H_res_3d_individual{i},1),2));
             data(end+1) = data(end);
             stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
         end
@@ -4718,13 +4726,13 @@ if ~tcPDAstruct.use_stochasticlabeling
 else
     if n_gauss/2 > 1  
         for i = 1:2:n_gauss % only plot every second 
-            data = 2*tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data = 2*tcPDAstruct.plots{f}.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots{f}.H_res_3d_individual{i},1),2));
             data(end+1) = data(end);
             stairs(x_axis_stairs,data,'Color',color{(i+1)/2},'LineWidth',2);
         end
     end
 end
-data = tcPDAstruct.plots.H_res_3d_gr;
+data = tcPDAstruct.plots{f}.H_res_3d_gr;
 data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
@@ -4739,7 +4747,7 @@ ax_wres(3) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
 linkaxes([ax,ax_wres(3)],'x');
 linkprop([ax,ax_wres(3)],'XTick');
 data = squeeze(sum(sum(input,1),2));
-fit = tcPDAstruct.plots.H_res_3d_gr;
+fit = tcPDAstruct.plots{f}.H_res_3d_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error; w_res(end+1) = w_res(end);
 stairs(ax_wres(3),x_axis_stairs,w_res,'k','LineWidth',2);
@@ -6551,7 +6559,7 @@ PofT = calc_dynamic_distribution(dT,N,k12,k21);
 include_width = true;
 if include_width
     combinations = [-1,-1,-1; -1,-1,1; -1,1,-1; -1,1,1; 1,-1,-1; 1,-1,1; 1,1,-1; 1,1,1];
-    all_combinations = true;
+    all_combinations = false;
     if ~all_combinations        
         % only consider shift in the same direction for both populations
         combinations = repmat(combinations,[1,1,2]);
