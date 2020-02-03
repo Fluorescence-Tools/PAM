@@ -10199,7 +10199,7 @@ if any(mode==1)
                 end
             end
             if isempty(UserValues.PIE.Combined{BRperp}) %%% not a combined channel
-                BurstData.Background.Background_BRRperp = UserValues.PIE.Background(BRperp);
+                BurstData.Background.Background_BRperp = UserValues.PIE.Background(BRperp);
             else %%% combine Background
                 PIEchannel = UserValues.PIE.Combined{BRperp};
                 BurstData.Background.Background_BRperp = 0;

@@ -433,7 +433,7 @@ switch (Type)
         %%% check for case where the first record was NOT the sync period
         %%% (i.e. for Seidel simulated spc data)
         %%% if there was no set file, this is likely the case
-        if ask_syncrate
+        if ask_syncrate && isempty(FileInfo.SyncPeriod)
             %%% if the sync period was less than 1 MHz, this is probably
             %%% the case
             %%% ask for TAC range in nanoseconds
