@@ -6779,6 +6779,7 @@ switch mode
                 end
             end
         end
+        ParamNames = regexprep(ParamNames, '<.*?>', '' ); % remove html tags
         PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:})');
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
