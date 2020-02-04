@@ -5688,7 +5688,7 @@ switch mode
             %%% Cuts the filename up if too long
             for i = 1:numel(tmp)
                try 
-                   tmp{i} = [tmp{i}(1:10) '...' tmp{i}(end-10:end)];
+                   tmp{i} = [tmp{i}(1:15) '...' tmp{i}(end-15:end)];
                end
             end
             Rows(1:numel(tmp))=deal(tmp);
@@ -6779,7 +6779,7 @@ switch mode
                 end
             end
         end
-        PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:}));
+        PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:})');
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
         if h.SettingsTab.DynamicModel.Value == 1 & (h.SettingsTab.DynamicSystem.Value > 1) % three-state system
