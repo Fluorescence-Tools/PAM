@@ -74,6 +74,7 @@ while 1
     TagTyp = fread(fid, 1, 'uint32');   % TagHead.Typ
     % TagHead.Value will be read in the
     % right type function
+    TagIdent = genvarname(TagIdent);
     if TagIdx > -1
         EvalName = [TagIdent '(' int2str(TagIdx + 1) ')'];
     else
