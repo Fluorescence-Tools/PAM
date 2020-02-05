@@ -579,7 +579,7 @@ if isempty(h)
      %BIC text
      handles.BIC_text = uicontrol('Parent',handles.tab_fit_table,...
          'Units','normalized',...
-         'Position',[0.25 0.705 0.4 0.03],...
+         'Position',[0.2 0.705 0.4 0.05],...
          'Style','text',...
          'HorizontalAlignment','center',...
          'String','',...
@@ -731,6 +731,19 @@ if isempty(h)
         'FontSize',10,...
         'HorizontalAlignment','left',...
         'Parent',handles.tab_fit_table);
+    
+    % fix distances of static species to distances of dynamic species
+    handles.checkbox_FixStaticToDynamic = uicontrol('Parent',handles.tab_fit_table,...
+        'Style','checkbox',...
+        'Tag','checkbox_FixStaticToDynamic',...
+        'Units','normalized',...
+        'Position',[0.25 0.77 0.3 0.03],...
+        'String','Fix static to dyn',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'FontSize',10,...
+        'Value',0,...
+        'Callback',@update_corrections);
     
     % fix sigma at fraction of R
     handles.checkbox_FixSigmaFractionR = uicontrol('Parent',handles.tab_fit_table,...
@@ -1329,6 +1342,8 @@ switch hObject
                 handles.text_FixSigmaFractionR_GR,...
                 handles.text_FixSigmaFractionR_BG,handles.edit_FixSigmaFractionR_BG, handles.checkbox_fix_FixSigmaFractionR_BG],'Visible','off');
         end
+    case handles.checkbox_FixStaticToDynamic
+        UpdateTable_FixStaticToDynamic(handles);
 end
 if any(hObject == [handles.checkbox_FixSigmaFractionR,handles.edit_FixSigmaFractionR,handles.checkbox_fix_FixSigmaFractionR,handles.checkbox_global_FixSigmaFractionR,...
                 handles.text_FixSigmaFractionR_BR,handles.edit_FixSigmaFractionR_BR, handles.checkbox_fix_FixSigmaFractionR_BR,...
@@ -1373,6 +1388,41 @@ for i = 1:n_gauss %number of species
    %%% fix all
    fixed([3,5,7]) = 1;
    %%% reassign to table   
+   fit_data((i-1)*11+1:(i-1)*11+10,3) = num2cell(fixed);
+end
+set(handles.fit_table,'data',fit_data);
+
+function UpdateTable_FixStaticToDynamic(handles)
+% Set the distances and distribution width of the 3rd and 4th static population
+% to the parameters of the dynamic species
+global tcPDAstruct
+tcPDAstruct.FixStaticToDynamic = handles.checkbox_FixStaticToDynamic.Value;
+if ~tcPDAstruct.FixStaticToDynamic %%% not active
+    return;
+end
+
+n_gauss = get(handles.popupmenu_ngauss,'value');
+if n_gauss < 4
+    %%% we require a minimum of 4 species (2 dynamic, 2 static)
+    handles.popupmenu_ngauss.Value = 4;
+    popupmenu_ngauss_callback(handles.popupmenu_ngauss);
+    n_gauss = 4;
+end
+
+%%% update the values in the table
+fit_data = get(handles.fit_table,'data');
+for i = 1:2 % the two dynamic species
+   param_dyn{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,2));
+end
+for i = 3:4
+   param = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,2));
+   %%% set distances and sigma to dynamic species values
+   param(2:10) = param_dyn{i-2}(2:10);
+   %%% fix distance and sigmas
+   fixed = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,3));
+   fixed(2:10) = true;
+   %%% reassign to table
+   fit_data((i-1)*11+1:(i-1)*11+10,2) = num2cell(param);
    fit_data((i-1)*11+1:(i-1)*11+10,3) = num2cell(fixed);
 end
 set(handles.fit_table,'data',fit_data);
@@ -2232,6 +2282,14 @@ switch (selected_tab)
             fitpar_final = fitpar;
             fitpar = apply_sigma_at_fraction_of_R(fitpar);
         end
+        if tcPDAstruct.FixStaticToDynamic
+            %%% reset the distance and sigma of the 3rd and 4th species (static) to
+            %%% those of the dynamic species (1+2)
+            for a = 1:2
+                fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));    
+                fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));
+            end
+        end
         %Update fitpar in tcPDAstruct
         for i = 1:n_gauss
             tcPDAstruct.fitdata.param{i} = fitpar(((i-1)*10+1):(10*i));
@@ -2435,6 +2493,7 @@ for i = 1:n_gauss%number of species
    tcPDAstruct.fitdata.prior_sigma{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,8));
 end
 UpdateTable_fixSigmaAtFractionOfR(handles);
+UpdateTable_FixStaticToDynamic(handles);
 
 function UpdateFitTable(handles)
 global tcPDAstruct
@@ -3163,6 +3222,15 @@ elseif tcPDAstruct.use_stochasticlabeling
     return;
 end
 
+if tcPDAstruct.FixStaticToDynamic
+    %%% set the distance and sigma of the 3rd and 4th species (static) to
+    %%% those of the dynamic species (1+2)
+    for a = 1:2
+        fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));    
+        fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));
+    end
+end
+
 %read corrections
 mBG_bb = tcPDAstruct.corrections.BG_bb;
 mBG_bg = tcPDAstruct.corrections.BG_bg;
@@ -3436,7 +3504,7 @@ for f = 1:numel(tcPDAstruct.Data)
     P_res = cell(N_gauss,1);
     
     for j = 1:N_gauss
-        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{f},f);
+        P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param{j},f);
     end
     
     if tcPDAstruct.BrightnessCorrection
@@ -3487,7 +3555,7 @@ for f = 1:numel(tcPDAstruct.Data)
     %%% combine the likelihoods of the Gauss
     PA = A;
     P_res = horzcat(P_res{:});
-    P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb),1);
+    P_res = P_res + repmat(log(PA),numel(tcPDAstruct.fbb{f}),1);
     Lmax = max(P_res,[],2);
     P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
     %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
@@ -4299,7 +4367,7 @@ tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Val
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 tcPDAstruct.dynamic_model = handles.dynamic_model_checkbox.Value;
 tcPDAstruct.fixSigmaAtFractionOfR = handles.checkbox_FixSigmaFractionR.Value;
-
+tcPDAstruct.FixStaticToDynamic = handles.checkbox_FixStaticToDynamic.Value;
 %read correction table
 corrections = get(handles.corrections_table,'data');
 [tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
@@ -6408,6 +6476,15 @@ if tcPDAstruct.SigmaAtFractionOfR
     fitpar = apply_sigma_at_fraction_of_R(fitpar);
 end
 
+if tcPDAstruct.FixStaticToDynamic
+    %%% set the distance and sigma of the 3rd and 4th species (static) to
+    %%% those of the dynamic species (1+2)
+    for a = 1:2
+        fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));    
+        fitpar((a+2-1)*10+(2:10)) = fitpar((a-1)*10+(2:10));
+    end
+end
+
 if ~tcPDAstruct.use_stochasticlabeling
     %%% No stochastic labeling correction
     N_gauss = numel(fitpar)/10; 
@@ -6454,6 +6531,9 @@ end
 % evaluate dynamics
 k12 = A(1);
 k21 = A(2);
+% adjust the amplitudes
+A = [1, A(3:end)]; % assign amplitude of 1 to dynamic system
+A = A./sum(A);
 P_result = zeros(numel(tcPDAstruct.Data),1);
 for f = 1:numel(tcPDAstruct.Data)
     dur = tcPDAstruct.Data{f}.duration(tcPDAstruct.valid{f});
@@ -6469,10 +6549,6 @@ for f = 1:numel(tcPDAstruct.Data)
     % remove second population (included in binary dynamics)
     P_res(2) = [];
 
-    % adjust the amplitudes
-    A = [1, A(3:end)]; % assign amplitude of 1 to dynamic system
-    A = A./sum(A);
-    
     %%% combine the likelihoods of the Gauss
     PA = A;
     P_res = horzcat(P_res{:});
