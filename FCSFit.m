@@ -2382,7 +2382,12 @@ switch mode
             if isfield(FCSMeta,'Confidence_Intervals')
                 for i = 1:numel(FCSData.FileName)
                     if active(i)
-                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                        Nlow = FCSMeta.Confidence_Intervals{i}(1,1);
+                        Nhigh = FCSMeta.Confidence_Intervals{i}(1,2);
+                        N = FitResult{i}{4};
+                        Blow = FitResult{i}{3}*Nlow/N;
+                        Bhigh = FitResult{i}{3}*Nhigh/N;
+                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'','';num2str(Blow),num2str(Bhigh)},num2cell([FCSMeta.Confidence_Intervals{i}])));
                     end
                 end
             end
