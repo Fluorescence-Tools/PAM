@@ -5165,6 +5165,7 @@ else %%% dynamic model
     else
         hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     end
+    PDAMeta.hFit_onlyDyn{file} = zeros(numel(PDAMeta.hProx{file}),1);
 end
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
