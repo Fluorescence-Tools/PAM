@@ -5023,155 +5023,159 @@ end
 %% Plots TICS data
 if any(mode==5)
     for i=1:3
-        %%% 1&3: ACF 1&2
-        %%% 2:   CCF
-        if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
-            % different images to be plotted
-            %%% G(first lag)
-            G1 = MIAData.TICS.Data{i}(:,:,1);
-            %%% G(first lag)./mean(Counts)
-            switch i
-                case 1 %ACF1
-                    brightness = MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                    counts = MIAData.TICS.Int{1};
-                case 2 %CCF
-                    brightness = MIAData.TICS.Data{2}(:,:,1).*...
-                        (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
-                        mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
-                    counts = (MIAData.TICS.Int{1}+MIAData.TICS.Int{2});
-                case 3 %ACF2
-                    brightness = MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                    counts = MIAData.TICS.Int{2};
-            end
-            
-            %%% Find G(0)/2
-            halflife = (size(MIAData.TICS.Data{i},3)-sum(cumsum(MIAData.TICS.Data{i}./repmat(MIAData.TICS.Data{i}(:,:,1),1,1,size(MIAData.TICS.Data{i},3))<0.5,3)~=0,3)).*...
-                str2double(h.Mia_Image.Settings.Image_Frame.String);
-            
-            
-            % reset the values
-            if ~isempty(obj)
-                if strcmp(obj.Tag, 'DoTICS') || strcmp(obj.Tag, 'Reset')
-                    % store or reset the values for each correlation
-                    MIAData.TICS.Thresholds{i}(1,1) = min(min(G1));
-                    MIAData.TICS.Thresholds{i}(1,2) = max(max(G1));
-                    MIAData.TICS.Thresholds{i}(2,1) = min(min(brightness));
-                    MIAData.TICS.Thresholds{i}(2,2) = max(max(brightness));
-                    MIAData.TICS.Thresholds{i}(3,1) = min(min(counts));
-                    MIAData.TICS.Thresholds{i}(3,2) = max(max(counts));
-                    MIAData.TICS.Thresholds{i}(4,1) = min(min(halflife));
-                    MIAData.TICS.Thresholds{i}(4,2) = max(max(halflife));
-                    
-                    % display the values of the popupmenu selected correlation
-                    h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
-                    h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
-                    h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
-                    h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
-                    h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
-                    h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
-                    h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
-                    h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
-                elseif strcmp(obj.Tag, 'SelectCor')
-                    % display the values of the popupmenu selected correlation
-                    h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
-                    h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
-                    h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
-                    h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
-                    h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
-                    h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
-                    h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
-                    h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
-                elseif strcmp(obj.Tag, 'thresholds')
-                    % user changed threshold value
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1) = str2num(h.Mia_TICS.Threshold_G1_Min_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2) = str2num(h.Mia_TICS.Threshold_G1_Max_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1) = str2num(h.Mia_TICS.Threshold_brightness_Min_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2) = str2num(h.Mia_TICS.Threshold_brightness_Max_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1) = str2num(h.Mia_TICS.Threshold_counts_Min_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2) = str2num(h.Mia_TICS.Threshold_counts_Max_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1) = str2num(h.Mia_TICS.Threshold_halflife_Min_Edit.String);
-                    MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2) = str2num(h.Mia_TICS.Threshold_halflife_Max_Edit.String);
+        % user has previously pressed the TICS calculate at all
+        if isfield(MIAData.TICS,'Data')
+            %%% 1&3: ACF 1&2
+            %%% 2:   CCF
+            if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
+                % different images to be plotted
+                %%% G(first lag)
+                G1 = MIAData.TICS.Data{i}(:,:,1);
+                %%% G(first lag)./mean(Counts)
+                switch i
+                    case 1 %ACF1
+                        brightness = MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
+                        counts = MIAData.TICS.Int{1};
+                    case 2 %CCF
+                        brightness = MIAData.TICS.Data{2}(:,:,1).*...
+                            (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
+                            mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
+                        counts = (MIAData.TICS.Int{1}+MIAData.TICS.Int{2});
+                    case 3 %ACF2
+                        brightness = MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
+                        counts = MIAData.TICS.Int{2};
                 end
+                
+                %%% Find G(0)/2
+                halflife = (size(MIAData.TICS.Data{i},3)-sum(cumsum(MIAData.TICS.Data{i}./repmat(MIAData.TICS.Data{i}(:,:,1),1,1,size(MIAData.TICS.Data{i},3))<0.5,3)~=0,3)).*...
+                    str2double(h.Mia_Image.Settings.Image_Frame.String);
+                
+                
+                % reset the values
+                if ~isempty(obj)
+                    if strcmp(obj.Tag, 'DoTICS') || strcmp(obj.Tag, 'Reset')
+                        % store or reset the values for each correlation
+                        MIAData.TICS.Thresholds{i}(1,1) = min(min(G1));
+                        MIAData.TICS.Thresholds{i}(1,2) = max(max(G1));
+                        MIAData.TICS.Thresholds{i}(2,1) = min(min(brightness));
+                        MIAData.TICS.Thresholds{i}(2,2) = max(max(brightness));
+                        MIAData.TICS.Thresholds{i}(3,1) = min(min(counts));
+                        MIAData.TICS.Thresholds{i}(3,2) = max(max(counts));
+                        MIAData.TICS.Thresholds{i}(4,1) = min(min(halflife));
+                        MIAData.TICS.Thresholds{i}(4,2) = max(max(halflife));
+                        
+                        % display the values of the popupmenu selected correlation
+                        h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
+                        h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
+                        h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
+                        h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
+                        h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
+                        h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
+                        h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
+                        h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                    elseif strcmp(obj.Tag, 'SelectCor')
+                        % display the values of the popupmenu selected correlation
+                        h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
+                        h.Mia_TICS.Threshold_G1_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2));
+                        h.Mia_TICS.Threshold_brightness_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1));
+                        h.Mia_TICS.Threshold_brightness_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2));
+                        h.Mia_TICS.Threshold_counts_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1));
+                        h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
+                        h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
+                        h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                    elseif strcmp(obj.Tag, 'thresholds')
+                        % user changed threshold value
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1) = str2num(h.Mia_TICS.Threshold_G1_Min_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,2) = str2num(h.Mia_TICS.Threshold_G1_Max_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,1) = str2num(h.Mia_TICS.Threshold_brightness_Min_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(2,2) = str2num(h.Mia_TICS.Threshold_brightness_Max_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,1) = str2num(h.Mia_TICS.Threshold_counts_Min_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2) = str2num(h.Mia_TICS.Threshold_counts_Max_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1) = str2num(h.Mia_TICS.Threshold_halflife_Min_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2) = str2num(h.Mia_TICS.Threshold_halflife_Max_Edit.String);
+                    end
+                end
+                
+                %%% Sets unselected pixels to NaN
+                if size(MIAData.TICS.MS,1)~=size(MIAData.TICS.Data{i},1) || size(MIAData.TICS.MS,2)~=size(MIAData.TICS.Data{i},2)
+                    TICS = MIAData.TICS.Data{i};
+                    MIAData.TICS.MS = true(size(MIAData.TICS.Int{1}));
+                    mask = MIAData.TICS.MS;
+                else
+                    % take the thresholds into account in the mask
+                    mask = true(size(MIAData.TICS.Int{1}));
+                    mask(G1 < MIAData.TICS.Thresholds{i}(1,1)) = false;
+                    mask(G1 > MIAData.TICS.Thresholds{i}(1,2)) = false;
+                    mask(brightness < MIAData.TICS.Thresholds{i}(2,1)) = false;
+                    mask(brightness > MIAData.TICS.Thresholds{i}(2,2)) = false;
+                    mask(counts < MIAData.TICS.Thresholds{i}(3,1)) = false;
+                    mask(counts > MIAData.TICS.Thresholds{i}(3,2)) = false;
+                    mask(halflife < MIAData.TICS.Thresholds{i}(4,1)) = false;
+                    mask(halflife > MIAData.TICS.Thresholds{i}(4,2)) = false;
+                    % apply thresholds and freehand mask
+                    mask = mask & MIAData.TICS.MS;
+                    TICS = MIAData.TICS.Data{i};
+                    TICS(repmat(~mask,1,1,size(TICS,3))) = NaN;
+                end
+                %set the intensity NaN outside the mask
+                Int1 = MIAData.TICS.Int{1};
+                Int2 = MIAData.TICS.Int{2};
+                Int1(~mask)=NaN;
+                Int2(~mask)=NaN;
+                
+                %%% Averages pixel TICS data for selected (~NaN) pixels and
+                %%% plots the curve
+                h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
+                h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
+                EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
+                EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
+                h.Plots.TICS(i,1).UData = EData;
+                h.Plots.TICS(i,1).LData = EData;
+                
+                MIAData.TICS.Counts = [nanmean(nanmean(Int1,2),1) nanmean(nanmean(Int2,2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                data{i}.Valid = 1;
+                data{i}.Cor_Times = (1:size(MIAData.TICS.Data{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+                data{i}.Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
+                data{i}.Cor_Array = data{i}.Cor_Average';
+                data{i}.Cor_SEM = EData;
+                
+                %%% Updates fit curve
+                Calc_TICS_Fit([],[],i);
+                
+                %%% Plots individual pixel data in images
+                switch(h.Mia_TICS.SelectImage.Value)
+                    case 1 %%% G(first lag)
+                        h.Plots.TICSImage(i).CData = G1;
+                    case 2 %%% G(first lag)./mean(Counts)
+                        h.Plots.TICSImage(i).CData = brightness;
+                    case 3 %%% Mean counts
+                        h.Plots.TICSImage(i).CData = counts;
+                    case 4 %%% Find G(0)/2
+                        h.Plots.TICSImage(i).CData = halflife;
+                end
+                %%% Sets transparency of unselected pixels to 80%
+                h.Plots.TICSImage(i).AlphaData = (any(~isnan(TICS),3)+0.25)/1.25;
+                
+                %%% Updates axis and shows plots
+                h.Mia_TICS.Image(i,1).XLim = [0 size(TICS,2)]+0.5;
+                h.Mia_TICS.Image(i,1).YLim = [0 size(TICS,1)]+0.5;
+                h.Plots.TICSImage(i).Visible = 'on';
+                h.Mia_TICS.Image(i,2).Visible = 'on';
+                h.Mia_TICS.Image(i,1).Visible = 'on';
+            else %%% Hides plots, if no TICS data exists for current channel
+                h.Plots.TICS(i,1).Visible = 'off';
+                h.Plots.TICS(i,2).Visible = 'off';
+                h.Plots.TICSImage(i).Visible = 'off';
+                h.Mia_TICS.Image(i,2).Visible = 'off';
+                h.Mia_TICS.Image(i,1).Visible = 'off';
             end
-            
-            %%% Sets unselected pixels to NaN
-            if size(MIAData.TICS.MS,1)~=size(MIAData.TICS.Data{i},1) || size(MIAData.TICS.MS,2)~=size(MIAData.TICS.Data{i},2)
-                TICS = MIAData.TICS.Data{i};
-                MIAData.TICS.MS = true(size(MIAData.TICS.Int{1}));
-                mask = MIAData.TICS.MS;
-            else    
-                % take the thresholds into account in the mask
-                mask = true(size(MIAData.TICS.Int{1}));
-                mask(G1 < MIAData.TICS.Thresholds{i}(1,1)) = false;
-                mask(G1 > MIAData.TICS.Thresholds{i}(1,2)) = false;
-                mask(brightness < MIAData.TICS.Thresholds{i}(2,1)) = false;
-                mask(brightness > MIAData.TICS.Thresholds{i}(2,2)) = false;
-                mask(counts < MIAData.TICS.Thresholds{i}(3,1)) = false;
-                mask(counts > MIAData.TICS.Thresholds{i}(3,2)) = false;
-                mask(halflife < MIAData.TICS.Thresholds{i}(4,1)) = false;
-                mask(halflife > MIAData.TICS.Thresholds{i}(4,2)) = false;
-                % apply thresholds and freehand mask
-                mask = mask & MIAData.TICS.MS;
-                TICS = MIAData.TICS.Data{i};
-                TICS(repmat(~mask,1,1,size(TICS,3))) = NaN;
-            end
-            %set the intensity NaN outside the mask
-            Int1 = MIAData.TICS.Int{1};
-            Int2 = MIAData.TICS.Int{2};
-            Int1(~mask)=NaN;
-            Int2(~mask)=NaN;
-            
-            %%% Averages pixel TICS data for selected (~NaN) pixels and
-            %%% plots the curve
-            h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
-            h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
-            EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
-            h.Plots.TICS(i,1).UData = EData;
-            h.Plots.TICS(i,1).LData = EData;
-            
-            MIAData.TICS.Counts = [nanmean(nanmean(Int1,2),1) nanmean(nanmean(Int2,2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-            data{i}.Valid = 1;
-            data{i}.Cor_Times = (1:size(MIAData.TICS.Data{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            data{i}.Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
-            data{i}.Cor_Array = data{i}.Cor_Average';
-            data{i}.Cor_SEM = EData;
-            
-            %%% Updates fit curve
-            Calc_TICS_Fit([],[],i);
-            
-            %%% Plots individual pixel data in images
-            switch(h.Mia_TICS.SelectImage.Value)
-                case 1 %%% G(first lag)
-                    h.Plots.TICSImage(i).CData = G1;
-                case 2 %%% G(first lag)./mean(Counts)
-                    h.Plots.TICSImage(i).CData = brightness;
-                case 3 %%% Mean counts
-                    h.Plots.TICSImage(i).CData = counts;
-                case 4 %%% Find G(0)/2
-                    h.Plots.TICSImage(i).CData = halflife;
-            end
-            %%% Sets transparency of unselected pixels to 80%
-            h.Plots.TICSImage(i).AlphaData = (any(~isnan(TICS),3)+0.25)/1.25;
-            
-            %%% Updates axis and shows plots
-            h.Mia_TICS.Image(i,1).XLim = [0 size(TICS,2)]+0.5;
-            h.Mia_TICS.Image(i,1).YLim = [0 size(TICS,1)]+0.5;
-            h.Plots.TICSImage(i).Visible = 'on';
-            h.Mia_TICS.Image(i,2).Visible = 'on';
-            h.Mia_TICS.Image(i,1).Visible = 'on';
-        else %%% Hides plots, if no TICS data exists for current channel
-            h.Plots.TICS(i,1).Visible = 'off';
-            h.Plots.TICS(i,2).Visible = 'off';
-            h.Plots.TICSImage(i).Visible = 'off';
-            h.Mia_TICS.Image(i,2).Visible = 'off';
-            h.Mia_TICS.Image(i,1).Visible = 'off';
         end
-    end
-    % Save displayed TICS data
-    if ~isempty(obj)
-        if strcmp(obj.Tag, 'Save')
-            Save_TICS([],[],data)
+        
+        % Save displayed TICS data
+        if ~isempty(obj)
+            if strcmp(obj.Tag, 'Save')
+                Save_TICS([],[],data)
+            end
         end
     end
 end
