@@ -1950,7 +1950,7 @@ switch mode
             PDAMeta.Plots.Data_Single.YData(end) = maxi;
             set(h.SingleTab.Main_Axes, 'XLim', lims)
             set(h.SingleTab.Res_Axes, 'XLim', lims)
-            
+            set(h.SingleTab.Main_Axes,'YLimMode','auto');
             % residuals
             PDAMeta.Plots.Res_Single = copyobj(PDAMeta.Plots.Res_All{i}, h.SingleTab.Res_Axes);
             set(PDAMeta.Plots.Res_Single,...
