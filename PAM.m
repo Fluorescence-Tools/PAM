@@ -4372,10 +4372,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
-%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
-%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
-%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
+    h.Image.Axes.XLim(1)= 0.5;
+    h.Image.Axes.XLim(2)= size(PamMeta.Image{Sel},2)+0.5;
+    h.Image.Axes.YLim(1)= 0.5;
+    h.Image.Axes.YLim(2)= size(PamMeta.Image{Sel},1)+0.5;
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
