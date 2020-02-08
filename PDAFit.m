@@ -2796,7 +2796,8 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
                                 PN_trans = PN_trans(:);
                                 PN_trans = PN_trans(validd{count});
-                                P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
+                                %P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
+                                P{1,j} = P{1,j} + [accumarray_c(bin{count},P_array{count}.*PN_trans,max(bin{count}),numel(bin{count}))'; zeros(Nobins-max(bin{count}),1)];
                                 count = count+1;
                             end
                         end
@@ -2807,7 +2808,8 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
                                 PN_trans = PN_trans(:);
                                 PN_trans = PN_trans(validd{count});
-                                P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
+                                %P{1,j} = P{1,j} + [accumarray(bin{count},P_array{count}.*PN_trans); zeros(Nobins-max(bin{count}),1)];
+                                P{1,j} = P{1,j} + [accumarray_c(bin{count},P_array{count}.*PN_trans,max(bin{count}),numel(bin{count}))'; zeros(Nobins-max(bin{count}),1)];
                                 count = count+1;
                             end
                         end
