@@ -2516,11 +2516,10 @@ end
 %%% Read fit settings and store in UserValues
 %% Prepare Fit Inputs
 if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_grid')
+    Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+    Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing fit...');
     counter = 1;
     maxN = 0;
-    %if isfield(PDAMeta,'P')
-    %    PDAMeta = rmfield(PDAMeta,'P');
-    %end
     for i  = find(PDAMeta.Active)'
         if strcmp(PDAData.Type{i},'Burst')
             %%% find valid bins (chosen by thresholds min/max and stoichiometry)
@@ -2555,6 +2554,9 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
     end
 
     for i  = find(PDAMeta.Active)'
+        Progress((i-1)./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+        Progress((i-1)./numel(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing fit...');
+            
         if ~PDAMeta.FitInProgress
             break;
         end
@@ -2602,9 +2604,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         
         if any(strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},{'Histogram Library','MLE'}))
             if calc
-                %%% prepare epsilon grid
-                Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
-                Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
+                %%% prepare epsilon grid               
                 
                 % generate NobinsE+1 values for eps
                 %E_grid = linspace(0,1,NobinsE+1);
@@ -2625,14 +2625,9 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 % NF all possible number of FRET photons
                 % N all possible total number of photons
                 % eps all possible FRET efficiencies
-                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
-                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
                 % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
-                %pause(0.2)
-                %tic;
                 PNF = calc_PNF(NF(:),N(:),eps(:),numel(NF));
                 PNF = reshape(PNF,size(eps,1),size(eps,2),size(eps,3));
-                %toc
                 %PNF = binopdf(NF, N, eps);
                 % binopdf(X,N,P) returns the binomial probability density function with parameters N and P at the values in X.
                 %%% Also calculate distribution for donor only
@@ -2658,9 +2653,9 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
             PDAMeta.Grid.eps{i} = eps;
             PDAMeta.maxN{i} = maxN;
             
-            %% Calculate Histogram Library (CalcHistLib)
-            Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
-            Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+            Progress((i-1+0.2)./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+            Progress((i-1+0.2)./numel(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing fit...');
+            %% Calculate Histogram Library (CalcHistLib)            
             PDAMeta.HistLib = [];
             P = cell(1,numel(eps_grid));
             PN_dummy = PN';
@@ -2712,8 +2707,6 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     P_temp = P_temp(:);
                     bin = bin(validd);
                     P_temp = P_temp(validd);
-                    % Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
-                    % Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                     %%% Store bin,valid and P_temp variables for brightness correction
                     PDAMeta.HistLib.bin{i}{j} = bin;
                     PDAMeta.HistLib.P_array{i}{j} = P_temp;
@@ -2813,11 +2806,11 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                                 count = count+1;
                             end
                         end
-                    end
-                    %Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
-                    %Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+                    end                   
                 end
             end
+            Progress((i-1+0.8)./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+            Progress((i-1+0.8)./numel(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing fit...');
             %% Caclulate shot noise limited histogram for Donly
             if NBG == 0 && NBR == 0
                 %for a particular value of E
