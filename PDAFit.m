@@ -5099,11 +5099,19 @@ else %%% dynamic model
     DynRates(end+1,:) = ones(1,n_states);
     b = zeros(n_states,1); b(end+1) = 1;
     p_eq = DynRates\b;
+    tic
+    PRH = cell(1,sampling);
     if n_states == 3
-        PRH = MonteCarlo_3states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling,change_prob);
+        parfor k = 1:sampling
+            PRH{1,k} = MonteCarlo_3states_oneSample(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,change_prob);
+        end
     else
-        PRH = MonteCarlo_2states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,sampling);
+        parfor k = 1:sampling
+            PRH{1,k} = MonteCarlo_2states(mBG_gg,mBG_gr,R,sigmaR,R0,cr,de,ct,gamma,numel(BSD),dur,BSD,dwell_mean,p_eq,1);
+        end
     end
+    toc
+    PRH = PRH{:};
     switch PDAMeta.xAxisUnit
         case 'Proximity Ratio'
             % already PRH, do nothing
