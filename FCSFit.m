@@ -2281,8 +2281,8 @@ switch mode
         end
         %% Sets axes parameters   
         set(H.FCS.Children,'LineWidth',1.5);
-        set(H.Residuals.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
+            set(H.Residuals.Children,'LineWidth',1.5);
             linkaxes([H.FCS,H.Residuals],'x');
         end
         H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
