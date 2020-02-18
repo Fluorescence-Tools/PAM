@@ -51,7 +51,7 @@ void shot_noise_limited_histogram(const int Nbins, const double minE, const doub
                         for (n = 0; n < Nbins; n++) {
                             if (EPR < binsE[n]) {
                                 // add probability to bin
-                                PE[n+i*Neps] += PN[j]*PBG_G[k]*PBG_R[l]*ran_binomial_pdf(m,eps[i],j-k-l);
+                                PE[n+i*Neps] += PN[j]*PBG_G[k]*PBG_R[l]*ran_binomial_pdf((unsigned int)m,eps[i],(unsigned int)(j-k-l));
                             }
                         }
                     }
