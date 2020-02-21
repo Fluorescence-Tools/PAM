@@ -54,7 +54,7 @@ if UserValues.BurstBrowser.Dog_Mode
     end
 else
     data = imread('images/BurstBrowser/splash.jpg');
-    imagesc(h.axes_general,flipud(data));    
+    imagesc(flipud(data),'Parent',h.axes_general);    
 end
 %% Lorentz Attractor
 
