@@ -5,17 +5,6 @@ function logL = GP_logL(t,c,K,E)
 % K -   transition rate matrix
 % E -   FRET efficiencies of states
 
-K = rot90(diag(K));
-% fill in diagonals of K matrix
-if all(diag(K) == 0)
-    for i = 1:size(K,1)
-        K(i,i) = -sum(K(:,i));
-    end
-end
-
-% convert E vector to matrix
-E = diag(E);
-
 % diagonalize K matrix
 [U,Lambda] = eig(K); % U is the right eigenvector
 % i.e. U*Lambda*U^(-1) yields K
@@ -53,6 +42,8 @@ for i = 1:numel(dt)
     L = L*a(i);
 end
 % sum over states
-L = [1,1]*U*L;
+L = ones(1,size(E,1))*U*L;
 % return logL, corrected for the scaling
-logL = log(L) - sum(log(a));
+logL = real(log(L) - sum(log(a)));
+% sometimes, logL can have a small (1E-12) complex part.
+% It is not clear why this may occur. (Numeric instabilities?)

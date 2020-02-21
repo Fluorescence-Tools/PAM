@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.coder" plugin-version="R2018b">
-  <configuration build-checksum="824696933" file="/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood/GP_logL.prj" location="/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood" name="GP_logL" target="target.unifiedcoder" target-name="MATLAB Coder">
+  <configuration build-checksum="1763876775" file="/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood/GP_logL.prj" location="/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood" name="GP_logL" target="target.unifiedcoder" target-name="MATLAB Coder">
     <profile key="profile.mex">
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
       <param.RanInstrumentedMex>false</param.RanInstrumentedMex>
@@ -846,7 +846,7 @@
     <param.AutoInferUnboundedSizeThreshold>2048</param.AutoInferUnboundedSizeThreshold>
     <param.EnableFixedPointStep>false</param.EnableFixedPointStep>
     <param.EnableScreener>true</param.EnableScreener>
-    <param.AnnotationChecksum>2674906891</param.AnnotationChecksum>
+    <param.AnnotationChecksum>4288487164</param.AnnotationChecksum>
     <var.LegacyTarget />
     <var.MirrorOnOpen>false</var.MirrorOnOpen>
     <param.FixedPointEnabled>false</param.FixedPointEnabled>
@@ -855,12 +855,12 @@
     <param.unifiedParamStorage />
     <var.gc.lastOutputRoot>codegen/mex/GP_logL</var.gc.lastOutputRoot>
     <var.gc.lastOutputType>MEX_FILE</var.gc.lastOutputType>
-    <var.gc.preBuildChecksum>824696933</var.gc.preBuildChecksum>
+    <var.gc.preBuildChecksum>3489704772</var.gc.preBuildChecksum>
     <var.cfi.lastOutputRoot>codegen/mex/GP_logL</var.cfi.lastOutputRoot>
     <var.cfi.preBuildChecksum>3084623790</var.cfi.preBuildChecksum>
     <var.lastCfiTestSnippet>GP_logL(t,c,K,E)</var.lastCfiTestSnippet>
     <var.outdatedOnRestore>false</var.outdatedOnRestore>
-    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood/GP_logL.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;1098846877&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
+    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood/GP_logL.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;314499962&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
     <var.sourceSetState>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;sourceModel&gt;&lt;primarySourceFiles&gt;&lt;file&gt;/Users/Anders/Desktop/PAM-git/functions/BurstBrowser/GS_likelihood/GP_logL.m&lt;/file&gt;&lt;/primarySourceFiles&gt;&lt;fixedPointSourceFiles/&gt;&lt;fixedPointSourceRegistered&gt;false&lt;/fixedPointSourceRegistered&gt;&lt;fixedPointSourceSelected&gt;false&lt;/fixedPointSourceSelected&gt;&lt;/sourceModel&gt;</var.sourceSetState>
     <param.forceMexBuild>false</param.forceMexBuild>
     <param.NoDefaultJIT>false</param.NoDefaultJIT>
@@ -1065,7 +1065,7 @@
     </unset>
     <fileset.entrypoints>
       <file custom-data-expanded="false" value="${PROJECT_ROOT}/GP_logL.m">
-        <Marker>1581985819594</Marker>
+        <Marker>1582040756175</Marker>
       </file>
     </fileset.entrypoints>
     <fileset.testbench />
@@ -1088,7 +1088,7 @@
             </type>
             <type typeId="1">
               <Class>double</Class>
-              <Size>1 x :inf</Size>
+              <Size>:inf x :inf</Size>
               <Value />
               <InitialValue />
               <UserDefined>true</UserDefined>
