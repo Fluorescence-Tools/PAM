@@ -54,7 +54,7 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data ...');
 if isempty(BurstTCSPCData{file})
     Load_Photons();
 end
-
+tw = UserValues.BurstBrowser.Settings.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
     if isempty(PhotonStream{file})
         success = Load_Photons('aps');
@@ -105,7 +105,6 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
         use = ones(numel(start),1);
         %%% loop over selected bursts
         Progress(0,h.Progress_Axes,h.Progress_Text,'Including Time Window...');
-        tw = UserValues.BurstBrowser.Settings.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
         
         start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
         stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
