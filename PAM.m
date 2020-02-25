@@ -4248,7 +4248,7 @@ if any(mode == 10)
         end
     end
     if UserValues.Settings.Pam.Use_PCH
-        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
             for t = h.PIE.List.Value
                 %%% create plot
                 h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
