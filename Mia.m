@@ -5197,7 +5197,7 @@ if any(mode==5)
                     mask(halflife < MIAData.TICS.Thresholds{i}(4,1)) = false;
                     mask(halflife > MIAData.TICS.Thresholds{i}(4,2)) = false;
                     % mask based on thresholds for one correlation function applies to all
-                    mask = mask & MIAData.TICS.ThreshMask;
+                    %mask = mask & MIAData.TICS.ThreshMask;
                     MIAData.TICS.ThreshMask = mask;
                     % freehand mask for one correlation function applies to all
                     mask = mask & MIAData.TICS.FreehandMask;
