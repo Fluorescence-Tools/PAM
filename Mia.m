@@ -5108,27 +5108,27 @@ if any(mode==5)
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
                 % different images to be plotted
                 %%% G(first lag)
-                G1 = MIAData.TICS.Data{i}(:,:,1);
+                G1 = double(MIAData.TICS.Data{i}(:,:,1));
                 %%% G(first lag)./mean(Counts)
                 switch i
                     case 1 %ACF1
-                        brightness = MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                        counts = MIAData.TICS.Int{i,1};
+                        brightness = double(MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
+                        counts = double(MIAData.TICS.Int{i,1});
                     case 2 %CCF
-                        brightness = MIAData.TICS.Data{2}(:,:,1).*...
+                        brightness = double(MIAData.TICS.Data{2}(:,:,1).*...
                             (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
-                            mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
-                        counts = (MIAData.TICS.Int{i,1}+MIAData.TICS.Int{i,2});
+                            mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2); %#ok<ST2NM>
+                        counts = double((MIAData.TICS.Int{i,1}+MIAData.TICS.Int{i,2}));
                     case 3 %ACF2
-                        brightness = MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                        counts = MIAData.TICS.Int{i,2};
+                        brightness = double(MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
+                        counts = double(MIAData.TICS.Int{i,2});
                 end
                 
                 %%% Find G(0)/2
                 firstlag = repmat(MIAData.TICS.Data{i}(:,:,1),1,1,size(MIAData.TICS.Data{i},3));
                 lastlag = repmat(MIAData.TICS.Data{i}(:,:,end),1,1,size(MIAData.TICS.Data{i},3));
-                halflife = (size(MIAData.TICS.Data{i},3)-sum(cumsum((MIAData.TICS.Data{i}-lastlag)./(firstlag-lastlag)<0.5,3)~=0,3)).*...
-                    str2double(h.Mia_Image.Settings.Image_Frame.String);
+                halflife = double((size(MIAData.TICS.Data{i},3)-sum(cumsum((MIAData.TICS.Data{i}-lastlag)./(firstlag-lastlag)<0.5,3)~=0,3)).*...
+                    str2double(h.Mia_Image.Settings.Image_Frame.String));
                 
                 if h.Mia_TICS.Median.Value
                     filtsize = [3 3];
