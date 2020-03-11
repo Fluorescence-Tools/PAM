@@ -258,9 +258,11 @@ switch TTResultFormat_TTTRRecType
             Header.LineStopMarker = 2;
             Header.FrameStartMarker = 3;
         elseif strcmp(CreatorSW_Name,'SymPhoTime 64')
-            Header.LineStartMarker = ImgHdr_LineStart;
-            Header.LineStopMarker = ImgHdr_LineStop;
-            Header.FrameStartMarker = imgHdr_Frame;
+            if exist('ImgHdr_LineStart','var')
+                Header.LineStartMarker = ImgHdr_LineStart;
+                Header.LineStopMarker = ImgHdr_LineStop;
+                Header.FrameStartMarker = imgHdr_Frame;
+            end
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
