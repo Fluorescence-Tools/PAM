@@ -1567,9 +1567,9 @@ end
 
 switch mode
     case 3
-        %% Update the All tab
-        color = lines(100);
+        %% Update the All tab        
         n = size(PDAData.Data,2);
+        color = lines(n);
         % after loading data or changing settings tab
         % predefine handle cells
         PDAMeta.Plots.Data_All = cell(n,1);
