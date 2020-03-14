@@ -1429,6 +1429,12 @@ for i = 1:numel(FileName)
                 PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
                 PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
             end
+            if isfield(SavedData,'ScaleNumberOfPhotons')
+                % Scale number of photon setting was saved
+                if i == 1 % first file, use settings of this file for all
+                    h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value = SavedData.ScaleNumberOfPhotons;
+                end
+            end
             if isfield(SavedData,'XAxisMethod')
                 %%% XAxisMethod and limits have been saved
                 if i == 1 % first file, use xAxisMethod and limits of this file
@@ -1438,6 +1444,13 @@ for i = 1:numel(FileName)
                     h.SettingsTab.MainAxisLimtsHigh_Edit.String = num2str(SavedData.XAxisLimitHigh);
                 end
             end
+            if isfield(SavedData,'HalfGlobal')
+                % HalfGlobal settings were saved
+                if i == 1 % first file, use settings of this file for all
+                    h.SettingsTab.SampleGlobal.Value = SavedData.HalfGlobal;
+                    h.SettingsTab.TW_edit.String = num2str(SavedData.HalfGlobalSubsetSize);
+                 end
+            end            
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -1523,6 +1536,9 @@ for i = 1:numel(PDAData.FileName)
     SavedData.XAxisMethod = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
     SavedData.XAxisLimitLow = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
     SavedData.XAxisLimitHigh = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);
+    SavedData.HalfGlobal = h.SettingsTab.SampleGlobal.Value;
+    SavedData.HalfGlobalSubsetSize = str2double(h.SettingsTab.TW_edit.String);
+    SavedData.ScaleNumberOfPhotons = h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value;
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
@@ -3345,11 +3361,12 @@ else
             % standard is to link the rates of the dynamic states for each block
             switch h.SettingsTab.DynamicSystem.Value
                 case 1 % two state system
-                    PDAMeta.SampleGlobal(1) = true; %half globally link k12
-                    PDAMeta.SampleGlobal(4) = true; %half globally link k21
+                    %PDAMeta.SampleGlobal(1) = true; %half globally link k12
+                    %PDAMeta.SampleGlobal(4) = true; %half globally link k21
                     %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
                     %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
-                    %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+                    PDAMeta.SampleGlobal(2) = true; %half globally link R1
+                    PDAMeta.SampleGlobal(5) = true; %half globally link R2
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                 case 2
@@ -5706,21 +5723,23 @@ switch mode
             %%% Add FitTable data of new files in between old data and ALL row
             a = size(h.FitTab.Table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
             for i = a:(size(Data,1)-3) % i = 4:5
-                %%% Added D only fraction, so check old data for compatibility
-                if (numel(PDAData.FitTable{i}) ~= 50)
-                    dummy = cell(50,1);
-                    dummy(1:46) = PDAData.FitTable{i}(1:46);
-                    dummy(47:49) = {'0',true,false};
-                    dummy(50) = PDAData.FitTable{i}(end);
-                    PDAData.FitTable{i} = dummy;
-                end
-                if (numel(PDAData.FitTable{i}) ~= 59) %%% before addition of sixth species
-                    dummy = cell(59,1);
-                    dummy(1:46) = PDAData.FitTable{i}(1:46);
-                    dummy(47:55) = {'0',true,false,'50',true,false,'5',true,false};
-                    dummy(56:58) = PDAData.FitTable{i}(47:49);
-                    dummy(59) = PDAData.FitTable{i}(end);
-                    PDAData.FitTable{i} = dummy;
+                if ~(numel(PDAData.FitTable{i}) == 59) % should be 59 elements
+                    %%% Added D only fraction, so check old data for compatibility
+                    if (numel(PDAData.FitTable{i}) ~= 50)
+                        dummy = cell(50,1);
+                        dummy(1:46) = PDAData.FitTable{i}(1:46);
+                        dummy(47:49) = {'0',true,false};
+                        dummy(50) = PDAData.FitTable{i}(end);
+                        PDAData.FitTable{i} = dummy;
+                    end
+                    if (numel(PDAData.FitTable{i}) ~= 59) %%% before addition of sixth species
+                        dummy = cell(59,1);
+                        dummy(1:46) = PDAData.FitTable{i}(1:46);
+                        dummy(47:55) = {'0',true,false,'50',true,false,'5',true,false};
+                        dummy(56:58) = PDAData.FitTable{i}(47:49);
+                        dummy(59) = PDAData.FitTable{i}(end);
+                        PDAData.FitTable{i} = dummy;
+                    end
                 end
                 Data(i,:) = PDAData.FitTable{i};
             end
