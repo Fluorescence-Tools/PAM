@@ -6803,16 +6803,22 @@ switch mode
             case 0 % static
                 for i = 1:numel(PDAData.FileName)
                     if active(i)
+                        UserValues.BurstBrowser.Settings.BVA_amplitude1_static = params(i,1);
+                        UserValues.BurstBrowser.Settings.BVA_amplitude2_static = params(i,4);
+                        UserValues.BurstBrowser.Settings.BVA_amplitude3_static = params(i,7);
                         UserValues.BurstBrowser.Settings.BVA_R1_st = params(i,2);
                         UserValues.BurstBrowser.Settings.BVA_R2_st = params(i,5);
                         UserValues.BurstBrowser.Settings.BVA_R3_st = params(i,8);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma1_st = params(i,3);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma2_st = params(i,6);
                         UserValues.BurstBrowser.Settings.BVA_Rsigma3_st = params(i,9);
+                        hb.state1st_amplitude_edit.String = num2str(params(i,1));
                         hb.Rstate1st_edit.String = num2str(params(i,2));
                         hb.Rsigma1st_edit.String = num2str(params(i,3));
+                        hb.state2st_amplitude_edit.String = num2str(params(i,4));
                         hb.Rstate2st_edit.String = num2str(params(i,5));
                         hb.Rsigma2st_edit.String = num2str(params(i,6));
+                        hb.state3st_amplitude_edit.String = num2str(params(i,7));
                         hb.Rstate3st_edit.String = num2str(params(i,8));
                         hb.Rsigma3st_edit.String = num2str(params(i,9));
                         break

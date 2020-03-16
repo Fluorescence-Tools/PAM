@@ -1,4 +1,4 @@
-function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
+function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states,dynamic)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -39,7 +39,7 @@ switch type
         dur = cell2mat(cellfun(@(x) x(end),mt_sec,'UniformOutput',false)); %duration
         for i = 1:numel(mt) %%% loop over bursts
             %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
         end
         % convert macrotime to units of freq
         mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
@@ -149,7 +149,7 @@ switch type
         states = cell(numel(dur),1);
         for i = 1:numel(dur) %%% loop over bursts
             %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
             %%% convert states to fraction of time spent in each state
             for s = 1:n_states
                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
@@ -404,7 +404,7 @@ switch type
         states = cell(numel(dur),1);
         for i = 1:numel(dur) %%% loop over bursts
             %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
             %%% convert states to fraction of time spent in each state
             for s = 1:n_states
                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
