@@ -12,6 +12,9 @@ end
 file = BurstMeta.SelectedFile;
 if isempty(obj)
     if isempty(BurstData)
+        h.state1st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        h.state2st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        h.state3st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
         h.Rstate1_edit.String = UserValues.BurstBrowser.Settings.BVA_R1;
         h.Rstate2_edit.String = UserValues.BurstBrowser.Settings.BVA_R2;
         h.Rstate3_edit.String = UserValues.BurstBrowser.Settings.BVA_R3;
@@ -67,14 +70,28 @@ if isempty(obj)
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma3_static')
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static;
         end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude1_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude2_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude3_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
+        end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable2')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2;
         end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable3')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3;
         end
+
+        
         
         %%% Update GUI with values stored in BurstData Structure
+        h.state1st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static);
+        h.state2st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude2_static);
+        h.state3st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude3_static);
         h.Rstate1_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R1);
         h.Rstate2_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R2);
         h.Rstate3_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R3);
@@ -139,6 +156,15 @@ else
         case h.Rsigma3st_edit
             UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static;
+        case h.state1st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude1_static = str2double(h.state1st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        case h.state2st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude2_static = str2double(h.state2st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        case h.state3st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude3_static = str2double(h.state3st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
         case h.DynamicStates_Popupmenu
             UserValues.BurstBrowser.Settings.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1; 
             switch UserValues.BurstBrowser.Settings.BVA_DynamicStates
@@ -168,12 +194,16 @@ else
                     h.Rstate3st_edit.Visible = 'off';
                     h.Rsigma3st_text.Visible = 'off';
                     h.Rsigma3st_edit.Visible = 'off';
+                    h.state3st_amplitude_edit.Visible = 'off';
+                    h.state3st_amplitude_text.Visible = 'off';
                 case 3
                     h.state3st_text.Visible = 'on';
                     h.Rstate3st_text.Visible = 'on';
                     h.Rstate3st_edit.Visible = 'on';
                     h.Rsigma3st_text.Visible = 'on';
                     h.Rsigma3st_edit.Visible = 'on';
+                    h.state3st_amplitude_edit.Visible = 'on';
+                    h.state3st_amplitude_text.Visible = 'on';
             end
         case h.DynamicAnalysisMethod_Popupmenu
                 UserValues.BurstBrowser.Settings.DynamicAnalysisMethod = h.DynamicAnalysisMethod_Popupmenu.Value;
@@ -226,6 +256,9 @@ else
             BurstData{file}.AdditionalParameters.BVA_Rsigma1_static = str2double(h.Rsigma1st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma2_static = str2double(h.Rsigma2st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = str2double(h.state1st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = str2double(h.state2st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = str2double(h.state3st_amplitude_edit.String);
     end
 end
 LSUserValues(1);
