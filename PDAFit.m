@@ -4073,15 +4073,16 @@ else %%% dynamic model
     
     %%% Add static models
     norm = 1;
-    if numel(PDAMeta.Comp{i}) > n_states
+    static_states = PDAMeta.Comp{i}(PDAMeta.Comp{i} > n_states);
+    if ~isempty(static_states)
         %%% normalize Amplitudes
         % amplitudes of the static components are normalized to the total area 
         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
-        norm = (sum(fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2))+1);
-        fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2) = fitpar(3*PDAMeta.Comp{i}(n_states+1:end)-2)./norm;
-        for c = PDAMeta.Comp{i}(n_states+1:end)
+        norm = (sum(fitpar(3*static_states-2))+1);
+        fitpar(3*static_states-2) = fitpar(3*static_states-2)./norm;
+        for c = static_states
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = fitpar(3*c-2).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -4090,7 +4091,7 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
-        for j = 1:n_states
+        for j = 1:numel(hFit_Ind)
             hFit_Ind{j} = hFit_Ind{j}./norm;
         end
     end
