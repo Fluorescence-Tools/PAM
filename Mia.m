@@ -5099,7 +5099,8 @@ end
 %% Plots TICS data
 if any(mode==5)
    
-%% Generate the proper total mask
+    %% Generate the proper total mask
+    mask = true(size(MIAData.TICS.Int{1,1}));
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -5187,7 +5188,6 @@ if any(mode==5)
                 if size(MIAData.TICS.FreehandMask,1)==size(MIAData.TICS.Data{i},1) && size(MIAData.TICS.FreehandMask,2)==size(MIAData.TICS.Data{i},2)...
                     && size(MIAData.TICS.ThreshMask,1)==size(MIAData.TICS.Data{i},1) && size(MIAData.TICS.ThreshMask,2)==size(MIAData.TICS.Data{i},2)
                     % take the thresholds into account in the mask
-                    mask = true(size(MIAData.TICS.Int{i,1}));
                     mask(G1 < MIAData.TICS.Thresholds{i}(1,1)) = false;
                     mask(G1 > MIAData.TICS.Thresholds{i}(1,2)) = false;
                     mask(brightness < MIAData.TICS.Thresholds{i}(2,1)) = false;
@@ -5230,7 +5230,7 @@ if any(mode==5)
         end
     end
     
-%% Mask all TICS data    
+    %% Mask all TICS data    
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -6899,6 +6899,15 @@ Update_Plots([],[],2,channel);
 function Do_1D_XCor(obj,~)
 global MIAData
 h = guidata(findobj('Tag','Mia'));
+
+if h.Mia_Image.Settings.ROI_FramesUse.Value ~= 1
+    h.Mia_Image.Settings.ROI_FramesUse.Value = 1;
+    m = msgbox('Normal ROI selection will be applied');
+    pause(2)
+    close(m)
+    MIA_Various([],[],3);
+end
+
 
 %%% Stops, if no data was loaded
 if size(MIAData.Data,1)<1
