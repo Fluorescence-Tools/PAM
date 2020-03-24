@@ -4336,7 +4336,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  function Update_Plots(obj,~,mode,channel)
+function Update_Plots(obj,~,mode,channel)
 global MIAData UserValues
 Fig = gcf; 
 %%% This speeds display up
@@ -5212,14 +5212,18 @@ if any(mode==5)
                 %%% Plots individual pixel data in images
                 switch(h.Mia_TICS.SelectImage.Value)
                     case 1 %%% G(first lag)
-                        h.Plots.TICSImage(i).CData = G1;
+                        plotdata = G1;
                     case 2 %%% G(first lag)./mean(Counts)
-                        h.Plots.TICSImage(i).CData = brightness;
+                        plotdata = brightness;
                     case 3 %%% Mean counts
-                        h.Plots.TICSImage(i).CData = counts;
+                        plotdata = counts;
                     case 4 %%% Find G(0)/2
-                        h.Plots.TICSImage(i).CData = halflife;
+                        plotdata = halflife;
                 end
+                % Show the data on the image
+                h.Plots.TICSImage(i).CData = plotdata;
+                % Set the image scaling on the axes
+                h.Mia_TICS.Image(i).CLim = [min(min(plotdata(mask))) max(max(plotdata(mask)))];
             else %%% Hides plots, if no TICS data exists for current channel
                 h.Plots.TICS(i,1).Visible = 'off';
                 h.Plots.TICS(i,2).Visible = 'off';
