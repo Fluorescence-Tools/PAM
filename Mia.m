@@ -2687,7 +2687,7 @@ h.Mia_TICS.SelectImage = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'G(1)','Brightness','Counts','Half-Life'},...
+    'String',{'G(1)-G(end)','Brightness','Counts','Half-Life'},...
     'Callback',{@Update_Plots,5,[]},...
     'Position',[0.01 0.53, 0.08 0.03]);
 if ismac
@@ -2754,7 +2754,7 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore);
     h.Mia_TICS.Threshold_G1_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
-        'String','G(1)',...
+        'String','G(1)-G(end)',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
@@ -5101,6 +5101,11 @@ if any(mode==5)
    
     %% Generate the proper total mask
     mask = true(size(MIAData.TICS.Int{1,1}));
+    G1a = cell(3,1);
+    brightnessa = cell(3,1);
+    countsa = cell(3,1);
+    halflifea = cell(3,1);
+    
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -5108,8 +5113,10 @@ if any(mode==5)
             %%% 2:   CCF
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
                 % different images to be plotted
-                %%% G(first lag)
-                G1 = double(MIAData.TICS.Data{i}(:,:,1));
+                %%% G(first lag) - G(last lag) = the amplitude of that part
+                %%% of the correlation that actually decays within the
+                %%% total correlation function time
+                G1 = double(MIAData.TICS.Data{i}(:,:,1)-MIAData.TICS.Data{i}(:,:,end));
                 %%% G(first lag)./mean(Counts)
                 switch i
                     case 1 %ACF1
@@ -5208,17 +5215,31 @@ if any(mode==5)
                     MIAData.TICS.FreehandMask = true(size(MIAData.TICS.Int{i,1}));
                     mask = MIAData.TICS.FreehandMask;
                 end
-                
-                %%% Plots individual pixel data in images
+            end
+        end
+        G1a{i} = G1;
+        halflifea{i} = halflife;
+        countsa{i} = counts;
+        brightnessa{i} = brightness;
+    end
+    
+    for i=1:3
+        % user has previously pressed the TICS calculate at all
+        if isfield(MIAData.TICS,'Data')
+            %%% 1&3: ACF 1&2
+            %%% 2:   CCF
+            if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
+
+                    %%% Plots individual pixel data in images
                 switch(h.Mia_TICS.SelectImage.Value)
                     case 1 %%% G(first lag)
-                        plotdata = G1;
+                        plotdata = G1a{i};
                     case 2 %%% G(first lag)./mean(Counts)
-                        plotdata = brightness;
+                        plotdata = brightnessa{i};
                     case 3 %%% Mean counts
-                        plotdata = counts;
+                        plotdata = countsa{i};
                     case 4 %%% Find G(0)/2
-                        plotdata = halflife;
+                        plotdata = halflifea{i};
                 end
                 % Show the data on the image
                 h.Plots.TICSImage(i).CData = plotdata;
@@ -5233,7 +5254,6 @@ if any(mode==5)
             end
         end
     end
-    
     %% Mask all TICS data    
     for i=1:3
         % user has previously pressed the TICS calculate at all
