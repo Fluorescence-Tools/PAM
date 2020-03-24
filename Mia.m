@@ -1822,9 +1822,9 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.14, 0.26 0.06],...
-    'String','Radius:');
+    'String','Size:');
 %%% Editbox for Averaging radius
-h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius = uicontrol(...
+h.Mia_Image.Calculations.Cor_TICS_AvgSize = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Cor_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -1833,7 +1833,7 @@ h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.3 0.14, 0.15 0.06],...
     'String','3',...
-    'Tooltipstring','Sets the radius for the spatial TICS xy averaging');
+    'Tooltipstring',['Radius for the spatial TICS xy averaging.' 10 'Size of the median filter on the TICS tab.']);
 
 
 %% Perform N&B calculation tab
@@ -2707,7 +2707,7 @@ h.Mia_TICS.Median = uicontrol(...
     'Callback',{@Update_Plots,5,[]},...
     'Value', 0,...
     'Tag','Median',...
-    'Tooltipstring','Apply a median filter to G1, brightness, counts and halflife images');
+    'Tooltipstring',['Median filter the G1, brightness, counts,' 10 'halflife images and the TICS mask.' 10 'Size is defined on the Correlate tab "Size:".']);
 
 h.Mia_TICS.Normalize = uicontrol(...
     'Parent', h.Mia_TICS.Panel,...
@@ -5138,14 +5138,15 @@ if any(mode==5)
                 halflife = double((size(MIAData.TICS.Data{i},3)-sum(cumsum((MIAData.TICS.Data{i}-lastlag)./(firstlag-lastlag)<0.5,3)~=0,3)).*...
                     str2double(h.Mia_Image.Settings.Image_Frame.String));
                 
+                % median filter the images 'just to make them look better'
                 if h.Mia_TICS.Median.Value
-                    filtsize = [3 3];
+                    filtsize = str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String); %Size: on the Correlate tabe
+                    filtsize = [filtsize filtsize];
                     G1 = medfilt2(G1, filtsize, 'symmetric');
                     brightness = medfilt2(brightness, filtsize, 'symmetric');
                     counts = medfilt2(counts, filtsize, 'symmetric');
                     halflife = medfilt2(halflife, filtsize, 'symmetric');
                 end
-                
                 % reset the values
                 if ~isempty(obj)
                     if strcmp(obj.Tag, 'DoTICS') || strcmp(obj.Tag, 'Reset') || strcmp(obj.Tag, 'Median')
@@ -5214,6 +5215,10 @@ if any(mode==5)
                     MIAData.TICS.ThreshMask = true(size(MIAData.TICS.Int{i,1}));
                     MIAData.TICS.FreehandMask = true(size(MIAData.TICS.Int{i,1}));
                     mask = MIAData.TICS.FreehandMask;
+                end
+                % median filter the mask to make the mask look more logical
+                if h.Mia_TICS.Median.Value
+                    mask = medfilt2(mask, filtsize, 'symmetric');
                 end
             end
         end
@@ -7007,7 +7012,7 @@ MIAData.TICS.Frames = Frames;
 MIAData.TICS.Use = Use;
 
 %% determine if spatial filtering will be applied to TICS data
-if str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)<=1
+if str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)<=1
     h.Mia_Image.Calculations.Cor_TICS_SpaceAvg.Value=1;
 end
 %%% Determinesspatial filter
@@ -7015,11 +7020,11 @@ switch h.Mia_Image.Calculations.Cor_TICS_SpaceAvg.Value
     case 1 %%% Do nothing
         Filter = fspecial('average',1);
     case 2 %%% Moving average
-        Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)));
+        Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)));
     case 3 %%% Disc average
-        Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)-1);
+        Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)-1);
     case 4 %%% Gaussian average
-        Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String),str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)/2);
+        Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String),str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)/2);
 end
 
 %% Performs TICS correlation
