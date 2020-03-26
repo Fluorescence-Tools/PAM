@@ -1782,7 +1782,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                         FileName = {FileName};
                     end
                     %%% only load one file for now
-                    [time,decay,header] = load_PQ_decay(FileName{1});
+                    [time,decay,header] = load_PQ_decay(fullfile(PathName,FileName{1}));
                     
                     switch obj
                         case h.Menu.OpenDecayData_PQ
@@ -1813,7 +1813,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             else %%% take previous datasets IRF
                                 TauFitData.External.IRF{end+1} = TauFitData.External.IRF{end};
                                 TauFitData.External.Scat{end+1} =TauFitData.External.Scat{end};
-                                TauFitData.External.Donly{end+1} = TauFitData.External.Donly{end}
+                                TauFitData.External.Donly{end+1} = TauFitData.External.Donly{end};
                             end
                             PIEchans{end+1} = FileName{1};
                             h.PIEChannelPar_Popupmenu.String = PIEchans;
@@ -7279,7 +7279,8 @@ end
 %%% generate linear combination decay
 decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
 
-if strcmp(mode,'dist')
+%%% add donor only if parameter of model
+if strcmp(mode,'dist') && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'))
     fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
         %%% consider donor only fraction in model
