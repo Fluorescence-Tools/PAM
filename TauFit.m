@@ -7204,7 +7204,7 @@ h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannel
 
 
 function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,mode,resolution, v)
-global TauFitData
+global TauFitData UserValues
 h = guidata(gcbo);
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 5
@@ -7225,13 +7225,14 @@ x = 1:1:numel(decay);
 %%% Calculate error estimate based on poissonian counting statistics
 error = sqrt(decay); error(error == 0) = 1;
 
+include_donor_only = false;
 switch mode
     case 'tau' % fit lifetime distribution
         %%% vector of lifetimes to consider (up to 10 ns)
         tau = linspace(0,ceil(7.5/TauFitData.TACChannelWidth),resolution);
     case 'dist' % fit distance distribution
+        include_donor_only = strcmp(mode,'dist') && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'));
         %%% get F?rster distance and donor-only lifetime
-        global UserValues
         R0 = params(end-1);
         tauD = params(end)/TauFitData.TACChannelWidth;
         params(end-1:end) = [];
@@ -7260,6 +7261,11 @@ switch mode
             tau = (1./tauD+k_RET).^(-1);
             tau2 = (1./tauD2+k_RET).^(-1);
         end
+        if include_donor_only
+            % set background to zero here and readd later after donor only
+            % pattern has been added
+            bg = params(2); params(2) = 0;
+        end
 end
 
 %%% Establish library of single exponential decays, convoluted with IRF
@@ -7280,17 +7286,17 @@ end
 decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
 
 %%% add donor only if parameter of model
-if strcmp(mode,'dist') && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'))
+if include_donor_only
     fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
         %%% consider donor only fraction in model
         decay_donly = fitfun_1exp([tauD,params],static_fit_params);
      elseif strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
-        % consider biexponential donor only
-        params_donly = [h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
+        % consider biexponential donor only (without scatter or background of the donor only fit, only lifetimes)
+        params_donly = params;%[h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
         decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly],static_fit_params);
     end
-    decay_lincomb = @(p) (1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly;
+    decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
 end
 
 switch TauFitData.WeightedResidualsType
