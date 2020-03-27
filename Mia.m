@@ -5098,14 +5098,14 @@ end
 
 %% Plots TICS data
 if any(mode==5)
-   
-    %% Generate the proper total mask
-    mask = true(size(MIAData.TICS.Int{1,1}));
-    G1a = cell(3,1);
-    brightnessa = cell(3,1);
-    countsa = cell(3,1);
-    halflifea = cell(3,1);
-    
+    if isfield(MIAData.TICS,'Data')
+        %% Generate the proper total mask
+        mask = true(size(MIAData.TICS.Int{1,1}));
+        G1a = cell(3,1);
+        brightnessa = cell(3,1);
+        countsa = cell(3,1);
+        halflifea = cell(3,1);
+    end
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -5220,12 +5220,12 @@ if any(mode==5)
                 if h.Mia_TICS.Median.Value
                     mask = medfilt2(mask, filtsize, 'symmetric');
                 end
+                G1a{i} = G1;
+                halflifea{i} = halflife;
+                countsa{i} = counts;
+                brightnessa{i} = brightness;
             end
         end
-        G1a{i} = G1;
-        halflifea{i} = halflife;
-        countsa{i} = counts;
-        brightnessa{i} = brightness;
     end
     
     for i=1:3
