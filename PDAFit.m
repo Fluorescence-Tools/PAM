@@ -2033,6 +2033,7 @@ switch mode
                 PDAMeta.Plots.Gauss_Single{1,j} = copyobj(PDAMeta.Plots.Gauss_All{i,j}, h.SingleTab.Gauss_Axes);
                 PDAMeta.Plots.Gauss_Single{1,j}.Color = [0.4 0.4 0.4]; %only define those properties that are different to the all tab
             end
+            PDAMeta.Plots.Gauss_Single{1,7}.Visible = 'off'; % donor only population does not apply
             % set Ylim of the single plot Gauss
             ylim(h.SingleTab.Gauss_Axes,[min(PDAMeta.Plots.Gauss_Single{1,1}.YData), max(PDAMeta.Plots.Gauss_Single{1,1}.YData)*1.05]);
             PDAMeta.Plots.Gauss_Single{1,1}.Color = 'k';
@@ -2131,6 +2132,7 @@ switch mode
                 end
                 PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
                 PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind./sum(ydatafit);
+                PDAMeta.Plots.Gauss_All{i,7}.Visible = 'off'; % hide distance distribution as it does not apply
             else
                 PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
             end
@@ -2324,6 +2326,7 @@ switch mode
                     PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind./sum(ydatafit);
                     PDAMeta.Plots.Fit_Single{i,7}.Visible = 'on';
                     PDAMeta.Plots.Fit_Single{i,7}.YData = ydatafitind;
+                    PDAMeta.Plots.Gauss_All{i,7}.Visible = 'off'; % hide distance distribution as it does not apply
                 else
                     PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
                 end
@@ -3369,6 +3372,9 @@ else
                     PDAMeta.SampleGlobal(5) = true; %half globally link R2
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+                    PDAMeta.SampleGlobal(13) = true; %half globally link Area5
+                    PDAMeta.SampleGlobal(14) = true; %half globally link R5
+                    PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
                 case 2
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
@@ -3440,7 +3446,7 @@ else
             %% Do Fit
             switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                 case 'Simplex'
-                    fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfval);
+                    fitopts = optimset('MaxFunEvals', 1E5,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfval);
                     fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
                 case 'Gradient-based (lsqnonlin)'
                     PDAMeta.FitInProgress = 2; % indicate that we want a vector of residuals, instead of chi2, and that we only pass non-fixed parameters
@@ -5400,8 +5406,8 @@ else
     res_ax.YLabel.Color = [0 0 0];
     main_ax.Units = 'pixel';
     res_ax.Units = 'pixel';
-    main_ax.Position = [75 70 475 290];
-    res_ax.Position = [75 360 475 50];
+    main_ax.Position = [85 70 475 290];
+    res_ax.Position = [85 360 475 50];
     main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
     main_ax.YTick(end) = [];
     gauss_ax.Color = [1 1 1];
@@ -5410,12 +5416,12 @@ else
     gauss_ax.XLabel.Color = [0 0 0];
     gauss_ax.YLabel.Color = [0 0 0];
     gauss_ax.Units = 'pixel';
-    gauss_ax.Position = [650 70 225 290];
+    gauss_ax.Position = [660 70 225 290];
     %gauss_ax.GridAlpha = 0.1;
     %res_ax.GridAlpha = 0.1;
-    gauss_ax.FontSize = 18;
-    main_ax.FontSize = 18;
-    res_ax.FontSize = 18;
+    gauss_ax.FontSize = 16;
+    main_ax.FontSize = 16;
+    res_ax.FontSize = 16;
     main_ax.Children(end).Units = 'pixel';
     
     set(fig,'PaperPositionMode','auto');
@@ -5451,8 +5457,8 @@ else
         res_ax.YLabel.Color = [0 0 0];
         main_ax.Units = 'pixel';
         res_ax.Units = 'pixel';
-        main_ax.Position = [75 70 475 290];
-        res_ax.Position = [75 360 475 50];
+        main_ax.Position = [85 70 475 290];
+        res_ax.Position = [85 360 475 50];
         main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
         main_ax.YTick(end) = [];
         gauss_ax.Color = [1 1 1];
@@ -5461,10 +5467,10 @@ else
         gauss_ax.XLabel.Color = [0 0 0];
         gauss_ax.YLabel.Color = [0 0 0];
         gauss_ax.Units = 'pixel';
-        gauss_ax.Position = [650 70 225 290];
+        gauss_ax.Position = [660 70 225 290];
         %gauss_ax.GridAlpha = 0.1;
         %res_ax.GridAlpha = 0.1;
-        gauss_ax.FontSize = 15;
+        gauss_ax.FontSize = 16;
         
         %%% more style updates
         main_ax.Layer = 'top';
@@ -5473,23 +5479,22 @@ else
         set(main_ax.Children(1:end-2),'LineStyle','-');
         set(main_ax.Children,'LineWidth',2);
         main_ax.LineWidth = 2;
-        main_ax.FontSize = 20;
-        res_ax.FontSize =20;
-        res_ax.YLabel.Position(1) = -0.07;
+        main_ax.FontSize = 16;
+        res_ax.FontSize = 16;
         res_ax.LineWidth = 2;
         main_ax.Children(end-1).FaceColor = [150,150,150]./255;
         res_ax.XGrid = 'off';
         res_ax.YGrid = 'off';
         res_ax.Children(1).LineWidth = 2;
-        main_ax.YLabel.Position(1) = -0.105;
-        res_ax.YLabel.Position(1) = -0.09;
+        %main_ax.YLabel.Position(1) = -0.105;
+        %res_ax.YLabel.Position(1) = -0.09;
         colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
         for j = 2:7
             main_ax.Children(j).Color = colors(8-j,:);
         end
         main_ax.Children(1).Color = yellow; % dynamic mixing component
         uistack(main_ax.Children(8),'top')
-        gauss_ax.FontSize = 20;
+        gauss_ax.FontSize = 16;
         gauss_ax.Layer = 'top';
         gauss_ax.XGrid = 'off';
         gauss_ax.YGrid = 'off';
@@ -5627,6 +5632,11 @@ end
 function Update_FitTable(obj,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
 global PDAMeta PDAData
+if obj == h.FitTab.Table
+    %%% read current scrollbar position
+    pos_y = h.jobj.FitTable_JScrollPane.getVerticalScrollBar.getValue;
+    pos_x = h.jobj.FitTable_JScrollPane.getHorizontalScrollBar.getValue;
+end
 switch mode
     case 0 %%% Updates whole table (Open UI)
         %%% Disables cell callbacks, to prohibit double callback
@@ -5826,12 +5836,12 @@ switch mode
     case 3 %%% Individual cells callbacks
         switch obj
             case h.FitTab.Table
-                tab = h.FitTab.Table;                
+                tab = h.FitTab.Table;
                 %%% Disables cell callbacks, to prohibit double callback
                 tab.CellEditCallback=[];
                 %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
                 if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-                    if isempty(e.Indices) || (e.Indices(1)~=(size(tab.Data,1)-1) && e.Indices(2)~=1)
+                    if isempty(e.Indices) || (e.Indices(2)~=1) %%% (e.Indices(1)~=(size(tab.Data,1)-1) && e.Indices(2)~=1)
                         tab.CellEditCallback={@Update_FitTable,3};
                         return;
                     end
@@ -5920,6 +5930,7 @@ switch mode
                 end
                 %%% Enables cell callback again
                 tab.CellEditCallback={@Update_FitTable,3};
+               
             case h.KineticRates_table
                 tab = h.KineticRates_table;
                 %%% Disables cell callbacks, to prohibit double callback
@@ -5981,8 +5992,7 @@ switch mode
                 end                
                 %%% Enables cell callback again
                 tab.CellEditCallback={@Update_FitTable,3};
-        end
-        
+        end 
 end
 
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
@@ -6002,7 +6012,8 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
     h.FitTab.Table.Data = Data;
     %%% Enables cell callback again
     h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
-elseif h.SettingsTab.FixStaticToDynamicSpecies.Value == 1 %%% Link distances of static and dynamic species
+end
+if h.SettingsTab.FixStaticToDynamicSpecies.Value == 1 %%% Link distances of static and dynamic species
     %%% Disables cell callbacks, to prohibit double callback
     h.FitTab.Table.CellEditCallback=[];
     %%% Get Table Data
@@ -6020,6 +6031,12 @@ elseif h.SettingsTab.FixStaticToDynamicSpecies.Value == 1 %%% Link distances of 
     h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
 end
 
+if obj == h.FitTab.Table
+    drawnow;
+    %%% reset scrollbar position
+    h.jobj.FitTable_JScrollPane.getVerticalScrollBar.setValue(pos_y);
+    h.jobj.FitTable_JScrollPane.getHorizontalScrollBar.setValue(pos_x);
+end
 % Update the Parameters Tab
 function Update_ParamTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
