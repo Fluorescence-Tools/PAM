@@ -2273,7 +2273,29 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Settings.BVA_Rsigma3_static=0.1;
         disp('UserValues.BurstBrowser.Settings.BVA_sigma3_static was incomplete');
     end
-    P.BurstBrowser.Settings.BVA_Rsigma3_static = S.BurstBrowser.Settings.BVA_Rsigma3_static;  
+    P.BurstBrowser.Settings.BVA_Rsigma3_static = S.BurstBrowser.Settings.BVA_Rsigma3_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_amplitude1_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_amplitude1_static')
+        S.BurstBrowser.Settings.BVA_amplitude1_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_amplitude1_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_amplitude1_static = S.BurstBrowser.Settings.BVA_amplitude1_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_amplitude2_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_amplitude2_static')
+        S.BurstBrowser.Settings.BVA_amplitude2_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_amplitude2_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_amplitude2_static = S.BurstBrowser.Settings.BVA_amplitude2_static;
+    
+    %%% Check, if BurstBrowser.Settings.BVA_amplitude3_static subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_amplitude3_static')
+        S.BurstBrowser.Settings.BVA_amplitude3_static=0.1;
+        disp('UserValues.BurstBrowser.Settings.BVA_amplitude3_static was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_amplitude3_static = S.BurstBrowser.Settings.BVA_amplitude3_static;
+    
     
     %%% Check, if BurstBrowser.Settings.BVA_DynamicStates subfield exists
     if ~isfield(S.BurstBrowser.Settings,'BVA_DynamicStates')

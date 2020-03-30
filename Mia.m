@@ -1822,9 +1822,9 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.14, 0.26 0.06],...
-    'String','Radius:');
+    'String','Size:');
 %%% Editbox for Averaging radius
-h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius = uicontrol(...
+h.Mia_Image.Calculations.Cor_TICS_AvgSize = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Cor_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -1833,7 +1833,7 @@ h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.3 0.14, 0.15 0.06],...
     'String','3',...
-    'Tooltipstring','Sets the radius for the spatial TICS xy averaging');
+    'Tooltipstring',['Radius for the spatial TICS xy averaging.' 10 'Size of the median filter on the TICS tab.']);
 
 
 %% Perform N&B calculation tab
@@ -2687,7 +2687,7 @@ h.Mia_TICS.SelectImage = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'G(1)','Brightness','Counts','Half-Life'},...
+    'String',{'G(1)-G(end)','Brightness','Counts','Half-Life'},...
     'Callback',{@Update_Plots,5,[]},...
     'Position',[0.01 0.53, 0.08 0.03]);
 if ismac
@@ -2707,7 +2707,7 @@ h.Mia_TICS.Median = uicontrol(...
     'Callback',{@Update_Plots,5,[]},...
     'Value', 0,...
     'Tag','Median',...
-    'Tooltipstring','Apply a median filter to G1, brightness, counts and halflife images');
+    'Tooltipstring',['Median filter the G1, brightness, counts,' 10 'halflife images and the TICS mask.' 10 'Size is defined on the Correlate tab "Size:".']);
 
 h.Mia_TICS.Normalize = uicontrol(...
     'Parent', h.Mia_TICS.Panel,...
@@ -2754,7 +2754,7 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore);
     h.Mia_TICS.Threshold_G1_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
-        'String','G(1)',...
+        'String','G(1)-G(end)',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
@@ -4336,7 +4336,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  function Update_Plots(obj,~,mode,channel)
+function Update_Plots(obj,~,mode,channel)
 global MIAData UserValues
 Fig = gcf; 
 %%% This speeds display up
@@ -5098,8 +5098,14 @@ end
 
 %% Plots TICS data
 if any(mode==5)
-   
-%% Generate the proper total mask
+    if isfield(MIAData.TICS,'Data')
+        %% Generate the proper total mask
+        mask = true(size(MIAData.TICS.Int{1,1}));
+        G1a = cell(3,1);
+        brightnessa = cell(3,1);
+        countsa = cell(3,1);
+        halflifea = cell(3,1);
+    end
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -5107,8 +5113,10 @@ if any(mode==5)
             %%% 2:   CCF
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
                 % different images to be plotted
-                %%% G(first lag)
-                G1 = double(MIAData.TICS.Data{i}(:,:,1));
+                %%% G(first lag) - G(last lag) = the amplitude of that part
+                %%% of the correlation that actually decays within the
+                %%% total correlation function time
+                G1 = double(MIAData.TICS.Data{i}(:,:,1)-MIAData.TICS.Data{i}(:,:,end));
                 %%% G(first lag)./mean(Counts)
                 switch i
                     case 1 %ACF1
@@ -5130,14 +5138,15 @@ if any(mode==5)
                 halflife = double((size(MIAData.TICS.Data{i},3)-sum(cumsum((MIAData.TICS.Data{i}-lastlag)./(firstlag-lastlag)<0.5,3)~=0,3)).*...
                     str2double(h.Mia_Image.Settings.Image_Frame.String));
                 
+                % median filter the images 'just to make them look better'
                 if h.Mia_TICS.Median.Value
-                    filtsize = [3 3];
+                    filtsize = str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String); %Size: on the Correlate tabe
+                    filtsize = [filtsize filtsize];
                     G1 = medfilt2(G1, filtsize, 'symmetric');
                     brightness = medfilt2(brightness, filtsize, 'symmetric');
                     counts = medfilt2(counts, filtsize, 'symmetric');
                     halflife = medfilt2(halflife, filtsize, 'symmetric');
                 end
-                
                 % reset the values
                 if ~isempty(obj)
                     if strcmp(obj.Tag, 'DoTICS') || strcmp(obj.Tag, 'Reset') || strcmp(obj.Tag, 'Median')
@@ -5187,7 +5196,6 @@ if any(mode==5)
                 if size(MIAData.TICS.FreehandMask,1)==size(MIAData.TICS.Data{i},1) && size(MIAData.TICS.FreehandMask,2)==size(MIAData.TICS.Data{i},2)...
                     && size(MIAData.TICS.ThreshMask,1)==size(MIAData.TICS.Data{i},1) && size(MIAData.TICS.ThreshMask,2)==size(MIAData.TICS.Data{i},2)
                     % take the thresholds into account in the mask
-                    mask = true(size(MIAData.TICS.Int{i,1}));
                     mask(G1 < MIAData.TICS.Thresholds{i}(1,1)) = false;
                     mask(G1 > MIAData.TICS.Thresholds{i}(1,2)) = false;
                     mask(brightness < MIAData.TICS.Thresholds{i}(2,1)) = false;
@@ -5208,18 +5216,40 @@ if any(mode==5)
                     MIAData.TICS.FreehandMask = true(size(MIAData.TICS.Int{i,1}));
                     mask = MIAData.TICS.FreehandMask;
                 end
-                
-                %%% Plots individual pixel data in images
+                % median filter the mask to make the mask look more logical
+                if h.Mia_TICS.Median.Value
+                    mask = medfilt2(mask, filtsize, 'symmetric');
+                end
+                G1a{i} = G1;
+                halflifea{i} = halflife;
+                countsa{i} = counts;
+                brightnessa{i} = brightness;
+            end
+        end
+    end
+    
+    for i=1:3
+        % user has previously pressed the TICS calculate at all
+        if isfield(MIAData.TICS,'Data')
+            %%% 1&3: ACF 1&2
+            %%% 2:   CCF
+            if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
+
+                    %%% Plots individual pixel data in images
                 switch(h.Mia_TICS.SelectImage.Value)
                     case 1 %%% G(first lag)
-                        h.Plots.TICSImage(i).CData = G1;
+                        plotdata = G1a{i};
                     case 2 %%% G(first lag)./mean(Counts)
-                        h.Plots.TICSImage(i).CData = brightness;
+                        plotdata = brightnessa{i};
                     case 3 %%% Mean counts
-                        h.Plots.TICSImage(i).CData = counts;
+                        plotdata = countsa{i};
                     case 4 %%% Find G(0)/2
-                        h.Plots.TICSImage(i).CData = halflife;
+                        plotdata = halflifea{i};
                 end
+                % Show the data on the image
+                h.Plots.TICSImage(i).CData = plotdata;
+                % Set the image scaling on the axes
+                h.Mia_TICS.Image(i).CLim = [min(min(plotdata(mask))) max(max(plotdata(mask)))];
             else %%% Hides plots, if no TICS data exists for current channel
                 h.Plots.TICS(i,1).Visible = 'off';
                 h.Plots.TICS(i,2).Visible = 'off';
@@ -5229,8 +5259,7 @@ if any(mode==5)
             end
         end
     end
-    
-%% Mask all TICS data    
+    %% Mask all TICS data    
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
@@ -6900,6 +6929,15 @@ function Do_1D_XCor(obj,~)
 global MIAData
 h = guidata(findobj('Tag','Mia'));
 
+if h.Mia_Image.Settings.ROI_FramesUse.Value ~= 1
+    h.Mia_Image.Settings.ROI_FramesUse.Value = 1;
+    m = msgbox('Normal ROI selection will be applied');
+    pause(2)
+    close(m)
+    MIA_Various([],[],3);
+end
+
+
 %%% Stops, if no data was loaded
 if size(MIAData.Data,1)<1
     return;
@@ -6974,7 +7012,7 @@ MIAData.TICS.Frames = Frames;
 MIAData.TICS.Use = Use;
 
 %% determine if spatial filtering will be applied to TICS data
-if str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)<=1
+if str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)<=1
     h.Mia_Image.Calculations.Cor_TICS_SpaceAvg.Value=1;
 end
 %%% Determinesspatial filter
@@ -6982,11 +7020,11 @@ switch h.Mia_Image.Calculations.Cor_TICS_SpaceAvg.Value
     case 1 %%% Do nothing
         Filter = fspecial('average',1);
     case 2 %%% Moving average
-        Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)));
+        Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)));
     case 3 %%% Disc average
-        Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)-1);
+        Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)-1);
     case 4 %%% Gaussian average
-        Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String),str2double(h.Mia_Image.Calculations.Cor_TICS_SpaceAvg_Radius.String)/2);
+        Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String),str2double(h.Mia_Image.Calculations.Cor_TICS_AvgSize.String)/2);
 end
 
 %% Performs TICS correlation
