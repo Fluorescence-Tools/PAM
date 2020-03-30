@@ -5445,7 +5445,9 @@ else
         main_ax = copyobj(h.SingleTab.Main_Axes,fig);
         res_ax = copyobj(h.SingleTab.Res_Axes,fig);
         gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
+        % position of chi2
         main_ax.Children(end).Position = [1.35,1.09];
+        
         main_ax.Color = [1 1 1];
         res_ax.Color = [1 1 1];
         main_ax.XColor = [0 0 0];
@@ -5458,8 +5460,8 @@ else
         res_ax.YLabel.Color = [0 0 0];
         main_ax.Units = 'pixel';
         res_ax.Units = 'pixel';
-        main_ax.Position = [85 70 475 290];
-        res_ax.Position = [85 360 475 50];
+        main_ax.Position = [85 60 475 290];
+        res_ax.Position = [85 350 475 50];
         main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
         main_ax.YTick(end) = [];
         gauss_ax.Color = [1 1 1];
@@ -5468,7 +5470,7 @@ else
         gauss_ax.XLabel.Color = [0 0 0];
         gauss_ax.YLabel.Color = [0 0 0];
         gauss_ax.Units = 'pixel';
-        gauss_ax.Position = [660 70 225 290];
+        gauss_ax.Position = [660 60 225 290];
         %gauss_ax.GridAlpha = 0.1;
         %res_ax.GridAlpha = 0.1;
         gauss_ax.FontSize = 16;
@@ -5503,6 +5505,12 @@ else
         gauss_ax.XLabel.String = 'Distance [A]';
         uistack(gauss_ax.Children(7),'top');
         set(gauss_ax.Children,'LineWidth',3);
+        
+        %%% add filename
+        uicontrol(gcf,'Style','text',...
+            'String',PDAData.FileName{Active(i)}(1:end-4),...
+            'BackgroundColor',[1,1,1],'FontSize',14,'FontWeight','bold',...            
+            'Position',[85 405 800 20]);
         
         main_ax.Children(end).Units = 'pixel';
         set(fig,'PaperPositionMode','auto');
