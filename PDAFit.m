@@ -5382,7 +5382,11 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 
 Path = uigetdir(fullfile(UserValues.File.PDAPath),...
     'Specify directory name');
-
+fontsize = 16;
+if ispc
+    fontsize = fontsize/1.2;
+end
+linewidth = 1.5;
 if Path == 0
     return
 else
@@ -5420,9 +5424,9 @@ else
     gauss_ax.Position = [660 70 225 290];
     %gauss_ax.GridAlpha = 0.1;
     %res_ax.GridAlpha = 0.1;
-    gauss_ax.FontSize = 16;
-    main_ax.FontSize = 16;
-    res_ax.FontSize = 16;
+    gauss_ax.FontSize = fontsize;
+    main_ax.FontSize = fontsize;
+    res_ax.FontSize = fontsize;
     main_ax.Children(end).Units = 'pixel';
     
     set(fig,'PaperPositionMode','auto');
@@ -5447,6 +5451,7 @@ else
         gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
         % position of chi2
         main_ax.Children(end).Position = [1.35,1.09];
+        main_ax.Children(end).FontSize =fontsize;
         
         main_ax.Color = [1 1 1];
         res_ax.Color = [1 1 1];
@@ -5473,22 +5478,22 @@ else
         gauss_ax.Position = [660 60 225 290];
         %gauss_ax.GridAlpha = 0.1;
         %res_ax.GridAlpha = 0.1;
-        gauss_ax.FontSize = 16;
+        gauss_ax.FontSize = fontsize;
         
         %%% more style updates
         main_ax.Layer = 'top';
         main_ax.XGrid = 'off';
         main_ax.YGrid = 'off';
         set(main_ax.Children(1:end-2),'LineStyle','-');
-        set(main_ax.Children,'LineWidth',2);
-        main_ax.LineWidth = 2;
-        main_ax.FontSize = 16;
-        res_ax.FontSize = 16;
-        res_ax.LineWidth = 2;
+        set(main_ax.Children,'LineWidth',linewidth);
+        main_ax.LineWidth = linewidth;
+        main_ax.FontSize = fontsize;
+        res_ax.FontSize = fontsize;
+        res_ax.LineWidth = linewidth;
         main_ax.Children(end-1).FaceColor = [150,150,150]./255;
         res_ax.XGrid = 'off';
         res_ax.YGrid = 'off';
-        res_ax.Children(1).LineWidth = 2;
+        res_ax.Children(1).LineWidth = linewidth;
         %main_ax.YLabel.Position(1) = -0.105;
         %res_ax.YLabel.Position(1) = -0.09;
         colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
@@ -5497,19 +5502,22 @@ else
         end
         main_ax.Children(1).Color = yellow; % dynamic mixing component
         uistack(main_ax.Children(8),'top')
-        gauss_ax.FontSize = 16;
         gauss_ax.Layer = 'top';
         gauss_ax.XGrid = 'off';
         gauss_ax.YGrid = 'off';
-        gauss_ax.LineWidth = 2;
+        gauss_ax.LineWidth = linewidth;
         gauss_ax.XLabel.String = 'Distance [A]';
         uistack(gauss_ax.Children(7),'top');
-        set(gauss_ax.Children,'LineWidth',3);
+        set(gauss_ax.Children,'LineWidth',linewidth);
         
         %%% add filename
+        fs = 14;
+        if ispc
+            fs = fs/1.2;
+        end
         uicontrol(gcf,'Style','text',...
             'String',PDAData.FileName{Active(i)}(1:end-4),...
-            'BackgroundColor',[1,1,1],'FontSize',14,'FontWeight','bold',...            
+            'BackgroundColor',[1,1,1],'FontSize',fs,'FontWeight','bold',...            
             'Position',[85 405 800 20]);
         
         main_ax.Children(end).Units = 'pixel';
