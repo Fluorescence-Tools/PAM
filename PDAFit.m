@@ -3386,7 +3386,19 @@ else
                     %PDAMeta.SampleGlobal(5) = true; %half globally link R2
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-            end            
+            end
+        else %static model
+            PDAMeta.SampleGlobal(1) = true; %half globally link Area1
+            PDAMeta.SampleGlobal(4) = true; %half globally link Area2
+            PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+            PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+            %PDAMeta.SampleGlobal(2) = true; %half globally link R1
+            %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+            %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+            %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+            %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
+            %PDAMeta.SampleGlobal(14) = true; %half globally link R5
+            %PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
         end
         PDAMeta.Blocks = numel(PDAData.Data)/PDAMeta.BlockSize; %number of data blocks
         if ~isequal(round(PDAMeta.Blocks), PDAMeta.Blocks)
