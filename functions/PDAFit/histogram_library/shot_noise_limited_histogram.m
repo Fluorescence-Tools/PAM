@@ -1,7 +1,7 @@
 function H = shot_noise_limited_histogram(eps,NobinsE,maxN,PN,BG,BR,limits,i)
-global PDAMeta
+global PDAMeta UserValues
 %%% Evaluate probability of combination of photon counts Sg and Sr
-P_SgSr = PDA_histogram(maxN,PN,1-eps,BG,BR); % takes pG = probability to see donor photon
+P_SgSr = PDA_histogram(maxN,PN,1-eps,BG,BR,UserValues.PDA.DeconvoluteBackground); % takes pG = probability to see donor photon
 P_SgSr = reshape(P_SgSr,[maxN+1,maxN+1]);
 
 [Sg, Sr] = meshgrid(0:1:maxN,0:1:maxN);

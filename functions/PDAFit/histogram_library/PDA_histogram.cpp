@@ -121,10 +121,35 @@ void sgsr_pN(double *SgSr,        // return: SgSr(i,j) = p(Sg=i, Sr=j)
     delete[] FgFr;
 }
 
+void sgsr_pF(double *SgSr, double *pF, unsigned int Nmax, double Bg, double Br, double pg_theor) {
+
+    /*** FgFr: matrix, FgFr(i,j) = p(Fg = i, Fr = j) ***/
+
+    auto *FgFr = new double[(Nmax + 1) * (Nmax + 1)];
+    FgFr[0] = 1.;
+    unsigned int i, red;
+
+    for (i = 1; i <= Nmax; i++) {
+        polynom2_conv(FgFr + i * (Nmax + 1), FgFr + (i - 1) * (Nmax + 1), i, pg_theor);
+        for (red = 0; red <= i - 1; red++)
+            FgFr[(i - 1 - red) * (Nmax + 1) + red] = FgFr[(i - 1) * (Nmax + 1) + red] * pF[i - 1];
+    }
+    for (red = 0; red <= Nmax; red++)
+        FgFr[(Nmax - red) * (Nmax + 1) + red] = FgFr[Nmax * (Nmax + 1) + red] * pF[Nmax];
+
+
+    /*** SgSr: matrix, SgSr(i,j) = p(Sg = i, Sr = j) ***/
+
+    conv_pF(SgSr, FgFr, Nmax, Bg, Br);
+
+    delete[] FgFr;
+}
+
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=5)
-    { mexErrMsgIdAndTxt("dyn_Sim:nrhs","5 inputs required."); }
+    if(nrhs!=6)
+    { mexErrMsgIdAndTxt("dyn_Sim:nrhs","6 inputs required."); }
     if (nlhs!=1)
     { mexErrMsgIdAndTxt("dyn_Sim:nlhs","1 output required."); }
 
@@ -133,22 +158,32 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const double eps = mxGetScalar(prhs[2]);
     const double Bg = mxGetScalar(prhs[3]);
     const double Br = mxGetScalar(prhs[4]);
-
+    const bool use_PF = mxGetScalar(prhs[5]); // use PN approximation or deconvoluted PF?
+    
     double * SgSr = (double*) mxCalloc((Nmax + 1) * (Nmax + 1),sizeof(double));
-
-    //shot_noise_limited_histogram(Nbins,minE,maxE,PN,N,eps,Neps,NBG,NBR,PBG_G,PBG_R,PE);
+    
+    if (!use_PF) {
     sgsr_pN(SgSr,        // return: SgSr(i,j) = p(Sg=i, Sr=j)
             pN,        // p(N)
             Nmax,    // max number of photons (max N)
             Bg,        // <background green>, per time window (!)
             Br,        // <background red>, -"-
             eps);  
-
+    }
+    else {
+        sgsr_pF(SgSr,        // return: SgSr(i,j) = p(Sg=i, Sr=j)
+        pN,        // p(F), i.e. the deconvoluted fluorescence intensity distribution
+        Nmax,    // max number of photons (max N)
+        Bg,        // <background green>, per time window (!)
+        Br,        // <background red>, -"-
+        eps);  
+    }
 
     plhs[0] = mxCreateNumericMatrix((Nmax + 1) * (Nmax + 1),1,mxDOUBLE_CLASS,mxREAL);
     mxSetData(plhs[0], SgSr);
 }
 
+ //shot_noise_limited_histogram(Nbins,minE,maxE,PN,N,eps,Neps,NBG,NBR,PBG_G,PBG_R,PE);
 // generate shot-noise limited histogram for given epsilon value
 // sum up all probabilities for all combinations of fluorescence and background that fall into a given bin
 // works only if no brightness correction is performed
