@@ -1,4 +1,4 @@
-function [P, P_donly] = generate_histogram_library_matlab(i,NobinsE)
+function [P, P_donly] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h)
 global PDAMeta PDAData UserValues
 %%% evaluate the background probabilities
 BGgg = poisspdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
@@ -8,8 +8,8 @@ method = 'cdf';
 switch method
     case 'pdf'
         %determine boundaries for background inclusion
-        BGgg(BGgg<1E-2) = [];
-        BGgr(BGgr<1E-2) = [];
+        BGgg(BGgg<1E-3) = [];
+        BGgr(BGgr<1E-3) = [];
     case 'cdf'
         %%% evaluate the background probabilities
         CDF_BGgg = poisscdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
