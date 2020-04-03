@@ -2595,26 +2595,32 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         eps_min = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((0+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-0))).^(-1);
         PDAMeta.eps_grid{i} = linspace(eps_min,1,NobinsE+1);
         % histogram NF+NG into maxN+1 bins
-        PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
+        if ~UserValues.PDA.DeconvoluteBackground
+            % histogram NF+NG into maxN+1 bins
+            PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
+        else
+            PN = deconvolute_PofF(PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}),(PDAMeta.BGdonor(i)+PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3);
+            PN = PN(1:maxN).*sum(PDAMeta.valid{i} &  ~((PDAData.Data{i}.NG == 0) & (PDAData.Data{i}.NF == 0)));
+        end
         eps_min = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((0+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-0))).^(-1);
         eps_grid = linspace(eps_min,1,NobinsE+1);
         if calc
             PDAMeta.P(i,:) = cell(1,NobinsE+1);
-            StasApproach = true;
+            StasApproach = false;
             if StasApproach
-                %%% Note: Brightness Correction currently is not supported with this approach!
+                %%% Note: Background deconvolution is currently NOT supported with this approach!
                 limits = h.AllTab.Main_Axes.XLim;
                 for e = 1:numel(eps_grid)
                     %%% get background
                     BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
                     BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;                                       
-                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),NobinsE+1,maxN,PN,BG,BR,limits,i);
+                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins+1,maxN,PN,BG,BR,limits,i);
                 end
                 %%% add donor only histogram
                 eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
-                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,NobinsE+1,maxN,PN,BG,BR,limits,i);
+                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins+1,maxN,PN,BG,BR,limits,i);
             else
-                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
+                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,PN,h);
             end
             PDAMeta.PreparationDone(i) = 1;
         end

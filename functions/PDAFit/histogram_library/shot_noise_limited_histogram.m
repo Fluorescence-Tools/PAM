@@ -1,11 +1,11 @@
 function H = shot_noise_limited_histogram(eps,NobinsE,maxN,PN,BG,BR,limits,i)
 global PDAMeta
 %%% Evaluate probability of combination of photon counts Sg and Sr
-P_SgSr = PDA_histogram(maxN,PN,eps,BR,BG); % for some reason, BG and BR have to be assigned opposite as expected from the C code (?)
+P_SgSr = PDA_histogram(maxN,PN,1-eps,BG,BR); % takes pG = probability to see donor photon
 P_SgSr = reshape(P_SgSr,[maxN+1,maxN+1]);
 
-[Sr, Sg] = meshgrid(0:1:maxN,0:1:maxN);
-
+[Sg, Sr] = meshgrid(0:1:maxN,0:1:maxN);
+P_SgSr = P_SgSr(:);
 switch PDAMeta.xAxisUnit
     case 'Proximity Ratio'
         E_temp = Sr./(Sg+Sr);
@@ -34,9 +34,8 @@ switch PDAMeta.xAxisUnit
             % convert to distance
             E_temp = real(PDAMeta.R0(i)*(1./E_temp-1).^(1/6));
             E_temp = E_temp(valid_distance);
-            P_temp = P_temp(valid_distance);
+            P_SgSr = P_SgSr(valid_distance);
         end
 end
 [~,~,bin] = histcounts(E_temp(:),linspace(limits(1),limits(2),NobinsE));
-P_SgSr = P_SgSr(:);
 H = accumarray(bin(bin~=0),P_SgSr(bin~=0));
