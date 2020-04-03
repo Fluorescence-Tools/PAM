@@ -2602,18 +2602,19 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
             PDAMeta.P(i,:) = cell(1,NobinsE+1);
             StasApproach = true;
             if StasApproach
-                %%% Note: Brightness Correction currently is not supported with this approach!                
+                %%% Note: Brightness Correction currently is not supported with this approach!
+                limits = h.AllTab.Main_Axes.XLim;
                 for e = 1:numel(eps_grid)
                     %%% get background
                     BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
                     BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;                                       
-                    PDAMeta.P(i,:) = shot_noise_limited_histogram(eps_grid(e),maxN,PN,BG,BR);
+                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),NobinsE+1,maxN,PN,BG,BR,limits,i);
                 end
                 %%% add donor only histogram
                 eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
-                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,maxN,PN,BG,BR);
+                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,NobinsE+1,maxN,PN,BG,BR,limits,i);
             else
-                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i);
+                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
             end
             PDAMeta.PreparationDone(i) = 1;
         end
