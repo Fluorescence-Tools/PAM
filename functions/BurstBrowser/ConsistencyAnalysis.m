@@ -306,7 +306,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     ax.XLabel.String = 'Proximity Ratio, E*';
                     ax.YLabel.String = 'STDEV of E*, s';
                     ax.XLim = [0 1];
-                    ax.YLim = [0 0.55];
+                    ax.YLim = [0 0.5];
                     ax.GridAlpha = 0.35;
                     grid(ax,'on');
                     ax.FontSize = ffontsize;
@@ -595,7 +595,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                             lgd = legend(ax,legends{i},'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                         end
                         lgd.FontSize = ffontsize*0.95;
-                        face_alpha = 1;
+                        face_alpha = 0.8;
                         plot_marignal_1D_hist(ax,tauD_data,E_data,face_alpha,color,ffontsize)
                     end
                 else % plot all in one figure
@@ -638,7 +638,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
                     end
                     lgd = legend(ax,'EXP Data',SSR_dyn_legend,SSR_stat_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize * 0.95;
-                    face_alpha = 1;
+                    face_alpha = 0.8;
                     plot_marignal_1D_hist(ax,tauD,E,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize)
                     plot_marignal_1D_hist(ax,tauD_sim,E_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize)
                     plot_marignal_1D_hist(ax,tauD_static,E_static,face_alpha,UserValues.BurstBrowser.Display.ColorLine3,ffontsize)
@@ -1015,6 +1015,7 @@ axtop.NextPlot = 'add';
 axright.YLim = axmain.YLim;
 axright.XTick = linspace(axright.XLim(1),axright.XLim(2),9);
 axright.XTick(:,[1:2,4:6,8:9]) = [];
+% axright.YTick(:,[2,4,6,8,10]) = [];
 axright.XTickLabel = [];
 axright.YTickLabel = [];
 axright.LineWidth = 2;
