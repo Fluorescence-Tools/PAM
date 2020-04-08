@@ -2606,7 +2606,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         eps_grid = linspace(eps_min,1,NobinsE+1);
         if calc
             PDAMeta.P(i,:) = cell(1,NobinsE+1);
-            StasApproach = false;
+            StasApproach = true;
             if StasApproach
                 %%% Note: Background deconvolution is currently NOT supported with this approach!
                 limits = h.AllTab.Main_Axes.XLim;
@@ -6448,7 +6448,7 @@ Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
 lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
 
 %%% specify fit options
-opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-4);
+opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
 p = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts); 
 
 %%% construct distribution PofF from distribution over brightnesses
