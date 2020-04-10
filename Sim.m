@@ -1576,25 +1576,45 @@ switch Obj
               h.Sim_MIRange.Visible = 'on';
               h.Text_MIRange.Visible = 'on';
           case 5 %%% Camera mode
+%               h.Sim_Frames.Visible='on';
+%               h.Sim_Freq.Visible = 'off';
+%               h.Text_F.Visible='on';
+%               for i=[1,2]
+%                   h.Sim_Px{i}.Visible='on';
+%                   h.Sim_Size{i}.Visible='on';
+%                   h.Sim_Dim{i}.Visible='on';
+%                   h.Text_P{i}.Visible='on';
+%                   h.Text_S{i}.Visible='on';
+%                   h.Text_D{i}.Visible='on';
+%                   h.Sim_Px_Time{i}.Visible='off';
+%                   h.Text_T{i}.Visible='off';
+%               end
+%               h.Sim_Px_Time{3}.Visible='on';
+%               h.Text_T{3}.Visible='on';
+%               h.Sim_UseNoise.String = 'Apply Noise [kHz/pixel]';
+%               h.Sim_Lifetime_Panel.Visible = 'off';
+%               h.Sim_MIRange.Visible = 'off';
+%               h.Text_MIRange.Visible = 'off';
+
+              h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='on';
-              h.Sim_Freq.Visible = 'off';
               h.Text_F.Visible='on';
-              for i=[1,2]
+              for i=1:2
                   h.Sim_Px{i}.Visible='on';
                   h.Sim_Size{i}.Visible='on';
                   h.Sim_Dim{i}.Visible='on';
                   h.Text_P{i}.Visible='on';
                   h.Text_S{i}.Visible='on';
                   h.Text_D{i}.Visible='on';
-                  h.Sim_Px_Time{i}.Visible='off';
-                  h.Text_T{i}.Visible='off';
               end
-              h.Sim_Px_Time{3}.Visible='on';
-              h.Text_T{3}.Visible='on';
-              h.Sim_UseNoise.String = 'Apply Noise [kHz/pixel]';
-              h.Sim_Lifetime_Panel.Visible = 'off';
-              h.Sim_MIRange.Visible = 'off';
-              h.Text_MIRange.Visible = 'off';
+              for i=1:3
+                  h.Sim_Px_Time{i}.Visible='on';
+                  h.Text_T{i}.Visible='on';
+              end
+              h.Sim_UseNoise.String = 'Apply Noise [kHz]';
+              h.Sim_Lifetime_Panel.Visible = 'on';
+              h.Sim_MIRange.Visible = 'on';
+              h.Text_MIRange.Visible = 'on';
       end
       SimData.General(File).ScanType = h.Sim_Scan.Value;
       
@@ -2068,7 +2088,7 @@ switch mode
         Data_temp = h.Sim_Dyn_Table.Data;
         h.Sim_Dyn_Table.RowName = h.Sim_List.String;
         h.Sim_Dyn_Table.ColumnName = h.Sim_List.String;
-        Data = cell(numel(h.Sim_List.String));Data(:) = deal({0});
+        Data = cell(numel(h.Sim_List.String)); Data(:) = deal({0});
         Data(1:end-1,1:end-1) = Data_temp;
         h.Sim_Dyn_Table.Data = Data;
     case 2 %%% Deletes current species
@@ -2155,13 +2175,13 @@ for i = 1:numel(h.Sim_File_List.String)
     if ~SimData.Start %%% Aborts Simulation
        return; 
     end
-    if h.Sim_Scan.Value<5
+    %if h.Sim_Scan.Value<5
         Do_PointSim;
-    else
+    %else
         %profile on
-        Do_CameraSim;
+    %    Do_CameraSim;
         %profile viewer
-    end
+    %end
     h.Sim_File_List.Value = h.Sim_File_List.Value+1;
 end
 h.Sim_File_List.Enable = 'on';
@@ -2225,13 +2245,18 @@ end
 %%% Linker fluctuations for TCSPC fitting
 %%% dynamic interconversion
 advanced = any([...
+    Scan_Type == 5,...
     h.Sim_UseIRF.Value,...
     h.Sim_UseAni.Value,...
     h.Use_FRET_Width.Value,...
     h.Use_Linker_Width.Value,...
     any([SimData.Species.FRET] == 3)...
     ]);
+
+%advanced = true;
 %% basic simulation 
+
+
 if ~advanced
     for i = 1:numel(SimData.Species)
         if ~SimData.Start %%% Aborts Simulation
@@ -2404,7 +2429,7 @@ if ~advanced
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 [Photons,  MI, Channel, Pos] = DifSim(...
                     Frametime, BS,... General Parameters
-                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
+                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters NOTE scanticks is actually 
                     D,Pos,... Particle parameters
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
@@ -2598,7 +2623,16 @@ if advanced
         dZ(j) = SimData.Species(i).dZ(j);
     end
     
-    DiffStep = 1;
+    
+    % Set the diffusion step: once every tiny time step for confocal, once
+    % every frame for camera
+    
+    if h.Sim_Scan.Value == 5
+        DiffStep = ScanTicks(2) * Pixel(2);
+    else    
+        DiffStep = 1;
+    end
+    
 
     if h.Use_FRET_Width.Value
         HeterogeneityStep = SimData.General(h.Sim_File_List.Value).HeterogeneityUpdate*1E-3.*Freq;
@@ -2692,6 +2726,10 @@ if advanced
         else
             DynRates = DynRates.*1E3./Freq; %%% convert to DiffTime
             DynamicStep = round(0.1/max(DynRates(:))); %%% Set dynamic step such that p_max = 0.1
+            if h.Sim_Scan.Value == 5
+                % In camera mode, don't update fret dynamics during a frame
+                DynamicStep = ScanTicks(2) * Pixel(2);
+            end
             pTrans = DynRates.*DynamicStep;
             pTrans(isnan(pTrans)) = 0;
             %%% diagonal elements are 1-sum(p_else)
@@ -2750,6 +2788,7 @@ if advanced
         Cross_i = Cross{i};
         BlP_i = BlP{i};
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
+        %for (j = 1:NoP)
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2789,6 +2828,7 @@ if advanced
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+              
                 [Photons,  MI, Channel, Pol, Pos, final_state_temp(j)] = DifSim_ani(...
                     Frametime, BS,... General Parameters
                     Scan_Type, Step, Pixel, ScanTicks, DiffStep,... Scanning Parameters 

@@ -112,6 +112,8 @@ void Simulate_Diffusion(
     /// Toggle for valid particle position
     bool Invalid_Pos = true;
     
+    //NOTE we are doing one particle at a time, the loop over the particles is outside this file
+    
     for (i=0; i<SimTime; i++) 
     {
         if ( (i % (__int64)DiffusionStep) == 0) { // Only calculate diffusion at larger time intervals
@@ -215,7 +217,7 @@ void Simulate_Diffusion(
                         break;
                 }
             }
-        }
+        } //End diffusion sim code
         
         
         /// Focus movement ////////////////////////////////////////////////
@@ -226,6 +228,7 @@ void Simulate_Diffusion(
                 y = 0;
                 break;
             case 2: /// Raster scan (includes point and line)
+            case 5: // we're doing widefield as a hacked version of raster scan
                 x = fmod((double)(i / ScanTicks[0]), Pixel[0]) * Step[0] + x0;
                 y = fmod((double)(i / ScanTicks[1]), Pixel[1]) * Step[1] + x0;
                 break;
@@ -246,7 +249,7 @@ void Simulate_Diffusion(
                     // calculate cumulative probability from outgoing rates of current state
                     for (s=0;s<n_states;s++) {
                         TRANS[s] = k_dyn[n_states*state+s];
-                        }
+                    }
                     for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
                     prob = equal_dist(mt);
                     for (s=0; s<n_states; s++) /// Determines transition according to rates
@@ -296,9 +299,18 @@ void Simulate_Diffusion(
                 if (Active[k] && ExP[4*j+k]>0) /// Only calculates, if particle is not bleached and direct excitation enabled
                 {
                     /// Calculate absolute excitation probability
-                    Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
-                    + (Pos[1]-Box[1]/2+ShiftY[j]-y)*(Pos[1]-Box[1]/2+ShiftY[j]-y))/(Wr[j]*Wr[j]) ///Y
-                    -2*(Pos[2]-Box[2]/2+ShiftZ[j])*(Pos[2]-Box[2]/2+ShiftZ[j])/(Wz[j]*Wz[j])); ///Z
+                    Ex = ExP[4*j+k] * exp(
+                            -2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x)                ///X
+                               +(Pos[1]-Box[1]/2+ShiftY[j]-y)*(Pos[1]-Box[1]/2+ShiftY[j]-y))/(Wr[j]*Wr[j]) ///Y
+                            - 2*(Pos[2]-Box[2]/2+ShiftZ[j])  *(Pos[2]-Box[2]/2+ShiftZ[j])   /(Wz[j]*Wz[j]) ///Z
+                    );
+                    /* Where:
+                     * double Ex is the absolute excitation probability
+                     * double[3] Pos is the particle position
+                     * double[3] Box is the simulaton box size
+                     * double ShiftI is a constant PSF shift
+                     * double x,y is the current scan position
+                     */
                     
                     /// Calculates quenching efficiency
                     if (Map_Type == 2) 
@@ -422,7 +434,7 @@ void Simulate_Diffusion(
                                         NPhotons[0]++;
                                     }
                                 }
-                                else if (DetP[4*m+n] >= 1)
+                                else if (DetP[4*m+n] >= 1) //Is this path just dead?
                                 {
                                     /// Adds photon
                                     Macrotimes[NPhotons[0]] = (double) i;
