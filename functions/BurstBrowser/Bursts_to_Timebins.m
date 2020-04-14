@@ -1,11 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Slice Bursts in time bins for  PDA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration,MI)
+function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration,MI,export_MT)
 if nargin < 4
     export_lifetime = false;
 else
     export_lifetime = true;
+end
+if nargin < 5
+    export_MT = false;
+else
+    export_MT = true;
 end
 if duration == 0 % burstwise, simply return channel information
     PDAdata = CH;
@@ -47,6 +52,9 @@ for i = 1:numel(CH)
         PDAdata{index,1} = CH{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
         if export_lifetime
             PDAdata{index,2} = MI{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
+        end
+        if export_MT % also export macrotime
+            PDAdata{index,3} = MT{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
         end
         index = index + 1;
     end
