@@ -2703,6 +2703,22 @@ end
 if ~strcmp(TauFitData.Who,'Burstwise')
     UserValues.TauFit.FitMethod = obj.Value;
 end
+
+
+function sigma_est = get_error_combined_decay(Decay_Par,Decay_Per,G,l1,l2)
+%%% Get the correct error estimation for a combined decay par+per.
+%%% The variances do not simply sum up because the per decay is used twice.
+%%% var(vv+2*vh) = var(vv)+2^2*var(vh) = vv+4*vh
+%%%
+%%% Here, we also account for the G-factor and anisotropy correction
+%%% factors:
+%%% VM = G*(1-3*l2)*VV + 2*(1-3*l1)*VH
+%%% var(VM) = G*(1-3*l2)^2 * VV+ (2*(1-3*l1))^2 * VH
+
+sigma_est = sqrt( ((G*(1-3*l2))^2) * Decay_Par + ((2*(1-3*l1))^2) * Decay_Per);
+sigma_est(sigma_est == 0) = 0;
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Fit the PIE Channel data or Subensemble (Burst) TCSPC %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2796,15 +2812,19 @@ end
 if ~any(strcmp(TauFitData.Who,{'BurstBrowser','Burstwise'}))
     if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
         Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+        sigma_est = get_error_combined_decay(TauFitData.FitData.Decay_Par,TauFitData.FitData.Decay_Per,G,l1,l2);
     else
         Decay = TauFitData.FitData.Decay_Par;
+        sigma_est = sqrt(Decay); sigma_est(sigma_est==0) = 1;
     end    
 else
     switch TauFitData.BAMethod
         case {1,2,3,4}
             Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
+            sigma_est = get_error_combined_decay(TauFitData.FitData.Decay_Par,TauFitData.FitData.Decay_Per,G,l1,l2);
         case {5}
             Decay = TauFitData.FitData.Decay_Par;
+            sigma_est = sqrt(Decay); sigma_est(sigma_est==0) = 1;
     end
 end
 Length = numel(Decay);
@@ -2856,17 +2876,17 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 if fit
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
@@ -2923,17 +2943,17 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 if fit             
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -2950,7 +2970,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3015,9 +3035,9 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 
                 if fit
@@ -3025,8 +3045,8 @@ switch obj
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_3exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3044,7 +3064,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3127,9 +3147,9 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 
                 if fit
@@ -3137,8 +3157,8 @@ switch obj
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_4exp(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_4exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3156,7 +3176,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3246,9 +3266,9 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 
                 if fit
@@ -3256,8 +3276,8 @@ switch obj
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_stretched_exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3274,7 +3294,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3332,9 +3352,9 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 
                 if fit
@@ -3342,8 +3362,8 @@ switch obj
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3360,7 +3380,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3418,17 +3438,17 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata);
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 if fit
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3445,7 +3465,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3508,17 +3528,17 @@ switch obj
                 ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = sigma_est(ignore:end);
                 else
-                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
                 end
                 if fit                    
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3535,7 +3555,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -3611,11 +3631,13 @@ switch obj
                         donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
                         %%% combine to summed decay
                         Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
+                        sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
                     case 'External'
                         %%% check if donly is defined
                         if ~isempty(TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value})
                             Decay_donly = TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value};
                             Decay_donly = Decay_donly((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
+                            sigma_est_donly = sqrt(Decay_donly);  sigma_est_donly(sigma_est_donly==0) = 1; 
                         else
                             disp('No Donor only sample loaded.');
                             return;
@@ -3638,9 +3660,11 @@ switch obj
                         
                         if PIE_1 == PIE_2
                             Decay_donly = donly_par;
+                            sigma_est_donly = sqrt(Decay_donly); sigma_est_donly(sigma_est_donly==0) = 1; 
                         else
                             %%% combine to summed decay
                             Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
+                            sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
                         end
                 end
                         
@@ -3678,17 +3702,17 @@ switch obj
                 Decay_FitRange = Decay_stacked;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
-                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                    sigma_est_fit = [sigma_est(ignore:end) sigma_est_donly(ignore:end)];
                 else
-                    sigma_est = ones(1,numel(Decay_stacked));
+                    sigma_est_fit = ones(1,numel(Decay_stacked));
                 end
                 if fit                    
                     %%% Update Progressbar
                     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,Conv_Type};
                     if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata),Decay_stacked),...
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -3709,7 +3733,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay_stacked-FitFun); 
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay_stacked);
+                        wres = wres./[sigma_est sigma_est_donly];
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
