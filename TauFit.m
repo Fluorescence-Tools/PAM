@@ -7348,6 +7348,8 @@ opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
 tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
 
 advanced = false;
+%%% To Do: Add automatic choice of regularization parameter (or a GUI to
+%%% tune it)
 if advanced
     %%% Tikhonov:
     % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
@@ -7362,7 +7364,7 @@ if advanced
     H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
     f = -2*decay_ind_norm*decay_norm'./numel(decay);
 
-    v_range = logspace(-2,3,300);
+    v_range = [0, logspace(-6,3,300)];
     tau_dist = zeros(numel(v_range),numel(p0));
     model = zeros(numel(v_range),numel(decay));
     chi2 = zeros(numel(v_range),1);
