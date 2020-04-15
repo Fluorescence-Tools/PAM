@@ -2901,7 +2901,7 @@ switch obj
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./sqrt(Decay);
+                        wres = wres./sigma_est;
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -4810,15 +4810,16 @@ switch obj
                 x0(end+1) = UserValues.TauFit.FitParams{chan}(13);
                 x0(end+1) = UserValues.TauFit.FitParams{chan}(14);
         end
-        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata,mode);
+        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,sigma_est,x0,xdata,mode);
         
         % plot the result
         switch TauFitData.WeightedResidualsType
             case 'Gaussian'
-                wres = (Decay(ignore:end)-FitFun)./sqrt(Decay(ignore:end));
+                wres = (Decay(ignore:end)-FitFun)./sigma_est;
             case 'Poissonian'
                  wres = MLE_w_res(FitFun,Decay(ignore:end)).*sign(Decay(ignore:end)-FitFun);
         end
+        
         %%% define ignore region
         FitFun_ignore = NaN(1,ignore);
         wres_ignore = NaN(1,ignore);
@@ -7227,14 +7228,14 @@ h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
 
 
-function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,mode,resolution, v)
+function [tau_dist, tau, model, chi2] = taufit_mem(decay,error,params,static_fit_params,mode,resolution, v)
 global TauFitData UserValues
 h = guidata(gcbo);
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
-if nargin < 5
+if nargin < 6
     resolution = 300;
 end
-if nargin < 6
+if nargin < 7
     %%% scaling parameter for the entropy term
     v = 1E-5; 
     % this value is taken from:
@@ -7244,10 +7245,8 @@ end
 
 % remove ignore region from decay
 decay = decay(static_fit_params{7}:end);
+error = error(static_fit_params{7}:end);
 x = 1:1:numel(decay);
-
-%%% Calculate error estimate based on poissonian counting statistics
-error = sqrt(decay); error(error == 0) = 1;
 
 include_donor_only = false;
 switch mode
@@ -7321,6 +7320,8 @@ if include_donor_only
         decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly],static_fit_params);
     end
     decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
+    % for Tikhonov 
+    decay_ind = (1-bg).*((1-fraction_donly).*decay_ind + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
 end
 
 switch TauFitData.WeightedResidualsType
@@ -7338,10 +7339,79 @@ p=p0;
 %%% initialize boundaries
 Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
 lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
+%%% boundary condition that sum(p) = 1
+Aeq = zeros(numel(p0)); Aeq(1,:) = 1;
+beq = zeros(size(p0)); beq(1) = 1;
 
 %%% specify fit options
 opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
 tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
+
+advanced = false;
+if advanced
+    %%% Tikhonov:
+    % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
+    % equivalent to:
+    % xT(AT*A+lambda I)x - 2bTAx + bTb
+    % quadprog solves system of tpye: 0.5*xTHx + fTx
+    % so: H = 2(AT*A+lambda I)
+    %     fT = -2bTA
+    decay_ind_norm = decay_ind./repmat(error,300,1);
+    decay_norm = decay./error;
+    c = decay_norm*decay_norm'./numel(decay);
+    H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
+    f = -2*decay_ind_norm*decay_norm'./numel(decay);
+
+    v_range = logspace(-2,3,300);
+    tau_dist = zeros(numel(v_range),numel(p0));
+    model = zeros(numel(v_range),numel(decay));
+    chi2 = zeros(numel(v_range),1);
+    n = zeros(numel(v_range),1);
+    options = optimoptions(@quadprog,'Display','none');
+    for i = 1:numel(v_range)
+        dist = quadprog(H+2*v_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
+        n(i) = norm(dist);
+        model(i,:) = decay_ind'*dist;
+        chi2(i) = getchi2(dist,c,f,H);
+        tau_dist(i,:) = dist;
+    end
+
+    do_mem = false;
+    if do_mem
+        %%% MEM: Algorithm according to Vinogradov-Wilson (2000)
+
+        %%% (This algorithm does not converge well.)
+        mu_range = logspace(-6,2,100);
+        niter = 10;
+        d_iter = zeros(numel(mu_range),niter);
+        model = zeros(numel(mu_range),numel(decay));
+        chi2_mem = zeros(numel(mu_range),1);
+        S = zeros(numel(mu_range),1); % entropy
+        tau_dist_mem = zeros(numel(mu_range),numel(p0));
+        for i = 1:numel(mu_range)
+            j = 1;
+
+            D = diag(zeros(numel(p0),1));
+            l = zeros(size(p0));
+            p_mem = p0;
+            d = memdelta(p_mem,l,f,H);
+            while (d > 0.01) && j<=niter
+                p_mem = quadprog(H+2*mu_range(i)*D,f+mu_range(i)*(l-1),Aieq,bieq,Aeq,beq,[],[],[],options);
+                p_mem(p_mem<1E-12) = 1E-12;
+                l = log(p_mem./p0);
+                D = diag(1./p_mem);
+                d = memdelta(p_mem,l,f,H);
+                d_iter(i,j) = d;
+                j = j+1;
+            end
+            model(i,:) = decay_ind'*p_mem;
+            chi2_mem(i) = getchi2(p_mem,c,f,H);
+            S(i) = -p_mem'*l;
+            tau_dist_mem(i,:) = p_mem;
+        end
+    end
+end
+
 
 model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 switch TauFitData.WeightedResidualsType
@@ -7357,6 +7427,18 @@ switch mode
     case 'dist'
         tau = R;
 end
+
+function d = memdelta(p,l,q,H)
+%%% the delta for MEM optimization
+Q = q+H*p;
+if any(l>0)
+    d = 0.5*norm(Q/norm(Q)+(l+1)/norm(l+1));
+else
+    d = 0.5*norm(Q/norm(Q));
+end
+
+function chi2 = getchi2(p,c,q,H)
+chi2 = c + (q' + 0.5*p'*H)*p;
 
 function [c,ceq] = nonlcon(x)
 %%% nonlinear constraint for deconvolution
