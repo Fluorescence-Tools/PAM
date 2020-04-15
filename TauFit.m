@@ -4815,7 +4815,7 @@ switch obj
         % plot the result
         switch TauFitData.WeightedResidualsType
             case 'Gaussian'
-                wres = (Decay(ignore:end)-FitFun)./sigma_est;
+                wres = (Decay(ignore:end)-FitFun)./sigma_est(ignore:end);
             case 'Poissonian'
                  wres = MLE_w_res(FitFun,Decay(ignore:end)).*sign(Decay(ignore:end)-FitFun);
         end
@@ -7343,15 +7343,15 @@ lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
 Aeq = zeros(numel(p0)); Aeq(1,:) = 1;
 beq = zeros(size(p0)); beq(1) = 1;
 
-%%% specify fit options
-opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
-tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
-
-advanced = false;
-%%% To Do: Add automatic choice of regularization parameter (or a GUI to
-%%% tune it)
-if advanced
-    %%% Tikhonov:
+advanced = true;
+if ~advanced
+    %%% specify fit options
+    opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
+    tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
+    model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
+elseif advanced
+    do_mem = false;
+    %%% prepare vector and matrices
     % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
     % equivalent to:
     % xT(AT*A+lambda I)x - 2bTAx + bTb
@@ -7363,27 +7363,31 @@ if advanced
     c = decay_norm*decay_norm'./numel(decay);
     H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
     f = -2*decay_ind_norm*decay_norm'./numel(decay);
-
-    v_range = [0, logspace(-6,3,300)];
-    tau_dist = zeros(numel(v_range),numel(p0));
-    model = zeros(numel(v_range),numel(decay));
-    chi2 = zeros(numel(v_range),1);
-    n = zeros(numel(v_range),1);
     options = optimoptions(@quadprog,'Display','none');
-    for i = 1:numel(v_range)
-        dist = quadprog(H+2*v_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
-        n(i) = norm(dist);
-        model(i,:) = decay_ind'*dist;
-        chi2(i) = getchi2(dist,c,f,H);
-        tau_dist(i,:) = dist;
-    end
-
-    do_mem = false;
-    if do_mem
+    if ~do_mem 
+        %%% Tikhonov
+        v_range = [0, logspace(-2,3,300)];
+        tau_dist_tik = zeros(numel(v_range),numel(p0));
+        model = zeros(numel(v_range),numel(decay));
+        chi2 = zeros(numel(v_range),1);
+        n = zeros(numel(v_range),1);
+        for i = 1:numel(v_range)
+            dist = quadprog(H+2*v_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
+            n(i) = norm(dist);
+            model(i,:) = decay_ind'*dist;
+            chi2(i) = getchi2(dist,c,f,H);
+            tau_dist_tik(i,:) = dist;
+        end
+        %%% find the point of maximum curvature
+        ix_c = l_curve_corner(flipud(chi2),flipud(n),true); % chi2 and n need to be ordered in decreasing amount of regularization
+        ix_c = numel(chi2)+1-ix_c;
+        tau_dist = tau_dist_tik(ix_c,:);
+        model = model(ix_c,:);
+    elseif do_mem
         %%% MEM: Algorithm according to Vinogradov-Wilson (2000)
 
         %%% (This algorithm does not converge well.)
-        mu_range = logspace(-6,2,100);
+        mu_range = logspace(-4,2,250);
         niter = 10;
         d_iter = zeros(numel(mu_range),niter);
         model = zeros(numel(mu_range),numel(decay));
@@ -7411,11 +7415,14 @@ if advanced
             S(i) = -p_mem'*l;
             tau_dist_mem(i,:) = p_mem;
         end
+        %%% find the point of maximum curvature
+        ix_c = l_curve_corner(flipud(chi2_mem),flipud(-S),true); % chi2 and n need to be ordered in decreasing amount of regularization
+        ix_c = numel(chi2_mem)+1-ix_c;
+        tau_dist = tau_dist_mem(ix_c,:);
+        model = model(ix_c,:);
     end
 end
 
-
-model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
         chi2 = sum( (decay-model).^2./error.^2)./(numel(decay));
