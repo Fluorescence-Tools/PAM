@@ -2716,7 +2716,7 @@ function sigma_est = get_error_combined_decay(Decay_Par,Decay_Per,G,l1,l2)
 %%% var(VM) = G*(1-3*l2)^2 * VV+ (2*(1-3*l1))^2 * VH
 
 sigma_est = sqrt( ((G*(1-3*l2))^2) * Decay_Par + ((2*(1-3*l1))^2) * Decay_Per);
-sigma_est(sigma_est == 0) = 0;
+sigma_est(sigma_est == 0) = 1;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7316,7 +7316,7 @@ if include_donor_only
         decay_donly = fitfun_1exp([tauD,params],static_fit_params);
      elseif strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
         % consider biexponential donor only (without scatter or background of the donor only fit, only lifetimes)
-        params_donly = params;%[h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
+        params_donly = [0,0,params(3)];%[h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
         decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly],static_fit_params);
     end
     decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
@@ -7366,7 +7366,7 @@ elseif advanced
     options = optimoptions(@quadprog,'Display','none');
     if ~do_mem 
         %%% Tikhonov
-        v_range = [0, logspace(-2,3,300)];
+        v_range = [0, logspace(-2,4,300)];
         tau_dist_tik = zeros(numel(v_range),numel(p0));
         model = zeros(numel(v_range),numel(decay));
         chi2 = zeros(numel(v_range),1);
@@ -7386,9 +7386,9 @@ elseif advanced
     elseif do_mem
         %%% MEM: Algorithm according to Vinogradov-Wilson (2000)
 
-        %%% (This algorithm does not converge well.)
-        mu_range = logspace(-4,2,250);
-        niter = 10;
+        %%% (This algorithm does not converge when the normalization is enforced by the equality condition.)
+        mu_range = logspace(-4,2,300);
+        niter = 20;
         d_iter = zeros(numel(mu_range),niter);
         model = zeros(numel(mu_range),numel(decay));
         chi2_mem = zeros(numel(mu_range),1);
@@ -7397,17 +7397,17 @@ elseif advanced
         for i = 1:numel(mu_range)
             j = 1;
 
-            D = diag(zeros(numel(p0),1));
+            D = diag(1./p0);%diag(zeros(numel(p0),1));
             l = zeros(size(p0));
             p_mem = p0;
             d = memdelta(p_mem,l,f,H);
             while (d > 0.01) && j<=niter
-                p_mem = quadprog(H+2*mu_range(i)*D,f+mu_range(i)*(l-1),Aieq,bieq,Aeq,beq,[],[],[],options);
+                d_iter(i,j) = d;
+                p_mem = quadprog(H+2*mu_range(i)*D,f+mu_range(i)*(l-1),Aieq,bieq,[],[],[],[],[],options);
                 p_mem(p_mem<1E-12) = 1E-12;
                 l = log(p_mem./p0);
                 D = diag(1./p_mem);
                 d = memdelta(p_mem,l,f,H);
-                d_iter(i,j) = d;
                 j = j+1;
             end
             model(i,:) = decay_ind'*p_mem;
@@ -7416,7 +7416,7 @@ elseif advanced
             tau_dist_mem(i,:) = p_mem;
         end
         %%% find the point of maximum curvature
-        ix_c = l_curve_corner(flipud(chi2_mem),flipud(-S),true); % chi2 and n need to be ordered in decreasing amount of regularization
+        ix_c = l_curve_corner(flipud(chi2_mem),flipud(-S-min(-S)),true); % chi2 and n need to be ordered in decreasing amount of regularization
         ix_c = numel(chi2_mem)+1-ix_c;
         tau_dist = tau_dist_mem(ix_c,:);
         model = model(ix_c,:);
