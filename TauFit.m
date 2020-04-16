@@ -1517,12 +1517,31 @@ h.MCMC_Error_Estimation_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.3 0.65 0.05],...
+    'Position',[0.05 0.5 0.65 0.05],...
     'String','Perform MCMC error estimation?',...
     'FontSize',10,...
     'TooltipString',sprintf('Performs Markov Chain Monte Carlo sampling using the Metropolis-Hasting algorithm\nto estimate the posterior distribution of the model parameters.'),...
     'Tag','NormalizeScatter_Menu',...
     'Callback',[]);
+h.Rebin_Histogram_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.4 0.7 0.075],...
+    'String','Increase Histogram Binwidth (Faktor):',...
+    'FontSize',10,...
+    'Tag','Rebin_Histogram_Text');
+h.Rebin_Histogram_Edit = uicontrol(...
+    'Parent',h.Settings_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'Position',[0.8 0.4 0.15 0.075],...
+    'String','1',...
+    'FontSize',10,...
+    'Tag','Rebin_Histogram_Edit',...
+    'Callback',@UpdateOptions);
 h.Cleanup_IRF_Menu = uicontrol(...
     'Style','checkbox',...
     'Parent',h.Settings_Panel,...
@@ -2148,10 +2167,9 @@ end
 % nanoseconds per microtime bin
 TACtoTime = TauFitData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 
-if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy)
+if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
     %LoadData button or Burstwise lifetime button was pressed
     %%% Plot the Data
-    % anders, Should data be plotted at this point?
     h.Plots.Decay_Par.XData = TauFitData.XData_Par{chan}*TACtoTime;
     h.Plots.Decay_Per.XData = TauFitData.XData_Per{chan}*TACtoTime;
     h.Plots.IRF_Par.XData = TauFitData.XData_Par{chan}*TACtoTime;
@@ -2164,7 +2182,9 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.Plots.IRF_Per.YData = TauFitData.hIRF_Per{chan};
     h.Plots.Scat_Par.YData = TauFitData.hScat_Par{chan};
     h.Plots.Scat_Per.YData = TauFitData.hScat_Per{chan};
+
     h.Microtime_Plot.XLim = [min([TauFitData.XData_Par{chan}*TACtoTime TauFitData.XData_Per{chan}*TACtoTime]) max([TauFitData.XData_Par{chan}*TACtoTime TauFitData.XData_Per{chan}*TACtoTime])];
+    
     try
         h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}]) 10/9*max([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}])];
     catch
@@ -6606,7 +6626,60 @@ switch obj
     case h.DonorOnlyReference_Popupmenu
         UserValues.TauFit.DonorOnlyReferenceSource = obj.Value;
 end
+
+if obj == h.Rebin_Histogram_Edit
+    %%% round value
+    new_res = str2double(h.Rebin_Histogram_Edit.String);
+    if ~isfinite(new_res)
+        new_res = 1;
+    end
+    if new_res < 1
+        new_res = 1;
+    end
+    h.Rebin_Histogram_Edit.String = num2str(new_res);
+    if ~isfield(TauFitData,'OriginalHistograms')
+        % first, copy original data so it is not lost
+        TauFitData.OriginalHistograms.hMI_Par= TauFitData.hMI_Par;
+        TauFitData.OriginalHistograms.hMI_Per= TauFitData.hMI_Per;
+        TauFitData.OriginalHistograms.hIRF_Par = TauFitData.hIRF_Par;
+        TauFitData.OriginalHistograms.hIRF_Per = TauFitData.hIRF_Per;
+        TauFitData.OriginalHistograms.hScat_Par = TauFitData.hScat_Par;
+        TauFitData.OriginalHistograms.hScat_Per = TauFitData.hScat_Per;
+        TauFitData.OriginalHistograms.TACChannelWidth = TauFitData.TACChannelWidth;
+    end
+    if new_res > 1
+        %%% Rebin histogram in TauFitData
+        for i = 1:numel(TauFitData.OriginalHistograms.hMI_Par) % loop over all channels
+            TauFitData.hMI_Par{i} = downsamplebin(TauFitData.OriginalHistograms.hMI_Par{i},new_res);
+            TauFitData.hMI_Per{i} = downsamplebin(TauFitData.OriginalHistograms.hMI_Per{i},new_res);
+            TauFitData.hIRF_Par{i} = downsamplebin(TauFitData.OriginalHistograms.hIRF_Par{i},new_res)';
+            TauFitData.hIRF_Per{i} = downsamplebin(TauFitData.OriginalHistograms.hIRF_Per{i},new_res)';
+            TauFitData.hScat_Par{i} = downsamplebin(TauFitData.OriginalHistograms.hScat_Par{i},new_res)';
+            TauFitData.hScat_Per{i} = downsamplebin(TauFitData.OriginalHistograms.hScat_Per{i},new_res)';
+            TauFitData.XData_Par{i} = 1:numel(TauFitData.hMI_Par{i});
+            TauFitData.XData_Per{i} = 1:numel(TauFitData.hMI_Per{i});
+        end
+        TauFitData.TACChannelWidth = new_res*TauFitData.OriginalHistograms.TACChannelWidth;
+    elseif new_res == 1
+        % copy old data back
+        for i = 1:numel(TauFitData.OriginalHistograms.hMI_Par) % loop over all channels
+            TauFitData.hMI_Par{i} = TauFitData.OriginalHistograms.hMI_Par{i};
+            TauFitData.hMI_Per{i} = TauFitData.OriginalHistograms.hMI_Per{i};
+            TauFitData.hIRF_Par{i} = TauFitData.OriginalHistograms.hIRF_Par{i};
+            TauFitData.hIRF_Per{i} = TauFitData.OriginalHistograms.hIRF_Per{i};
+            TauFitData.hScat_Par{i} = TauFitData.OriginalHistograms.hScat_Par{i};
+            TauFitData.hScat_Per{i} = TauFitData.OriginalHistograms.hScat_Per{i};
+            TauFitData.XData_Par{i} = 1:numel(TauFitData.hMI_Par{i});
+            TauFitData.XData_Per{i} = 1:numel(TauFitData.hMI_Per{i});
+        end
+        TauFitData.TACChannelWidth = TauFitData.OriginalHistograms.TACChannelWidth;
+    end
+    %%% Update Plots
+    Update_Plots(h.Rebin_Histogram_Edit,[]);
+end
 LSUserValues(1);
+
+
 
 function ChangeLineStyle(h)
 global UserValues
