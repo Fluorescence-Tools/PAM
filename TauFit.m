@@ -2848,7 +2848,6 @@ else
     end
 end
 Length = numel(Decay);
-
 ignore = TauFitData.Ignore{chan};
 
 %% Start Fit
@@ -7461,7 +7460,7 @@ if ~advanced
     tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
     model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 elseif advanced
-    do_mem = true;
+    do_mem = false;
     %%% prepare vector and matrices
     % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
     % equivalent to:
