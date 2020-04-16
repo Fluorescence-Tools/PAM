@@ -1,4 +1,4 @@
-function [k_corner,info] = l_curve_corner(rho,eta,plot)
+function [k_corner,info] = l_curve_corner(rho,eta,reg,show_plot)
 %CORNER Find corner of discrete L-curve via adaptive pruning algorithm.
 %
 % [k_corner,info] = corner(rho,eta,fig)
@@ -47,8 +47,8 @@ end
 rho = rho(:);       % Make rho and eta column vectors.
 eta = eta(:);
 
-if (nargin < 3)
-    plot = false;        % Default is no figure.
+if (nargin < 4)
+    show_plot = 0;        % Default is no figure.
 end
 
 info = 0;
@@ -166,16 +166,20 @@ end
 % Corner according to original vectors without Inf, NaN, and zeros removed.
 k_corner = kept(index);
 
-if plot  % Show log-log L-curve and indicate the found corner.
+if show_plot  % Show log-log L-curve and indicate the found corner.
     figure; clf
     diffrho2 = (max(P(:,1))-min(P(:,1)))/2;
     diffeta2 = (max(P(:,2))-min(P(:,2)))/2;
-    loglog(rho, eta, 'k--o'); hold on; axis square;
+    %%% if search is done in linear space, take the log here
+    if show_plot == 2
+        rho = log10(rho); eta = log10(eta);
+    end
+    loglog(rho, eta, 'k--o','LineWidth',2); hold on; axis square;
     % Mark the corner.
     loglog([min(rho)/100,rho(index)],[eta(index),eta(index)],':r',... 
-           [rho(index),rho(index)],[min(eta)/100,eta(index)],':r') 
+           [rho(index),rho(index)],[min(eta)/100,eta(index)],':r','LineWidth',2) 
     % Scale axes to same number of decades.
-    if abs(diffrho2)>abs(diffeta2),
+    if abs(diffrho2)>abs(diffeta2)
         ax(1) = min(P(:,1)); ax(2) = max(P(:,1));
         mid = min(P(:,2)) + (max(P(:,2))-min(P(:,2)))/2;
         ax(3) = mid-diffrho2; ax(4) = mid+diffrho2;
@@ -184,10 +188,16 @@ if plot  % Show log-log L-curve and indicate the found corner.
         mid = min(P(:,1)) + (max(P(:,1))-min(P(:,1)))/2;
         ax(1) = mid-diffeta2; ax(2) = mid+diffeta2;
     end
-    ax = 10.^ax; ax(1) = ax(1)/2; axis(ax);
-	xlabel('residual norm || A x - b ||_2')
-	ylabel('solution (semi)norm || L x ||_2');
-    title(sprintf('Discrete L-curve, corner at %d', k_corner));
+    if show_plot == 1
+        ax = 10.^ax;
+    end
+    ax(1) = ax(1)/2; axis(ax);
+	xlabel('\chi^2_r')
+	ylabel('solution norm || x ||_2');
+    title(sprintf('L-curve, corner at \\mu = %.2d', reg(k_corner)));
+    set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top');
+    set(gcf,'Color',[1,1,1]);
+    xlim([0.95*min(rho),min([1.5,1.05*max(rho)])]); ylim([0.95*min(eta(rho<1.5)),1.05*max(eta)]);
 end
 
 % =========================================================================

@@ -2874,6 +2874,12 @@ switch obj
         lb = cell2mat(h.FitPar_Table.Data(:,2))';
         ub = cell2mat(h.FitPar_Table.Data(:,3))';
         fixed = cell2mat(h.FitPar_Table.Data(:,4))';
+        %%% Add I0 parameter (Initial fluorescence intensity)        
+        I0 = 2*max(Decay);
+        x0(end+1) = I0;
+        lb(end+1) = 0;
+        ub(end+1) = Inf;
+        fixed(end+1) = false;
         if all(fixed) %%% all parameters fixed, instead just plot the current values
             fit = 0;
         else
@@ -2937,7 +2943,8 @@ switch obj
                 FitResult = num2cell(x');
                 FitResult{lifetimes} = FitResult{lifetimes}.*TauFitData.TACChannelWidth;
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -2949,6 +2956,9 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(8) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(10) = FitResult{3};
                 UserValues.TauFit.IRFShift{chan} = FitResult{4};
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Biexponential'
                 %%% Parameter:
                 %%% taus    - Lifetimes
@@ -3019,11 +3029,13 @@ switch obj
                 meanTau = FitResult{1}*f1+FitResult{2}*f2;
                 meanTau_Fraction = FitResult{1}*FitResult{3} + FitResult{2}*(1-FitResult{3});
                 % Also update status text
-                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end}),....
+                    sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3125,13 +3137,15 @@ switch obj
                 meanTau_Fraction = FitResult{1}*FitResult{4} + FitResult{2}*FitResult{5} + (1-FitResult{4}-FitResult{5})*FitResult{3};
                 % FitResult{4} = amp1;
                 % FitResult{5} = amp2;
-                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end}),...
+                    sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
                     sprintf('Mean Lifetime Int: %.2f ns',meanTau), ...
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'], ...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.'],...
                     ['Intensity fraction of Tau3: ' sprintf('%2.2f',100*f3) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3240,14 +3254,16 @@ switch obj
                 meanTau_Fraction = FitResult{1}*FitResult{5} + FitResult{2}*FitResult{6} + FitResult{3}*FitResult{7} + (1-FitResult{5}-FitResult{6}-FitResult{7})*FitResult{7};
                 % FitResult{4} = amp1;
                 % FitResult{5} = amp2;
-                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end}),...
+                    sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
                     sprintf('Mean Lifetime Int: %.2f ns',meanTau), ...
                     ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'], ...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.'],...
                     ['Intensity fraction of Tau3: ' sprintf('%2.2f',100*f3) ' %.'],...
                     ['Intensity fraction of Tau4: ' sprintf('%2.2f',100*f4) ' %.']};
                 
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                     UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -3334,13 +3350,15 @@ switch obj
                     FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
                 end
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 
                 % species-weighted meanTau = tau/beta*gammafunction(1/beta)
                 meanTau_Fraction = (FitResult{1}/FitResult{2})*gamma(1/FitResult{2});
                 % intensity-weighted meanTau =  tau*gamma(2/beta)/gamma(1/beta)
                 meanTau = FitResult{1}*gamma(2/FitResult{2})/gamma(1/FitResult{2});
-                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau)};
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end}),...
+                    sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau)};
 
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
@@ -3421,7 +3439,8 @@ switch obj
                     FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
                 end
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(21) = fix(1);
@@ -3439,6 +3458,9 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{5};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{6};
                 UserValues.TauFit.IRFShift{chan} = FitResult{7};
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Distribution plus Donor only'
                 %%% Parameter:
                 %%% Center R
@@ -3505,7 +3527,8 @@ switch obj
                     FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
                 end
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(21) = fix(1);
@@ -3525,6 +3548,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{6};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Two Distributions plus Donor only'
                 %%% Parameter:
                 %%% Center R1
@@ -3595,7 +3620,8 @@ switch obj
                     FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
                 end
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(21) = fix(1);
@@ -3621,6 +3647,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data      
                 switch TauFitData.Who
                     case {'BurstBrowser','Burstwise'}
@@ -3687,7 +3715,11 @@ switch obj
                             sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
                         end
                 end
-                        
+                I0_donly = 2*max(Decay_donly);
+                x0(end+1) = I0_donly;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;        
                 %%% Parameter:
                 %%% Center R1
                 %%% sigmaR1
@@ -3705,6 +3737,9 @@ switch obj
                 %%% Scatter Donly
                 %%% Background Donly
                 %%% IRF shift
+                %%% I0(DA)
+                %%% I0(DOnly)
+                
                 
                 %%% Convert Lifetimes
                 lifetimes = [10,11,12];
@@ -3771,7 +3806,8 @@ switch obj
                     FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
                 end
                 TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-2);
+                TauFitData.I0 = FitResult{end-1};
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 if save_fix
                 UserValues.TauFit.FitFix{chan}(21) = fix(1);
@@ -3807,6 +3843,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(9) = FitResult{14};
                 UserValues.TauFit.FitParams{chan}(11) = FitResult{15};
                 UserValues.TauFit.IRFShift{chan} = FitResult{16};
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1})};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -3850,11 +3888,9 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                %%% update I0
                 I0 = max(Decay_stacked);
-                x0(end+1) = I0;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
+                x0(end) = I0;
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata);
@@ -3978,11 +4014,9 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                %%% update I0
                 I0 = max(Decay_stacked);
-                x0(end+1) = I0;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
+                x0(end) = I0;
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata);
@@ -4125,11 +4159,9 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                %%% update I0
                 I0 = max(Decay_stacked);
-                x0(end+1) = I0;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
+                x0(end) = I0;
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata);
@@ -4257,11 +4289,9 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                %%% update I0
                 I0 = max(Decay_stacked);
-                x0(end+1) = I0;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
+                x0(end) = I0;
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata);
@@ -4406,11 +4436,9 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                %%% update I0
                 I0 = max(Decay_stacked);
-                x0(end+1) = I0;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
+                x0(end) = I0;
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata);
@@ -4591,10 +4619,10 @@ switch obj
                 %%% normalize decays for better joint display
                 max_par = max(Fit_par); max_per = max(Fit_per);
                 mean_int = mean([max_par,max_per]);
-                Decay_par = mean_int*Decay_par./max_par;
-                Fit_par = mean_int*Fit_par./max_par;                
-                Decay_per = mean_int*Decay_per./max_per;
-                Fit_per = mean_int*Fit_per./max_per;
+                Decay_par = max_par*Decay_par./max_par;
+                Fit_par = max_par*Fit_par./max_par;                
+                Decay_per = max_par*Decay_per./max_per;
+                Fit_per = max_par*Fit_per./max_per;
                 
                 IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
                 IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
@@ -4630,9 +4658,12 @@ switch obj
                 h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
                 h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
                 h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
+                h.Result_Plot_Aniso.XTick = h.Result_Plot.XTick;
+                h.Result_Plot_Aniso.XTickLabelMode = 'auto';
                 % change axis labels
                 h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
                 h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+                h.Result_Plot_Aniso.YTickLabelMode = 'auto';
                 h.Plots.FitAnisoResult.Color = [1,0,0];
                 h.Plots.AnisoResult.Visible = 'on';
                 h.Plots.AnisoResult_ignore.Visible = 'on';
@@ -4658,6 +4689,7 @@ switch obj
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
                 h.Result_Plot_Aniso.YLabel.String = 'Probability';
                 h.Result_Plot_Aniso.YTickLabels = [];
+                h.Result_Plot_Aniso.XTick = 0:25:150;
             end
             
             % store FitResult TauFitData also for use in export
@@ -5548,12 +5580,13 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% Make table from fittable and save as txt
     res = h.FitPar_Table.Data(:,1);
     if ~all(isnan(TauFitData.ConfInt(:)))
-            if size(TauFitData.ConfInt,1) == size(res,1)
-                res = [res, num2cell(TauFitData.ConfInt)];
-            else                
-                res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
-            end
+        if ~(size(TauFitData.ConfInt,1) == size(res,1))
+            ci = TauFitData.ConfInt(1:size(res,1),:);
+        else
+            ci = TauFitData.ConfInt;
         end
+        res = [res, num2cell(ci)];
+    end
     tab = cell2table(res,'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result','CI_lower','CI_upper'});
     writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
@@ -6542,25 +6575,25 @@ sigR2f = UserValues.TauFit.FitFix{chan}(27);
 tauD_R0f = UserValues.TauFit.FitFix{chan}(28);
 
 StartPar = cell(7,1);
-StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,-Inf,Inf,IRFf};
-StartPar{2} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,-Inf,Inf,IRFf};
-StartPar{3} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;F1,0,1,F1f;F2,0,1,F2f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,-Inf,Inf,IRFf};
-StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau4f;F1,0,1,F1f;F2,0,1,F2f;F3,0,1,F3f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,-Inf,Inf,IRFf};
-StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,-Inf,Inf,IRFf};
-StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
-StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
-StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
-StartPar{9} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD_R0,0,Inf,tauD_R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,1,ScatPerf;BackPer,0,1,BackPerf;IRF,-Inf,Inf,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
-    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
-    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{12} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
-    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
-    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
-StartPar{14} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
-    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
+StartPar{2} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
+StartPar{3} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;F1,0,1,F1f;F2,0,1,F2f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
+StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau4f;F1,0,1,F1f;F2,0,1,F2f;F3,0,1,F3f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
+StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
+StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
+StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
+StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
+StartPar{9} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD_R0,0,Inf,tauD_R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,Inf,ScatPerf;BackPer,0,Inf,BackPerf;IRF,-Inf,Inf,IRFf};
+StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
+    ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
+    ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{12} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
+    ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
+    ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{14} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
+    ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
 
 startpar = StartPar{model};
 names = Parameters{model};
@@ -7320,6 +7353,7 @@ end
 decay = decay(static_fit_params{7}:end);
 error = error(static_fit_params{7}:end);
 x = 1:1:numel(decay);
+Scatter = static_fit_params{3}(static_fit_params{7}:end)';
 
 include_donor_only = false;
 switch mode
@@ -7358,22 +7392,25 @@ switch mode
             tau2 = (1./tauD2+k_RET).^(-1);
         end
         if include_donor_only
-            % set background to zero here and readd later after donor only
+            % set background and scatter to zero here and readd later after donor only
             % pattern has been added
             bg = params(2); params(2) = 0;
+            sc = params(1); params(1) = 0;
         end
 end
 
 %%% Establish library of single exponential decays, convoluted with IRF
+%%% These should not be area normalized to maintain the correct species
+%%% fractions in the MEM analysis!
 decay_ind = zeros(numel(tau),numel(x));
 if ~(strcmp(mode,'dist') && strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'))
     for i = 1:numel(tau)
-        decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
+        decay_ind(i,:) = fitfun_1exp([tau(i),params,TauFitData.I0],static_fit_params);
     end
 else
     for i = 1:numel(tau)
         %%% add second donor only lifetime component
-        decay_ind(i,:) = fitfun_2exp([tau(i), tau2(i), fraction_tauD1,params],static_fit_params);
+        decay_ind(i,:) = fitfun_2exp([tau(i), tau2(i),fraction_tauD1,params,TauFitData.I0],static_fit_params);
     end
 end
 
@@ -7386,15 +7423,16 @@ if include_donor_only
     fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
         %%% consider donor only fraction in model
-        decay_donly = fitfun_1exp([tauD,params],static_fit_params);
+        decay_donly = fitfun_1exp([tauD,params,TauFitData.I0],static_fit_params);
      elseif strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
         % consider biexponential donor only (without scatter or background of the donor only fit, only lifetimes)
         params_donly = [0,0,params(3)];%[h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
-        decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly],static_fit_params);
+        decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly,TauFitData.I0],static_fit_params);
     end
     decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
     % for Tikhonov 
-    decay_ind = (1-bg).*((1-fraction_donly).*decay_ind + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
+    %decay_ind = (1-bg).*((1-fraction_donly).*decay_ind + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
+    decay_ind = (1-fraction_donly).*decay_ind + fraction_donly.*decay_donly + sc*sum(decay)*Scatter + bg;
 end
 
 switch TauFitData.WeightedResidualsType
@@ -7423,7 +7461,7 @@ if ~advanced
     tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
     model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 elseif advanced
-    do_mem = false;
+    do_mem = true;
     %%% prepare vector and matrices
     % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
     % equivalent to:
@@ -7439,20 +7477,22 @@ elseif advanced
     options = optimoptions(@quadprog,'Display','none');
     if ~do_mem 
         %%% Tikhonov
-        v_range = [0, logspace(-2,4,300)];
-        tau_dist_tik = zeros(numel(v_range),numel(p0));
-        model = zeros(numel(v_range),numel(decay));
-        chi2 = zeros(numel(v_range),1);
-        n = zeros(numel(v_range),1);
-        for i = 1:numel(v_range)
-            dist = quadprog(H+2*v_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
+        mu_range = logspace(-2,4,300);
+        tau_dist_tik = zeros(numel(mu_range),numel(p0));
+        model = zeros(numel(mu_range),numel(decay));
+        chi2 = zeros(numel(mu_range),1);
+        n = zeros(numel(mu_range),1);
+        for i = 1:numel(mu_range)
+            dist = quadprog(H+2*mu_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
             n(i) = norm(dist);
             model(i,:) = decay_ind'*dist;
             chi2(i) = getchi2(dist,c,f,H);
             tau_dist_tik(i,:) = dist;
         end
         %%% find the point of maximum curvature
-        ix_c = l_curve_corner(flipud(chi2),flipud(n),true); % chi2 and n need to be ordered in decreasing amount of regularization
+        ix_c = l_curve_corner(flipud(chi2),flipud(n),flipud(mu_range),1); % chi2 and n need to be ordered in decreasing amount of regularization
+        % (Note: chi2 and n are taken to power of ten to search for the
+        % corner in the non-log space)
         ix_c = numel(chi2)+1-ix_c;
         tau_dist = tau_dist_tik(ix_c,:);
         model = model(ix_c,:);
@@ -7489,7 +7529,8 @@ elseif advanced
             tau_dist_mem(i,:) = p_mem;
         end
         %%% find the point of maximum curvature
-        ix_c = l_curve_corner(flipud(chi2_mem),flipud(-S-min(-S)),true); % chi2 and n need to be ordered in decreasing amount of regularization
+        ix_c = l_curve_corner(10.^flipud(chi2_mem),10.^flipud(-S-min(-S)+0.01),flipud(mu_range),2); % chi2 and n need to be ordered in decreasing amount of regularization
+        ylabel('neg. Entropy, -S');
         ix_c = numel(chi2_mem)+1-ix_c;
         tau_dist = tau_dist_mem(ix_c,:);
         model = model(ix_c,:);

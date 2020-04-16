@@ -4,7 +4,7 @@ IRFPattern = xdata{2};
 Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
-c = param(end);%xdata{6}; %IRF shift
+c = param(end-1);%xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
@@ -45,10 +45,15 @@ switch conv_type
     case 'circular'
         z = convol(irf,x(1:n));
 end
-z = z./repmat(sum(z,1),size(z,1),1);
-z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*(1-bg)+bg./numel(z);z = z.*sum(y);
-z=z';
+%%% new:
+z = param(end)*z(ignore:end)+sc*sum(y)*Scatter(ignore:end)+bg;
+z = z';
+
+%%% old:
+% z = z./repmat(sum(z,1),size(z,1),1);
+% z = (1-sc).*z + sc*Scatter;
+% z = z./sum(z);
+% z = z(ignore:end);
+% z = z./sum(z);
+% z = z.*(1-bg)+bg./numel(z);z = z.*sum(y);
+% z=z';
