@@ -4688,7 +4688,7 @@ switch obj
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
                 h.Result_Plot_Aniso.YLabel.String = 'Probability';
                 h.Result_Plot_Aniso.YTickLabels = [];
-                h.Result_Plot_Aniso.XTick = 0:25:150;
+                %h.Result_Plot_Aniso.XTick = 0:25:150;
             end
             
             % store FitResult TauFitData also for use in export
@@ -4970,7 +4970,8 @@ switch obj
             case h.Fit_Button_MEM_dist
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
         end
-        h.Result_Plot_Aniso.YLabel.String = 'Probability';
+        h.Result_Plot_Aniso.YLabel.String = 'Probability';        
+        h.Result_Plot_Aniso.XTickLabelMode = 'auto';
         
         h.Result_Plot.XLim = [0, Length*TACtoTime];
         if strcmp(h.Result_Plot.YScale,'log')
@@ -4978,7 +4979,6 @@ switch obj
             ydat = ydat(ydat > 0);
             h.Result_Plot.YLim(1) = min(ydat);
         end
-        
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
         legend(h.Result_Plot,'off');
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
@@ -7333,19 +7333,12 @@ h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
 
 
-function [tau_dist, tau, model, chi2] = taufit_mem(decay,error,params,static_fit_params,mode,resolution, v)
+function [tau_dist, tau, model, chi2] = taufit_mem(decay,error,params,static_fit_params,mode,resolution)
 global TauFitData UserValues
 h = guidata(gcbo);
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 6
     resolution = 300;
-end
-if nargin < 7
-    %%% scaling parameter for the entropy term
-    v = 1E-5; 
-    % this value is taken from:
-    % Vinogradov and Wilson, "Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery." 
-    % where it is suggested as an "optimal" value
 end
 
 % remove ignore region from decay
@@ -7391,7 +7384,7 @@ switch mode
             tau2 = (1./tauD2+k_RET).^(-1);
         end
         if include_donor_only
-            % set background and scatter to zero here and readd later after donor only
+            % set background and scatter to zero here and re-add later after donor only
             % pattern has been added
             bg = params(2); params(2) = 0;
             sc = params(1); params(1) = 0;
@@ -7414,9 +7407,6 @@ else
 end
 
 
-%%% generate linear combination decay
-decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
-
 %%% add donor only if parameter of model
 if include_donor_only
     fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
@@ -7430,15 +7420,7 @@ if include_donor_only
     end
     decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
     % for Tikhonov 
-    %decay_ind = (1-bg).*((1-fraction_donly).*decay_ind + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
     decay_ind = (1-fraction_donly).*decay_ind + fraction_donly.*decay_donly + sc*sum(decay)*Scatter + bg;
-end
-
-switch TauFitData.WeightedResidualsType
-    case 'Gaussian'
-        mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-decay_lincomb(p)).^2./error.^2)./(numel(decay)));
-    case 'Poissonian'
-        mem = @(p) -(v*sum(p-p.*log(p)) - sum(MLE_w_res(decay_lincomb(p),decay).^2)./(numel(decay)));
 end
 
 %%% initialize p
@@ -7453,88 +7435,208 @@ lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
 Aeq = zeros(numel(p0)); Aeq(1,:) = 1;
 beq = zeros(size(p0)); beq(1) = 1;
 
-advanced = true;
-if ~advanced
-    %%% specify fit options
-    opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
-    tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
-    model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
-elseif advanced
-    do_mem = false;
-    %%% prepare vector and matrices
-    % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
-    % equivalent to:
-    % xT(AT*A+lambda I)x - 2bTAx + bTb
-    % quadprog solves system of tpye: 0.5*xTHx + fTx
-    % so: H = 2(AT*A+lambda I)
-    %     fT = -2bTA
-    decay_ind_norm = decay_ind./repmat(error,300,1);
-    decay_norm = decay./error;
-    c = decay_norm*decay_norm'./numel(decay);
-    H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
-    f = -2*decay_ind_norm*decay_norm'./numel(decay);
-    options = optimoptions(@quadprog,'Display','none');
-    if ~do_mem 
-        %%% Tikhonov
-        mu_range = logspace(-2,4,300);
-        tau_dist_tik = zeros(numel(mu_range),numel(p0));
-        model = zeros(numel(mu_range),numel(decay));
-        chi2 = zeros(numel(mu_range),1);
-        n = zeros(numel(mu_range),1);
-        for i = 1:numel(mu_range)
-            dist = quadprog(H+2*mu_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
-            n(i) = norm(dist);
-            model(i,:) = decay_ind'*dist;
-            chi2(i) = getchi2(dist,c,f,H);
-            tau_dist_tik(i,:) = dist;
+%%% Use Kalinin MEM algorithm (works and is tested)
+MEM_mode = 'Kalinin';%'brute-force' 'Oleg', 'Kalinin'
+switch MEM_mode
+    case 'brute-force'
+        %%% this is the old "straight-forward" algorithm that I implemented
+        %%% using fmincon. It uses boundary constraints and the mem functional
+        %%% to optimize the distribution of lifetimes. It seems to work,
+        %%% although it also prefers "smooth" options even if the
+        %%% regularization is set to 0.
+
+        %%% scaling parameter for the entropy term
+        v = 1E-5; 
+        % this value is taken from:
+        % Vinogradov and Wilson, "Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery." 
+        % where it is suggested as an "optimal" value
+
+        %%% generate linear combination decay
+        decay_lincomb = @(p) sum(decay_ind.*repmat(p,1,numel(decay),1));
+        
+        %%% define functional
+        switch TauFitData.WeightedResidualsType
+            case 'Gaussian'
+                mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-decay_lincomb(p)).^2./error.^2)./(numel(decay)));
+            case 'Poissonian'
+                mem = @(p) -(v*sum(p-p.*log(p)) - sum(MLE_w_res(decay_lincomb(p),decay).^2)./(numel(decay)));
         end
-        %%% find the point of maximum curvature
-        ix_c = l_curve_corner(flipud(chi2),flipud(n),flipud(mu_range),1); % chi2 and n need to be ordered in decreasing amount of regularization
-        % (Note: chi2 and n are taken to power of ten to search for the
-        % corner in the non-log space)
-        ix_c = numel(chi2)+1-ix_c;
-        tau_dist = tau_dist_tik(ix_c,:);
-        model = model(ix_c,:);
-    elseif do_mem
-        %%% MEM: Algorithm according to Vinogradov-Wilson (2000)
-
-        %%% (This algorithm does not converge when the normalization is enforced by the equality condition.)
-        mu_range = logspace(-4,2,300);
-        niter = 20;
-        d_iter = zeros(numel(mu_range),niter);
-        model = zeros(numel(mu_range),numel(decay));
-        chi2_mem = zeros(numel(mu_range),1);
-        S = zeros(numel(mu_range),1); % entropy
-        tau_dist_mem = zeros(numel(mu_range),numel(p0));
-        for i = 1:numel(mu_range)
-            j = 1;
-
-            D = diag(1./p0);%diag(zeros(numel(p0),1));
-            l = zeros(size(p0));
-            p_mem = p0;
-            d = memdelta(p_mem,l,f,H);
-            while (d > 0.01) && j<=niter
-                d_iter(i,j) = d;
-                p_mem = quadprog(H+2*mu_range(i)*D,f+mu_range(i)*(l-1),Aieq,bieq,[],[],[],[],[],options);
-                p_mem(p_mem<1E-12) = 1E-12;
-                l = log(p_mem./p0);
-                D = diag(1./p_mem);
-                d = memdelta(p_mem,l,f,H);
-                j = j+1;
+        %%% specify fit options
+        opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
+        tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
+        model = decay_lincomb(tau_dist); %sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
+    case 'Oleg'
+        %%% These are advanced implementations of the regularization based on
+        %%% matrix algebra and quadratic programming. The problem is
+        %%% reformulated and the regularization.
+        do_mem = false;
+        %%% prepare vector and matrices
+        % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
+        % equivalent to:
+        % xT(AT*A+lambda I)x - 2bTAx + bTb
+        % quadprog solves system of tpye: 0.5*xTHx + fTx
+        % so: H = 2(AT*A+lambda I)
+        %     fT = -2bTA
+        decay_ind_norm = decay_ind./repmat(error,300,1);
+        decay_norm = decay./error;
+        c = decay_norm*decay_norm'./numel(decay);
+        H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
+        f = -2*decay_ind_norm*decay_norm'./numel(decay);
+        options = optimoptions(@quadprog,'Display','none');
+        if ~do_mem 
+            %%% Tikhonov
+            mu_range = logspace(-2,4,300);
+            tau_dist_tik = zeros(numel(mu_range),numel(p0));
+            model = zeros(numel(mu_range),numel(decay));
+            chi2 = zeros(numel(mu_range),1);
+            n = zeros(numel(mu_range),1);
+            for i = 1:numel(mu_range)
+                dist = quadprog(H+2*mu_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
+                n(i) = norm(dist);
+                model(i,:) = decay_ind'*dist;
+                chi2(i) = getchi2(dist,c,f,H);
+                tau_dist_tik(i,:) = dist;
             end
-            model(i,:) = decay_ind'*p_mem;
-            chi2_mem(i) = getchi2(p_mem,c,f,H);
-            S(i) = -p_mem'*l;
-            tau_dist_mem(i,:) = p_mem;
+            %%% find the point of maximum curvature
+            ix_c = l_curve_corner(flipud(chi2),flipud(n),flipud(mu_range),1); % chi2 and n need to be ordered in decreasing amount of regularization
+            % (Note: chi2 and n are taken to power of ten to search for the
+            % corner in the non-log space)
+            ix_c = numel(chi2)+1-ix_c;
+            tau_dist = tau_dist_tik(ix_c,:);
+            model = model(ix_c,:);
+        elseif do_mem
+            %%% MEM: Algorithm according to Vinogradov-Wilson (2000), based
+            %%% on the implementation of Oleg Opanasyuk
+            %%% The algoithm performs equivalent to the Kalinin algoirthm,
+            %%% but the latter is used for historical reasons.
+            %%% (This algorithm does not converge when the normalization is enforced by the equality condition.)
+            niter = 20;
+            d_iter = zeros(numel(mu_range),niter);
+            model = zeros(numel(mu_range),numel(decay));
+            chi2_mem = zeros(numel(mu_range),1);
+            S = zeros(numel(mu_range),1); % entropy
+            tau_dist_mem = zeros(numel(mu_range),numel(p0));
+            for i = 1:numel(mu_range)
+                j = 1;
+
+                D = diag(1./p0);%diag(zeros(numel(p0),1));
+                l = zeros(size(p0));
+                p_mem = p0;
+                d = memdelta(p_mem,l,f,H);
+                while (d > 0.01) && j<=niter
+                    d_iter(i,j) = d;
+                    %%% Different prefactors for the expansion were used
+                    %%% Stas-Vinogradov formula
+                    p_mem = quadprog(H+mu_range(i)*0.5*D,f+0.5*mu_range(i)*(l-1),Aieq,bieq,[],[],[],[],[],options);
+                    %%% Olegs formula:
+                    %p_mem = quadprog(H+2*mu_range(i)*D,f+mu_range(i)*(l-1),Aieq,bieq,[],[],[],[],[],options);
+                    p_mem(p_mem<1E-12) = 1E-12;
+                    l = log(p_mem./p0);
+                    D = diag(1./p_mem);
+                    d = memdelta(p_mem,l,f,H);
+                    j = j+1;
+                end
+                model(i,:) = decay_ind'*p_mem;
+                chi2_mem(i) = getchi2(p_mem,c,f,H);
+                S(i) = -p_mem'*l;
+                tau_dist_mem(i,:) = p_mem;
+            end
+            %%% find the point of maximum curvature
+            ix_c = l_curve_corner(10.^flipud(chi2_mem),10.^flipud(-S-min(-S)+0.01),flipud(mu_range),2); % chi2 and n need to be ordered in decreasing amount of regularization
+            ylabel('neg. Entropy, -S');
+            ix_c = numel(chi2_mem)+1-ix_c;
+            tau_dist = tau_dist_mem(ix_c,:);
+            model = model(ix_c,:);
         end
-        %%% find the point of maximum curvature
-        ix_c = l_curve_corner(10.^flipud(chi2_mem),10.^flipud(-S-min(-S)+0.01),flipud(mu_range),2); % chi2 and n need to be ordered in decreasing amount of regularization
-        ylabel('neg. Entropy, -S');
-        ix_c = numel(chi2_mem)+1-ix_c;
-        tau_dist = tau_dist_mem(ix_c,:);
-        model = model(ix_c,:);
-    end
+    case 'Kalinin'
+        %%% Algorithm based on the legendary "MATLAB scripts" from
+        %%% Stanislav Kalinin used in the Seidel lab
+        % Fi: Normalized array of kernel decays (i.e. divided by sigma) - Fi(:,j) is j-th decay
+        % sigma: The error estimate assumed to be sqrt(decay) (! This is not true for polarization-combined data !)
+        % y: The data (decay)
+        
+        %%% assign parameters
+        y = decay';
+        Fi = (decay_ind./repmat(error,length(tau),1))';
+        sigma = error';
+        
+        % parameters
+        n = length(tau);
+        p = ones(1,n); p = p./sum(p);			% initial parameters
+        m = p;
+        M = length(y);
+        
+        sigma_sqrt_y = false;
+        if sigma_sqrt_y
+            %%% these calculation assume that sigma = sqrt(y)!
+            H = 2/M*(Fi'*Fi);
+            g0 = 2/M*sigma'*Fi;
+            const_chi2 = sum(y)/M;
+        else
+            %%% here, we take arbitrary sigma and account for it correctly
+            H = 2/M*(Fi'*Fi);
+            g0 = 2/M*(y./sigma)'*Fi;
+            const_chi2 = sum((y./sigma).^2)/M;            
+        end
+        
+        nus = logspace(-2,1,200);
+        
+        chis = [];
+        ps = [];
+        Ss = [];
+        norms = [];
+        options = optimoptions(@quadprog,'Display','none');
+        for i=1:numel(nus)
+            nu = nus(i);
+            
+            chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+            L = log(p./m); S = (-L+1)*p'-sum(m);
+            %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
+
+            % Optimization
+            dgrad = 1;
+            % p >= 0:
+            A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
+            p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
+            chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
+
+            S = (-log(p_esm./m)+1)*p_esm'-sum(m);
+
+            Q = chisq-0.5*nu*S;
+            %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
+
+            niter = 1;
+            p = m;
+            while ((dgrad > 0.0001) && (niter < 20))
+
+                Delta = diag(0.5./p,0);
+                p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
+                chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+                L = log(p./m); S = (-L+1)*p'-sum(m);
+                Q = chisq-0.5*nu*S;
+
+                grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
+                grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
+                dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
+                    (grad_chi2./norm_chi2-grad_S./norm_S));
+                %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
+
+                niter = niter+1;
+            end
+            
+            chis = [chis, chisq];
+            ps = [ps; [p]];
+            Ss = [Ss, S];
+            norms = [norms, norm(p)];
+            
+            Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
+        end        
+        indexOfMin = find_corner(chis,-Ss,nus,true);
+
+        tau_dist = ps(indexOfMin,:);
+        model =  (decay_ind'*tau_dist')';
 end
+
 
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
@@ -7548,6 +7650,46 @@ switch mode
         tau = tau*TauFitData.TACChannelWidth;
     case 'dist'
         tau = R;
+end
+
+function indexOfMin = find_corner(eta,rho,reg,show_plot)
+%%% finds the point of maximum curvature in a plot of b vs. a
+
+cornerX = min(eta);
+cornerY = min(rho);
+distancesFromCorner = sqrt((eta - cornerX) .^ 2 + (rho - cornerY) .^ 2);
+% Find min distance
+[~, indexOfMin] = min(distancesFromCorner);
+
+if show_plot
+    minEta = eta(indexOfMin);
+    minRho = rho(indexOfMin);
+    figure;
+    plot(eta, rho, 'k--o', 'LineWidth', 2);
+    grid on;
+    axis equal % Make axes equal, otherwise "corner" depends on scaling.
+    xlabel('eta', 'FontSize', 16);
+    ylabel('rho', 'FontSize', 16);
+
+    % Start x axis at 0
+    xlim([0, max(eta)]);
+    % Start y axis at 3
+    ylim([0.003, max(rho)]);
+    % Get location of axes:
+    xl = xlim;
+    yl = ylim;
+    % Plot a vertical line there.
+    line([minEta, minEta], [yl(1), minRho], 'Color', 'r', 'LineWidth', 2);
+    % Plot a horzontal line there.
+    line([xl(1), minEta], [minRho, minRho], 'Color', 'r', 'LineWidth', 2);
+    
+    xlabel('\chi^2_r')
+	ylabel('neg. Entropy -S');
+    title(sprintf('L-curve, corner at \\mu = %.2d', reg(indexOfMin)));
+    set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top');
+    set(gcf,'Color',[1,1,1]);
+    x_lim = [0.95*min(eta),min([2,1.05*max(eta)])];
+    xlim(x_lim); ylim(0.95*min(rho(eta<2)) + [0,diff(x_lim)]);
 end
 
 function d = memdelta(p,l,q,H)
