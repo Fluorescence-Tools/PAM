@@ -530,7 +530,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Time, // Additional random seed value
         Map_Type, Map); // Map for quenching/barriers etc.
         
-    const mwSize NP[]={(int)NPhotons[0],1};
+    const mwSize NP[]={static_cast<mwSize>(NPhotons[0]),1};
     const mwSize SizePos[]={3,1};
     const mwSize SizeInt[]={1,1};
     
