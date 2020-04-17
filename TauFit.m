@@ -2233,10 +2233,14 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% of the perpendicular channel
     h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
-    h.ShiftPer_Slider.SliderStep =[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
+    %%% Note: (!)
+    %%% While shift of < 1 (e.g. 0.1) are in principle possible, they
+    %%% change the noise characteristics and thus the obtained chi2 is
+    %%% wrong!
+    h.ShiftPer_Slider.SliderStep = [1, 10]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));%[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
     if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/20)
-        tmp = UserValues.TauFit.ShiftPer{chan};
+        tmp = round(UserValues.TauFit.ShiftPer{chan});
     else
         tmp = 0;
     end
@@ -2365,10 +2369,14 @@ if isobject(obj) % check if matlab object
             end
         case {h.ShiftPer_Slider, h.ShiftPer_Edit}
             %%% Update Value
+            %%% Note: (!)
+            %%% While shifts of < 1 (e.g. 0.1) are in principle possible, they
+            %%% change the noise characteristics and thus the obtained chi2 is
+            %%% wrong!
             if obj == h.ShiftPer_Slider
-                TauFitData.ShiftPer{chan} = round(obj.Value*h.subresolution)/h.subresolution;
+                TauFitData.ShiftPer{chan} = floor(obj.Value);%round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ShiftPer_Edit
-                TauFitData.ShiftPer{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                TauFitData.ShiftPer{chan} = floor(str2double(obj.String));%round(str2double(obj.String)*h.subresolution)/h.subresolution;
                 obj.String = num2str(TauFitData.ShiftPer{chan});
             end
         case {h.IRFLength_Slider, h.IRFLength_Edit}
@@ -2849,7 +2857,6 @@ else
 end
 Length = numel(Decay);
 ignore = TauFitData.Ignore{chan};
-
 %% Start Fit
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';drawnow;
@@ -3772,7 +3779,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(:,ignore:end))-numel(x0));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
