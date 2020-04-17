@@ -125,8 +125,8 @@ switch conv_type
 end
 
 %%% new:
-z = param(end-1)*z(ignore:end)+sc*sum(y)*Scatter(ignore:end)+bg;
-zDonly = param(end)*zDonly(ignore:end)+sc_donly*sum(y)*Scatter(ignore:end)+bg_donly;
+z = param(end-1)*z(ignore:end)+sc*sum(y(1,:))*Scatter(ignore:end)+bg;
+zDonly = param(end)*zDonly(ignore:end)+sc_donly*sum(y(2,:))*Scatter(ignore:end)+bg_donly;
 z = [z' zDonly'];
 
 %%% old:
