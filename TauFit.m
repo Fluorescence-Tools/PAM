@@ -7651,6 +7651,8 @@ switch MEM_mode
         %%% 5th input means that a plot is shown:
         ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1,1);
         ix_corner = numel(nus) - ix_corner + 1;
+        ylabel('neg. Entropy -S');
+        
         %%% alternative algorithm
         % define corner as closest point to origin
         % -> overweights regularization, leading to bad chi2
