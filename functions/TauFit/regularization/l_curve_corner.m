@@ -1,4 +1,4 @@
-function [k_corner,info] = l_curve_corner(rho,eta,reg,show_plot)
+function [k_corner,info] = l_curve_corner(rho,eta,reg,select_first_corner,show_plot)
 %CORNER Find corner of discrete L-curve via adaptive pruning algorithm.
 %
 % [k_corner,info] = corner(rho,eta,fig)
@@ -37,6 +37,14 @@ function [k_corner,info] = l_curve_corner(rho,eta,reg,show_plot)
 % Per Christian Hansen and Toke Koldborg Jensen, DTU Compute, DTU;
 % Giuseppe Rodriguez, University of Cagliari, Italy; Sept. 2, 2011.
 
+%%% select_first_corner - Added by Anders Barth for PAM:
+% Always select the left-most corner as it works "best".
+if nargin < 4
+    select_first_corner = false;
+end
+if (nargin < 5)
+    show_plot = 0;        % Default is no figure.
+end
 % Initialization of data
 if length(rho)~=length(eta)
     error('Vectors rho and eta must have the same length')
@@ -47,9 +55,8 @@ end
 rho = rho(:);       % Make rho and eta column vectors.
 eta = eta(:);
 
-if (nargin < 4)
-    show_plot = 0;        % Default is no figure.
-end
+
+
 
 info = 0;
 
@@ -68,7 +75,7 @@ end
 rho = rho(kept);            % rho and eta with bad data removed.
 eta = eta(kept);
 
-if any(rho(1:end-1)<rho(2:end)) | any(eta(1:end-1)>eta(2:end))
+if any(rho(1:end-1)<rho(2:end)) || any(eta(1:end-1)>eta(2:end))
 	info = info + 10;
 	warning('Corner:warnings', 'Lack of monotonicity')
 end
@@ -144,7 +151,7 @@ elseif length(vz)==1
 	if(vz(1) == 1),  vz = [];  end
 end
 
-if isempty(vz)		
+if isempty(vz) || select_first_corner	
         % No large increase in solution (semi)norm is found and the
         % leftmost corner candidate in clist is selected.
 	index = clist(end);

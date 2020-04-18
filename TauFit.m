@@ -7637,10 +7637,26 @@ switch MEM_mode
             norms = [norms, norm(p)];
             
             Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
-        end        
-        indexOfMin = find_corner(chis,-Ss,nus,true);
+        end
+        
+        % define corner as point of maxiumum curvature
+        if any(Ss >= 0) %%% algorithm uses log(-Ss), rescale to make sure that log is defined
+            Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
+        end
+        %%% Inputs have to be reordered in order of decreasing
+        %%% regularization parameter.
+        %%% Tak ethe negative entropy (ensured that all S < 0) so that
+        %%% log10(S) is defined.
+        %%% 4th input means that the first corner is selected.
+        %%% 5th input means that a plot is shown:
+        ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1,1);
+        ix_corner = numel(nus) - ix_corner + 1;
+        %%% alternative algorithm
+        % define corner as closest point to origin
+        % -> overweights regularization, leading to bad chi2
+        %indexOfMin = find_corner(chis,-Ss,nus,true);
 
-        tau_dist = ps(indexOfMin,:);
+        tau_dist = ps(ix_corner,:);
         model =  (decay_ind'*tau_dist')';
 end
 
