@@ -3780,7 +3780,9 @@ switch obj
                     end
                     x = interlace(x0,x,fixed);
                     chi2 = sum(residuals.^2)/(numel(Decay(:,ignore:end))-numel(x0));
-                    
+                    %%% calculate separate chi2 for DA and DO decays                    
+                    chi2_DA = sum(residuals(1:(numel(residuals)/2)).^2)/(numel(Decay(1,ignore:end))-numel(x0));
+                    chi2_D0 = sum(residuals((numel(residuals)/2+1):end).^2)/(numel(Decay(1,ignore:end))-numel(x0));
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
@@ -4568,6 +4570,7 @@ switch obj
         else
             h.Result_Plot_Text.String = [sprintf('res^2 = %.2f', chi2)];
         end
+        TauFitData.Chi2 = chi2;
         %h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
         h.Result_Plot_Text.Position = [0.8 0.95];
         
@@ -4695,7 +4698,9 @@ switch obj
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
                 h.Result_Plot_Aniso.YLabel.String = 'Probability';
                 h.Result_Plot_Aniso.YTickLabels = [];
-                %h.Result_Plot_Aniso.XTick = 0:25:150;
+                                
+                %%% assign only the chi2 of the DA decay
+                TauFitData.Chi2 = chi2_DA;
             end
             
             % store FitResult TauFitData also for use in export
@@ -7360,7 +7365,8 @@ switch mode
         %%% vector of lifetimes to consider (up to 10 ns)
         tau = linspace(0,ceil(7.5/TauFitData.TACChannelWidth),resolution);
     case 'dist' % fit distance distribution
-        include_donor_only = strcmp(mode,'dist') && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'));
+        fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
+        include_donor_only = strcmp(mode,'dist') && fraction_donly > 0 && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'));
         %%% get F?rster distance and donor-only lifetime
         R0 = params(end-1);
         tauD = params(end)/TauFitData.TACChannelWidth;
@@ -7415,19 +7421,17 @@ end
 
 
 %%% add donor only if parameter of model
-if include_donor_only
-    fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
+if include_donor_only    
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
         %%% consider donor only fraction in model
         decay_donly = fitfun_1exp([tauD,params,TauFitData.I0],static_fit_params);
      elseif strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
         % consider biexponential donor only (without scatter or background of the donor only fit, only lifetimes)
-        params_donly = [0,0,params(3)];%[h.FitPar_Table.Data{14,1}, h.FitPar_Table.Data{15,1},h.FitPar_Table.Data{16,1}];
+        params_donly = [0,0,params(3)];
         decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly,TauFitData.I0],static_fit_params);
     end
-    decay_lincomb = @(p) (1-bg).*((1-fraction_donly).*sum(decay_ind.*repmat(p,1,numel(decay),1)) + fraction_donly.*decay_donly) +bg.*sum(decay)./numel(decay);
-    % for Tikhonov 
-    decay_ind = (1-fraction_donly).*decay_ind + fraction_donly.*decay_donly + sc*sum(decay)*Scatter + bg;
+    % for Tikhonov/MEM
+    decay_ind = (1-fraction_donly).*decay_ind + fraction_donly.*decay_donly + repmat(sc*sum(decay)*Scatter,size(decay_ind,1),1) + bg;
 end
 
 %%% initialize p
@@ -7586,18 +7590,18 @@ switch MEM_mode
             const_chi2 = sum((y./sigma).^2)/M;            
         end
         
-        nus = logspace(-2,1,200);
+        nus = logspace(-3,1,250);
         
         chis = [];
         ps = [];
         Ss = [];
-        norms = [];
+
         options = optimoptions(@quadprog,'Display','none');
         for i=1:numel(nus)
             nu = nus(i);
             
-            chisq = 0.5*p*H*p' - g0*p' + const_chi2;
-            L = log(p./m); S = (-L+1)*p'-sum(m);
+            %chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+            L = log(p./m); %S = (-L+1)*p'-sum(m);
             %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
 
             % Optimization
@@ -7609,7 +7613,7 @@ switch MEM_mode
 
             S = (-log(p_esm./m)+1)*p_esm'-sum(m);
 
-            Q = chisq-0.5*nu*S;
+            %Q = chisq-0.5*nu*S;
             %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
 
             niter = 1;
@@ -7633,8 +7637,7 @@ switch MEM_mode
             
             chis = [chis, chisq];
             ps = [ps; [p]];
-            Ss = [Ss, S];
-            norms = [norms, norm(p)];
+            Ss = [Ss, S];            
             
             Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
         end
@@ -7643,21 +7646,28 @@ switch MEM_mode
         if any(Ss >= 0) %%% algorithm uses log(-Ss), rescale to make sure that log is defined
             Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
         end
-        %%% Inputs have to be reordered in order of decreasing
-        %%% regularization parameter.
-        %%% Tak ethe negative entropy (ensured that all S < 0) so that
-        %%% log10(S) is defined.
-        %%% 4th input means that the first corner is selected.
-        %%% 5th input means that a plot is shown:
-        ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1,1);
-        ix_corner = numel(nus) - ix_corner + 1;
-        ylabel('neg. Entropy -S');
         
-        %%% alternative algorithm
-        % define corner as closest point to origin
-        % -> overweights regularization, leading to bad chi2
-        %indexOfMin = find_corner(chis,-Ss,nus,true);
+        find_corner = true;
+        if find_corner
+            %%% Find corner of discrete L-curve via adaptive pruning algorithm.
+            %%% Inputs have to be reordered in order of decreasing
+            %%% regularization parameter.
+            %%% Take the negative entropy (ensured that all S < 0) so that
+            %%% log10(S) is defined.
+            %%% 4th input means that the first corner is selected.
+            %%% 5th input means that a plot is shown:
+            ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1);
+            ix_corner = numel(nus) - ix_corner + 1;
 
+            %%% alternative algorithm
+            % define corner as closest point to origin
+            % -> overweights regularization, leading to bad chi2
+            %indexOfMin = find_corner(chis,-Ss,nus,true);
+        else %%% choose regularization parameter such that chi2 is equal to the chi2 of the model-based fit
+            ix_corner = find(chis>TauFitData.Chi2,1,'first');
+        end
+        plot_L_curve(chis,-Ss,nus,ix_corner);
+        
         tau_dist = ps(ix_corner,:);
         model =  (decay_ind'*tau_dist')';
 end
@@ -7676,6 +7686,74 @@ switch mode
     case 'dist'
         tau = R;
 end
+
+function plot_L_curve(rho,eta,reg,index)
+figure; clf
+lrho = log10(rho); leta = log10(eta);
+diffrho2 = (max(lrho)-min(lrho))/2;
+diffeta2 = (max(leta)-min(leta))/2;
+
+loglog(rho, eta, 'k--o','LineWidth',2); hold on; axis square;
+% Mark the corner.
+loglog([min(rho)/100,rho(index)],[eta(index),eta(index)],':r',...
+    [rho(index),rho(index)],[min(eta)/100,eta(index)],':r','LineWidth',2)
+% Scale axes to same number of decades.
+if abs(diffrho2)>abs(diffeta2)
+    ax(1) = min(lrho); ax(2) = max(lrho);
+    mid = min(leta) + (max(leta)-min(leta))/2;
+    ax(3) = mid-diffrho2; ax(4) = mid+diffrho2;
+else
+    ax(3) = min(leta); ax(4) = max(leta);
+    mid = min(lrho) + (max(lrho)-min(lrho))/2;
+    ax(1) = mid-diffeta2; ax(2) = mid+diffeta2;
+end
+
+ax = 10.^ax;
+
+ax(1) = ax(1)/2; axis(ax);
+xlabel('\chi^2_r')
+ylabel('neg. Entropy, -S');
+title(sprintf('L-curve, corner at \\mu = %.2d', reg(index)));
+set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top');
+set(gcf,'Color',[1,1,1]);
+xlim([0.95*min(rho),min([1.5,1.05*max(rho)])]); ylim([0.95*min(eta(rho<1.5)),1.05*max(eta)]);
+
+function [p,chi2,S] = solve_mem(H,g0,p,const_chi2,nu,niter_max)
+chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+L = log(p./m); S = (-L+1)*p'-sum(m);
+%fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
+
+% Optimization
+dgrad = 1;
+% p >= 0:
+A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
+p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
+chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
+
+S = (-log(p_esm./m)+1)*p_esm'-sum(m);
+
+Q = chisq-0.5*nu*S;
+%fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
+
+niter = 1;
+p = m;
+while ((dgrad > 0.0001) && (niter < niter_max))
+
+    Delta = diag(0.5./p,0);
+    p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
+    chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+    L = log(p./m); S = (-L+1)*p'-sum(m);
+    Q = chisq-0.5*nu*S;
+
+    grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
+    grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
+    dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
+        (grad_chi2./norm_chi2-grad_S./norm_S));
+    %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
+
+    niter = niter+1;
+end
+
 
 function indexOfMin = find_corner(eta,rho,reg,show_plot)
 %%% finds the point of maximum curvature in a plot of b vs. a
