@@ -3852,7 +3852,9 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(11) = FitResult{15};
                 UserValues.TauFit.IRFShift{chan} = FitResult{16};
                 % Also update status text
-                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1})};
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1}),...
+                    sprintf('red. Chi2 (DA): %.2f',chi2_DA),...
+                    sprintf('red. Chi2 (D0): %.2f',chi2_D0)};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -7373,7 +7375,7 @@ switch mode
         params(end-1:end) = [];
         lin = true; % linear R spacing or not
         if lin
-            R = linspace(R0/4,3*R0,resolution);
+            R = linspace(10,3*R0,resolution);
         else
             %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
@@ -7396,14 +7398,12 @@ switch mode
             tau = (1./tauD+k_RET).^(-1);
             tau2 = (1./tauD2+k_RET).^(-1);
         end
-        if include_donor_only
-            % set background and scatter to zero here and re-add later after donor only
-            % pattern has been added
-            bg = params(2); params(2) = 0;
-            sc = params(1); params(1) = 0;
-        end
 end
-
+% set background and scatter to zero here and re-add to the
+% kernel functions later
+bg = params(2); params(2) = 0;
+sc = params(1); params(1) = 0;
+        
 %%% Establish library of single exponential decays, convoluted with IRF
 %%% These should not be area normalized to maintain the correct species
 %%% fractions in the MEM analysis!
@@ -7419,7 +7419,7 @@ else
     end
 end
 
-
+decay_offset = sc*sum(decay)*Scatter + bg;
 %%% add donor only if parameter of model
 if include_donor_only    
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
@@ -7431,8 +7431,10 @@ if include_donor_only
         decay_donly = fitfun_2exp([tauD, tauD2, fraction_tauD1,params_donly,TauFitData.I0],static_fit_params);
     end
     % for Tikhonov/MEM
-    decay_ind = (1-fraction_donly).*decay_ind + fraction_donly.*decay_donly + repmat(sc*sum(decay)*Scatter,size(decay_ind,1),1) + bg;
+    decay_ind = (1-fraction_donly).*decay_ind;
+    decay_offset = decay_offset + fraction_donly.*decay_donly;
 end
+decay = decay-decay_offset;
 
 %%% initialize p
 p0 = ones(numel(tau),1)./numel(tau);
@@ -7449,6 +7451,118 @@ beq = zeros(size(p0)); beq(1) = 1;
 %%% Use Kalinin MEM algorithm (works and is tested)
 MEM_mode = 'Kalinin';%'brute-force' 'Oleg', 'Kalinin'
 switch MEM_mode
+    case 'Kalinin'
+        %%% Algorithm based on the legendary "MATLAB scripts" from
+        %%% Stanislav Kalinin used in the Seidel lab
+        % Fi: Normalized array of kernel decays (i.e. divided by sigma) - Fi(:,j) is j-th decay
+        % sigma: The error estimate assumed to be sqrt(decay) (! This is not true for polarization-combined data !)
+        % y: The data (decay)
+        
+        %%% assign parameters
+        y = decay';
+        Fi = (decay_ind./repmat(error,length(tau),1))';
+        sigma = error';
+        
+        % parameters
+        n = length(tau);
+        p = ones(1,n); p = p./sum(p);			% initial parameters
+        m = p;
+        M = length(y);
+        
+        sigma_sqrt_y = false;
+        if sigma_sqrt_y
+            %%% these calculation assume that sigma = sqrt(y)!
+            H = 2/M*(Fi'*Fi);
+            g0 = 2/M*sigma'*Fi;
+            const_chi2 = sum(y)/M;
+        else
+            %%% here, we take arbitrary sigma and account for it correctly
+            H = 2/M*(Fi'*Fi);
+            g0 = 2/M*(y./sigma)'*Fi;
+            const_chi2 = sum((y./sigma).^2)/M;            
+        end
+        
+        nus = logspace(-2,2,200);
+        
+        chis = [];
+        ps = [];
+        Ss = [];
+
+        options = optimoptions(@quadprog,'Display','none');
+        for i=1:numel(nus)
+            nu = nus(i);
+            
+            %chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+            L = log(p./m); %S = (-L+1)*p'-sum(m);
+            %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
+
+            % Optimization
+            dgrad = 1;
+            % p >= 0:
+            A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
+            p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
+            chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
+
+            S = (-log(p_esm./m)+1)*p_esm'-sum(m);
+
+            %Q = chisq-0.5*nu*S;
+            %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
+
+            niter = 1;
+            p = m;
+            while ((dgrad > 0.0001) && (niter < 20))
+
+                Delta = diag(0.5./p,0);
+                p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
+                chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+                L = log(p./m); S = (-L+1)*p'-sum(m);
+                Q = chisq-0.5*nu*S;
+
+                grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
+                grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
+                dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
+                    (grad_chi2./norm_chi2-grad_S./norm_S));
+                %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
+
+                niter = niter+1;
+            end
+            
+            chis = [chis, chisq];
+            ps = [ps; [p]];
+            Ss = [Ss, S];            
+            
+            Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
+        end
+        
+        % define corner as point of maxiumum curvature
+        if any(Ss >= 0) %%% algorithm uses log(-Ss), rescale to make sure that log is defined
+            Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
+        end
+        
+        find_corner = true;
+        if find_corner
+            %%% Find corner of discrete L-curve via adaptive pruning algorithm.
+            %%% Inputs have to be reordered in order of decreasing
+            %%% regularization parameter.
+            %%% Take the negative entropy (ensured that all S < 0) so that
+            %%% log10(S) is defined.
+            %%% 4th input means that the first corner is selected.
+            %%% 5th input means that a plot is shown:
+            ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
+            ix_corner = numel(nus) - ix_corner + 1;
+
+            %%% alternative algorithm
+            % define corner as closest point to origin
+            % -> overweights regularization, leading to bad chi2
+            %indexOfMin = find_corner(chis,-Ss,nus,true);
+        else %%% choose regularization parameter such that chi2 is equal to the chi2 of the model-based fit
+            ix_corner = find(chis>TauFitData.Chi2,1,'first');
+        end
+        plot_L_curve(chis,-Ss,nus,ix_corner);
+        
+        tau_dist = ps(ix_corner,:);
+        model =  (decay_ind'*tau_dist')'+decay_offset;
+        decay = decay + decay_offset;
     case 'brute-force'
         %%% this is the old "straight-forward" algorithm that I implemented
         %%% using fmincon. It uses boundary constraints and the mem functional
@@ -7559,117 +7673,6 @@ switch MEM_mode
             tau_dist = tau_dist_mem(ix_c,:);
             model = model(ix_c,:);
         end
-    case 'Kalinin'
-        %%% Algorithm based on the legendary "MATLAB scripts" from
-        %%% Stanislav Kalinin used in the Seidel lab
-        % Fi: Normalized array of kernel decays (i.e. divided by sigma) - Fi(:,j) is j-th decay
-        % sigma: The error estimate assumed to be sqrt(decay) (! This is not true for polarization-combined data !)
-        % y: The data (decay)
-        
-        %%% assign parameters
-        y = decay';
-        Fi = (decay_ind./repmat(error,length(tau),1))';
-        sigma = error';
-        
-        % parameters
-        n = length(tau);
-        p = ones(1,n); p = p./sum(p);			% initial parameters
-        m = p;
-        M = length(y);
-        
-        sigma_sqrt_y = false;
-        if sigma_sqrt_y
-            %%% these calculation assume that sigma = sqrt(y)!
-            H = 2/M*(Fi'*Fi);
-            g0 = 2/M*sigma'*Fi;
-            const_chi2 = sum(y)/M;
-        else
-            %%% here, we take arbitrary sigma and account for it correctly
-            H = 2/M*(Fi'*Fi);
-            g0 = 2/M*(y./sigma)'*Fi;
-            const_chi2 = sum((y./sigma).^2)/M;            
-        end
-        
-        nus = logspace(-3,1,250);
-        
-        chis = [];
-        ps = [];
-        Ss = [];
-
-        options = optimoptions(@quadprog,'Display','none');
-        for i=1:numel(nus)
-            nu = nus(i);
-            
-            %chisq = 0.5*p*H*p' - g0*p' + const_chi2;
-            L = log(p./m); %S = (-L+1)*p'-sum(m);
-            %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
-
-            % Optimization
-            dgrad = 1;
-            % p >= 0:
-            A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
-            p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
-            chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
-
-            S = (-log(p_esm./m)+1)*p_esm'-sum(m);
-
-            %Q = chisq-0.5*nu*S;
-            %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
-
-            niter = 1;
-            p = m;
-            while ((dgrad > 0.0001) && (niter < 20))
-
-                Delta = diag(0.5./p,0);
-                p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
-                chisq = 0.5*p*H*p' - g0*p' + const_chi2;
-                L = log(p./m); S = (-L+1)*p'-sum(m);
-                Q = chisq-0.5*nu*S;
-
-                grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
-                grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
-                dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
-                    (grad_chi2./norm_chi2-grad_S./norm_S));
-                %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
-
-                niter = niter+1;
-            end
-            
-            chis = [chis, chisq];
-            ps = [ps; [p]];
-            Ss = [Ss, S];            
-            
-            Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
-        end
-        
-        % define corner as point of maxiumum curvature
-        if any(Ss >= 0) %%% algorithm uses log(-Ss), rescale to make sure that log is defined
-            Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
-        end
-        
-        find_corner = true;
-        if find_corner
-            %%% Find corner of discrete L-curve via adaptive pruning algorithm.
-            %%% Inputs have to be reordered in order of decreasing
-            %%% regularization parameter.
-            %%% Take the negative entropy (ensured that all S < 0) so that
-            %%% log10(S) is defined.
-            %%% 4th input means that the first corner is selected.
-            %%% 5th input means that a plot is shown:
-            ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1);
-            ix_corner = numel(nus) - ix_corner + 1;
-
-            %%% alternative algorithm
-            % define corner as closest point to origin
-            % -> overweights regularization, leading to bad chi2
-            %indexOfMin = find_corner(chis,-Ss,nus,true);
-        else %%% choose regularization parameter such that chi2 is equal to the chi2 of the model-based fit
-            ix_corner = find(chis>TauFitData.Chi2,1,'first');
-        end
-        plot_L_curve(chis,-Ss,nus,ix_corner);
-        
-        tau_dist = ps(ix_corner,:);
-        model =  (decay_ind'*tau_dist')';
 end
 
 
