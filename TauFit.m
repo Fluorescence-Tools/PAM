@@ -7596,7 +7596,7 @@ switch MEM_mode
         %%% These are advanced implementations of the regularization based on
         %%% matrix algebra and quadratic programming. The problem is
         %%% reformulated and the regularization.
-        do_mem = false;
+        do_mem = true;
         %%% prepare vector and matrices
         % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
         % equivalent to:
@@ -7634,7 +7634,7 @@ switch MEM_mode
         elseif do_mem
             %%% MEM: Algorithm according to Vinogradov-Wilson (2000), based
             %%% on the implementation of Oleg Opanasyuk
-            %%% The algoithm performs equivalent to the Kalinin algoirthm,
+            %%% The algorithm performs equivalent to the Kalinin algorithm,
             %%% but the latter is used for historical reasons.
             %%% (This algorithm does not converge when the normalization is enforced by the equality condition.)
             niter = 20;
