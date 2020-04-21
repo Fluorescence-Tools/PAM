@@ -7080,13 +7080,13 @@ switch obj
                     end
                     for i = 1:2:5
                         range = from(i):to(i);
-                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par;
-                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par;
-                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par;
+                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{1};
+                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{1};
+                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par{1};
                         range = from(i+1):to(i+1);
-                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per;
-                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per;
-                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per;
+                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per{1};
+                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per{1};
+                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per{1};
                     end
                 case 5
             end
@@ -7265,7 +7265,9 @@ switch obj
         if ~all(isnan(TauFitData.ConfInt(:)))
             if size(TauFitData.ConfInt,1) == size(res,1)
                 res = [res, num2cell(TauFitData.ConfInt)];
-            else                
+            elseif size(TauFitData.ConfInt,1) > size(res,1)
+                res = [res, num2cell(TauFitData.ConfInt(1:size(res,1),:))];
+            elseif size(TauFitData.ConfInt,1) < size(res,1)
                 res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
             end
         end
@@ -7375,7 +7377,7 @@ switch mode
         params(end-1:end) = [];
         lin = true; % linear R spacing or not
         if lin
-            R = linspace(10,3*R0,resolution);
+            R = linspace(0,2.5*R0,resolution);
         else
             %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
@@ -7482,7 +7484,7 @@ switch MEM_mode
             const_chi2 = sum((y./sigma).^2)/M;            
         end
         
-        nus = logspace(-2,2,200);
+        nus = logspace(-2,2,250);
         
         chis = [];
         ps = [];
@@ -7539,7 +7541,7 @@ switch MEM_mode
             Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
         end
         
-        find_corner = true;
+        find_corner = false;
         if find_corner
             %%% Find corner of discrete L-curve via adaptive pruning algorithm.
             %%% Inputs have to be reordered in order of decreasing
