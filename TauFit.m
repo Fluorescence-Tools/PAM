@@ -7377,7 +7377,7 @@ switch mode
         params(end-1:end) = [];
         lin = true; % linear R spacing or not
         if lin
-            R = linspace(0,2.5*R0,resolution);
+            R = linspace(0,2*R0,resolution);
         else
             %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
@@ -7484,7 +7484,7 @@ switch MEM_mode
             const_chi2 = sum((y./sigma).^2)/M;            
         end
         
-        nus = logspace(-2,2,250);
+        nus = logspace(-2,1,250);
         
         chis = [];
         ps = [];
@@ -7541,8 +7541,12 @@ switch MEM_mode
             Ss = Ss-max(Ss)-0.01; %%% make sure all entropies are negative so that log10(-S) is defined
         end
         
-        find_corner = false;
+        find_corner = true;
         if find_corner
+            %%% find instead the corner of the chi2 vs. mu plot
+            ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
+            ix_corner = numel(nus) - ix + 1;
+
             %%% Find corner of discrete L-curve via adaptive pruning algorithm.
             %%% Inputs have to be reordered in order of decreasing
             %%% regularization parameter.
@@ -7550,8 +7554,8 @@ switch MEM_mode
             %%% log10(S) is defined.
             %%% 4th input means that the first corner is selected.
             %%% 5th input means that a plot is shown:
-            ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
-            ix_corner = numel(nus) - ix_corner + 1;
+            %ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
+            %ix_corner = numel(nus) - ix_corner + 1;
 
             %%% alternative algorithm
             % define corner as closest point to origin
@@ -7560,11 +7564,12 @@ switch MEM_mode
         else %%% choose regularization parameter such that chi2 is equal to the chi2 of the model-based fit
             ix_corner = find(chis>TauFitData.Chi2,1,'first');
         end
-        plot_L_curve(chis,-Ss,nus,ix_corner);
+        %plot_L_curve(chis,-Ss,nus,ix_corner);
         
         tau_dist = ps(ix_corner,:);
         model =  (decay_ind'*tau_dist')'+decay_offset;
         decay = decay + decay_offset;
+        compare_L_curve([0,ix_corner],{'Fit','MEM'},chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,false);
     case 'brute-force'
         %%% this is the old "straight-forward" algorithm that I implemented
         %%% using fmincon. It uses boundary constraints and the mem functional
@@ -7677,6 +7682,37 @@ switch MEM_mode
         end
 end
 
+compare_all = false;
+if compare_all
+    %%% How to choose L-curve?
+    %%% Compare the effect of selecting the regularization parameter
+    %%% from the L curve
+
+    method = cell(0);
+    ix_corner = [];
+
+    % the previous fit
+    method{end+1} = 'Fit - 2 Gaussian';
+    ix_corner(end+1) = 0;
+
+    % maximum curvature
+    method{end+1} = 'Maximum curvature (\chi^2_r vs. -S) - global';
+    ix = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
+    ix_corner(end+1) = numel(nus) - ix + 1;
+
+    method{end+1} = 'Maximum curvature (\chi^2_r vs. -S) - leftmost';
+    ix = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1);
+    ix_corner(end+1) = numel(nus) - ix + 1;
+
+    method{end+1} = '\chi^2_r equal to fit';
+    ix_corner(end+1) = find(chis>TauFitData.Chi2,1,'first');
+
+    method{end+1} = 'Maximum curvature (\mu vs. \chi^2_r)';
+    ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
+    ix_corner(end+1) = numel(nus) - ix + 1;
+
+    compare_L_curve(ix_corner,method,chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,true);
+end
 
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
@@ -7690,6 +7726,127 @@ switch mode
         tau = tau*TauFitData.TACChannelWidth;
     case 'dist'
         tau = R;
+end
+
+function compare_L_curve(index,method_names,chi,negS,nu,tau,tau_dist,decay_ind,decay,decay_offset,error,plot_decay)
+global TauFitData
+% make a plot with four panel
+
+% 11 - L-curve -Ss vs. chi2
+% 12 - L-curve chi2 vs. reg-param
+% 21 - decay and w_res at choice
+% 22 - tau_dist
+color = lines(numel(index));
+figure('Color',[1,1,1],'Position',[100,100,1000,1000]); hold on;
+tiledlayout(2,2);
+for i = 1:numel(index)
+    if index(i) ~= 0 %%% plot the data        
+        dist{i} = tau_dist(index(i),:);
+        model{i} =  (decay_ind'*dist{i}')' + decay_offset;
+        dist{i}= dist{i}./sum(dist{i});
+        w_res{i} = (decay-model{i})./error;
+        
+        nexttile(1);hold on;
+        if i == 1
+            loglog(chi, negS, 'k-','LineWidth',3,'DisplayName','L-curve');
+            axis square;
+        end
+        % Mark the corner.
+        %loglog([min(chi)/100,chi(index(i))],[negS(index(i)),negS(index(i))],':',...
+        %    [chi(index(i)),chi(index(i))],[min(negS)/100,negS(index(i))],':','LineWidth',2,'Color',color(i,:));
+        scatter(chi(index(i)),negS(index(i)),200,'o','filled','MarkerFaceColor',color(i,:),'DisplayName',[method_names{i}, sprintf('(\\mu = %.2f)', nu(index(i)))]);
+        %text(chi(index(i))*1.01,1.01*negS(index(i)),sprintf('\\mu = %.2f', nu(index(i))),'FontSize',18);
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on',...
+            'XMinorGrid','off','YMinorGrid','off');
+        xlabel('\chi^2_r')
+        ylabel('neg. Entropy, -S');
+        %title('L-curve - neg. Entropy vs. Chi2');
+        xlim([0.95*min(chi),min([1.5,1.05*max(chi)])]); ylim([0.95*min(negS(chi<1.5)),max(negS)]);
+        set(gca,'XScale','log','YScale','log');
+        legend('FontSize',18);
+        axis('tight');
+        
+        nexttile(2);hold on;
+        if i == 1
+            semilogx(nu, chi, 'k--','LineWidth',3);
+            axis square;
+        end
+        scatter(nu(index(i)),chi(index(i)),200,'o','filled','MarkerFaceColor',color(i,:));
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
+        set(gca,'XScale','log');
+        xlabel('\mu')
+        ylabel('\chi^2_r');
+        ylim([0.95*min(chi),min([max(chi),1.5])]);
+    elseif index(i) == 0
+        %%% get the distribution and decay from the GUI
+        h = guidata(findobj('Tag','TauFit'));
+        model{i} = get(findobj('Type','line','DisplayName','I_{DA}'),'YData');
+        w_res{i} = (decay-model{i})./error;
+        dist{i} = interp1(h.Result_Plot_Aniso.Children(2).XData,h.Result_Plot_Aniso.Children(2).YData,tau);
+        dist{i}= dist{i}./sum(dist{i});
+        
+        nexttile(1);hold on;
+        if i == 1
+            loglog(chi, negS, 'k-','LineWidth',3,'DisplayName','L-curve');
+            axis square;
+        end
+        plot([TauFitData.Chi2,TauFitData.Chi2],[min(negS),max(negS)],'--','Color',color(i,:),'LineWidth',3,'DisplayName',method_names{i});
+
+        nexttile(2);hold on;
+        if i == 1
+            plot(nu, chi, 'k--','LineWidth',3);
+            axis square;
+        end
+    end
+    
+    nexttile(3);hold on;
+    plot(tau,dist{i},'LineWidth',3);
+    axis('square');
+    axis('tight');
+    set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
+    xlabel('R_{DA} [A]')
+    ylabel('PDF');
+    
+    nexttile(4);hold on;
+    plot(tau,cumsum(dist{i}),'LineWidth',3);
+    axis('square');
+    axis('tight');
+    set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
+    xlabel('R_{DA} [A]')
+    ylabel('CDF');
+end
+
+if plot_decay
+    %%% second figure, decays
+    figure('Color',[1,1,1],'Position',[100,100,800,600]); hold on;
+    tiledlayout(4,1);
+
+    t = TauFitData.TACChannelWidth*(1:numel(decay));
+    for i = 1:numel(index)    
+        nexttile(1);hold on;
+        plot(t, w_res{i},'LineWidth',2,'Color',color(i,:));
+        axis('tight');
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
+        set(gca,'XScale','log');
+        set(gca,'XTickLabel',[]);
+        nexttile(2,[3,1]);hold on;
+        if i == 1
+            plot(t, decay, 'k','LineWidth',2,'DisplayName','Decay');
+        end
+        if index(i) == 0
+            chi2 = TauFitData.Chi2;
+        else
+            chi2 = sum(w_res{i}.^2./numel(w_res{i}));
+        end
+        plot(t,model{i},'LineWidth',3,'DisplayName',[method_names{i} ' - ' sprintf('\\chi^2_r = %.2f',chi2)],'Color',color(i,:));
+
+        xlabel('time [ns]')
+        ylabel('Intensity');
+        set(gca,'YScale','log','XScale','log');
+        axis('tight');
+        legend('Color',[1,1,1],'Location','SouthWest');
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
+    end
 end
 
 function plot_L_curve(rho,eta,reg,index)
