@@ -7543,9 +7543,12 @@ switch MEM_mode
         
         find_corner = true;
         if find_corner
+            %%% geometrically find the corner in the L-curve
+            ix_corner= find_corner_of_curve(log10(chis),log10(-Ss));
+            
             %%% find instead the corner of the chi2 vs. mu plot
-            ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
-            ix_corner = numel(nus) - ix + 1;
+            % ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
+            % ix_corner = numel(nus) - ix + 1;
 
             %%% Find corner of discrete L-curve via adaptive pruning algorithm.
             %%% Inputs have to be reordered in order of decreasing
@@ -7554,8 +7557,8 @@ switch MEM_mode
             %%% log10(S) is defined.
             %%% 4th input means that the first corner is selected.
             %%% 5th input means that a plot is shown:
-            %ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
-            %ix_corner = numel(nus) - ix_corner + 1;
+            % ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
+            % ix_corner = numel(nus) - ix_corner + 1;
 
             %%% alternative algorithm
             % define corner as closest point to origin
@@ -7687,7 +7690,6 @@ if compare_all
     %%% How to choose L-curve?
     %%% Compare the effect of selecting the regularization parameter
     %%% from the L curve
-
     method = cell(0);
     ix_corner = [];
 
@@ -7710,7 +7712,13 @@ if compare_all
     method{end+1} = 'Maximum curvature (\mu vs. \chi^2_r)';
     ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
     ix_corner(end+1) = numel(nus) - ix + 1;
-
+    
+    method{end+1} = 'Geometric (\chi^2_r vs. -S)';
+    ix_corner(end+1) = find_corner_of_curve(log10(chis),log10(-Ss));
+    
+    method{end+1} = 'Geometric (\mu vs. \chi^2_r)';
+    ix_corner(end+1) = find_corner_of_curve(log10(nus),chis);
+    
     compare_L_curve(ix_corner,method,chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,true);
 end
 
@@ -7917,45 +7925,24 @@ while ((dgrad > 0.0001) && (niter < niter_max))
 end
 
 
-function indexOfMin = find_corner(eta,rho,reg,show_plot)
-%%% finds the point of maximum curvature in a plot of b vs. a
+function indexOfMin = find_corner_of_curve(rho,eta)
+%%% finds the point closest to corner in a plot of chi2 vs. nu
 
-cornerX = min(eta);
-cornerY = min(rho);
-distancesFromCorner = sqrt((eta - cornerX) .^ 2 + (rho - cornerY) .^ 2);
+%%% rescale to 0-1 range
+rho_sc = (rho-min(rho))./(max(rho)-min(rho));
+eta_sc = (eta-min(eta))./(max(eta)-min(eta));
+if all(diff(eta) >= 0)
+    %%% monotonic increasing, corner to the bottom right
+    cornerX = 1;
+    cornerY = 0;
+elseif all(diff(eta) <= 0)
+    %%% monotonic decreasing, corner to the bottom left
+    cornerX = 0;
+    cornerY = 0;
+end
+distancesFromCorner = sqrt((rho_sc - cornerX) .^ 2 + (eta_sc - cornerY) .^ 2);
 % Find min distance
 [~, indexOfMin] = min(distancesFromCorner);
-
-if show_plot
-    minEta = eta(indexOfMin);
-    minRho = rho(indexOfMin);
-    figure;
-    plot(eta, rho, 'k--o', 'LineWidth', 2);
-    grid on;
-    axis equal % Make axes equal, otherwise "corner" depends on scaling.
-    xlabel('eta', 'FontSize', 16);
-    ylabel('rho', 'FontSize', 16);
-
-    % Start x axis at 0
-    xlim([0, max(eta)]);
-    % Start y axis at 3
-    ylim([0.003, max(rho)]);
-    % Get location of axes:
-    xl = xlim;
-    yl = ylim;
-    % Plot a vertical line there.
-    line([minEta, minEta], [yl(1), minRho], 'Color', 'r', 'LineWidth', 2);
-    % Plot a horzontal line there.
-    line([xl(1), minEta], [minRho, minRho], 'Color', 'r', 'LineWidth', 2);
-    
-    xlabel('\chi^2_r')
-	ylabel('neg. Entropy -S');
-    title(sprintf('L-curve, corner at \\mu = %.2d', reg(indexOfMin)));
-    set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top');
-    set(gcf,'Color',[1,1,1]);
-    x_lim = [0.95*min(eta),min([2,1.05*max(eta)])];
-    xlim(x_lim); ylim(0.95*min(rho(eta<2)) + [0,diff(x_lim)]);
-end
 
 function d = memdelta(p,l,q,H)
 %%% the delta for MEM optimization
