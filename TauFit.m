@@ -67,11 +67,11 @@ end
 h.Menu.File = uimenu(h.TauFit,'Label','File');
 h.Menu.OpenDecayData = uimenu(h.Menu.File,'Label','Load decay data (*.dec)',...
     'Callback',@Load_Data);
-h.Menu.OpenDecayData_PQ = uimenu(h.Menu.File,'Label','Load PQ decay data (*.dat)',...
+h.Menu.OpenDecayData_PQ = uimenu(h.Menu.File,'Label','Load decay data from text file',...
     'Callback',@Load_Data,'Separator','on');
-h.Menu.OpenIRFData_PQ = uimenu(h.Menu.File,'Label','Load PQ IRF data (*.dat)',...
+h.Menu.OpenIRFData_PQ = uimenu(h.Menu.File,'Label','Load IRF data from text file',...
     'Callback',@Load_Data,'Enable','off');
-h.Menu.OpenDecayDOnlyData_PQ = uimenu(h.Menu.File,'Label','Load PQ DOnly data (*.dat)',...
+h.Menu.OpenDecayDOnlyData_PQ = uimenu(h.Menu.File,'Label','Load DOnly data from text file',...
     'Callback',@Load_Data,'Enable','off');
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
 h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
@@ -1792,7 +1792,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    [FileName, PathName, FilterIndex] = uigetfile({'*.dat','PQ decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','off');
+                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt','Tab-separated text file (*.txt)'},'Choose data file...',UserValues.File.TauFitPath);
                     if FilterIndex == 0
                         return;
                     end
@@ -1801,19 +1801,30 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                         FileName = {FileName};
                     end
                     %%% only load one file for now
-                    [time,decay,header] = load_PQ_decay(fullfile(PathName,FileName{1}));
+                    switch FilterIndex
+                        case 1 %%% pq data
+                            [time,decay,header] = load_PQ_decay(fullfile(PathName,FileName{1}));
+                            % read data from header
+                            sync = textscan(header.Sync_Frequency,'%d Hz');
+                            TAC = (1./double(sync{1}))*1E9;
+                            res = textscan(header.Meas_BinWidth,'%d ps');
+                            TACChannelWidth = double(res{1})*1E-3;
+                        case 2
+                            data = dlmread(fullfile(PathName,FileName{1}))';
+                            time = data(:,1); time = time-time(1);
+                            decay = data(:,2);
+                            TAC = max(time);
+                            TACChannelWidth = time(2);
+                    end
                     
                     switch obj
                         case h.Menu.OpenDecayData_PQ
                             set([h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ],'Enable','on');
                             
-                            % read data from header
-                            TAC = textscan(header.Sync_Frequency,'%d Hz');
-                            TauFitData.TACRange = (1./double(TAC{1}))*1E9;
+                            TauFitData.TACRange = TAC;
                             MI_Bins = numel(time); TauFitData.MI_Bins = MI_Bins;
-                            TACChannelWidth = textscan(header.Meas_BinWidth,'%d ps');
-                            TauFitData.TACChannelWidth = double(TACChannelWidth{1})*1E-3;
                             
+                            TauFitData.TACChannelWidth = TACChannelWidth;                            
                             if ~isfield(TauFitData,'External') % first time
                                 TauFitData.External = struct;
                                 TauFitData.External.MI_Hist = {};
@@ -4589,31 +4600,44 @@ switch obj
             h.Plots.Residuals_ignore.Visible = 'off';
             h.Plots.FitResult_ignore.Visible = 'off';
         end
-        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','Distribution Fit - Global Model'}))
-            % Unhide plots
-            h.Plots.IRFResult_Perp.Visible = 'on';
-            h.Plots.FitResult_Perp.Visible = 'on';
-            h.Plots.FitResult_Perp_ignore.Visible = 'on';
-            h.Plots.DecayResult_Perp.Visible = 'on';
-            h.Plots.DecayResult_Perp_ignore.Visible = 'on';
-            h.Plots.Residuals_Perp.Visible = 'on';
-            h.Plots.Residuals_Perp_ignore.Visible = 'on';
+        if contains(TauFitData.FitType,'Anisotropy') || contains(TauFitData.FitType,'Distribution') %any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','Distribution Fit - Global Model'}))
+            if contains(TauFitData.FitType,'Anisotropy') || strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                % Unhide plots
+                h.Plots.IRFResult_Perp.Visible = 'on';
+                h.Plots.FitResult_Perp.Visible = 'on';
+                h.Plots.FitResult_Perp_ignore.Visible = 'on';
+                h.Plots.DecayResult_Perp.Visible = 'on';
+                h.Plots.DecayResult_Perp_ignore.Visible = 'on';
+                h.Plots.Residuals_Perp.Visible = 'on';
+                h.Plots.Residuals_Perp_ignore.Visible = 'on';
+
+                % change colors
+                h.Plots.IRFResult.Color = [1 0 0];
+                h.Plots.DecayResult.Color = [0.6000 0.2000 0];
+                h.Plots.Residuals.Color = [1 0 0];
+                h.Plots.Residuals_ignore.Color = [1 0 0];
+
+                %%% Split Decay_Result in Par and Per
+                Decay_par = Decay(1:numel(Decay)/2);
+                Decay_per = Decay(numel(Decay)/2+1:end);
+                Fit_par = FitFun(1:numel(Decay)/2);
+                Fit_per = FitFun(numel(Decay)/2+1:end);
+                wres_par = wres(1:numel(Decay)/2);
+                wres_per = wres(numel(Decay)/2+1:end);
+                
+                            
+                % store FitResult TauFitData also for use in export
+                TauFitData.FitResult = [Fit_par; Fit_per];
+            else
+                Decay_par = Decay;
+                Decay_per = Decay;
+                Fit_par = FitFun;
+                Fit_per = FitFun;
+                wres_par = wres;
+                wres_per = wres;
+            end
             
-            % change colors
-            h.Plots.IRFResult.Color = [1 0 0];
-            h.Plots.DecayResult.Color = [0.6000 0.2000 0];
-            h.Plots.Residuals.Color = [1 0 0];
-            h.Plots.Residuals_ignore.Color = [1 0 0];
-            
-            %%% Split Decay_Result in Par and Per
-            Decay_par = Decay(1:numel(Decay)/2);
-            Decay_per = Decay(numel(Decay)/2+1:end);
-            Fit_par = FitFun(1:numel(Decay)/2);
-            Fit_per = FitFun(numel(Decay)/2+1:end);
-            wres_par = wres(1:numel(Decay)/2);
-            wres_per = wres(numel(Decay)/2+1:end);
-            
-            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
+            if contains(TauFitData.FitType,'Anisotropy') %~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
                 IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
                 IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
                 IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
@@ -4626,7 +4650,8 @@ switch obj
                 IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
                 h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
                 h.Plots.IRFResult_Perp.YData = IRFPat_Perp;
-            else %%% global fit of DO and DA, only one IRF
+            elseif strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                %%% global fit of DO and DA, only one IRF
                 %%% normalize decays for better joint display
                 max_par = max(Fit_par); max_per = max(Fit_per);
                 mean_int = mean([max_par,max_per]);
@@ -4651,7 +4676,7 @@ switch obj
             h.Result_Plot.Position = [0.075 0.3 0.9 0.55];
             h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
             
-            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model');
+            if contains(TauFitData.FitType,'Anisotropy')
                 r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
                 r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
                 x_r = (1:numel(Decay)/2).*TACtoTime;
@@ -4679,13 +4704,18 @@ switch obj
                 h.Plots.AnisoResult.Visible = 'on';
                 h.Plots.AnisoResult_ignore.Visible = 'on';
                 h.Plots.FitAnisoResult_ignore.Visible = 'on';
-            else %% global fit of DO and DA, show distance distribution
+            elseif contains(TauFitData.FitType,'Distribution') %%% show distance distribution
                 xR = 0:0.01:150;
-                Gauss1 = 1./(sqrt(2*pi())*x(2)).*exp(-(xR-x(1)).^2./(2*x(2).^2));
-                Gauss1 = Gauss1./sum(Gauss1);
-                Gauss2 = 1./(sqrt(2*pi())*x(4)).*exp(-(xR-x(3)).^2./(2*x(4).^2));
-                Gauss2 = Gauss2./sum(Gauss2);
-                pR = x(5)*Gauss1 + (1-x(5))*Gauss2;
+                if any(strcmp(TauFitData.FitType,{'Distribution','Distribution plus Donor only'}))
+                    pR = 1./(sqrt(2*pi())*x(2)).*exp(-(xR-x(1)).^2./(2*x(2).^2));
+                    pR = pR./sum(pR);
+                elseif any(strcmp(TauFitData.FitType,{'Two Distributions plus Donor only','Distribution Fit - Global Model'}))
+                    Gauss1 = 1./(sqrt(2*pi())*x(2)).*exp(-(xR-x(1)).^2./(2*x(2).^2));
+                    Gauss1 = Gauss1./sum(Gauss1);
+                    Gauss2 = 1./(sqrt(2*pi())*x(4)).*exp(-(xR-x(3)).^2./(2*x(4).^2));
+                    Gauss2 = Gauss2./sum(Gauss2);
+                    pR = x(5)*Gauss1 + (1-x(5))*Gauss2;
+                end
                 
                 % update plots
                 h.Plots.AnisoResult.Visible = 'off';
@@ -4700,14 +4730,12 @@ switch obj
                 h.Result_Plot_Aniso.XLabel.String = 'Distance [A]';
                 h.Result_Plot_Aniso.YLabel.String = 'Probability';
                 h.Result_Plot_Aniso.YTickLabels = [];
-                                
-                %%% assign only the chi2 of the DA decay
-                TauFitData.Chi2 = chi2_DA;
+                if strcmp(TauFitData,'Distribution Fit - Global Model')
+                    %%% assign only the chi2 of the DA decay
+                    TauFitData.Chi2 = chi2_DA;
+                end
             end
-            
-            % store FitResult TauFitData also for use in export
-            TauFitData.FitResult = [Fit_par; Fit_per];           
-            
+   
             h.Plots.DecayResult.XData = (ignore:numel(Decay_par))*TACtoTime;
             h.Plots.DecayResult.YData = Decay_par(ignore:end);
             h.Plots.FitResult.XData = (ignore:numel(Fit_par))*TACtoTime;
@@ -4731,7 +4759,7 @@ switch obj
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(1:end)) min(Decay_per(1:end))]);
             h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
-            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+            if contains(TauFitData.FitType,'Anisotropy') %~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
                 h.Result_Plot_Aniso.XLim = [0, h.Result_Plot.XLim(2)];
             end
             
@@ -4750,13 +4778,15 @@ switch obj
             
             h.Residuals_Plot.YLim = [min([min(wres_par(ignore:end)) min(wres_per(ignore:end))]) max([max(wres_par(ignore:end)) max(wres_per(ignore:end))])];
             % add legend
-            if ~strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+            if contains(TauFitData.FitType,'Anisotropy')
                 legend_str = {'I_{||}','I_\perp'};
-            else
+                l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
+                l.Box = 'off';
+            elseif strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
                 legend_str = {'I_{DA}','I_{D0}'};
+                l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
+                l.Box = 'off';
             end
-            l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
-            l.Box = 'off';
         else
             % hide plots
             h.Plots.IRFResult_Perp.Visible = 'off';
@@ -7401,6 +7431,13 @@ switch mode
             tau2 = (1./tauD2+k_RET).^(-1);
         end
 end
+
+%%% remove lifetimes of less than 1 bin
+tau_range = tau > 0;
+tau = tau(tau_range);
+if strcmp(mode,'dist')
+    R = R(tau_range);
+end
 % set background and scatter to zero here and re-add to the
 % kernel functions later
 bg = params(2); params(2) = 0;
@@ -7544,11 +7581,11 @@ switch MEM_mode
         find_corner = true;
         if find_corner
             %%% geometrically find the corner in the L-curve
-            ix_corner= find_corner_of_curve(log10(chis),log10(-Ss));
+            % ix_corner= find_corner_of_curve(log10(chis),log10(-Ss));
             
             %%% find instead the corner of the chi2 vs. mu plot
-            % ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
-            % ix_corner = numel(nus) - ix + 1;
+            ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
+            ix_corner = numel(nus) - ix + 1;
 
             %%% Find corner of discrete L-curve via adaptive pruning algorithm.
             %%% Inputs have to be reordered in order of decreasing
@@ -7572,7 +7609,7 @@ switch MEM_mode
         tau_dist = ps(ix_corner,:);
         model =  (decay_ind'*tau_dist')'+decay_offset;
         decay = decay + decay_offset;
-        compare_L_curve([0,ix_corner],{'Fit','MEM'},chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,false);
+        compare_L_curve([-1,0,ix_corner],{'Input','Fit','MEM'},chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,false);
     case 'brute-force'
         %%% this is the old "straight-forward" algorithm that I implemented
         %%% using fmincon. It uses boundary constraints and the mem functional
@@ -7745,10 +7782,13 @@ global TauFitData
 % 21 - decay and w_res at choice
 % 22 - tau_dist
 color = lines(numel(index));
+if index(1) == -1 % plot inital distribution also in gray
+    color = [0.5,0.5,0.5;color];
+end
 figure('Color',[1,1,1],'Position',[100,100,1000,1000]); hold on;
 tiledlayout(2,2);
 for i = 1:numel(index)
-    if index(i) ~= 0 %%% plot the data        
+    if index(i) > 0 %%% plot the data        
         dist{i} = tau_dist(index(i),:);
         model{i} =  (decay_ind'*dist{i}')' + decay_offset;
         dist{i}= dist{i}./sum(dist{i});
@@ -7782,16 +7822,23 @@ for i = 1:numel(index)
         scatter(nu(index(i)),chi(index(i)),200,'o','filled','MarkerFaceColor',color(i,:));
         set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
         set(gca,'XScale','log');
-        xlabel('\mu')
+        xlabel('\mu');
         ylabel('\chi^2_r');
-        ylim([0.95*min(chi),min([max(chi),1.5])]);
+        %xlim([0.95*min(negS),max(negS)]);
+        ylim([0.95*min(chi),min([max(chi),1.5])]);        
     elseif index(i) == 0
         %%% get the distribution and decay from the GUI
-        h = guidata(findobj('Tag','TauFit'));
-        model{i} = get(findobj('Type','line','DisplayName','I_{DA}'),'YData');
-        w_res{i} = (decay-model{i})./error;
-        dist{i} = interp1(h.Result_Plot_Aniso.Children(2).XData,h.Result_Plot_Aniso.Children(2).YData,tau);
-        dist{i}= dist{i}./sum(dist{i});
+        try
+            h = guidata(findobj('Tag','TauFit'));
+            model{i} = h.Plots.DecayResult.YData;
+            w_res{i} = (decay-model{i})./error;
+            dist{i} = interp1(h.Plots.FitAnisoResult.XData,h.Plots.FitAnisoResult.YData,tau);
+            dist{i}= dist{i}./sum(dist{i});
+        catch
+            model{i} = zeros(size(tau));
+            w_res{i} = zeros(size(tau));
+            dist{i} = zeros(size(tau));
+        end
         
         nexttile(1);hold on;
         if i == 1
@@ -7805,10 +7852,29 @@ for i = 1:numel(index)
             plot(nu, chi, 'k--','LineWidth',3);
             axis square;
         end
+    elseif index(i) == -1 %%% plot the input flat distribution
+        dist{i} = ones(size(tau))./numel(tau);
+        model{i} =  (decay_ind'*dist{i}')' + decay_offset;
+        dist{i}= dist{i}./sum(dist{i});
+        w_res{i} = (decay-model{i})./error;
+        chi2_initial = sum(w_res{i}.^2)./numel(tau);
+        
+        nexttile(1);hold on;
+        if i == 1
+            loglog(chi, negS, 'k-','LineWidth',3,'DisplayName','L-curve');
+            axis square;
+        end
+        %plot([chi2_initial,chi2_initial],[min(negS),max(negS)],'--','Color',[0.5,0.5,0.5],'LineWidth',3,'DisplayName',method_names{i});
+
+        nexttile(2);hold on;
+        if i == 1
+            plot(nu, chi, 'k--','LineWidth',3);
+            axis square;
+        end
     end
     
     nexttile(3);hold on;
-    plot(tau,dist{i},'LineWidth',3);
+    plot(tau,dist{i},'LineWidth',3,'Color',color(i,:));
     axis('square');
     axis('tight');
     set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
@@ -7816,7 +7882,7 @@ for i = 1:numel(index)
     ylabel('PDF');
     
     nexttile(4);hold on;
-    plot(tau,cumsum(dist{i}),'LineWidth',3);
+    plot(tau,cumsum(dist{i}),'LineWidth',3,'Color',color(i,:));
     axis('square');
     axis('tight');
     set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
