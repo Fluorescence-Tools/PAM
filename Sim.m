@@ -2455,7 +2455,7 @@ if ~advanced
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                [Photons,  MI, Channel, Pos] = DifSim_mac(...
+                [Photons,  MI, Channel, Pos] = DifSim(...
                     Frametime, BS,... General Parameters
                     Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
                     D,Pos,... Particle parameters
