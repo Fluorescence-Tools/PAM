@@ -1678,7 +1678,8 @@ switch Obj
         
         SimData.General(File).Px(2) = str2double(h.Sim_Px{2}.String);
         SimData.General(File).Size(2) = str2double(h.Sim_Size{2}.String);
-        SimData.General(File).Time(3) = str2double(h.Sim_Px_Time{3}.String);                
+        SimData.General(File).Time(3) = str2double(h.Sim_Px_Time{3}.String);
+        SimData.General(File).SimTime = str2double(h.Sim_Time.String);
     
     case h.Sim_Size %%% Pixel\Line Size
         %%% Updates Dimension in X\Y
@@ -2558,6 +2559,12 @@ if advanced
     
     %%% Determins barrier type and map (for quenching, barriers, ect.)
     Map_Type = h.Sim_Barrier.Value;
+    
+    %If a diffusion map is needed, import one
+    if Map_Type ~= 1
+        SimData.Map=importdata(uigetfile('.mat'));
+    end
+    
     switch Map_Type
         case 1 %%% Free Diffusion
             if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
@@ -3013,10 +3020,29 @@ switch h.Sim_Save.Value
                 %%% Write File Name to save as tif
                 File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_C' num2str(i) '_F' num2str(h.Sim_File_List.Value) '.tif']);
                 
-                imwrite(Int(:,:,1),File,'tif','Compression','lzw');
-                for k=2:Frames;
-                    imwrite(Int(:,:,k),File,'tif','WriteMode','append','Compression','lzw');
-                end
+                tifffile = Tiff(File,'w');
+                
+                setTag(tifffile,'Photometric',Tiff.Photometric.LinearRaw);
+                setTag(tifffile,'Compression',Tiff.Compression.LZW);
+                setTag(tifffile,'ImageWidth' ,Pixel(1));
+                setTag(tifffile,'ImageLength',Pixel(2));
+                setTag(tifffile,'BitsPerSample',16);
+                setTag(tifffile,'SamplesPerPixel',1);
+                setTag(tifffile,'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky);
+                
+                %convert pixel size in nanometers to dots per centimeter
+                %for tiff format                
+                setTag(tifffile,'XResolution',0.01 / (Step(1) * 1e-9));
+                setTag(tifffile,'YResolution',0.01 / (Step(2) * 1e-9));
+                setTag(tifffile,'ResolutionUnit',Tiff.ResolutionUnit.Centimeter);
+                
+                write(tifffile,Int(:,:,1));
+                close(tifffile);
+                                
+%                 imwrite(Int(:,:,1),File,'tif','Compression','lzw');
+                 for k=2:Frames;
+                     imwrite(Int(:,:,k),File,'tif','WriteMode','append','Compression','lzw');
+                 end
             end
         end
     case 3 %%% Save as .sim file for pam
@@ -3054,466 +3080,6 @@ switch h.Sim_Save.Value
             end
         end
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
-%%% Peforms actual simulation procedure for camera observation %%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_CameraSim(~,~)
-global SimData PathToApp
-h = guidata(findobj('Tag','Sim'));
-Sel = h.Sim_File_List.Value(1);
-
-for i = 1:numel(SimData.Species)
-    
-    %%% Box Size
-    BS(1) = str2double(h.Sim_BS{1}.String);
-    BS(2) = str2double(h.Sim_BS{2}.String);
-    %%% Frames
-    Frames = str2double(h.Sim_Frames.String);
-    
-    %%% Pixel/Line info
-    Step(1) = str2double(h.Sim_Size{1}.String);
-    Pixel(1) = str2double(h.Sim_Px{1}.String);
-    Step(2) = str2double(h.Sim_Size{2}.String);
-    Pixel(2) = str2double(h.Sim_Px{2}.String);
-    
-    
-    if BS(1)<Pixel(1)*Step(1)
-        BS(1)=Pixel(1)*Step(1);
-    end
-    if BS(2)<Pixel(2)*Step(2)
-        BS(2)=Pixel(2)*Step(2);
-    end   
-    
-    NoP = SimData.Species(i).N;
-    D = sqrt(2*SimData.Species(i).D*10^6*SimData.General(Sel).Time(3));
-    
-    wr = zeros(4,1);
-    dX = zeros(4,1); dY = zeros(4,1);
-    %%% Species specific parameters for used colors
-    for j = 1:SimData.Species(i).Color
-        wr(j) = SimData.Species(i).wr(j);
-        dX(j) = SimData.Species(i).dX(j);
-        dY(j) = SimData.Species(i).dY(j);
-    end  
-    
-    ExP = SimData.Species(i).ExP;
-    DetP = SimData.Species(i).DetP;
-    BlP = SimData.Species(i).BlP;
-    %%% Crosstalk
-    SimData.Species(i).Cross(1:5:16) = 1;
-    Cross = zeros(4,4);
-    for j=1:4
-        for k=1:4
-            Cross(j,k) =  DetP(k,k)/DetP(j,k)*SimData.Species(i).Cross(j,k);
-        end
-
-    end
-    
-    %%% Calculates relative energy transfer rates
-    switch SimData.Species(i).FRET
-        case 1
-            FRET = diag(ones(4,1));
-        case 2
-            FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
-            FRET(SimData.Species(i).R == 0) = 0; % fix nan values
-            FRET(1:5:16) = 1;
-        case 3
-            FRET = diag(ones(4,1));
-    end
-    
-    for j=SimData.Species(i).Color+1:4
-       ExP(j,:) = 0; 
-       FRET(j,:) = 0;
-    end
-
-    %%% Once FRET etc. is enabled
-    if exist('Total','var')
-        while size(Total,1) < SimData.Species(i).Color
-            Total(end+1,:) = deal({uint16(zeros(Pixel(1),Pixel(2),Frames))});
-            Total(:,end+1) = deal({uint16(zeros(Pixel(1),Pixel(2),Frames))});
-        end
-    else
-        Total = repmat({uint16(zeros(Pixel(1),Pixel(2),Frames))}, SimData.Species(i).Color, SimData.Species(i).Color);
-    end
-    
-    Px_Total = floor(BS./Step);
-    Start = floor((Px_Total-Pixel)/2);
-    Stop = floor((Px_Total+Pixel)/2);
-    Filter = cell(SimData.Species(i).Color,1);
-    for j = 1:SimData.Species(i).Color
-        Filter{j} = fspecial('gaussian',4*wr(j),wr(j)/2);
-        Px = floor(size(Filter{j})./Step);
-        Filter{j} = single(Filter{j}(1:Px(1)*Step(1),1:Px(2)*Step(2)));
-    end
-    
-    if D == 0 %%% Static particles
-        for k=1:NoP
-            
-            Pos = round(BS.*rand(1,2));
-            Pos(Pos==0) = 1;
-            Int = cell(SimData.Species(i).Color,1);
-            Location = cell(SimData.Species(i).Color,1);
-            
-            
-            %%% No bleaching via FRET yet, need to still fix that
-            %%% Calculates excitation and FRET dependent bleaching
-            Bleach = zeros(SimData.Species(i).Color,1); 
-            bleach = zeros(SimData.Species(i).Color,1); 
-            while any(Bleach == 0)                
-                for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(j,:).*BlP(j,:))./sum(FRET(find(Bleach==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)));
-                end
-                bleach(bleach==Inf) = Frames+1;
-                bleach(Bleach~=0) = Inf;
-                [~,Index] = sort(bleach);                
-                Bleach(Index(1)) = bleach(Index(1))+max(Bleach);
-            end
-           
-            %%% Particle is spread out over PSF into pixels
-            for j = 1:SimData.Species(i).Color
-                
-                Shift = round(mod(Pos,Step));
-                Location{j} = floor(Pos./Step);
-                
-                Int{j} = zeros(size(Filter{j})+Step);
-                Int{j}((1:size(Filter{j},1))+Shift(1),(1:size(Filter{j},1))+Shift(2)) = Filter{j};
-                
-                Px = floor(size(Int{j})./Step);
-                
-                Int{j} = Int{j}(1:Px(1)*Step(1),1:Px(1)*Step(1));
-                Int{j} = squeeze(sum(reshape(Int{j}, Step(1), []),1));
-                Int{j} = squeeze(sum(reshape(Int{j}, Px(1), [], Px(2)),2));
-                
-                Begin = Start-Location{j};
-                if any(Begin>0) %%% Particle before frame
-                    Begin(Begin<0) = 0;
-                    if all(Begin<size(Int{j})) %%% Particle partially before frame
-                        Int{j} = Int{j}((1+Begin(1)):end,(1+Begin(2)):end);
-                        Location{j} = Location{j} + Begin;
-                    else %%% Particle completely before frame
-                        Int{j} = [];
-                    end
-                end
-                End = Stop-(Location{j}+size(Int{j}));
-                if any(End<0) %%% Particle behind frame
-                    End(End>0) = 0;
-                    if all(End>-size(Int{j})) %%% Particle partially behind frame
-                        Int{j} = Int{j}(1:(end+End(1)),1:(end+End(2)));
-                    else %%% Particle completely behind frame
-                        Int{j} = [];
-                    end
-                end 
-                
-                if Location{j}(1) == 0 && (size(Int{j},1)>1)
-                   Int{j} = Int{j}(2:end,:); 
-                   Location{j}(1) = 1;
-                elseif size(Int{j},1) == 1
-                    Int{j} = [];
-                end
-                
-                if Location{j}(2) == 0 && (size(Int{j},2)>1)
-                    Int{j} = Int{j}(:,2:end);
-                    Location{j}(2) = 1;
-                elseif size(Int{j},2) == 1
-                    Int{j} = [];
-                end
-                
-            end
-            
-            %%% Calculates actual Intensity per particle
-            for m = 1:Frames
-                ExP1 = ExP;                
-                FRET1 = FRET;
-                
-                ExP1(find(Bleach < m),:) = 0;
-                FRET1(find(Bleach < m),:) = 0;
-                if any( floor(Bleach) == m)
-                    ExP1 (find(floor(Bleach) == m),:) = ExP1 (find(floor(Bleach) == m),:).*repmat(mod(Bleach(find(floor(Bleach) == m)),1),[1 4]);
-                    FRET1(find(floor(Bleach) == m),:) = FRET1(find(floor(Bleach) == m),:).*repmat(mod(Bleach(find(floor(Bleach) == m)),1),[1 4]);
-                end
-                
-                
-                Prob = zeros(SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color);
-                for j = 1:SimData.Species(i).Color %%% Laser
-                    for n = 1:SimData.Species(i).Color %%% excited dye
-                        for o = 1:SimData.Species(i).Color %%% Emmiting dye
-                            for p = 1:SimData.Species(i).Color %%% Detected channel
-                                switch (o-n) %%% How many FRET ways are possible
-                                    case 0 %%% No FRET
-                                        Prob(j,n,o,p) = ExP1(n,j)... Excited dye n by laser j
-                                                       *FRET1(o,n)/sum(FRET1(:,n))... No FRET from dye o to other dyes (n=o)
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability
-                                    case 1 %%% Direct FRET                                                  
-                                        Prob(j,n,o,p) = ExP1(n,j)... Excited dye n by laser j
-                                                       *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability
-                                    case 2 %%% 2Color distance FRET (Direct or 2 Step FRET)
-                                        %%% FRET directly to dye o from n
-                                        Prob(j,n,o,p) = ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 2 steps to dye o from n over n+1          
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                                       *FRET1(o,n+1)/sum(FRET1(:,n+1))... FRET to dye o from dye n+1
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability                                                     
-                                    case 3 %%% 3Color distance FRET(Direct, 2x2Step and 3Step FRET)
-                                        %%% FRET directly to dye o from n
-                                        Prob(j,n,o,p) = ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 2 steps to dye o from n over n+1          
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                                       *FRET1(o,n+1)/sum(FRET1(:,n+1))... FRET to dye o from dye n+1
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability  
-                                        %%% FRET in 2 steps to dye o from n over n+2
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(n+2,n)/sum(FRET1(:,n))... FRET to dye n+2 from dye n
-                                                       *FRET1(o,n+2)/sum(FRET1(:,n+2))... FRET to dye o from dye n+2
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 3 steps to dye o from n over n+1 and n+2
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                                       *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                                       *FRET1(n+2,n+1)/sum(FRET1(:,n+1))... FRET to dye n+2 from dye n+1
-                                                       *FRET1(o,n+2)/sum(FRET1(:,n+2))... FRET to dye o from dye n+2
-                                                       *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                                       *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                                       *DetP(p,o); %%% Detection probability                                         
-                                end
-                            end
-                        end
-                    end
-                end
-                Prob(isinf(Prob) | isnan(Prob)) = 0;
-                Prob = squeeze(sum(sum(Prob,2),3));                   
-                
-                for j = 1:SimData.Species(i).Color
-                    for n = 1:SimData.Species(i).Color
-                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)*Prob(j,n);
-                        Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
-                        Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
-                        Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
-                    end
-                end                    
-            end
-        end
-    else %%% Moving Particles
-        Pos = ceil(repmat(BS,[NoP,1]).*rand(NoP,2));
-        Pos(Pos==0) = 1;
-        Bleach = zeros(SimData.Species(i).Color,NoP);
-        for m = 1:Frames
-            disp(m)
-            Pos = Pos + round(D*randn(NoP,2));
-            
-            %%% Puts particles back into box;
-            %%% Unbleaches
-            Out1 = (Pos(:,1) > BS(1)) | (Pos(:,1) <= 0);
-            Out2 = (Pos(:,2) > BS(2)) | (Pos(:,2) <= 0);
-            while any(Out1 | Out2)
-                Bleach(:,find(Out1 | Out2)) = 0;
-                Pos(Out1) = mod(BS(1)+Pos(Out1),BS(1));
-                Pos([false(NoP,1); Out2]) = mod(BS(2)+Pos([false(NoP,1); Out2]),BS(2));
-                Out1 = (Pos(:,1) > BS(1)) | (Pos(:,1) <= 0);
-                Out2 = (Pos(:,2) > BS(2)) | (Pos(:,2) <= 0);
-            end
-            
-            for k=1:NoP
-                Int = cell(SimData.Species(i).Color,1);
-                Location = cell(SimData.Species(i).Color,1);                
-                
-                %%% Tests for bleaching
-                bleach = zeros(SimData.Species(i).Color,1);
-                for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(:,j).*BlP(:,j))./sum(FRET(find(Bleach(:,k)==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)));
-                end
-              
-                %%% Particle is spread out over PSF into pixels 
-                for j = 1:SimData.Species(i).Color
-                    
-                    Shift = round(mod(Pos(k,:),Step));
-                    Location{j} = floor(Pos(k,:)./Step);
-                             
-                    Int{j} = zeros(size(Filter{j})+Step,'single');
-                    Int{j}((1:size(Filter{j},1))+Shift(1),(1:size(Filter{j},1))+Shift(2)) = Filter{j};
-                    
-                    Px = floor(size(Int{j})./Step);                    
-                    
-                    Int{j} = squeeze(sum(reshape(Int{j}, Step(1), []),1));
-                    Int{j} = squeeze(sum(reshape(Int{j}, Px(1), [], Px(2)),2));
-                    
-                    Begin = Start-Location{j};
-                    if any(Begin>0) %%% Particle before frame
-                        Begin(Begin<0) = 0;
-                        if all(Begin<size(Int{j})) %%% Particle partially before frame
-                            Int{j} = Int{j}((1+Begin(1)):end,(1+Begin(2)):end);
-                            Location{j} = Location{j} + Begin;
-                        else %%% Particle completely before frame
-                            Int{j} = [];
-                        end
-                    end
-                    End = Stop-(Location{j}+size(Int{j}));
-                    if any(End<0) %%% Particle behind frame
-                        End(End>0) = 0;
-                        if all(End>-size(Int{j})) %%% Particle partially behind frame
-                            Int{j} = Int{j}(1:(end+End(1)),1:(end+End(2)));
-                        else %%% Particle completely behind frame
-                            Int{j} = [];
-                        end
-                    end
-                    
-                    if Location{j}(1) == 0 && (size(Int{j},1)>1)
-                        Int{j} = Int{j}(2:end,:);
-                        Location{j}(1) = 1;
-                    elseif size(Int{j},1) == 1
-                        Int{j} = [];
-                    end
-                    if Location{j}(2) == 0 && (size(Int{j},2)>1)
-                        Int{j} = Int{j}(:,2:end);
-                        Location{j}(2) = 1;
-                    elseif size(Int{j},2) == 1
-                        Int{j} = [];
-                    end
-                    
-                end
-                  
-                %%% Applies bleaching
-                ExP1 = ExP;
-                FRET1 = FRET;
-                ExP1(find(Bleach == 1),:) = 0;
-                FRET1(find(Bleach == 1),:) = 0;
-                if any(bleach < 1)
-                    ExP1 (find(bleach < 1),:) = ExP1 (find(bleach < 1),:).*repmat(bleach(find(bleach <1)),[1 4]);
-                    FRET1(find(bleach < 1),:) = FRET1(find(bleach < 1),:).*repmat(bleach(find(bleach <1)),[1 4]);
-                    Bleach(find(bleach < 1),k)=1;
-                end
-                
-                %%% Calculates Photon probabilities
-                Prob = zeros(SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color);
-                for j = 1:SimData.Species(i).Color %%% Laser
-                    for n = 1:SimData.Species(i).Color %%% excited dye
-                        for o = 1:SimData.Species(i).Color %%% emiting dye
-                            for p = 1:SimData.Species(i).Color %%% Detected channel
-                                switch (o-n) %%% How many FRET ways are possible
-                                    case 0 %%% No FRET
-                                        Prob(j,n,o,p) = ExP1(n,j)... Excited dye n by laser j
-                                            *FRET1(o,n)/sum(FRET1(:,n))... No FRET from dye o to other dyes (n=o)
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                    case 1 %%% Direct FRET
-                                        Prob(j,n,o,p) = ExP1(n,j)... Excited dye n by laser j
-                                            *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                    case 2 %%% 2Color distance FRET (Direct or 2 Step FRET)
-                                        %%% FRET directly to dye o from n
-                                        Prob(j,n,o,p) = ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 2 steps to dye o from n over n+1
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                            *FRET1(o,n+1)/sum(FRET1(:,n+1))... FRET to dye o from dye n+1
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                    case 3 %%% 3Color distance FRET(Direct, 2x2Step and 3Step FRET)
-                                        %%% FRET directly to dye o from n
-                                        Prob(j,n,o,p) = ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(o,n)/sum(FRET1(:,n))... FRET to dye o from dye n
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 2 steps to dye o from n over n+1
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                            *FRET1(o,n+1)/sum(FRET1(:,n+1))... FRET to dye o from dye n+1
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 2 steps to dye o from n over n+2
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(n+2,n)/sum(FRET1(:,n))... FRET to dye n+2 from dye n
-                                            *FRET1(o,n+2)/sum(FRET1(:,n+2))... FRET to dye o from dye n+2
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                        %%% FRET in 3 steps to dye o from n over n+1 and n+2
-                                        Prob(j,n,o,p) = Prob(j,n,o,p) + ExP(n,j)... Excited dye n by laser j
-                                            *FRET1(n+1,n)/sum(FRET1(:,n))... FRET to dye n+1 from dye n
-                                            *FRET1(n+2,n+1)/sum(FRET1(:,n+1))... FRET to dye n+2 from dye n+1
-                                            *FRET1(o,n+2)/sum(FRET1(:,n+2))... FRET to dye o from dye n+2
-                                            *FRET1(o,o)/sum(FRET1(:,o))... No FRET from dye o to other dyes
-                                            *Cross(p,o)/sum(Cross(:,o))... Detected photon on detector p
-                                            *DetP(p,o); %%% Detection probability
-                                end
-                            end
-                        end
-                    end
-                end
-                Prob(isinf(Prob) | isnan(Prob)) = 0;
-                Prob = squeeze(sum(sum(Prob,2),3));
-                
-                %%% Calculates actual photons
-                for j = 1:SimData.Species(i).Color
-                    for n = 1:SimData.Species(i).Color
-                        Image = double(Int{j})*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)*Prob(j,n);
-                        Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
-                        Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
-                            Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
-                    end
-                end
-            end
-        end
-    end
-    
-end
-
-if h.Sim_UseNoise.Value
-    for i=1:4
-        
-        for j=1:4
-            if str2double(h.Sim_Noise{i}.String) > 0 && size(Total,1)>=i && size(Total,2)>=j
-               Noise = str2double(h.Sim_Noise{i}.String)*1000/SimData.General(Sel).Time(3);                
-               Total{i,j} = Total{i,j} + uint16(poissrnd(Noise,size(Total{i,j})));
-            end            
-        end
-    end
-end
-
-switch h.Sim_Save.Value
-    case 1 %%% Save to workspace
-        assignin('base',['Sim_Camera_' num2str(h.Sim_File_List.Value)],Total);
-    case 2 %%% Saves as TIFF
-        for i = 1:size(Total,1)
-            for j = 1:size(Total,2)
-                %%% Write File Name to save as tif
-                File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_Ex' num2str(i) '_Det' num2str(j) '_F' num2str(h.Sim_File_List.Value) '.tif']);
-                imwrite(Total{i,j}(:,:,1),File,'tif','Compression','lzw');
-                for k=2:Frames;
-                    imwrite(Total{i,j}(:,:,k),File,'tif','WriteMode','append','Compression','lzw');
-                end
-            end
-        end
-end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Updates Progressbar during simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
