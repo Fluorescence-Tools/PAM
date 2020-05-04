@@ -5598,18 +5598,20 @@ if h.Mia_Image.Settings.Correction_Drift.Value
                 if i == 1 %later on, apply the same shift for channel two
                     CrCorr=fftshift(real(ifft2(fft2(Im1).*conj(fft2(Im2)))))/(size(Im1,1)*size(Im1,2));
                     [x(j),y(j)] = find(CrCorr == max(max(CrCorr)));
-                    x(j)=x(j)-x0;
-                    y(j)=y(j)-y0;
+                    x(j)=x(j)-x0-1;
+                    y(j)=y(j)-y0-1;
                 end
                 MIAData.Data{i,2}(:,:,j+1)=circshift(MIAData.Data{i,2}(:,:,j+1),x(j),1);
                 % still implement: make Nan what has been circshifted
                 MIAData.Data{i,2}(:,:,j+1)=circshift(MIAData.Data{i,2}(:,:,j+1),y(j),2);
             end
-        figure
-        hold on 
-        plot(f,x,'b')
-        plot(f,y,'r')
-        hold off
+            if i == 1
+                figure
+                hold on
+                plot(f,x,'b')
+                plot(f,y,'r')
+                hold off
+            end
         end
     end    
 end
