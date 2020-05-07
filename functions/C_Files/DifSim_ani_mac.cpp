@@ -47,7 +47,7 @@ void Simulate_Diffusion(
     
     /// Random number generator
 	mt19937 mt; // initialize mersenne twister engine
-    mt.seed((unsigned long)time(NULL) + Time); // engine seeding
+    mt.seed(Time); // engine seeding
     //normal distribtion for diffusion
 	normal_distribution<double> normal(0.0, 1.0); //mu = 0.0, sigma = 1.0
     /// Generates uniform distributed random number between 0 and 1
@@ -530,7 +530,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Time, // Additional random seed value
         Map_Type, Map); // Map for quenching/barriers etc.
         
-    const mwSize NP[]={(int)NPhotons[0],1};
+    const mwSize NP[]={static_cast<mwSize>(NPhotons[0]),1};
     const mwSize SizePos[]={3,1};
     const mwSize SizeInt[]={1,1};
     

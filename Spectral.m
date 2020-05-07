@@ -45,9 +45,9 @@ whitebg(Look.Fore);
 %%% Changes Pam background; must be called after whitebg
 h.SpectralImage.Color=Look.Back;
 %%% Remove unneeded items from toolbar
-toolbar = findall(h.SpectralImage,'Type','uitoolbar');
-toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 13:17]));
+%toolbar = findall(h.SpectralImage,'Type','uitoolbar');
+%toolbar_items = findall(toolbar);
+%delete(toolbar_items([2:7 9 13:17]));
 
 %%% Loading menues
 h.Load = uimenu(...
