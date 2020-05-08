@@ -1225,10 +1225,19 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
         Image = reshape(Map(Int(:),:),size(Image,1),size(Image,2),3);
         
         for i = 1:numel(h.Phasor_ROI)
-            x(i) = logical(h.Phasor_ROI(i).Visible);
+            if strcmp(h.Phasor_ROI(i).Visible, 'on') || strcmp(h.Phasor_ROI(i).Visible, 'off')
+                %R2018a
+                if strcmp(h.Phasor_ROI(i).Visible, 'on')
+                    x(i) = true;
+                else
+                    x(i) = false;
+                end
+            else %R2020a or later
+                x(i) = logical(h.Phasor_ROI(i).Visible);
+            end
         end
         %%% Applies ROI filter to image
-        if any(x,'all')
+        if any(x)
             Color = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2),3);
             Mask = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2));
             for i=1:6
