@@ -1050,7 +1050,7 @@ switch mode
                     Data_Raw = bfopen(fullfile(Path,FileName{i}),h.Spectral_Progress_Axes,h.Spectral_Progress_Text,i,numel(FileName));
                     h.Spectral_Progress_Text.String = 'Updating MetaData';
                     drawnow;
-                    %%% Finds positions of plane/channel/time seperators
+                    %%% Finds positions of plane/channel/time separators
                     Sep = strfind(Data_Raw{1,1}{1,2},';');
                     
                     if numel(Sep) == 3 %%% Normal mode
@@ -1126,10 +1126,12 @@ switch mode
         
 end
 
+
+Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
+h.Spectral_Progress_Axes.Color=UserValues.Look.Control;
+drawnow;
 if ~isempty(SpectralData.Data)
-    Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
     h.Spectral_Progress_Text.String = SpectralData.FileName;
-    drawnow;
 end
 
 
@@ -1222,8 +1224,11 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
         %%% Applies colormap
         Image = reshape(Map(Int(:),:),size(Image,1),size(Image,2),3);
         
+        for i = 1:numel(h.Phasor_ROI)
+            x(i) = logical(h.Phasor_ROI(i).Visible);
+        end
         %%% Applies ROI filter to image
-        if any(cell2mat(strfind({h.Phasor_ROI.Visible},'on')))
+        if any(x,'all')
             Color = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2),3);
             Mask = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2));
             for i=1:6
