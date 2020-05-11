@@ -786,7 +786,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
         ax.YLim = ylim;
         %% average lifetime in FRET efficiency bins
         bin_number = UserValues.BurstBrowser.Settings.NumberOfBins_BVA; % bins for range 0-1
-        bin_edges = linspace(0,1,bin_number); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+        bin_edges = linspace(0,1,bin_number+1); 
+%         bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
         [~,~,bin] = histcounts(E,bin_edges);
         mean_g = NaN(1,numel(bin_edges)-1);
         mean_s = NaN(1,numel(bin_edges)-1);
@@ -842,19 +843,20 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             w_res_stat(isnan(w_res_stat)) = 0;
             SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
             
-            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
+            add_universal_circle(ax,1);
+            legend('EXP Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
         else
             patch(ax,[xlim(1),xlim(2),xlim(2),xlim(1)],[ylim(1),ylim(1),ylim(2),ylim(2)],[1,1,1],'FaceAlpha',0.5,'EdgeColor','none','HandleVisibility','off');
             plot(mean_g,mean_s,'d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
             plot(mean_g_dyn,mean_s_dyn,'d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
-            legend('Experimental Data','Simulation','Location','northeast');
+            add_universal_circle(ax,1);
+            legend('EXP Data','SIM Data','Location','northeast');
         end
 %         g_circle = linspace(0,1,1000);
 %         s_circle = sqrt(0.25-(g_circle-0.5).^2);
 %         plot(ax,g_circle,s_circle,'-','LineWidth',2,'Color',[0,0,0],'Handlevisibility','off');
-        add_universal_circle(ax,1);
     case 4
         selected = BurstData{file}.Selected;
         E = BurstData{file}.DataArray(selected,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
@@ -925,7 +927,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method % BVA
             w_res_stat = (mean_FRET_2CDE_naive-mean_FRET_2CDE_static);
             w_res_stat(isnan(w_res_stat)) = 0;
             SSR_stat_legend = ['Static SSR =' ' ' sprintf('%1.0e',round(sum(w_res_stat.^2),1,'significant'))];
-            legend('Experimental Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
+            legend('EXP Data',SSR_dyn_legend,SSR_stat_legend,'Location','northeast');
 %             scatter(bin_centers,mean_FRET_2CDE_naive,100,'^','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine3);
 %         scatter(bin_centers,mean_FRET_2CDE_static,100,'^','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
         else
@@ -1017,7 +1019,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
             axright.XTick = linspace(axright.XLim(1),axright.XLim(2),6);
         else
             [ycounts, yedges] = histcounts(y_data, linspace(0,0.5,UserValues.BurstBrowser.Display.NumberOfBinsY+1));
-            stairs(axright,yedges,[ycounts ycounts(end)], 'Color',color,'LineStyle','-','LineWidth',2);
+            stairs(axright,yedges,[ycounts ycounts(end)], 'Color',color,'LineStyle','-','LineWidth',3);
         end
     case 2
         if ~isfit
@@ -1028,7 +1030,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
             axright.XTick = linspace(0,1,6);
         else
             [ycounts, yedges] = histcounts(y_data, linspace(-0.1,1.1,UserValues.BurstBrowser.Display.NumberOfBinsY+1));
-            stairs(axright,yedges,[ycounts ycounts(end)], 'Color',color,'LineStyle','-','LineWidth',2);
+            stairs(axright,yedges,[ycounts ycounts(end)], 'Color',color,'LineStyle','-','LineWidth',3);
         end
 end
 axright.NextPlot = 'add';
@@ -1068,7 +1070,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
         else
             [xcounts, xedges] = histcounts(x_data, linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1));
-            stairs(axtop,xedges,[xcounts xcounts(end)], 'Color',color,'LineStyle','-','LineWidth',2);
+            stairs(axtop,xedges,[xcounts xcounts(end)], 'Color',color,'LineStyle','-','LineWidth',3);
         end
     case 2
         if ~isfit
@@ -1076,7 +1078,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 'EdgeColor','none','FaceColor',color,'FaceAlpha',face_alpha,'LineWidth',1);
         else
             [xcounts, xedges] = histcounts(x_data, linspace(0,1.1,UserValues.BurstBrowser.Display.NumberOfBinsX+1));
-            stairs(axtop,xedges,[xcounts xcounts(end)], 'Color',color,'LineStyle','-','LineWidth',2);
+            stairs(axtop,xedges,[xcounts xcounts(end)], 'Color',color,'LineStyle','-','LineWidth',3);
         end
 end
 axtop.NextPlot = 'add';
