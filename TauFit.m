@@ -1793,6 +1793,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
                     [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt','Tab-separated text file (*.txt)'},'Choose data file...',UserValues.File.TauFitPath);
+                    if isempty(FileName)
+                        return;
+                    end
                     if FilterIndex == 0
                         return;
                     end
@@ -1806,14 +1809,14 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             [time,decay,header] = load_PQ_decay(fullfile(PathName,FileName{1}));
                             % read data from header
                             sync = textscan(header.Sync_Frequency,'%d Hz');
-                            TAC = (1./double(sync{1}))*1E9;
+                            TAC = (1./double(sync{1}));
                             res = textscan(header.Meas_BinWidth,'%d ps');
                             TACChannelWidth = double(res{1})*1E-3;
                         case 2
                             data = dlmread(fullfile(PathName,FileName{1}))';
                             time = data(:,1); time = time-time(1);
                             decay = data(:,2);
-                            TAC = max(time);
+                            TAC = max(time)*1E-9;
                             TACChannelWidth = time(2);
                     end
                     
@@ -2934,7 +2937,7 @@ switch obj
                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
@@ -3006,7 +3009,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3101,7 +3104,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3215,7 +3218,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3336,7 +3339,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3424,7 +3427,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3513,7 +3516,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3606,7 +3609,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -3790,10 +3793,10 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(:,ignore:end))-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay(:,ignore:end))-sum(~fixed));
                     %%% calculate separate chi2 for DA and DO decays                    
-                    chi2_DA = sum(residuals(1:(numel(residuals)/2)).^2)/(numel(Decay(1,ignore:end))-numel(x0));
-                    chi2_D0 = sum(residuals((numel(residuals)/2+1):end).^2)/(numel(Decay(1,ignore:end))-numel(x0));
+                    chi2_DA = sum(residuals(1:(numel(residuals)/2)).^2)/(numel(Decay(1,ignore:end))-sum(~fixed));
+                    chi2_D0 = sum(residuals((numel(residuals)/2+1):end).^2)/(numel(Decay(1,ignore:end))-sum(~fixed));
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
@@ -3928,7 +3931,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -4054,7 +4057,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -4200,7 +4203,7 @@ switch obj
                     end
                     x = interlace(x0,x,fixed);
                     
-                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -4329,7 +4332,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));                    
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-sum(~fixed));                    
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
@@ -4476,7 +4479,7 @@ switch obj
                             x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-numel(x0));
+                    chi2 = sum(residuals.^2)/(numel(Decay_stacked)-sum(~fixed));
                     
                     TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
@@ -4575,7 +4578,7 @@ switch obj
 
         % plot chi^2 on graph
         if ~fit % plot only, chi2 was not calculated yet
-            chi2 = sum(wres(~isinf(wres)).^2)./(numel(wres)-numel(x0));
+            chi2 = sum(wres(~isinf(wres)).^2)./(numel(wres)-sum(~fixed));
         end
         h.Result_Plot_Text.Visible = 'on';
         if UserValues.TauFit.use_weighted_residuals
@@ -4660,6 +4663,14 @@ switch obj
                 Decay_per = max_par*Decay_per./max_per;
                 Fit_per = max_par*Fit_per./max_per;
                 
+                IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
+                IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+                IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
+                h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+                h.Plots.IRFResult.YData = IRFPat;
+                h.Plots.IRFResult.Color = [0,0,0];
+                h.Plots.IRFResult_Perp.Visible = 'off';
+            else
                 IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
                 IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
                 IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
@@ -4861,6 +4872,7 @@ switch obj
             proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
             if any(isnan(proposal))
                 %%% nlparci may return NaN values. Set to 1% of the fit value
+                Fitted_Params = x(~fixed);
                 proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/10;
             end
             if ~exist('Decay_FitRange','var')
@@ -6699,10 +6711,12 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
-    case h.DonorOnlyReference_Popupmenu
-        UserValues.TauFit.DonorOnlyReferenceSource = obj.Value;
 end
-
+if isfield(h,'DonorOnlyReference_Popupmenu')
+    if obj == h.DonorOnlyReference_Popupmenu
+        UserValues.TauFit.DonorOnlyReferenceSource = obj.Value;
+    end
+end
 if obj == h.Rebin_Histogram_Edit
     %%% round value
     new_res = str2double(h.Rebin_Histogram_Edit.String);
@@ -7048,7 +7062,7 @@ switch obj
         end
         %%% check that the extension has not been deleted by the user!
         %%% if it has, readd
-        if isempty(strfind(filename,ext))
+        if ~contains(filename,ext)
             filename = [filename(1:end-4) ext '.txt'];
         end
         writetable(tab,fullfile(pathname,filename));
@@ -7384,7 +7398,7 @@ global TauFitData UserValues
 h = guidata(gcbo);
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 6
-    resolution = 300;
+    resolution = 200;
 end
 
 % remove ignore region from decay
@@ -7405,13 +7419,13 @@ switch mode
         R0 = params(end-1);
         tauD = params(end)/TauFitData.TACChannelWidth;
         params(end-1:end) = [];
-        lin = true; % linear R spacing or not
-        if lin
-            R = linspace(0,2*R0,resolution);
+        linear_R = true; % linear R spacing or not
+        if linear_R
+            R = linspace(10,200,resolution);
         else
             %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
-            R = R(2:end-1);
+            R = R(1:end-1);
         end
         if ~strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
             %%% calculate respective lifetime vector
@@ -7504,7 +7518,11 @@ switch MEM_mode
         
         % parameters
         n = length(tau);
-        p = ones(1,n); p = p./sum(p);			% initial parameters
+        p =  ones(1,n); 
+        % take fitted distribution as input
+        %p = interp1(h.Plots.FitAnisoResult.XData,h.Plots.FitAnisoResult.YData,R);%% initial parameters
+        %p(isnan(p)) = 0;
+        p = p./sum(p);			
         m = p;
         M = length(y);
         
@@ -7521,55 +7539,64 @@ switch MEM_mode
             const_chi2 = sum((y./sigma).^2)/M;            
         end
         
-        nus = logspace(-2,1,250);
+        
         
         chis = [];
         ps = [];
         Ss = [];
 
         options = optimoptions(@quadprog,'Display','none');
+        do_mem = true;
+        if do_mem
+            nus = logspace(-2,2,100);
+        else
+            nus = logspace(-1,4,250);
+        end
         for i=1:numel(nus)
             nu = nus(i);
-            
-            %chisq = 0.5*p*H*p' - g0*p' + const_chi2;
-            L = log(p./m); %S = (-L+1)*p'-sum(m);
-            %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
+            if do_mem %%% perform MEM analysis
+                %chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+                L = log(p./m); %S = (-L+1)*p'-sum(m);
+                %fprintf('\nmax S   \tchi2 = %.6f S = %.4f\n', chisq, S);
 
-            % Optimization
-            dgrad = 1;
-            % p >= 0:
-            A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
-            p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
-            chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
+                % Optimization
+                dgrad = 1;
+                % p >= 0:
+                A = -diag(ones(n,1)); B = -1e-12*ones(1,n);
+                p_esm = quadprog(H + diag(diag(H)*1e-12),-g0,A,B,[],[],[],[],[],options)';
+                chisq = 0.5*p_esm*H*p_esm' - g0*p_esm' + const_chi2;
 
-            S = (-log(p_esm./m)+1)*p_esm'-sum(m);
+                S = (-log(p_esm./m)+1)*p_esm'-sum(m);
 
-            %Q = chisq-0.5*nu*S;
-            %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
+                %Q = chisq-0.5*nu*S;
+                %fprintf('min chi2 \tchi2 = %.6f  S = %.4f  Q = %.6f\n\n', chisq, S, Q);
 
-            niter = 1;
-            p = m;
-            while ((dgrad > 0.0001) && (niter < 20))
+                niter = 1;
+                p = m;
+                while ((dgrad > 0.001) && (niter < 50))
 
-                Delta = diag(0.5./p,0);
-                p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
+                    Delta = diag(0.5./p,0);
+                    p = quadprog(H+nu*Delta,-g0+0.5*nu*(L-1),A,B,[],[],[],[],[],options)';
+                    chisq = 0.5*p*H*p' - g0*p' + const_chi2;
+                    L = log(p./m); S = (-L+1)*p'-sum(m);
+                    %Q = chisq-0.5*nu*S;
+
+                    grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
+                    grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
+                    dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
+                        (grad_chi2./norm_chi2-grad_S./norm_S));
+                    %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
+
+                    niter = niter+1;
+                end                   
+            else %%% do Tikhonov analysis
+                p = quadprog(H+2*nu*eye(numel(p)),-g0,Aieq,bieq,[],[],[],[],[],options)';
                 chisq = 0.5*p*H*p' - g0*p' + const_chi2;
-                L = log(p./m); S = (-L+1)*p'-sum(m);
-                Q = chisq-0.5*nu*S;
-
-                grad_chi2 = (p>-1.1*B)'.*(H*p'-g0'); norm_chi2 = sqrt(grad_chi2'*grad_chi2);
-                grad_S = (p>-1.1*B)'.*(-L)'; norm_S = sqrt(grad_S'*grad_S);
-                dgrad = 0.5*sqrt((grad_chi2./norm_chi2-grad_S./norm_S)'* ...
-                    (grad_chi2./norm_chi2-grad_S./norm_S));
-                %fprintf('iter #%d \tchi2 = %.6f  S = %.4f  Q = %.6f dgrad = %.6f\n', niter, chisq, S, Q, dgrad);
-
-                niter = niter+1;
+                S = -norm(p); %%% this is the solution norm
             end
-            
             chis = [chis, chisq];
             ps = [ps; [p]];
-            Ss = [Ss, S];            
-            
+            Ss = [Ss, S];         
             Progress(i/numel(nus),h.Progress_Axes,h.Progress_Text);
         end
         
@@ -7584,8 +7611,8 @@ switch MEM_mode
             % ix_corner= find_corner_of_curve(log10(chis),log10(-Ss));
             
             %%% find instead the corner of the chi2 vs. mu plot
-            ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
-            ix_corner = numel(nus) - ix + 1;
+            %ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
+            %ix_corner = numel(nus) - ix + 1;
 
             %%% Find corner of discrete L-curve via adaptive pruning algorithm.
             %%% Inputs have to be reordered in order of decreasing
@@ -7594,8 +7621,8 @@ switch MEM_mode
             %%% log10(S) is defined.
             %%% 4th input means that the first corner is selected.
             %%% 5th input means that a plot is shown:
-            % ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
-            % ix_corner = numel(nus) - ix_corner + 1;
+            ix_corner = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
+            ix_corner = numel(nus) - ix_corner + 1;
 
             %%% alternative algorithm
             % define corner as closest point to origin
@@ -7609,7 +7636,27 @@ switch MEM_mode
         tau_dist = ps(ix_corner,:);
         model =  (decay_ind'*tau_dist')'+decay_offset;
         decay = decay + decay_offset;
-        compare_L_curve([-1,0,ix_corner],{'Input','Fit','MEM'},chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,false);
+        
+        model_all = zeros(size(ps,1),numel(decay));
+        for i = 1:size(ps,1)
+            model_all(i,:) = (decay_ind'*ps(i,:)')'+decay_offset;
+        end
+        if ~linear_R
+            %%% reweight the distribution for R binning
+            w = gradient(tau)./gradient(R); % binning correction
+            norm_ps = sum(ps,2); % area
+            
+            %%% reweight for binning
+            ps = ps.*repmat(w,size(ps,1),1);
+            %%% rescale to original area
+            ps = ps.*repmat(norm_ps,1,size(ps,2))./repmat(sum(ps,2),1,size(ps,2));
+            
+            tau_dist = ps(ix_corner,:);
+        end
+        
+        if strcmp(mode,'dist')
+            compare_L_curve([-1,0,ix_corner],{'Input','Fit','MEM'},chis,-Ss,nus,R,ps,model_all,decay,error,false);
+        end
     case 'brute-force'
         %%% this is the old "straight-forward" algorithm that I implemented
         %%% using fmincon. It uses boundary constraints and the mem functional
@@ -7641,7 +7688,7 @@ switch MEM_mode
         %%% These are advanced implementations of the regularization based on
         %%% matrix algebra and quadratic programming. The problem is
         %%% reformulated and the regularization.
-        do_mem = true;
+        do_mem = false;
         %%% prepare vector and matrices
         % minimize ||Ax-b||^2 + lambda||x||^2 subject to sum(x) = 1
         % equivalent to:
@@ -7649,7 +7696,7 @@ switch MEM_mode
         % quadprog solves system of tpye: 0.5*xTHx + fTx
         % so: H = 2(AT*A+lambda I)
         %     fT = -2bTA
-        decay_ind_norm = decay_ind./repmat(error,300,1);
+        decay_ind_norm = decay_ind./repmat(error,size(decay_ind,1),1);
         decay_norm = decay./error;
         c = decay_norm*decay_norm'./numel(decay);
         H = 2*(decay_ind_norm*decay_ind_norm')./numel(decay);
@@ -7663,19 +7710,19 @@ switch MEM_mode
             chi2 = zeros(numel(mu_range),1);
             n = zeros(numel(mu_range),1);
             for i = 1:numel(mu_range)
-                dist = quadprog(H+2*mu_range(i)*eye(numel(p)),f,Aieq,bieq,Aeq,beq,[],[],[],options);
+                dist = quadprog(H+2*mu_range(i)*eye(numel(p)),f,Aieq,bieq,[],[],[],[],[],options);
                 n(i) = norm(dist);
                 model(i,:) = decay_ind'*dist;
                 chi2(i) = getchi2(dist,c,f,H);
                 tau_dist_tik(i,:) = dist;
             end
             %%% find the point of maximum curvature
-            ix_c = l_curve_corner(flipud(chi2),flipud(n),flipud(mu_range),1); % chi2 and n need to be ordered in decreasing amount of regularization
+            ix_c = l_curve_corner(flipud(chi2),flipud(n),flipud(mu_range),0,1); % chi2 and n need to be ordered in decreasing amount of regularization
             % (Note: chi2 and n are taken to power of ten to search for the
             % corner in the non-log space)
             ix_c = numel(chi2)+1-ix_c;
-            tau_dist = tau_dist_tik(ix_c,:);
-            model = model(ix_c,:);
+            tau_dist = tau_dist_tik(ix_c,:); 
+            model = model(ix_c,:) + decay_offset;
         elseif do_mem
             %%% MEM: Algorithm according to Vinogradov-Wilson (2000), based
             %%% on the implementation of Oleg Opanasyuk
@@ -7717,9 +7764,10 @@ switch MEM_mode
             ix_c = l_curve_corner(10.^flipud(chi2_mem),10.^flipud(-S-min(-S)+0.01),flipud(mu_range),2); % chi2 and n need to be ordered in decreasing amount of regularization
             ylabel('neg. Entropy, -S');
             ix_c = numel(chi2_mem)+1-ix_c;
-            tau_dist = tau_dist_mem(ix_c,:);
+            tau_dist = tau_dist_mem(ix_c,:) + decay_offset;
             model = model(ix_c,:);
         end
+        decay = decay + decay_offset;
 end
 
 compare_all = false;
@@ -7729,24 +7777,30 @@ if compare_all
     %%% from the L curve
     method = cell(0);
     ix_corner = [];
-
+    
+    % a flat distribution
+    method{end+1} = 'Prior';
+    ix_corner(end+1) = -1;
     % the previous fit
     method{end+1} = 'Fit - 2 Gaussian';
     ix_corner(end+1) = 0;
-
+    
     % maximum curvature
-    method{end+1} = 'Maximum curvature (\chi^2_r vs. -S) - global';
+    method{end+1} = 'Max. curv. (\chi^2_r vs. -S)';%'Maximum curvature (\chi^2_r vs. -S) - global';
     ix = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1));
     ix_corner(end+1) = numel(nus) - ix + 1;
-
-    method{end+1} = 'Maximum curvature (\chi^2_r vs. -S) - leftmost';
-    ix = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1);
-    ix_corner(end+1) = numel(nus) - ix + 1;
-
-    method{end+1} = '\chi^2_r equal to fit';
-    ix_corner(end+1) = find(chis>TauFitData.Chi2,1,'first');
-
-    method{end+1} = 'Maximum curvature (\mu vs. \chi^2_r)';
+    
+    %     method{end+1} = 'Maximum curvature (\chi^2_r vs. -S) - leftmost';
+    %     ix = l_curve_corner(chis(end:-1:1),-Ss(end:-1:1),nus(end:-1:1),1);
+    %     ix_corner(end+1) = numel(nus) - ix + 1;
+    
+    
+    ix = find(chis>TauFitData.Chi2,1,'first');
+    if ~isempty(ix)
+        method{end+1} = '\chi^2_r equal to fit';
+        ix_corner(end+1) = ix;
+    end
+    method{end+1} = 'Max. curv. (\mu vs. \chi^2_r)';%'Maximum curvature (\mu vs. \chi^2_r)';
     ix = l_curve_corner(-nus(end:-1:1),chis(end:-1:1),nus(end:-1:1));
     ix_corner(end+1) = numel(nus) - ix + 1;
     
@@ -7756,7 +7810,7 @@ if compare_all
     method{end+1} = 'Geometric (\mu vs. \chi^2_r)';
     ix_corner(end+1) = find_corner_of_curve(log10(nus),chis);
     
-    compare_L_curve(ix_corner,method,chis,-Ss,nus,R,ps,decay_ind,decay,decay_offset,error,true);
+    compare_L_curve(ix_corner,method,chis,-Ss,nus,R,ps,model_all,decay,error,true);
 end
 
 switch TauFitData.WeightedResidualsType
@@ -7773,7 +7827,7 @@ switch mode
         tau = R;
 end
 
-function compare_L_curve(index,method_names,chi,negS,nu,tau,tau_dist,decay_ind,decay,decay_offset,error,plot_decay)
+function compare_L_curve(index,method_names,chi,negS,nu,tau,tau_dist,model_all,decay,error,plot_decay)
 global TauFitData
 % make a plot with four panel
 
@@ -7783,14 +7837,23 @@ global TauFitData
 % 22 - tau_dist
 color = lines(numel(index));
 if index(1) == -1 % plot inital distribution also in gray
-    color = [0.5,0.5,0.5;color];
+    color = [0,0,0;color];
 end
 figure('Color',[1,1,1],'Position',[100,100,1000,1000]); hold on;
 tiledlayout(2,2);
 for i = 1:numel(index)
+    if i == 1 %%% plot the input ensemble
+        x = [0.394648829431438,0.789297658862876,1.18394648829431,1.57859531772575,1.97324414715719,2.36789297658863,2.76254180602007,3.15719063545151,3.55183946488294,3.94648829431438,4.34113712374582,4.73578595317726,5.13043478260870,5.52508361204013,5.91973244147157,6.31438127090301,6.70903010033445,7.10367892976589,7.49832775919732,7.89297658862876,8.28762541806020,8.68227424749164,9.07692307692308,9.47157190635452,9.86622073578595,10.2608695652174,10.6555183946488,11.0501672240803,11.4448160535117,11.8394648829431,12.2341137123746,12.6287625418060,13.0234113712375,13.4180602006689,13.8127090301003,14.2073578595318,14.6020066889632,14.9966555183946,15.3913043478261,15.7859531772575,16.1806020066890,16.5752508361204,16.9698996655518,17.3645484949833,17.7591973244147,18.1538461538462,18.5484949832776,18.9431438127090,19.3377926421405,19.7324414715719,20.1270903010033,20.5217391304348,20.9163879598662,21.3110367892977,21.7056856187291,22.1003344481605,22.4949832775920,22.8896321070234,23.2842809364549,23.6789297658863,24.0735785953177,24.4682274247492,24.8628762541806,25.2575250836120,25.6521739130435,26.0468227424749,26.4414715719064,26.8361204013378,27.2307692307692,27.6254180602007,28.0200668896321,28.4147157190635,28.8093645484950,29.2040133779264,29.5986622073579,29.9933110367893,30.3879598662207,30.7826086956522,31.1772575250836,31.5719063545151,31.9665551839465,32.3612040133779,32.7558528428094,33.1505016722408,33.5451505016722,33.9397993311037,34.3344481605351,34.7290969899666,35.1237458193980,35.5183946488294,35.9130434782609,36.3076923076923,36.7023411371237,37.0969899665552,37.4916387959866,37.8862876254181,38.2809364548495,38.6755852842809,39.0702341137124,39.4648829431438,39.8595317725753,40.2541806020067,40.6488294314381,41.0434782608696,41.4381270903010,41.8327759197324,42.2274247491639,42.6220735785953,43.0167224080268,43.4113712374582,43.8060200668896,44.2006688963211,44.5953177257525,44.9899665551840,45.3846153846154,45.7792642140468,46.1739130434783,46.5685618729097,46.9632107023411,47.3578595317726,47.7525083612040,48.1471571906355,48.5418060200669,48.9364548494983,49.3311036789298,49.7257525083612,50.1204013377926,50.5150501672241,50.9096989966555,51.3043478260870,51.6989966555184,52.0936454849498,52.4882943143813,52.8829431438127,53.2775919732442,53.6722408026756,54.0668896321070,54.4615384615385,54.8561872909699,55.2508361204013,55.6454849498328,56.0401337792642,56.4347826086957,56.8294314381271,57.2240802675585,57.6187290969900,58.0133779264214,58.4080267558528,58.8026755852843,59.1973244147157,59.5919732441472,59.9866220735786,60.3812709030100,60.7759197324415,61.1705685618729,61.5652173913044,61.9598662207358,62.3545150501672,62.7491638795987,63.1438127090301,63.5384615384615,63.9331103678930,64.3277591973244,64.7224080267559,65.1170568561873,65.5117056856187,65.9063545150502,66.3010033444816,66.6956521739131,67.0903010033445,67.4849498327759,67.8795986622074,68.2742474916388,68.6688963210702,69.0635451505017,69.4581939799331,69.8528428093646,70.2474916387960,70.6421404682274,71.0367892976589,71.4314381270903,71.8260869565217,72.2207357859532,72.6153846153846,73.0100334448161,73.4046822742475,73.7993311036789,74.1939799331104,74.5886287625418,74.9832775919733,75.3779264214047,75.7725752508361,76.1672240802676,76.5618729096990,76.9565217391304,77.3511705685619,77.7458193979933,78.1404682274248,78.5351170568562,78.9297658862876,79.3244147157191,79.7190635451505,80.1137123745819,80.5083612040134,80.9030100334448,81.2976588628763,81.6923076923077,82.0869565217391,82.4816053511706,82.8762541806020,83.2709030100335,83.6655518394649,84.0602006688963,84.4548494983278,84.8494983277592,85.2441471571906,85.6387959866221,86.0334448160535,86.4280936454850,86.8227424749164,87.2173913043478,87.6120401337793,88.0066889632107,88.4013377926421,88.7959866220736,89.1906354515050,89.5852842809365,89.9799331103679,90.3745819397993,90.7692307692308,91.1638795986622,91.5585284280937,91.9531772575251,92.3478260869565,92.7424749163880,93.1371237458194,93.5317725752508,93.9264214046823,94.3210702341137,94.7157190635452,95.1103678929766,95.5050167224080,95.8996655518395,96.2943143812709,96.6889632107023,97.0836120401338,97.4782608695652,97.8729096989967,98.2675585284281,98.6622073578595,99.0568561872910,99.4515050167224,99.8461538461538,100.240802675585,100.635451505017,101.030100334448,101.424749163880,101.819397993311,102.214046822742,102.608695652174,103.003344481605,103.397993311037,103.792642140468,104.187290969900,104.581939799331,104.976588628763,105.371237458194,105.765886287625,106.160535117057,106.555183946488,106.949832775920,107.344481605351,107.739130434783,108.133779264214,108.528428093645,108.923076923077,109.317725752508,109.712374581940,110.107023411371,110.501672240803,110.896321070234,111.290969899666,111.685618729097,112.080267558528,112.474916387960,112.869565217391,113.264214046823,113.658862876254,114.053511705686,114.448160535117,114.842809364549,115.237458193980,115.632107023411,116.026755852843,116.421404682274,116.816053511706,117.210702341137,117.605351170569,118];
+        y = [0,0,0,0,0,0,0,1.53522204586511e-06,1.94559583251667e-06,2.35596961916822e-06,2.76634340581978e-06,3.36948470841295e-06,4.06927057551340e-06,4.76905644261385e-06,5.60995593446387e-06,6.74789198041905e-06,7.88582802637424e-06,9.02376407232942e-06,1.07663892218278e-05,1.25225739856641e-05,1.42787587495005e-05,1.65519449849244e-05,1.91235012462562e-05,2.16950575075880e-05,2.45733027901776e-05,2.82021539575999e-05,3.18310051250222e-05,3.54598562924445e-05,4.01483212667442e-05,4.48971882229824e-05,4.96460551792205e-05,5.52580637500871e-05,6.14405509195292e-05,6.76230380889714e-05,7.42217500209218e-05,8.20170599892869e-05,8.98123699576521e-05,9.76076799260173e-05,0.000106959129908005,0.000116456863820481,0.000125954597732957,0.000136729315519879,0.000148467081015487,0.000160204846511094,0.000172611079844117,0.000187305687029457,0.000202000294214798,0.000216694901400139,0.000235025123673770,0.000253841388972072,0.000272657654270374,0.000294896996899415,0.000320074951893809,0.000345252906888204,0.000371804640561263,0.000404061095602774,0.000436317550644285,0.000468574005685797,0.000511493996574526,0.000556294628237151,0.000601095259899775,0.000652244242079230,0.000709589050607390,0.000766933859135549,0.000827037962991898,0.000901407011551854,0.000975776060111810,0.00105014510867177,0.00113917438052606,0.00123146368175107,0.00132375298297607,0.00142581230760544,0.00153870989939525,0.00165160749118506,0.00176706931703799,0.00189967918776420,0.00203228905849041,0.00216489892921662,0.00231300430567070,0.00246532645332362,0.00261764860097654,0.00277710079463388,0.00294555116968535,0.00311400154473681,0.00328438541461466,0.00347254806759768,0.00366071072058070,0.00384887337356372,0.00403703602654675,0.00422519867952976,0.00441336133251278,0.00460887285919268,0.00481495576484075,0.00502103867048882,0.00522652941477158,0.00542365219558081,0.00562077497639004,0.00581789775719928,0.00600855052429074,0.00619671317727377,0.00638487583025679,0.00657303848323981,0.00676120113622283,0.00694936378920585,0.00713661005657772,0.00729789233056316,0.00745917460454861,0.00762045687853406,0.00776937252688249,0.00791273454820289,0.00805609656952328,0.00819325651597547,0.00831869828463082,0.00844414005328617,0.00856954429784383,0.00867706581464886,0.00878458733145390,0.00889210884825894,0.00897604391162835,0.00904772492228855,0.00911940593294875,0.00918827260576849,0.00925099349009616,0.00931371437442384,0.00937643525875151,0.00942177176550203,0.00946657239716465,0.00951137302882727,0.00955056374708572,0.00958640425241582,0.00962224475774592,0.00965302998707478,0.00967095023987562,0.00968887049267646,0.00970679074547730,0.00971630550895582,0.00972526563528835,0.00973422576162087,0.00973253946033233,0.00972357933399981,0.00971461920766728,0.00970117720448250,0.00967429682548493,0.00964741644648735,0.00962053606748978,0.00956929932036946,0.00951553856237431,0.00946177780437916,0.00939794401840432,0.00932626300774412,0.00925458199708393,0.00917508403182426,0.00906756251501922,0.00896004099821419,0.00885251948140915,0.00872933378575507,0.00860389201709973,0.00847845024844438,0.00834825866539283,0.00821385677040496,0.00807945487541708,0.00794005036339382,0.00777876808940838,0.00761748581542293,0.00745620354143748,0.00730246665741195,0.00715014450975903,0.00699782236210611,0.00684550021445319,0.00669317806680027,0.00654085591914734,0.00638991461051812,0.00624655258811141,0.00610319056570469,0.00595982854329797,0.00583824259287011,0.00572176095054729,0.00560527930822446,0.00549297408088351,0.00538545256489321,0.00527793104890291,0.00517369195170501,0.00509305081471229,0.00501240967771957,0.00493176854072684,0.00485809939427971,0.00478641838361951,0.00471473737295931,0.00464694607746029,0.00458422519313262,0.00452150430880494,0.00445959086421734,0.00440583010581482,0.00435206934741230,0.00429830858900978,0.00424454783091121,0.00419078707291606,0.00413702631492091,0.00407966254135823,0.00401694165703055,0.00395422077270288,0.00389097914819207,0.00381929813753187,0.00374761712687167,0.00367593611621147,0.00359785651442002,0.00351721537742730,0.00343657424043457,0.00335261678769500,0.00326301552436975,0.00317341426104450,0.00308378959366510,0.00299329231702086,0.00290279504037662,0.00281229776373238,0.00271935573094085,0.00262527440444934,0.00253119307795783,0.00243771767469696,0.00234542837347195,0.00225313907224695,0.00216084977102194,0.00207390495005773,0.00198699172463224,0.00190007849920675,0.00181840794632649,0.00173955883460027,0.00166070972287405,0.00158570069385956,0.00151939575849645,0.00145309082313335,0.00138678588777024,0.00133168795065052,0.00127703118002212,0.00122237440939371,0.00117491767852558,0.00113190907212946,0.00108890046573334,0.00104883931942387,0.00101658286462678,0.000984326409829692,0.000952069955032602,0.000927314161153811,0.000903121820055993,0.000878929478958177,0.000857363034011657,0.000837650756080102,0.000817938478148548,0.000798660103567752,0.000780739850766913,0.000762819597966073,0.000744899345165234,0.000726979092608309,0.000709058840079048,0.000691138587549788,0.000672721825460069,0.000653905559734029,0.000635089294007988,0.000616084746499806,0.000596372468120145,0.000576660189740484,0.000556947911360823,0.000535683500475650,0.000514179198418225,0.000492674896360799,0.000472106271960674,0.000452393993581013,0.000432681715201352,0.000413129048598410,0.000394312782872369,0.000375496517146330,0.000356680251420289,0.000340106177572668,0.000323977951029599,0.000307849724486530,0.000293522091263839,0.000281067515378507,0.000268612939493176,0.000256590471453114,0.000247092737324733,0.000237595003196350,0.000228097269067968,0.000220611970392810,0.000213623071694567,0.000206634172996323,0.000200425223475067,0.000195138749219284,0.000189852274963500,0.000184668072427863,0.000180277610425120,0.000175887148422378,0.000171496686419635,0.000167175230111108,0.000162874369373727,0.000158573508636347,0.000154043550376312,0.000149205082413391,0.000144366614450470,0.000139491345577210];
+        y = interp1(x,y,tau); y(isnan(y)) = 0; y = y./sum(y);
+        nexttile(3);hold on;
+        area(tau,y,'FaceColor',[0.85,0.85,0.85],'EdgeColor','none');
+        nexttile(4);hold on;
+        plot(tau,cumsum(y),'LineWidth',3,'Color',[0.85,0.85,0.85]);
+    end
     if index(i) > 0 %%% plot the data        
         dist{i} = tau_dist(index(i),:);
-        model{i} =  (decay_ind'*dist{i}')' + decay_offset;
+        model{i} =  model_all(i,:);%(decay_ind'*dist{i}')' + decay_offset;
         dist{i}= dist{i}./sum(dist{i});
         w_res{i} = (decay-model{i})./error;
         
@@ -7809,9 +7872,9 @@ for i = 1:numel(index)
         xlabel('\chi^2_r')
         ylabel('neg. Entropy, -S');
         %title('L-curve - neg. Entropy vs. Chi2');
-        xlim([0.95*min(chi),min([1.5,1.05*max(chi)])]); ylim([0.95*min(negS(chi<1.5)),max(negS)]);
+        %xlim([max([0.95,0.95*min(chi)]),min([1.5,1.05*max(chi)])]); ylim([0.95*min(negS(chi<1.5)),max(negS)]);
         set(gca,'XScale','log','YScale','log');
-        legend('FontSize',18);
+        legend('FontSize',12);
         axis('tight');
         
         nexttile(2);hold on;
@@ -7824,13 +7887,12 @@ for i = 1:numel(index)
         set(gca,'XScale','log');
         xlabel('\mu');
         ylabel('\chi^2_r');
-        %xlim([0.95*min(negS),max(negS)]);
-        ylim([0.95*min(chi),min([max(chi),1.5])]);        
+        ylim([min([1,0.95*min(chi)]),min([max(chi),1.5])]);        
     elseif index(i) == 0
         %%% get the distribution and decay from the GUI
         try
             h = guidata(findobj('Tag','TauFit'));
-            model{i} = h.Plots.DecayResult.YData;
+            model{i} = h.Plots.FitResult.YData;
             w_res{i} = (decay-model{i})./error;
             dist{i} = interp1(h.Plots.FitAnisoResult.XData,h.Plots.FitAnisoResult.YData,tau);
             dist{i}= dist{i}./sum(dist{i});
@@ -7854,7 +7916,7 @@ for i = 1:numel(index)
         end
     elseif index(i) == -1 %%% plot the input flat distribution
         dist{i} = ones(size(tau))./numel(tau);
-        model{i} =  (decay_ind'*dist{i}')' + decay_offset;
+        model{i} = model_all(i,:); %(decay_ind'*dist{i}')' + decay_offset;
         dist{i}= dist{i}./sum(dist{i});
         w_res{i} = (decay-model{i})./error;
         chi2_initial = sum(w_res{i}.^2)./numel(tau);
@@ -7900,8 +7962,9 @@ if plot_decay
         nexttile(1);hold on;
         plot(t, w_res{i},'LineWidth',2,'Color',color(i,:));
         axis('tight');
+        ylim([-3,3]);
         set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
-        set(gca,'XScale','log');
+        %set(gca,'XScale','log');
         set(gca,'XTickLabel',[]);
         nexttile(2,[3,1]);hold on;
         if i == 1
@@ -7916,9 +7979,9 @@ if plot_decay
 
         xlabel('time [ns]')
         ylabel('Intensity');
-        set(gca,'YScale','log','XScale','log');
+        set(gca,'YScale','log');
         axis('tight');
-        legend('Color',[1,1,1],'Location','SouthWest');
+        legend('Color',[1,1,1],'Location','NorthEast','FontSize',12);
         set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',18,'Layer','Top','Box','on','TickDir','out','XGrid','on','YGrid','on');
     end
 end

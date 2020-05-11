@@ -16,7 +16,7 @@ for i = 1:2
     %irf = circshift(IRFPattern{i},[c, 0]);
     irf = shift_by_fraction(IRFPattern{i},c);
     irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-    irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
+    %irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
     %A shift in the scatter is not needed in the model
