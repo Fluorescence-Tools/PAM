@@ -228,9 +228,9 @@ plot(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData./BurstData{file}.Corrections
 plot(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
 if sampling ~=0
     patch([0,0,fliplr(upper_bound(isfinite(upper_bound)))],[min(bin_centers_cor(isfinite(upper_bound))),max(bin_centers_cor(isfinite(upper_bound))),fliplr(bin_centers_cor(isfinite(upper_bound)))],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
-    scatter(mean_tau_static_R,bin_centers_cor,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
+    plot(mean_tau_static_R,bin_centers_cor,'d','LineWidth',2,'MarkerSize',12,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
 end
-plot(mean_tau,bin_centers,'-d','LineWidth',2,'MarkerSize',10,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
+plot(mean_tau,bin_centers,'d','LineWidth',2,'MarkerSize',12,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
 % scatter(mean_tau,bin_centers,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
 %plot(mean_tau_static,bin_centers,'-g','LineWidth',2);
 
@@ -239,7 +239,7 @@ plot(mean_tau,bin_centers,'-d','LineWidth',2,'MarkerSize',10,'MarkerEdgeColor','
 set(gca,'Color',[1,1,1]);
 
 ax.XLim = [0,1.2];
-ax.YLim = [0,1];
+ax.YLim = [0,1.1];
 
 xlabel('\tau_{D,A}/\tau_{D,0}');
 ylabel('FRET Efficiency');
@@ -249,16 +249,16 @@ switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
                     [~,icons] = legend('CI','Binned CI','Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
-                    icons(4).FaceAlpha = 0.25;
-                    icons(5).Children.MarkerSize = 10;
+%                     icons(4).FaceAlpha = 0.25;
+%                     icons(5).Children.MarkerSize = 10;
                 else
                     legend('Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
                     [~,icons] = legend('CI','Binned CI','Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
-                    icons(4).FaceAlpha = 0.25;
-                    icons(5).Children.MarkerSize = 10;
+%                     icons(4).FaceAlpha = 0.25;
+%                     icons(5).Children.MarkerSize = 10;
                 else
                     legend('Binned \tau_{D,A}/\tau_{D,0}','Location','northeast');
                 end
@@ -315,7 +315,7 @@ if transformed
        patch([max(mean_tauDA_static(isfinite(upper_bound_var))),mean_tauDA_static(isfinite(upper_bound_var)),min(mean_tauDA_static(isfinite(upper_bound_var)))],[ylim(1),upper_bound_var(isfinite(upper_bound_var)),ylim(1)],0.25*[1,1,1],'FaceAlpha',0.25,'LineStyle','none');
        scatter(mean_tauDA_static,mean_var_tauDA_static,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
     end
-    plot(data_mean_tauDA,data_mean_var_tauDA,'-d','LineWidth',2,'MarkerSize',10,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
+    plot(data_mean_tauDA,data_mean_var_tauDA,'d','LineWidth',2,'MarkerSize',12,'MarkerEdgeColor','none','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1, 'Color',UserValues.BurstBrowser.Display.ColorLine1);
 %     plot(data_mean_tauDA,data_mean_var_tauDA,'--k','LineWidth',2);
 %     scatter(data_mean_tauDA,data_mean_var_tauDA,100,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1);
     set(gca,'Color',[1,1,1]);
@@ -362,7 +362,12 @@ if do_phasor
     %%% add phasor circle
     add_universal_circle(ax,1);
     circle = gca;
-    circle.Children.HandleVisibility = off;
+    if numel(circle.Children) > 1
+        circle.Children(2).HandleVisibility = 'off';
+        circle.Children(1).HandleVisibility = 'off';
+    else
+        circle.Children(1).HandleVisibility = 'off';
+    end
     % conf int
     %scatter(mean_g_static,mean_s_static,80,'diamond','filled','MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2);
     % filter NaNs
