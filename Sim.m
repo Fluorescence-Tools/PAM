@@ -2176,13 +2176,7 @@ for i = 1:numel(h.Sim_File_List.String)
     if ~SimData.Start %%% Aborts Simulation
        return; 
     end
-    %if h.Sim_Scan.Value<5
-        Do_PointSim;
-    %else
-        %profile on
-    %    Do_CameraSim;
-        %profile viewer
-    %end
+    Do_PointSim;
     h.Sim_File_List.Value = h.Sim_File_List.Value+1;
 end
 h.Sim_File_List.Enable = 'on';
@@ -2306,6 +2300,12 @@ if ~advanced
 
         %%% Determins barrier type and map (for quenching, barriers, ect.)
         Map_Type = SimData.Species(i).Barrier;
+        
+        %If a diffusion map is needed, import one
+        if Map_Type ~= 1
+            SimData.Map=importdata(uigetfile('.mat'));
+        end        
+        
         switch Map_Type
             case 1 %%% Free Diffusion
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
