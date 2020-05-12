@@ -226,6 +226,7 @@ void Simulate_Diffusion(
                 y = 0;
                 break;
             case 2: /// Raster scan (includes point and line)
+            case 5: // Camera mode (this is a hacked version of raster scan)
                 x = fmod((double)(i / ScanTicks[0]), Pixel[0]) * Step[0] + x0;
                 y = fmod((double)(i / ScanTicks[1]), Pixel[1]) * Step[1] + x0;
                 break;
