@@ -76,6 +76,7 @@ void sim_hist_mc_dist_3d_cor_optim_dynamicCPP(double *MU1, double *COV1, double 
     {
         for (j=0;j<2;++j)
         {
+            fracT[j] = 0;
             if (j==0)
             {
                 mu << MU1[0],MU1[1],MU1[2];
