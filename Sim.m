@@ -813,6 +813,19 @@ if ismac
         h.Sim_Param_Plot.ForegroundColor = [0 0 0];
         h.Sim_Param_Plot.BackgroundColor = [1 1 1];
 end
+h.Sim_Optosplit = uicontrol(...
+    'Parent',h.Sim_Advanced_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'fontSize',12,...
+    'Value',0,...
+    'HorizontalAlignment','right',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String', 'Separate channels by excitation',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.52 0.88 0.5 0.1]);
+
 %%% Text
 h.Text_FromTo = uicontrol(...
     'Parent',h.Sim_Advanced_Panel,...
@@ -1396,6 +1409,7 @@ SimData.General(1).IRFWidth = 250;
 SimData.General(1).HeterogeneityUpdate = 10;
 SimData.General(1).LinkerWidth = 5;
 SimData.General(1).DynamicRate = 0;
+SimData.General(1).Optosplit = 0;
 SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
 SimData.Species(1).Color = 1;
@@ -1831,6 +1845,8 @@ switch Obj
     case h.Sim_IRF_Width_Edit
         % why is this data stored in SimData?
         SimData.General(File).IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
+    case h.Sim_Optosplit
+        SimData.General(File).Optosplit = h.Sim_Optosplit.Value;
     case h.Sim_Param_Plot %%% Changed plotted advanced parameters
         for i=1:4
             for j=1:4
@@ -2001,6 +2017,8 @@ switch mode
         end
         h.Sim_List.String = Species;
         h.Sim_List.Value = 1;
+        
+        h.Sim_Optosplit = SimData.General(File).Optosplit;
         
         % advanced settings
         % for i=1:4
@@ -2220,8 +2238,12 @@ Pixel(2) = str2double(h.Sim_Px{2}.String);
 ScanTicks(2) = str2double(h.Sim_Px_Time{2}.String)*Freq*10^-3; 
 
 use_aniso = h.Sim_UseAni.Value;
+use_optosplit = h.Sim_Optosplit.Value;
 
-if use_aniso == 0
+if use_optosplit == 1
+    Photons_total = cell(numel(SimData.Species),16);
+    MI_total = cell(numel(SimData.Species),16);
+elseif use_aniso == 0
     Photons_total = cell(numel(SimData.Species),4);
     MI_total = cell(numel(SimData.Species),4);
 elseif use_aniso == 1
@@ -2766,6 +2788,8 @@ if advanced
         NoP = SimData.Species(i).N;
         final_state_temp = initial_state{i};
         
+        AJPhotons = cell(NoP,4,4); AJMI = cell(NoP,4,4);
+        
         Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
         Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
         Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
@@ -2855,8 +2879,15 @@ if advanced
                 %%% bits 2,3 for excited dye
                 %%% bits 4,5 for emitting dye
                 %%% bits 6,7 for detection channel
-
-                if use_aniso == 0
+                if use_optosplit == 1
+                    for excitation = 1:4
+                        for emission = 1:4
+                            bitmask = (excitation-1) + (emission-1)*64;
+                            AJPhotons{j,excitation,emission} = [AJPhotons{j,excitation,emission}; Photons(bitand(Channel,195)==bitmask)+(k-1)*double(Frametime)];
+                                 AJMI{j,excitation,emission} = [     AJMI{j,excitation,emission}; uint16(MI(bitand(Channel,195)==bitmask))];
+                        end
+                    end
+                elseif use_aniso == 0
                     %%% Assigns photons according to detection channel
                     Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
                     Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
@@ -2892,7 +2923,13 @@ if advanced
             fclose(FID);
         end
         %%% Combines photons for all particles
-        if use_aniso == 0
+        if use_optosplit == 1
+            for j = 1:16
+                Photons_total{i,j} = cell2mat(AJPhotons(:,j));
+                MI_total{i,j} = cell2mat(AJMI(:,j));
+            end
+            clear AJPhotons AJMI;
+        elseif use_aniso == 0
             Photons_total{i,1} = cell2mat(Photons1);
             MI_total{i,1} = cell2mat(MI1);
             Photons_total{i,2} = cell2mat(Photons2);
@@ -2930,7 +2967,9 @@ if advanced
         stop(Update);
     end
     
-    if use_aniso == 0
+    if use_optosplit == 1
+        nChan = 16;
+    elseif use_aniso == 0
         nChan = 4;
     elseif use_aniso == 1
         nChan = 8;
@@ -3009,7 +3048,7 @@ switch h.Sim_Save.Value
         assignin('base',['Sim_Photons_' num2str(h.Sim_File_List.Value)],Sim_Photons);
         assignin('base',['Sim_MI_' num2str(h.Sim_File_List.Value)],Sim_MI);
     case 2 %%% Saves as TIFF
-        for i=1:4            
+        for i=1:numel(Sim_Photons)         
             if ~isempty(Sim_Photons{i})
                 Int = histc(double(Sim_Photons{i}),1:ScanTicks(1):double(Simtime));
                 Int=reshape(Int,Pixel(1),Pixel(2),Frames);
@@ -3018,7 +3057,13 @@ switch h.Sim_Save.Value
                 %%% Rotates image if needed
                 Int=permute(Int,[2,1,3]);
                 %%% Write File Name to save as tif
-                File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_C' num2str(i) '_F' num2str(h.Sim_File_List.Value) '.tif']);
+                if use_optosplit == 0
+                    outfilename = [h.Sim_FileName.String '_C' num2str(i) '_F' num2str(h.Sim_File_List.Value) '.tif'];
+                else
+                    outfilename = [h.Sim_FileName.String '_Ex' num2str(floor((i-1)/4)+1) '_Em' num2str(mod(i-1,4)+1) '_F' num2str(h.Sim_File_List.Value) '.tif'];
+                end
+                    
+                File=fullfile(h.Sim_Path.String, outfilename);
                 
                 tifffile = Tiff(File,'w');
                 
@@ -3040,7 +3085,7 @@ switch h.Sim_Save.Value
                 close(tifffile);
                                 
 %                 imwrite(Int(:,:,1),File,'tif','Compression','lzw');
-                 for k=2:Frames;
+                 for k=2:Frames
                      imwrite(Int(:,:,k),File,'tif','WriteMode','append','Compression','lzw');
                  end
             end
