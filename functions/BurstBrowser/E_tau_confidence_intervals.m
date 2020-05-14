@@ -34,7 +34,8 @@ N_phot_D = N_phot_D(selected);
 threshold = minimum_burst_per_bin;
 %% average lifetime in FRET efficiency bins
 bin_number = number_of_bins; % bins for range 0-1
-bin_edges = linspace(0,1,bin_number); bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
+bin_edges = linspace(0,1,bin_number+1); 
+bin_centers = bin_edges(1:end-1) + min(diff(bin_edges))/2;
 [~,~,bin] = histcounts(E,bin_edges);
 mean_tau = NaN(1,numel(bin_edges)-1);
 if do_phasor
