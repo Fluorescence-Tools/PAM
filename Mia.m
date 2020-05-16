@@ -5710,7 +5710,7 @@ for i=1:2
                 end 
                 %%% Calculates Filter
                 Filter=ones(Box)/prod(Box);
-                MIAData.Data{i,2}=MIAData.Data{i,2} - imfilter(MIAData.Data{i,2},Filter,'replicate');    
+                MIAData.Data{i,2}=MIAData.Data{i,2} - imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
         
         %%% Removes NaNs from file
