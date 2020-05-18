@@ -111,7 +111,12 @@ h.Mia_Load_Custom = uimenu(...
     'Label','...custom data format',...
     'Callback',{@Mia_Load,3},...
     'Tag','Load_Mia_Custom');
-
+%%% Load lifetime data format
+h.Mia_Load_LT = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...mean lifetime data',...
+    'Callback',{@Mia_Load,7},...
+    'Tag','Load_Mia_LT');
 
 %%% Menu to open MIAFit and Spectral
 h.Mia_Open = uimenu(...
@@ -4342,7 +4347,118 @@ switch mode
         
     case 3 %%% Loads custom data formats
         MIA_CustomFileType([],[],2);
-              
+    case 7 %%% Load .phf file generated from phasor tab
+        % could be better just generated from PAM itself
+        [FileName,Path] = uigetfile({'*.phf'}, 'Choose a phasor file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+        UserValues.File.MIAPath = Path;
+
+        LSUserValues(1);
+    
+        MIAData.Data = {};
+        MIAData.Type = mode;
+        MIAData.FileName = [];
+        MIAData.PCH = [];
+        %% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
+        MIAData.STICS = [];
+        MIAData.STICS_SEM = [];
+        MIAData.RLICS = [];
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_ICS.Axes(i,1).Visible='off';
+            h.Mia_ICS.Axes(i,2).Visible='off';
+            h.Mia_ICS.Axes(i,3).Visible='off';
+            h.Mia_ICS.Axes(i,4).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+            h.Plots.Cor(i,4).Visible='off';
+            h.Plots.Cor(i,5).Visible='off';
+            h.Plots.Cor(i,6).Visible='off';
+            h.Plots.Cor(i,7).Visible='off';
+            h.Plots.TICS(i,1).Visible = 'off';
+            h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
+            h.Plots.TICSImage(i).Visible = 'off';
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
+        end
+        h.Mia_ICS.Frame_Slider.Min=0;
+        h.Mia_ICS.Frame_Slider.Max=0;
+        h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
+        h.Mia_ICS.Frame_Slider.Value=0;
+        h.Mia_STICS.Lag_Slider.Min=0;
+        h.Mia_STICS.Lag_Slider.Max=1;
+        h.Mia_STICS.Lag_Slider.SliderStep=[1 1];
+        h.Mia_STICS.Lag_Slider.Value=0;
+        %% Clears N&B data and plots
+        MIAData.NB=[];
+        h.Plots.NB(1).CData=zeros(1,1);
+        h.Plots.NB(2).CData=zeros(1,1);
+        h.Plots.NB(3).CData=zeros(1,1);
+        h.Plots.NB(4).YData=0;
+        h.Plots.NB(4).XData=0;
+        h.Plots.NB(5).CData=zeros(1,1);
+        %% Loads all frames for channel 1
+        
+        data=load(fullfile(Path, FileName),'-mat');
+        % hardcoded rescaling step to convert mean lifetime in TCSPC
+        % channels to nanoseconds
+        data.Mean_LT(isnan(data.Mean_LT)) = 0;
+        data.Mean_LT = (data.Mean_LT)/4096*16.67;
+        MIAData.Data{1,1} = single(data.Mean_LT);
+        delete data
+        
+        %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image.Settings.Channel_Link.Value = 0;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'off';
+        h.Mia_Image.Axes(2,1).Visible = 'off';
+        h.Mia_Image.Axes(2,2).Visible = 'off';
+        h.Plots.Image(2,1).Visible = 'off';
+        h.Plots.Image(2,2).Visible = 'off';
+        h.Plots.ROI(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
+
+        %%% Clears images
+        h.Plots.Image(2,1).CData=zeros(1,1,3);
+        h.Mia_Image.Axes(2,1).XLim=[0 1]+0.5;
+        h.Mia_Image.Axes(2,1).YLim=[0 1]+0.5;
+        h.Plots.Image(2,2).CData=zeros(1,1,3);
+        h.Mia_Image.Axes(2,2).XLim=[0 1]+0.5;
+        h.Mia_Image.Axes(2,2).YLim=[0 1]+0.5;
+        %%% Resets slider
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1 1];
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=1;
+        h.Mia_Image.Settings.Channel_Frame(2).String='1';
+        Progress(1);
+        %%% Updates plot
+        Mia_ROI([],[],1)
+        return
+        % convert data using S and offset parameter
+        Mia_Orientation([],[],5)
+
+        Progress(1);
+        %%% Updates plots
+        Mia_ROI([],[],1)
 end
 
 
