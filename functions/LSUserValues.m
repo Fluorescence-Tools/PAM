@@ -2034,6 +2034,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.PDATimeBin was incomplete');
     end
     P.BurstBrowser.Settings.PDATimeBin = S.BurstBrowser.Settings.PDATimeBin;
+    %%% Check, if BurstBrowser.Settings.PDA_ExportLifetime subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'PDA_ExportLifetime')
+        S.BurstBrowser.Settings.PDA_ExportLifetime=false;
+        disp('UserValues.BurstBrowser.Settings.PDA_ExportLifetime was incomplete');
+    end
+    P.BurstBrowser.Settings.PDA_ExportLifetime = S.BurstBrowser.Settings.PDA_ExportLifetime;
     %%% Check, if BurstBrowser.Settings.FitGaussPick subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'FitGaussPick')
         S.BurstBrowser.Settings.FitGaussPick=0;

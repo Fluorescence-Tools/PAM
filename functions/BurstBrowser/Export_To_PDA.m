@@ -12,7 +12,7 @@ else
     files = BurstMeta.SelectedFile;
 end
 
-export_lifetime = true;
+export_lifetime = h.PDA_ExportLifetime.Value;
 
 k = 0;
 sel_file =  BurstMeta.SelectedFile;
@@ -43,8 +43,8 @@ for i = 1:numel(files)
     % Timebin can be a single number or a range e.g. "0.2,0.5,1", without the " "
     Timebin = str2num(h.TimeBinPDAEdit.String).*1E-3;
     
-    for i = 1:numel(Timebin)
-        timebin = Timebin(i);
+    for t = 1:numel(Timebin)
+        timebin = Timebin(t);
         duration = timebin./BurstData{file}.ClockPeriod;
         
         if timebin ~= 0

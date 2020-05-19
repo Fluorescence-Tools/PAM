@@ -176,6 +176,30 @@ h.Sim_MultiCore = uicontrol(...
     'Callback',@Sim_Settings,...
     'Position',[0.51 0.63 0.49 0.15]);
 
+%%% Button to save simulation to json
+h.Sim_Save_JSON = uicontrol(...
+    'Parent',h.Sim_File_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Save JSON',...
+    'Callback',@save_json,...
+    'Position',[0.71 0.63 0.125 0.15]);
+
+%%% Button to save simulation to json
+h.Sim_Load_JSON = uicontrol(...
+    'Parent',h.Sim_File_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Load JSON',...
+    'Callback',@load_json,...
+    'Position',[0.85 0.63 0.125 0.15]);
+
 %%% Button to start simulation
 h.Sim_File_List = uicontrol(...
     'Parent',h.Sim_File_Panel,...
@@ -219,6 +243,29 @@ if ismac
     h.Sim_Scan.ForegroundColor = [0 0 0];
     h.Sim_Scan.BackgroundColor = [1 1 1];
 end
+
+%%% Text
+h.Text_Seed = uicontrol(...
+    'Parent',h.Sim_General_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','text',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Random Number Seed:',...
+    'Position',[0.2 0.85 0.2 0.1]);
+%%% Editbox for Random Number Seed
+h.Sim_Seed = uicontrol(...
+        'Parent',h.Sim_General_Panel,...
+        'Units','normalized',...
+        'Style','edit',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String',now(),...
+        'Callback',@Sim_Settings,...
+        'Position',[0.4 0.85 0.12 0.1]);
 %%% Text
 h.Text_BS = uicontrol(...
     'Parent',h.Sim_General_Panel,...
@@ -1381,6 +1428,7 @@ SimData.General = struct;
 
 SimData.General(1).Name = 'Simulation1';
 SimData.General(1).BS = [5000 5000 5000];
+SimData.General(1).Seed = str2double(h.Sim_Seed.String);
 SimData.General(1).Freq = 1000;
 SimData.General(1).SimTime = 10;
 SimData.General(1).Frames = 10;
@@ -1597,7 +1645,8 @@ switch Obj
               h.Text_MIRange.Visible = 'off';
       end
       SimData.General(File).ScanType = h.Sim_Scan.Value;
-      
+    case h.Sim_Seed %%% Random number seed changed
+        SimData.General(File).Seed = str2double(h.Sim_Seed.String);
     case h.Sim_BS %%% Box Size changed
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
@@ -1955,6 +2004,7 @@ switch mode
         
         SimData.Species = SimData.General(File).Species;
         
+        h.Sim_Seed.String = num2str(SimData.General(File).Seed);
         h.Sim_Scan.Value = SimData.General(File).ScanType;        
         h.Sim_Freq.String = num2str(SimData.General(File).Freq);
         h.Sim_Time.String = num2str(SimData.General(File).SimTime);
@@ -2179,6 +2229,9 @@ global SimData UserValues PathToApp
 h = guidata(findobj('Tag','Sim'));
 
 StartParPool();
+
+%%% Seed
+seed = str2double(h.Sim_Seed.String);
 %%% ScanType
 Scan_Type = h.Sim_Scan.Value;
 %%% Box Size
@@ -2362,7 +2415,8 @@ if ~advanced
             'Period',1,...
             'ExecutionMode','fixedDelay');
         start(Update)
-
+        %%% set random number seed
+        rng(seed);
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
@@ -2380,7 +2434,6 @@ if ~advanced
             Frametime = Simtime/Frames;
 
             for k=1:Frames 
-                Time = clock;
 
                 %%% Uses new map for dynamic barrier simulations
                 if any(Map_Type == [6,7])
@@ -2411,7 +2464,7 @@ if ~advanced
                     ExP,DetP,BlP,... %%% Probability parameters (Excitation, Detection and Bleaching)
                     LT,... %%% Lifetime of the different colors
                     FRET, Cross,... %%% Relative FRET and Crosstalk rates
-                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                    uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 %%% Channel is a 8 bit number that defines the exact photon type
                 %%% bits 0,1 for excitation laser
@@ -2749,7 +2802,9 @@ if advanced
         DetP_i = DetP{i};
         Cross_i = Cross{i};
         BlP_i = BlP{i};
-        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
+        %%% set random number seed
+        rng(seed);
+        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)            
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2766,7 +2821,6 @@ if advanced
             Frametime = Simtime/Frames;
 
             for k=1:Frames 
-                Time = clock;
 
                 %%% Uses new map for dynamic barrier simulations
                 if any(Map_Type == [6,7])
@@ -2800,7 +2854,7 @@ if advanced
                     LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
                     Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross_i,... %%% Relative FRET and Crosstalk rates
                     n_states, p, final_state_temp(j), DynamicStep,...
-                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                    uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 
                 %%% Channel is a 8 bit number that defines the exact photon type
@@ -3495,11 +3549,29 @@ switch mode
 end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Save Simulation Setup to JSON %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function save_json(~,~)
+global SimData
+h = guidata(findobj('Tag','Sim'));
 
+selected_simulation = h.Sim_File_List.Value;
 
+[file,path] = uiputfile('*.json','Please choose a location to store the initialization file');
+savejson('',SimData.General(selected_simulation),fullfile(path,file));
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Load Simulation Setup from JSON %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function load_json(~,~)
+global SimData
+h = guidata(findobj('Tag','Sim'));
 
-
+[file,path] = uigetfile('*.json','Please choose the initialization file to load');
+SimData.General(end+1) = loadjson(fullfile(path,file));
+h.Sim_File_List.String{end+1} = SimData.General(end).Name;
+File_List_Callback([],[],3);
 
 
 
