@@ -1,4 +1,4 @@
-function H = shot_noise_limited_histogram(eps,NobinsE,maxN,PN,BG,BR,limits,i)
+function H = shot_noise_limited_histogram(eps,Nobins,maxN,PN,BG,BR,limits,i)
 global PDAMeta UserValues
 %%% Evaluate probability of combination of photon counts Sg and Sr
 P_SgSr = PDA_histogram(maxN,PN,1-eps,BG,BR,UserValues.PDA.DeconvoluteBackground); % takes pG = probability to see donor photon
@@ -37,5 +37,6 @@ switch PDAMeta.xAxisUnit
             P_SgSr = P_SgSr(valid_distance);
         end
 end
-[~,~,bin] = histcounts(E_temp(:),linspace(limits(1),limits(2),NobinsE));
-H = accumarray(bin(bin~=0),P_SgSr(bin~=0));
+[~,~,bin] = histcounts(E_temp(:),linspace(limits(1),limits(2),Nobins+1));
+%H = [accumarray(bin(bin~=0),P_SgSr(bin~=0)); zeros(Nobins-max(bin(bin~=0)),1)];%accumarray(bin(bin~=0),P_SgSr(bin~=0));
+H = [accumarray_c(bin(bin~=0),P_SgSr(bin~=0),max(bin(bin~=0)),numel(bin(bin~=0)))'; zeros(Nobins-max(bin(bin~=0)),1)];

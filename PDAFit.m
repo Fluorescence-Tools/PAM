@@ -945,7 +945,7 @@ if isempty(h.GlobalPDAFit)
         'String',{'Poissonian','Gaussian'},...
         'FontSize',12,...
         'Callback',[],...
-        'Value',1,...
+        'Value',2,...
         'Position',[0.5 0.025 0.1 0.2],...
         'Tag','Chi2Method_Edit');
      h.SettingsTab.DynamicModel = uicontrol(...
@@ -1644,7 +1644,15 @@ switch mode
                     valid = valid & ...
                         ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
                         ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
-
+                    
+                    % Modified for RNA junction fitting:
+                    % Only scale the minimum number of photons in the red
+                    % channel.
+                    % Do not scale the maximum number of photons.
+                    %valid = valid & ...
+                    %    (PDAData.Data{i}.NF > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number red
+                    %    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                    %    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
                 end
             else
                 if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
@@ -1896,7 +1904,15 @@ switch mode
                     valid = valid & ...
                         ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
                         ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
-
+                    
+                    % Modified for RNA junction fitting:
+                    % Only scale the minimum number of photons in the red
+                    % channel.
+                    % Do not scale the maximum number of photons.
+                    %valid = valid & ...
+                    %    (PDAData.Data{i}.NF > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number red
+                    %    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                    %    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
                 end
             else
                 if ~h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value % no scaling of the minimum number of photons
@@ -2554,8 +2570,17 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 % by the time window in milliseconds, i.e. the 1 ms
                 % measurement is the reference
                 PDAMeta.valid{i} = PDAMeta.valid{i} & ...
-                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
-                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+                   ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                   ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
+                
+                % Modified for RNA junction fitting:
+                % Only scale the minimum number of photons in the red
+                % channel.
+                % Do not scale the maximum number of photons.
+                % PDAMeta.valid{i} = PDAMeta.valid{i} & ...
+                %     (PDAData.Data{i}.NF > PDAData.timebin(i)*1000*str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number red
+                %     ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photons total
+                %     ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)); % max photon number   
 
             end
         else
@@ -2614,15 +2639,16 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                     %%% get background
                     BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
                     BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;                                       
-                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins+1,maxN,PN,BG,BR,limits,i);
+                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins,maxN,PN,BG,BR,limits,i);
                 end
                 %%% add donor only histogram
                 eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
-                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins+1,maxN,PN,BG,BR,limits,i);
+                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins,maxN,PN,BG,BR,limits,i);
             else
-                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,PN,h);
+                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
             end
             PDAMeta.PreparationDone(i) = 1;
+            Progress(i./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
         end
         PDAMeta.eps_grid{i} = eps_grid;
         PDAMeta.PN{i} = PN;
@@ -3050,11 +3076,14 @@ else
                     %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
                     PDAMeta.SampleGlobal(2) = true; %half globally link R1
                     PDAMeta.SampleGlobal(5) = true; %half globally link R2
+                    PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+                    PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+                    %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
+                    %PDAMeta.SampleGlobal(14) = true; %half globally link R5
                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-                    PDAMeta.SampleGlobal(13) = true; %half globally link Area5
-                    PDAMeta.SampleGlobal(14) = true; %half globally link R5
-                    PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
+                    %PDAMeta.SampleGlobal(15) = true; %half globally link sigma5
+                    %PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
                 case 2
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
@@ -3760,14 +3789,39 @@ else %%% dynamic model
     %%% Add static models
     norm = 1;
     static_states = PDAMeta.Comp{i}(PDAMeta.Comp{i} > n_states);
-    if ~isempty(static_states)
+    if ~isempty(static_states)        
         %%% normalize Amplitudes
         % amplitudes of the static components are normalized to the total area 
         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
         % the k12 and k21 parameters are left untouched here so they will 
         % appear in the table. The area fractions are calculated in Update_Plots
-        norm = (sum(fitpar(3*static_states-2))+1);
-        fitpar(3*static_states-2) = fitpar(3*static_states-2)./norm;
+        if ~(h.SettingsTab.FixStaticToDynamicSpecies.Value == 1)
+            norm = (sum(fitpar(3*static_states-2))+1);
+            fitpar(3*static_states-2) = fitpar(3*static_states-2)./norm;
+        else % special case of linked static and dynamic states
+            %%% consider the first two static states as part of the dynamic system
+            %%% In this case, the total dynamic system (states 1,2,3,4) are
+            %%% treated as area 1.
+            %%% Normalize the dynamic system by:
+            %%% dyn + s3 + s4 = 1 + x3 + x4
+            %%% Then, if more static species are present (e.g. state 5), normalize by:
+            %%% dyn (dyn+stat) + s5 + s6 ... = 1 + x5
+            %%%
+            %%% Total contribution:
+            %%% X = (1+x3+x4)/(1+x3+x4)/(1+x5) + x5/(1+x5)
+            %%%   = 1/(1+x5) + x5(1+x5) = 1
+            
+            %%% if additional static states are present, normalize as above for these
+            norm = (sum(fitpar(3*static_states(static_states>4)-2))+1);
+            %%% additionally normalize the dynamic part to area of 1
+            norm_dyn = (sum(fitpar(3*[3,4]-2))+1);
+            hFit_Dyn = hFit_Dyn./norm_dyn;
+            for j = 1:2
+                hFit_Ind{j} = hFit_Ind{j}./norm_dyn;
+            end
+            fitpar(3*[3,4]-2) = fitpar(3*[3,4]-2)./norm_dyn;
+        end
+        
         for c = static_states
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = fitpar(3*c-2).*Pe;
