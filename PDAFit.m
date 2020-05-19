@@ -3869,7 +3869,7 @@ if fitpar(end) > 0
 end
 
 %%% correct for slight number deviations between hFit and hMeasured
-%hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
+hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
 
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
