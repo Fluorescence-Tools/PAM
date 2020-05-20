@@ -3869,7 +3869,20 @@ if fitpar(end) > 0
 end
 
 %%% correct for slight number deviations between hFit and hMeasured
-hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
+if sum(hFit) ~= sum(PDAMeta.hProx{i})
+    f = sum(PDAMeta.hProx{i})./sum(hFit);
+    hFit = f*hFit;
+    for k = 1:numel(hFit_Ind)
+        hFit_Ind{k} = f*hFit_Ind{k};
+    end
+    if h.SettingsTab.DynamicModel.Value
+        PDAMeta.hFit_onlyDyn{i} = f*PDAMeta.hFit_onlyDyn{i};
+    end
+    if fitpar(end) > 0
+        %%% Dnor only exists
+        PDAMeta.hFit_Donly{i} = f*PDAMeta.hFit_Donly{i};
+    end
+end
 
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
