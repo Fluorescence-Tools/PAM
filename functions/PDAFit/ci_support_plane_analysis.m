@@ -10,7 +10,7 @@ function ci = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha)
 
 % First, the maximum chi2 value chi2_max that is tolerated for a confidence
 % level is calculated based on the F statistic
-chi2_max = chi2_0*(1+(p/nu)*finv(0.95,p,nu));
+chi2_max = chi2_0*(1+(p/nu)*finv(alpha,p,nu));
 
 % Then, the chi2 is interpolated on a finer grid using a spline and
 % the first and last points above threshold are determined
@@ -25,6 +25,8 @@ for i = 1:size(chi2,2) %%% loop over all parameters
     valid(:,i) = chi2_fine(:,i) < chi2_max;
     ci(1,i) = param_fine(find(valid(:,i),1,'first'),i);
     ci(2,i) = param_fine(find(valid(:,i),1,'last'),i);
+    [best_chi2,best_idx] = min(chi2_fine(:,i));
+    best_val = param_fine(best_idx,i);
 end
 
 %%% visualize the result
@@ -35,3 +37,4 @@ for i = 1:size(chi2,2)
     plot(param_fine(~valid(:,i),i),chi2_fine(~valid(:,i),i),'--');
 end
 plot([min(param_fine(:)),max(param_fine(:))],[chi2_max,chi2_max],'k-');
+title(sprintf('R = %.2f (%.2f, %.2f)',best_val,ci(1,1),ci(2,1)));

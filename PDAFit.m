@@ -3046,8 +3046,8 @@ if ~do_global
                         
                         param_val = repmat(fp(params),numel(range),1)+repmat(ci,numel(range),1).*repmat(range',1,numel(ci));
                         
-                        p = numel(fitpar); % number of parameters of the model
-                        nu = sum(PDAMeta.hProxGlobal > 0)-numel(fitpar); % degrees of freedom
+                        p = sum(~fixed); % number of parameters of the model
+                        nu = sum(PDAMeta.hProx{i} > 0) - p; % degrees of freedom
                         alpha = 0.95; % confidence level
                         ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
 
@@ -3467,7 +3467,7 @@ else
                     %%% Read out best chi2
                     chi2_0 = PDAMeta.global_chi2;
                     %%% define arameters
-                    params = [2,5]; %%% distances of the first two populations
+                    params = [5]; %%% distances of the first two populations
                     %%% get confidence intervals for parameters                    
                     ci = max(0.5,10*err(1,params));
                     
@@ -3500,14 +3500,17 @@ else
                             PDAMeta.FitParams = fitparams_p;
                             fitpar_p = optimize_all_methods_SPA_global(h,fitfun,fitpar_p,LB_p,UB_p);
                             chi2(r,p) = PDAMeta.global_chi2;
+                            Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Performing SPA');
+                            Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Performing SPA');
                         end
                     end
                     
                     param_val = repmat(fitparams0(1,params),numel(range),1)+repmat(ci,numel(range),1).*repmat(range',1,numel(ci));
-                    figure; hold on;
-                    for p = 1:numel(params)
-                        plot(param_val(:,1),chi2(:,p));
-                    end
+                    p = numel(fitpar); % number of parameters of the model
+                    nu = sum(PDAMeta.hProxGlobal > 0)-numel(fitpar); % degrees of freedom
+                    alpha = 0.95; % confidence level
+                    ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
+
             end
             
             if obj == h.Menu.EstimateErrorMCMC
