@@ -2995,7 +2995,7 @@ if ~do_global
                         %%%
                         %%% Vary one parameter while optimizing all other
                         %%% parameters at each step.
-                        
+
                         %%% evaluate once to make plots available
                         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                             case {'MonteCarlo'} % removed 'MLE' for now since MC is broken
@@ -3014,7 +3014,7 @@ if ~do_global
                         %%% Read out best chi2
                         chi2_0 = PDAMeta.chi2(i);
                         %%% define arameters
-                        params = [2,5]; %%% distances of the first two populations
+                        params = [5];%,5]; %%% distances of the first two populations
                         %%% get confidence intervals for parameters
                         confi = zeros(size(fitpar)); confi(~fixed) = ci;
                         ci = max(confi(params),0.5);
@@ -3032,19 +3032,25 @@ if ~do_global
                                 fitpar_p(params(p)) = fitpar(params(p))+ci(p)*range(r);
                                 b_p = b; b_p(params(p)) = fitpar_p(params(p)); % update fix
                                 PDAMeta.FitParams(i,:) = fitpar_p;
-                                fitpar_p = optimize_all_methods_SPA(h,fitfun,fitpar_p,LB,UB,fixed_p,A_p,b_p);
+                                LB_p = LB; LB_p(params(p)) = fitpar_p(params(p));
+                                UB_p = UB; UB_p(params(p)) = fitpar_p(params(p));
+                                fitpar_p = optimize_all_methods_SPA(h,fitfun,fitpar_p,LB_p,UB_p,fixed_p,A_p,b_p);
                                 chi2(r,p) = PDAMeta.chi2(i);
-                            end
+                                Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Performing SPA');
+                                Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Performing SPA');
+                            end          
                         end
                         %%% restore previous fitparams and fixed status
                         PDAMeta.FitParams(i,:) = fp;
                         PDAMeta.Fixed(i,:) = ff;
                         
-                        figure; hold on;
-                        for p = 1:numel(params)
-                            plot(fitpar(params(p))+ci(p)*range,chi2(:,p));
-                        end
+                        param_val = repmat(fp(params),numel(range),1)+repmat(ci,numel(range),1).*repmat(range',1,numel(ci));
                         
+                        p = numel(fitpar); % number of parameters of the model
+                        nu = sum(PDAMeta.hProxGlobal > 0)-numel(fitpar); % degrees of freedom
+                        alpha = 0.95; % confidence level
+                        ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
+
                         %%% evaluate gain to reset plots
                         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                             case {'MonteCarlo'} % removed 'MLE' for now since MC is broken
@@ -3633,7 +3639,7 @@ global PDAMeta
 %%% routines embedded
 switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
     case 'Simplex'
-        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','MaxIter',100,'TolFun',1E-3,'TolX',1E-3,'PlotFcns',@optimplotfval);
+        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','MaxIter',100,'TolFun',1E-3,'TolX',1E-3,'PlotFcns',[]);
         fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
     case 'Gradient-based (lsqnonlin)'
         PDAMeta.FitInProgress = 2; % indicate that we want a vector of residuals, instead of chi2, and that we only pass non-fixed parameters
