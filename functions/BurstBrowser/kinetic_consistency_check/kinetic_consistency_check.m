@@ -143,17 +143,34 @@ switch type
         %%% for lifetime, we only need to know the fraction of time spent
         %%% in each state
         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
+%         freq = 10000;
         %%% get duration
         dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray)))/1000; % duration in seconds
-        FracT = zeros(numel(dur),n_states);
-        states = cell(numel(dur),1);
-        for i = 1:numel(dur) %%% loop over bursts
-            %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
-            %%% convert states to fraction of time spent in each state
-            for s = 1:n_states
-                FracT(i,s) = sum(states{i} == s)./numel(states{i});
-            end
+%         FracT = zeros(numel(dur),n_states);
+%         states = cell(numel(dur),1);
+%         for i = 1:numel(dur) %%% loop over bursts
+%             %%% evaluate kinetic scheme
+%             states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
+%             %%% convert states to fraction of time spent in each state
+%             for s = 1:n_states
+%                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
+%             end
+%         end
+        if n_states == 3
+            change_prob = cumsum(rate_matrix);
+            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+        end
+        dwell_mean = 1 ./ sum(rate_matrix);
+        for i = 1:n_states
+                rate_matrix(i,i) = -sum(rate_matrix(:,i));
+        end
+        rate_matrix(end+1,:) = ones(1,n_states);
+        b = zeros(n_states,1); b(end+1) = 1;
+        p_eq = rate_matrix\b;
+        if n_states == 3
+            FracT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(dur),p_eq,change_prob)./dur;
+        else
+            FracT = Gillespie_2states(dur,dwell_mean,numel(dur),p_eq)./dur;
         end
         %%% correct fractions for brightness differences of the different states
         for i = 1:n_states
