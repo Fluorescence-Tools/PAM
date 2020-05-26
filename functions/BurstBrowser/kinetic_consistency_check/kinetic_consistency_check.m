@@ -33,6 +33,9 @@ switch type
         %%% for BVA, we need to consider the actual photons, so simulate a
         %%% full trajectory
         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
+        if ~any(freq)
+            return
+        end
         states = cell(numel(mt),1);
         % convert macrotime to seconds and subtract first time point
         mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);

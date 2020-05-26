@@ -40,9 +40,8 @@ timesteps = ceil(simtime * frequency);
 
 if ~dynamic
     dynamic_rates = 1./dynamic_rates;
-    dynamic_rates = dynamic_rates/1E6;
-    dynamic_rates(find(dynamic_rates==0)) = 1E10;
-    dynamic_rates(isinf(dynamic_rates)) = 0;
+    dynamic_rates = dynamic_rates*1E-3;
+    dynamic_rates(isinf(dynamic_rates)) = 1E6;
     dynamic_rates(isnan(dynamic_rates)) = 0;
 end
 %%% convert to probability per step
