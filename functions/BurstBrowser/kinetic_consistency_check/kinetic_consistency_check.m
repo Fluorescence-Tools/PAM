@@ -155,6 +155,7 @@ switch type
 %                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
 %             end
 %         end
+        rate_matrix(isnan(rate_matrix)) = 0;
         if n_states == 3
             change_prob = cumsum(rate_matrix);
             change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
@@ -418,6 +419,7 @@ switch type
         dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray)))/1000; % duration in seconds
         FracT = zeros(numel(dur),n_states);
         states = cell(numel(dur),1);
+        rate_matrix(isnan(rate_matrix)) = 0;
         for i = 1:numel(dur) %%% loop over bursts
             %%% evaluate kinetic scheme
             states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
