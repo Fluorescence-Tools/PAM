@@ -188,22 +188,23 @@ switch type
         %%% get number of photons per burst after donor excitation
         N_phot = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Number of Photons (DX)',BurstData{file}.NameArray)));
         for model = 1:2
-            if model == 2         
+            if model == 2 % static       
                 rate_matrix = 1./amplitudes;
-                rate_matrix = rate_matrix/1E6;
-                rate_matrix(find(rate_matrix==0)) = 1E10;
-                rate_matrix(isinf(rate_matrix)) = 0;
+                rate_matrix = rate_matrix*1E-6;
+                rate_matrix(isinf(rate_matrix)) = 1E6;
                 rate_matrix(isnan(rate_matrix)) = 0;
                 R_states = R_states_static;
                 sigmaR = sigmaR_static;
                 n_states = n_states_static;
-            else
+                change_prob = zeros(n_states);
+            else % dynamic
                 n_states = n_states_dyn;
+                if n_states == 3
+                    change_prob = cumsum(rate_matrix);
+                    change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+                end
             end 
-            if n_states == 3
-                change_prob = cumsum(rate_matrix);
-                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
-            end
+            
             dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
             for i = 1:n_states
                     rate_matrix(i,i) = -sum(rate_matrix(:,i));

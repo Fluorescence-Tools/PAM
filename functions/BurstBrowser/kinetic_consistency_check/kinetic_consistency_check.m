@@ -158,18 +158,24 @@ switch type
 %                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
 %             end
 %         end
-        rate_matrix(isnan(rate_matrix)) = 0;
-        if n_states == 3
-            change_prob = cumsum(rate_matrix);
-            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
-        end
         if dynamic
+            if n_states == 3
+                change_prob = cumsum(rate_matrix);
+                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+            end
             dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
         else
+            rate_matrix = 1./rate_matrix;
+            rate_matrix = rate_matrix*1E-3;
+%             rate_matrix(find(rate_matrix==0)) = 1E6;
+            rate_matrix(isinf(rate_matrix)) = 1E6;
             for state = 1:n_states
                 dwell_mean(state) = max(dur)*1E6;
             end
+            change_prob = zeros(n_states);
         end
+        rate_matrix(isnan(rate_matrix)) = 0;
+
         for i = 1:n_states
                 rate_matrix(i,i) = -sum(rate_matrix(:,i));
         end
@@ -362,7 +368,7 @@ switch type
             %%% generate randomized average distance of each state for every
             %%% burst to account for conformational heterogeneity
             for b = 1:numel(mt_freq)
-                R_burst{b} = normrnd(R_states,sigmaR_states);
+                R_burst{b} = normrnd(R_states,sigmaR);
             end
             %%% for the microtime of the donor, roll linker width at every evaluation
             lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
