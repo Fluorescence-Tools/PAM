@@ -118,6 +118,8 @@ switch type
         end
         % visualize
         % figure;area(states{i}-1,'FaceAlpha',0.15,'EdgeColor','none');hold on; scatter(mt_freq{i},0.5*ones(size(mt_freq{i})),20,colors(channel{i}+1,:));
+        
+        % Combine dynamic and static simulation
         if n_states_static == 3
             amplitudes = amplitudes/1E3/2;
         else
@@ -128,6 +130,7 @@ switch type
         cut = round(sum(amplitudes(:))*length(channel));
         channel(1:cut,1) = channel(1:cut, 2);
         channel(:,2) = [];
+        
         % compute resampled average FRET efficiencies
         E = cell2mat(cellfun(@(x) sum(x == 1)/numel(x),channel,'UniformOutput',false));
         % do BVA based on resampled channels
@@ -180,62 +183,90 @@ switch type
 %                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
 %             end
 %         end
-        if n_states == 3
-            change_prob = cumsum(rate_matrix);
-            change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
-        end
-        dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
-        for i = 1:n_states
-                rate_matrix(i,i) = -sum(rate_matrix(:,i));
-        end
-        rate_matrix(end+1,:) = ones(1,n_states);
-        b = zeros(n_states,1); b(end+1) = 1;
-        p_eq = rate_matrix\b;
-        if n_states == 3
-            FracT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(dur),p_eq,change_prob)./dur;
-        else
-            FracT = Gillespie_2states(dur,dwell_mean,numel(dur),p_eq)./dur;
-        end
-        %%% correct fractions for brightness differences of the different states
-        for i = 1:n_states
-            Q(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
-        end
-        FracInt = zeros(size(FracT));
-        %%% calculate total brightness weighted by time spent, i.e.
-        %%% Q1*T1+Q2*T2+Q3*T3...
-        totalQ = sum(repmat(Q,[size(FracT,1),1]).*FracT,2);
-        %%% weigh fraction by brightness
-        for i = 1:n_states
-            FracInt(:,i) = Q(i)*FracT(:,i)./totalQ;
-        end 
+        channel = cell(2,numel(dur));
+        E_randomized = cell(2,numel(dur));
         %%% get number of photons per burst after donor excitation
         N_phot = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Number of Photons (DX)',BurstData{file}.NameArray)));
-        %%% roll photons per state
-        f_i = mnrnd(N_phot,FracInt);
-        
-        %%% generate channel and microtime variable based on kinetic scheme
-        %%% assign channel based on states
-        %%% with conformational broadening
-        % roll efficiencies of each state for every burst       
-        R_burst = normrnd(repmat(R_states,[numel(N_phot),1]),repmat(sigmaR_states,[numel(N_phot),1])); % center distance for every burst --> use for linker width inclusion    
-        %%% for the microtime of the donor, roll linker width at every evaluation
-        lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
-        tauD0 = BurstData{file}.Corrections.DonorLifetime; % donor only lifetime
-        %%% for every photon of every state, assign efficiency based on:
-        %%% center distance R_burst(states)
-        %%% linker width
-        R_randomized = cell(numel(N_phot),1);
-        E_randomized = cell(1,numel(N_phot));
-        for i = 1:numel(N_phot)
-            for s = 1:n_states
-                R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
+        for model = 1:2
+            if model == 2         
+                rate_matrix = 1./amplitudes;
+                rate_matrix = rate_matrix/1E6;
+                rate_matrix(find(rate_matrix==0)) = 1E10;
+                rate_matrix(isinf(rate_matrix)) = 0;
+                rate_matrix(isnan(rate_matrix)) = 0;
+                R_states = R_states_static;
+                sigmaR = sigmaR_static;
+                n_states = n_states_static;
+            else
+                n_states = n_states_dyn;
+            end 
+            if n_states == 3
+                change_prob = cumsum(rate_matrix);
+                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
             end
-            E_randomized{i} = 1./(1+(R_randomized{i}./R0).^6);
-        end 
-        % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
-        E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized,'UniformOutput',false);
-        %%% roll photons based on randomized proximity ratio to only have donor photons
-        channel = cellfun(@(x) binornd(1,x),E_randomized_PR,'UniformOutput',false);
+            dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
+            for i = 1:n_states
+                    rate_matrix(i,i) = -sum(rate_matrix(:,i));
+            end
+            rate_matrix(end+1,:) = ones(1,n_states);
+            b = zeros(n_states,1); b(end+1) = 1;
+            p_eq = rate_matrix\b;
+            if n_states == 3
+                FracT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(dur),p_eq,change_prob)./dur;
+            else
+                FracT = Gillespie_2states(dur,dwell_mean,numel(dur),p_eq)./dur;
+            end
+            %%% correct fractions for brightness differences of the different states
+            for i = 1:n_states
+                Q(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
+            end
+            FracInt = zeros(size(FracT));
+            %%% calculate total brightness weighted by time spent, i.e.
+            %%% Q1*T1+Q2*T2+Q3*T3...
+            totalQ = sum(repmat(Q,[size(FracT,1),1]).*FracT,2);
+            %%% weigh fraction by brightness
+            for i = 1:n_states
+                FracInt(:,i) = Q(i)*FracT(:,i)./totalQ;
+            end 
+            
+            %%% roll photons per state
+            f_i = mnrnd(N_phot,FracInt);
+
+            %%% generate channel and microtime variable based on kinetic scheme
+            %%% assign channel based on states
+            %%% with conformational broadening
+            % roll efficiencies of each state for every burst       
+            R_burst = normrnd(repmat(R_states,[numel(N_phot),1]),repmat(sigmaR,[numel(N_phot),1])); % center distance for every burst --> use for linker width inclusion    
+            %%% for the microtime of the donor, roll linker width at every evaluation
+            lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
+            tauD0 = BurstData{file}.Corrections.DonorLifetime; % donor only lifetime
+            %%% for every photon of every state, assign efficiency based on:
+            %%% center distance R_burst(states)
+            %%% linker width
+            R_randomized = cell(numel(N_phot),1);
+            for i = 1:numel(N_phot)
+                for s = 1:n_states
+                    R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
+                end
+                E_randomized{model,i} = 1./(1+(R_randomized{i}./R0).^6);
+            end 
+            % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
+            E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized(model,:),'UniformOutput',false);
+            %%% roll photons based on randomized proximity ratio to only have donor photons
+            channel(model,:) = cellfun(@(x) binornd(1,x),E_randomized_PR,'UniformOutput',false);
+        end
+        if n_states_static == 3
+            amplitudes = amplitudes/1E3/2;
+        else
+            amplitudes = amplitudes/1E3;
+        end
+        amplitudes(isnan(amplitudes)) = 0;
+        amplitudes(isinf(amplitudes)) = 0;
+        cut = round(sum(amplitudes(:))*length(channel));
+        channel(1,1:cut) = channel(2,1:cut);
+        channel(2,:) = [];
+        E_randomized(1,1:cut) = E_randomized(2,1:cut);
+        E_randomized(2,:) = [];
         %%% discard acceptor photons
         E_randomized = cellfun(@(x,y) x(y==0),E_randomized,channel,'UniformOutput',false);
         %%% roll microtime based on E_randomized (use ideal FRET here!)
@@ -266,7 +297,7 @@ switch type
             mean_g = NaN(1,numel(bin_edges)-1);
             mean_s = NaN(1,numel(bin_edges)-1);
         end
-        for i = 1:numel(bin_edges)-1 
+        for i = 1:numel(bin_edges)-1
             %%% compute bin-wise intensity-averaged lifetime for donor
             if sum(bin == i) > threshold
                 if do_phasor % calculate average phasor
@@ -377,7 +408,7 @@ switch type
             %%% generate randomized average distance of each state for every
             %%% burst to account for conformational heterogeneity
             for b = 1:numel(mt_freq)
-                R_burst{b} = normrnd(R_states,sigmaR_states);
+                R_burst{b} = normrnd(R_states,sigmaR);
             end
             %%% for the microtime of the donor, roll linker width at every evaluation
             lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width

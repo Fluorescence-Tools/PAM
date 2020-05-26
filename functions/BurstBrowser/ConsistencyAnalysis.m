@@ -220,7 +220,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         %% Calculate sum squared residuals (dynamic)
         w_res_dyn = (sPerBin-sPerBin_sim);
         w_res_dyn(isnan(w_res_dyn)) = 0;
-        SSR_dyn_legend = ['Dynamic' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        SSR_dyn_legend = ['SIM data' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
         switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
             case 1
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -535,14 +535,31 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         H_real = H_real./max(H_real(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
         %% Simulation for PDA comparison
         Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
-        [E_sim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,rate_matrix,R_states,sigmaR_states,1);
+        if UserValues.BurstBrowser.Settings.BVA_ModelComparison
+            % simulate dynamic and static models separately
+            Progress(0.25,h.Progress_Axes,h.Progress_Text,'Simulating dynamic Model...');
+            [E_sim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates...
+                ,rate_matrix,R_states,sigmaR_states,1);
+            
+            Progress(0.5,h.Progress_Axes,h.Progress_Text,'Simulating static Model...');
+        else
+            % simulate dynamic and static species at in one model
+            Progress(0.25,h.Progress_Axes,h.Progress_Text,'Simulating all species...');
+            [E_sim,tauD_sim,mean_tauD_sim,~] = ...
+                kinetic_consistency_check_2models('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,...
+                UserValues.BurstBrowser.Settings.BVA_StaticStates,...
+                rate_matrix,R_states,sigmaR_states,...
+                rate_matrix_static,R_states_static,sigmaR_states_static);
+        end
+%         [E_sim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,rate_matrix,R_states,sigmaR_states,1);
+        
         [H_sim,x_sim,y_sim] = histcounts2(tauD_sim,E_sim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[-0.1,1.1]);
         H_sim = H_sim./max(H_sim(:));
         Progress(0.5,h.Progress_Axes,h.Progress_Text,'Calculating...');
         %% Calculate sum squared residuals (dynamic)
         w_res_dyn = (mean_tauD-mean_tauD_sim);
         w_res_dyn(isnan(w_res_dyn)) = 0;
-        SSR_dyn_legend = ['Dynamic' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        SSR_dyn_legend = ['SIM data' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
 %         maxXLim = [0 max([tauD;tauD_sim'])+0.01];
         switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
             case 1
@@ -779,7 +796,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                         plot(ax,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData./BurstData{file}.Corrections.DonorLifetime,BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','on');
                     end
                     
-                    lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_dyn_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
+                    lgd = legend(ax,['EXP Data'],SSR_dyn_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
                     lgd.FontSize = ffontsize*0.95;
                     face_alpha = .8;
                     plot_marignal_1D_hist(ax,tauD,E,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize,0)

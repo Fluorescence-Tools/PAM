@@ -160,7 +160,13 @@ switch type
             change_prob = cumsum(rate_matrix);
             change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
         end
-        dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
+        if dynamic
+            dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
+        else
+            for state = 1:n_states
+                dwell_mean(state) = max(dur)*1E6;
+            end
+        end
         for i = 1:n_states
                 rate_matrix(i,i) = -sum(rate_matrix(:,i));
         end
