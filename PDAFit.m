@@ -3468,11 +3468,11 @@ else
                     %%% Read out best chi2
                     chi2_0 = PDAMeta.global_chi2;
                     %%% define arameters
-                    params = [5]; %%% distances of the first two populations
+                    params = [2]; %%% distances of the first two populations
                     %%% get confidence intervals for parameters                    
                     ci = max(0.5,10*err(1,params));
                     
-                    range = -5:1:5;
+                    range = -3:1:3;
                     chi2 = zeros(numel(range),numel(params));
                     %%% read out fixed and fitpar
                     fixed0 = PDAMeta.Fixed;
