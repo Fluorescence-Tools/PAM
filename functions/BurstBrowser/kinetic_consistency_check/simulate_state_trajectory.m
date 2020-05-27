@@ -38,9 +38,11 @@ end
 % convert simTime to number of TimeSteps
 timesteps = ceil(simtime * frequency);
 
-if ~dynamic 
+if ~dynamic
     dynamic_rates = 1./dynamic_rates;
-    dynamic_rates(isinf(dynamic_rates)) = 0;
+    dynamic_rates = dynamic_rates*1E-3;
+    dynamic_rates(isinf(dynamic_rates)) = 1E6;
+    dynamic_rates(isnan(dynamic_rates)) = 0;
 end
 %%% convert to probability per step
 % Assuming k/f is close to zero, we can approximate:
