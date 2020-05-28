@@ -3615,8 +3615,8 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC,h.Menu.Estim
             ConfInt_MCMC{count} = [mcmc_mean conf_int_mcmc];
         end
         if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
-            conf_int_SPA = zeros(numel(fitpar),1);
-            conf_int_SPA(~fixed) = PDAMeta.ConfInt_SPA{i};
+            conf_int_SPA = zeros(numel(fitpar),2);
+            conf_int_SPA(params,:) = PDAMeta.ConfInt_SPA{i}';
             ConfInt_MCMC{count} = [fitpar' conf_int_SPA];
         end
         filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
