@@ -3014,12 +3014,12 @@ if ~do_global
                         %%% Read out best chi2
                         chi2_0 = PDAMeta.chi2(i);
                         %%% define arameters
-                        params = [5];%,5]; %%% distances of the first two populations
+                        params = [2,5]; %%% distances of the first two populations
                         %%% get confidence intervals for parameters
                         confi = zeros(size(fitpar)); confi(~fixed) = ci;
                         ci = max(confi(params),0.5);
                         
-                        range = -5:0.5:5;
+                        range = -5:1:5;
                         chi2 = zeros(numel(range),numel(params));
                         for p = 1:numel(params)
                             %%% fix parameter at value
@@ -3465,14 +3465,19 @@ else
                     %%% Vary one parameter while optimizing all other
                     %%% parameters at each step.
                     
+                    %%% !!! Preliminary implementation !!!
+                    %%% It is assumed that parameters are either global or
+                    %%% fixed!
+                    %%% !!!
+                    
                     %%% Read out best chi2
                     chi2_0 = PDAMeta.global_chi2;
                     %%% define arameters
-                    params = [2]; %%% distances of the first two populations
+                    params = [2,5]; %%% distances of the first two populations
                     %%% get confidence intervals for parameters                    
                     ci = max(0.5,10*err(1,params));
                     
-                    range = -3:1:3;
+                    range = -4:0.5:4;
                     chi2 = zeros(numel(range),numel(params));
                     %%% read out fixed and fitpar
                     fixed0 = PDAMeta.Fixed;
@@ -3511,6 +3516,10 @@ else
                     nu = sum(PDAMeta.hProxGlobal > 0)-numel(fitpar); % degrees of freedom
                     alpha = 0.95; % confidence level
                     ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
+                    
+                    PDAMeta.FitParams = fitparams0;
+                    PDAMeta.Fixed = fixed0;
+                    PDAMeta.Global = global0;
             end
             
             if any(obj == [h.Menu.EstimateErrorMCMC,h.Menu.EstimateErrorSupportPlaneAnalysis])
@@ -3534,7 +3543,9 @@ else
                         end
                         ci = ci_mc;
                     case h.Menu.EstimateErrorSupportPlaneAnalysis
-                        ci = ci_SPA;
+                        ci = zeros(1,numel(fitpar));
+                        ix = cumsum(PDAMeta.Global);
+                        ci(ix(params)) = 0.5*(ci_SPA(2,:)-ci_SPA(1,:));
                 end
                 %%% Sort ci back to fit parameters
                 err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -3615,9 +3626,9 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC,h.Menu.Estim
             ConfInt_MCMC{count} = [mcmc_mean conf_int_mcmc];
         end
         if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
-            conf_int_SPA = zeros(numel(fitpar),2);
-            conf_int_SPA(params,:) = PDAMeta.ConfInt_SPA{i}';
-            ConfInt_MCMC{count} = [fitpar' conf_int_SPA];
+            conf_int_SPA = zeros(numel(fitpar),1);
+            conf_int_SPA(~fixed,:) = PDAMeta.ConfInt_SPA{i}';
+            ConfInt_SPA{count} = [fitpar' conf_int_SPA];
         end
         filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
         filenames{end+1} = ['CI_' num2str(i)];
@@ -3627,6 +3638,9 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC,h.Menu.Estim
         ConfInt_Jac{i} = ConfInt_Jac{i}(1:lim,:);
         if obj == h.Menu.EstimateErrorMCMC
             ConfInt_MCMC{i} = ConfInt_MCMC{i}(1:lim,:);
+        end
+        if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
+            ConfInt_SPA{i} = ConfInt_SPA{i}(1:lim,:);
         end
     end
     filenames = matlab.lang.makeUniqueStrings(filenames);
