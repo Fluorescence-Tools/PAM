@@ -43,11 +43,11 @@ for i = 1:size(chi2,2)
     plot(param_fine(:,i),chi2_temp,'--','LineWidth',1.5,'Color',colors(i,:));
     legend_str{i} = sprintf('R%d = %.2f \\pm %.2f (%.2f, %.2f)',i,best_val(i),0.5*(ci(2,i)-ci(1,i)),ci(1,i),ci(2,i));
 end
-legend(l,legend_str);
 xlabel('Distance [A]');
 ylabel('\chi^2_{red.}');
 set(gca,'Box','on','LineWidth',1.5,'Tickdir','out','FontSize',16,'XGrid','on','YGrid','on');
 plot(get(gca,'XLim'),[chi2_max,chi2_max],'k--','LineWidth',1.5);
+legend(l,legend_str);
 
 %%% save figure as fig and png
 % take first filename
