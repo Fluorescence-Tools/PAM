@@ -1,4 +1,5 @@
 function ci = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha)
+global PDAData
 %%% calculates the confidence intervals for parameters based on the F-test
 %%% used in support plane analysis
 % chi2 - the chi2 values of the support plane analysis, as columns for every parameter tested
@@ -19,6 +20,7 @@ param_fine = zeros(res,size(chi2,2));
 chi2_fine = zeros(res,size(chi2,2));
 valid = false(res,size(chi2,2));
 ci = zeros(2,size(chi2,2));
+best_val = zeros(1,size(chi2,2));
 for i = 1:size(chi2,2) %%% loop over all parameters
     param_fine(:,i) = linspace(param_val(1,i),param_val(end,i),res);
     chi2_fine(:,i) = interp1(param_val(:,i),chi2(:,i),param_fine(:,i),'spline');
@@ -26,15 +28,71 @@ for i = 1:size(chi2,2) %%% loop over all parameters
     ci(1,i) = param_fine(find(valid(:,i),1,'first'),i);
     ci(2,i) = param_fine(find(valid(:,i),1,'last'),i);
     [best_chi2,best_idx] = min(chi2_fine(:,i));
-    best_val = param_fine(best_idx,i);
+    best_val(i) = param_fine(best_idx,i);
 end
 
 %%% visualize the result
+colors = lines(size(chi2,2));
+legend_str = {};
 figure; hold on;
 for i = 1:size(chi2,2)
-    scatter(param_val(:,i),chi2(:,i));
-    plot(param_fine(valid(:,i),i),chi2_fine(valid(:,i),i),'-');
-    plot(param_fine(~valid(:,i),i),chi2_fine(~valid(:,i),i),'--');
+    scatter(param_val(:,i),chi2(:,i),'filled','MarkerFaceColor',colors(i,:),'MarkerEdgeColor',[0,0,0]);
+    chi2_temp = chi2_fine(:,i); chi2_temp(~valid(:,i)) = NaN;
+    l(i) = plot(param_fine(:,i),chi2_temp,'-','LineWidth',1.5,'Color',colors(i,:));
+    chi2_temp = chi2_fine(:,i); chi2_temp(valid(:,i)) = NaN;
+    plot(param_fine(:,i),chi2_temp,'--','LineWidth',1.5,'Color',colors(i,:));
+    legend_str{i} = sprintf('R%d = %.2f \\pm %.2f (%.2f, %.2f)',i,best_val(i),0.5*(ci(2,i)-ci(1,i)),ci(1,i),ci(2,i));
 end
-plot([min(param_fine(:)),max(param_fine(:))],[chi2_max,chi2_max],'k-');
-title(sprintf('R = %.2f (%.2f, %.2f)',best_val,ci(1,1),ci(2,1)));
+legend(l,legend_str);
+xlabel('Distance [A]');
+ylabel('\chi^2_{red.}');
+set(gca,'Box','on','LineWidth',1.5,'Tickdir','out','FontSize',16,'XGrid','on','YGrid','on');
+plot(get(gca,'XLim'),[chi2_max,chi2_max],'k--','LineWidth',1.5);
+
+%%% save figure as fig and png
+% take first filename
+[~,fn,~] = fileparts(PDAData.FileName{1});
+export_fig([PDAData.PathName{1} filesep fn '.png'],'-r300');
+%export_fig([PDAData.PathName{1} filesep fn '.eps']);
+savefig([PDAData.PathName{1} filesep fn '.fig']);
+
+%%% save result as txt file
+fn_text = [PDAData.PathName{1} filesep fn '.txt'];
+fid = fopen(fn_text,'w');
+fprintf(fid,['Support Plane Analysis of file: ' fn '\n\n']);
+for i = 1:numel(legend_str)
+    fprintf(fid,strrep(legend_str{i},'\pm','+-'));
+    fprintf(fid,'\n');
+end
+fprintf(fid,'\n');
+fprintf(fid,'Confidence level:\t%.2f\n',alpha);
+fprintf(fid,'chi2r threshold:\t%.2f\n',chi2_max);
+fprintf(fid,'Best chi2r:\t%.2f\n',chi2_0);
+fprintf(fid,'\n');
+fprintf(fid,'Parameter Scan Results:\n');
+fprintf(fid,'R1\tchi2');
+for i = 2:numel(legend_str)
+    fprintf(fid,'\tR%d\tchi2',2);
+end
+fprintf(fid,'\n');
+mat = [param_val(:,1),chi2(:,1)];
+for i = 2:numel(legend_str)
+    mat = [mat,param_val(:,i),chi2(:,i)];
+end
+fclose(fid);
+dlmwrite(fn_text,mat,'-append','Delimiter','\t');
+fid = fopen(fn_text,'a');
+fprintf(fid,'\n');
+fprintf(fid,'Parameter Scan Results (interpolated):\n');
+fprintf(fid,'R1\tchi2\n');
+fprintf(fid,'\n');
+for i = 2:numel(legend_str)
+    fprintf(fid,'\tR%d\tchi2',2);
+end
+fprintf(fid,'\n');
+mat = [param_fine(:,1),chi2_fine(:,1)];
+for i = 2:numel(legend_str)
+    mat = [mat,param_fine(:,i),chi2_fine(:,i)];
+end
+fclose(fid);
+dlmwrite(fn_text,mat,'-append','Delimiter','\t');
