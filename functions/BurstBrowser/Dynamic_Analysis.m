@@ -100,7 +100,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         % STD per Bin
         BinEdges = linspace(0,1,UserValues.BurstBrowser.Settings.NumberOfBins_BVA+1);
         [N,~,bin] = histcounts(E,BinEdges);
-        BinCenters = BinEdges(1:end-1)+0.025;
+        BinCenters = BinEdges(1:end-1)+min(diff(BinEdges))/2;
         sPerBin = zeros(numel(BinEdges)-1,1);
         sampling = UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;
         PsdPerBin = zeros(numel(BinEdges)-1,sampling);
@@ -193,7 +193,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
-        plot(BinCenters,sPerBin,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
+        plot(BinCenters,sPerBin,'d','MarkerSize',12,'MarkerEdgeColor','none',...
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
             
         % plot of expected STD
@@ -203,7 +203,8 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-            % confint2 = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
+%             confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
             p2 = area(BinCenters,confint);
             p2.FaceColor = [0.25 0.25 0.25];
             p2.FaceAlpha = 0.25;

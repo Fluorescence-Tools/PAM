@@ -111,7 +111,12 @@ h.Mia_Load_Custom = uimenu(...
     'Label','...custom data format',...
     'Callback',{@Mia_Load,3},...
     'Tag','Load_Mia_Custom');
-
+%%% Load lifetime data format
+h.Mia_Load_LT = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...mean lifetime data',...
+    'Callback',{@Mia_Load,7},...
+    'Tag','Load_Mia_LT');
 
 %%% Menu to open MIAFit and Spectral
 h.Mia_Open = uimenu(...
@@ -908,6 +913,7 @@ h.Mia_Image.Settings.ROI_Frames = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.76, 0.25 0.06],...
     'String','1',...
+    'Callback',{@Update_Plots,1,1:2},...
     'Tooltipstring','Sets the frame range to use (applies to all analyses)');
 
 %%%Button to Import ROI from file
@@ -1414,6 +1420,18 @@ h.Mia_Image.Settings.Correction_Add_Frames = uicontrol(...
     'Callback',{@Mia_Correct,1},...
     'Visible','off',...
     'String',num2str(UserValues.MIA.Correct_Add_Values(2)));
+h.Mia_Image.Settings.Correction_Drift = uicontrol(...
+    'Parent', h.Mia_Image.Settings.Correction_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'Callback', {@Mia_Correct,1},...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.42, 0.7 0.06],...
+    'String','Drift correction',...
+    'TooltipString',['Linearly shifts each frame to' 10 'overlay it on the first one.' 10 'Operates via cross-correlation.']);
 %% Mia image orientation tab
 %%% Tab and panel for Mia image orientation settings UIs
 h.Mia_Image.Settings.Orientation_Tab= uitab(...
@@ -4329,7 +4347,118 @@ switch mode
         
     case 3 %%% Loads custom data formats
         MIA_CustomFileType([],[],2);
-              
+    case 7 %%% Load .phf file generated from phasor tab
+        % could be better just generated from PAM itself
+        [FileName,Path] = uigetfile({'*.phf'}, 'Choose a phasor file', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+        UserValues.File.MIAPath = Path;
+
+        LSUserValues(1);
+    
+        MIAData.Data = {};
+        MIAData.Type = mode;
+        MIAData.FileName = [];
+        MIAData.PCH = [];
+        %% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        MIAData.TICS.Data.MS = [];
+        MIAData.TICS.Data = [];
+        MIAData.TICS.Data.Int = [];
+        MIAData.STICS = [];
+        MIAData.STICS_SEM = [];
+        MIAData.RLICS = [];
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_ICS.Axes(i,1).Visible='off';
+            h.Mia_ICS.Axes(i,2).Visible='off';
+            h.Mia_ICS.Axes(i,3).Visible='off';
+            h.Mia_ICS.Axes(i,4).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+            h.Plots.Cor(i,4).Visible='off';
+            h.Plots.Cor(i,5).Visible='off';
+            h.Plots.Cor(i,6).Visible='off';
+            h.Plots.Cor(i,7).Visible='off';
+            h.Plots.TICS(i,1).Visible = 'off';
+            h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
+            h.Plots.TICSImage(i).Visible = 'off';
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
+        end
+        h.Mia_ICS.Frame_Slider.Min=0;
+        h.Mia_ICS.Frame_Slider.Max=0;
+        h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
+        h.Mia_ICS.Frame_Slider.Value=0;
+        h.Mia_STICS.Lag_Slider.Min=0;
+        h.Mia_STICS.Lag_Slider.Max=1;
+        h.Mia_STICS.Lag_Slider.SliderStep=[1 1];
+        h.Mia_STICS.Lag_Slider.Value=0;
+        %% Clears N&B data and plots
+        MIAData.NB=[];
+        h.Plots.NB(1).CData=zeros(1,1);
+        h.Plots.NB(2).CData=zeros(1,1);
+        h.Plots.NB(3).CData=zeros(1,1);
+        h.Plots.NB(4).YData=0;
+        h.Plots.NB(4).XData=0;
+        h.Plots.NB(5).CData=zeros(1,1);
+        %% Loads all frames for channel 1
+        
+        data=load(fullfile(Path, FileName),'-mat');
+        % hardcoded rescaling step to convert mean lifetime in TCSPC
+        % channels to nanoseconds
+        data.Mean_LT(isnan(data.Mean_LT)) = 0;
+        data.Mean_LT = (data.Mean_LT)/4096*16.67;
+        MIAData.Data{1,1} = single(data.Mean_LT);
+        delete data
+        
+        %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image.Settings.Channel_Link.Value = 0;
+        h.Mia_Image.Settings.Channel_Link.Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_FrameUse(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Visible = 'off';
+        h.Mia_Image.Axes(2,1).Visible = 'off';
+        h.Mia_Image.Axes(2,2).Visible = 'off';
+        h.Plots.Image(2,1).Visible = 'off';
+        h.Plots.Image(2,2).Visible = 'off';
+        h.Plots.ROI(2).Visible = 'off';
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
+
+        %%% Clears images
+        h.Plots.Image(2,1).CData=zeros(1,1,3);
+        h.Mia_Image.Axes(2,1).XLim=[0 1]+0.5;
+        h.Mia_Image.Axes(2,1).YLim=[0 1]+0.5;
+        h.Plots.Image(2,2).CData=zeros(1,1,3);
+        h.Mia_Image.Axes(2,2).XLim=[0 1]+0.5;
+        h.Mia_Image.Axes(2,2).YLim=[0 1]+0.5;
+        %%% Resets slider
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1 1];
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=1;
+        h.Mia_Image.Settings.Channel_Frame(2).String='1';
+        Progress(1);
+        %%% Updates plot
+        Mia_ROI([],[],1)
+        return
+        % convert data using S and offset parameter
+        Mia_Orientation([],[],5)
+
+        Progress(1);
+        %%% Updates plots
+        Mia_ROI([],[],1)
 end
 
 
@@ -5563,43 +5692,80 @@ h.Mia_Image.Settings.Correction_Add_Pixel_Text.Visible='off';
 h.Mia_Image.Settings.Correction_Add_Frames.Visible='off';
 h.Mia_Image.Settings.Correction_Add_Frames_Text.Visible='off';
 
-%%% Actually performs correction
+
+for i=1:2
+    if size(MIAData.Data,1)>=i
+        MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+    end
+end
+
+%% Correct the image series for linear drift
+% assumption is linear x/y drift, no rotation, no stretching/shrinking
+if h.Mia_Image.Settings.Correction_Drift.Value
+    for i=1:2
+        if size(MIAData.Data,1)>=i
+            Im1=double(MIAData.Data{i,2}(:,:,1));
+            x0=round(size(Im1,1)/2);
+            y0=round(size(Im1,2)/2);
+            f = 1:(size(MIAData.Data{i,2},3)-1);
+            x = zeros(size(f));
+            y = zeros(size(f));
+            for j = f
+                Im2=double(MIAData.Data{i,2}(:,:,j+1));
+                if i == 1 %later on, apply the same shift for channel two
+                    CrCorr=fftshift(real(ifft2(fft2(Im1).*conj(fft2(Im2)))))/(size(Im1,1)*size(Im1,2));
+                    [x(j),y(j)] = find(CrCorr == max(max(CrCorr)));
+                    x(j)=x(j)-x0-1;
+                    y(j)=y(j)-y0-1;
+                end
+                MIAData.Data{i,2}(:,:,j+1)=circshift(MIAData.Data{i,2}(:,:,j+1),x(j),1);
+                % still implement: make Nan what has been circshifted
+                MIAData.Data{i,2}(:,:,j+1)=circshift(MIAData.Data{i,2}(:,:,j+1),y(j),2);
+            end
+            if i == 1
+                figure
+                hold on
+                plot(f,x,'b')
+                plot(f,y,'r')
+                hold off
+            end
+        end
+    end    
+end
+%%
+
+%% Correct by subtracting or adding
 for i=1:2
     if size(MIAData.Data,1)>=i  
-        MIAData.Data{i,2}=[];
         %% Adds to image
         switch h.Mia_Image.Settings.Correction_Add.Value
             case 1 %%% Do nothing
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
-                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                Add=MIAData.Data{i,2};
                 if h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(Add(:));
+                MIAData.Data{i,2}=MIAData.Data{i,2} + nanmean(Add(:));
                 clear Add
             case 3 %%% Frame ROI mean
-                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                Add=MIAData.Data{i,2};
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                  +repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
+                MIAData.Data{i,2}=MIAData.Data{i,2} + repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
             case 4 %%% Pixel mean
-                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                Add=MIAData.Data{i,2};
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                 +(repmat(nanmean(Add,3),[1,1,size(MIAData.Data{i,1},3)]));
+                MIAData.Data{i,2}=MIAData.Data{i,2} + (repmat(nanmean(Add,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 5 %%% Moving average
                 h.Mia_Image.Settings.Correction_Add_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Pixel_Text.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Frames.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Frames_Text.Visible='on';                
                 Box=[str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
-                
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));                 
+                               
                 %%% Forces averaging sizes into bounds
                 if any(Box<1) || any(Box>size(MIAData.Data{i,2}))
                     Box(Box<1)=1;
@@ -5617,7 +5783,7 @@ for i=1:2
                 end
                 %%% Calculates Filter
                 Filter=ones(Box)/prod(Box);
-                MIAData.Data{i,2}=MIAData.Data{i,2}+imfilter(MIAData.Data{i,2},Filter,'replicate');
+                MIAData.Data{i,2}=MIAData.Data{i,2} + imfilter(MIAData.Data{i,2},Filter,'replicate');
         end
         %% Subtracts from image
         switch h.Mia_Image.Settings.Correction_Subtract.Value
@@ -5627,15 +5793,13 @@ for i=1:2
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(nanmean(nanmean(Sub)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                MIAData.Data{i,2}=MIAData.Data{i,2} - (repmat(nanmean(nanmean(Sub)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 3 %%% Pixel mean
                 Sub=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(nanmean(Sub,3),[1,1,size(MIAData.Data{i,1},3)]));
+                MIAData.Data{i,2}=MIAData.Data{i,2} - (repmat(nanmean(Sub,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 4 %%% Moving average
                 h.Mia_Image.Settings.Correction_Subtract_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Pixel_Text.Visible='on';
@@ -5662,7 +5826,7 @@ for i=1:2
                 end 
                 %%% Calculates Filter
                 Filter=ones(Box)/prod(Box);
-                MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
+                MIAData.Data{i,2}=MIAData.Data{i,2} - imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
         
         %%% Removes NaNs from file
@@ -5673,6 +5837,7 @@ for i=1:2
         
     end
 end
+
 
 Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
 

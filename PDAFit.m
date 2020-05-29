@@ -3014,12 +3014,12 @@ if ~do_global
                         %%% Read out best chi2
                         chi2_0 = PDAMeta.chi2(i);
                         %%% define arameters
-                        params = [5];%,5]; %%% distances of the first two populations
+                        params = [2,5]; %%% distances of the first two populations
                         %%% get confidence intervals for parameters
                         confi = zeros(size(fitpar)); confi(~fixed) = ci;
                         ci = max(confi(params),0.5);
                         
-                        range = -5:0.5:5;
+                        range = -5:1:5;
                         chi2 = zeros(numel(range),numel(params));
                         for p = 1:numel(params)
                             %%% fix parameter at value
@@ -3063,6 +3063,7 @@ if ~do_global
                                 PDAMeta.FitInProgress = 1;
                                 PDAHistogramFit_Single(fitpar,h);
                         end
+                     PDAMeta.ConfInt_SPA{i} = ci_SPA;
                 end
         end
         %Calculate chi^2
@@ -3462,14 +3463,19 @@ else
                     %%% Vary one parameter while optimizing all other
                     %%% parameters at each step.
                     
+                    %%% !!! Preliminary implementation !!!
+                    %%% It is assumed that parameters are either global or
+                    %%% fixed!
+                    %%% !!!
+                    
                     %%% Read out best chi2
                     chi2_0 = PDAMeta.global_chi2;
                     %%% define arameters
-                    params = [5]; %%% distances of the first two populations
+                    params = [2,5]; %%% distances of the first two populations
                     %%% get confidence intervals for parameters                    
                     ci = max(0.5,10*err(1,params));
                     
-                    range = -5:1:5;
+                    range = -4:0.5:4;
                     chi2 = zeros(numel(range),numel(params));
                     %%% read out fixed and fitpar
                     fixed0 = PDAMeta.Fixed;
@@ -3508,40 +3514,56 @@ else
                     nu = sum(PDAMeta.hProxGlobal > 0)-numel(fitpar); % degrees of freedom
                     alpha = 0.95; % confidence level
                     ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
-
+                    
+                    PDAMeta.FitParams = fitparams0;
+                    PDAMeta.Fixed = fixed0;
+                    PDAMeta.Global = global0;
             end
             
-            if obj == h.Menu.EstimateErrorMCMC
-                %%% Sort MCMC_mean value back to fit parameters
-                MCMC_mean(:,PDAMeta.Global)=repmat(m_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
-                m_mc(1:sum(PDAMeta.Global))=[];
+            if any(obj == [h.Menu.EstimateErrorMCMC,h.Menu.EstimateErrorSupportPlaneAnalysis])
+                switch obj
+                    case h.Menu.EstimateErrorMCMC
+                        %%% Sort MCMC_mean value back to fit parameters
+                        MCMC_mean(:,PDAMeta.Global)=repmat(m_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
+                        m_mc(1:sum(PDAMeta.Global))=[];
+                        if UserValues.PDA.HalfGlobal
+                            for i = 1:(PDAMeta.Blocks-1)
+                                MCMC_mean(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(m_mc(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
+                                m_mc(1:sum(PDAMeta.SampleGlobal))=[];
+                            end
+                        end
+                        count = 1;
+                        for i=find(PDAMeta.Active)'
+                            MCMC_mean(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = m_mc(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+                            m_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+                            PDAMeta.MCMC_mean{count} = MCMC_mean(count,~PDAMeta.Fixed(i,:));
+                            count = count + 1;
+                        end
+                        ci = ci_mc;
+                    case h.Menu.EstimateErrorSupportPlaneAnalysis
+                        ci = zeros(1,numel(fitpar));
+                        ix = cumsum(PDAMeta.Global);
+                        ci(ix(params)) = 0.5*(ci_SPA(2,:)-ci_SPA(1,:));
+                end
+                %%% Sort ci back to fit parameters
+                err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
+                ci(1:sum(PDAMeta.Global))=[];
                 if UserValues.PDA.HalfGlobal
                     for i = 1:(PDAMeta.Blocks-1)
-                        MCMC_mean(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(m_mc(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
-                        m_mc(1:sum(PDAMeta.SampleGlobal))=[];
+                        err(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(ci(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
+                        ci(1:sum(PDAMeta.SampleGlobal))=[];
                     end
                 end
                 count = 1;
                 for i=find(PDAMeta.Active)'
-                    MCMC_mean(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = m_mc(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-                    m_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
-                    PDAMeta.MCMC_mean{count} = MCMC_mean(count,~PDAMeta.Fixed(i,:));
-                    count = count + 1;
-                end
-                %%% Sort ci_mc back to fit parameters
-                err_mc(:,PDAMeta.Global)=repmat(ci_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
-                ci_mc(1:sum(PDAMeta.Global))=[];
-                if UserValues.PDA.HalfGlobal
-                    for i = 1:(PDAMeta.Blocks-1)
-                        err_mc(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(ci_mc(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
-                        ci_mc(1:sum(PDAMeta.SampleGlobal))=[];
+                    err(count, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+                    ci(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+                    switch obj
+                        case h.Menu.EstimateErrorMCMC
+                            PDAMeta.ConfInt_MCMC{count} = err(count,~PDAMeta.Fixed(i,:));
+                        case h.Menu.EstimateErrorSupportPlaneAnalysis
+                            PDAMeta.ConfInt_SPA{count} = err(count,~PDAMeta.Fixed(i,:));
                     end
-                end
-                count = 1;
-                for i=find(PDAMeta.Active)'
-                    err_mc(count, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci_mc(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-                    ci_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
-                    PDAMeta.ConfInt_MCMC{count} = err_mc(count,~PDAMeta.Fixed(i,:));
                     count = count + 1;
                 end
             end
@@ -3549,7 +3571,7 @@ else
     end
 end
 % make confidence intervals available in base workspace
-if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
+if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC,h.Menu.EstimateErrorSupportPlaneAnalysis])
     %%% initialize names cell array
     if ~h.SettingsTab.DynamicModel.Value
         names = {'A1';'R1';'sigma1';'A2';'R2';'sigma2';'A3';'R3';'sigma3';...
@@ -3601,6 +3623,11 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
             mcmc_mean(~fixed) = PDAMeta.MCMC_mean{i};
             ConfInt_MCMC{count} = [mcmc_mean conf_int_mcmc];
         end
+        if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
+            conf_int_SPA = zeros(numel(fitpar),1);
+            conf_int_SPA(~fixed,:) = PDAMeta.ConfInt_SPA{i}';
+            ConfInt_SPA{count} = [fitpar' conf_int_SPA];
+        end
         filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
         filenames{end+1} = ['CI_' num2str(i)];
     end
@@ -3609,6 +3636,9 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         ConfInt_Jac{i} = ConfInt_Jac{i}(1:lim,:);
         if obj == h.Menu.EstimateErrorMCMC
             ConfInt_MCMC{i} = ConfInt_MCMC{i}(1:lim,:);
+        end
+        if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
+            ConfInt_SPA{i} = ConfInt_SPA{i}(1:lim,:);
         end
     end
     filenames = matlab.lang.makeUniqueStrings(filenames);
@@ -3623,6 +3653,11 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
         tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names(1:lim),'VariableNames',filenames);
         assignin('base','tab_mcmc',tab_mcmc);
         assignin('base','samples_mcmc',samples); % the mcmc samples
+    end
+    if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
+        assignin('base','ConfInt_SPA',ConfInt_SPA);
+        tab_SPA = cell2table(num2cell(horzcat(ConfInt_SPA{:})),'RowNames',names(1:lim),'VariableNames',filenames);
+        assignin('base','tab_SPA',tab_SPA);
     end
 end
 
