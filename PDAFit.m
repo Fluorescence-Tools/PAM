@@ -3034,7 +3034,7 @@ if ~do_global
                                 PDAMeta.FitParams(i,:) = fitpar_p;
                                 LB_p = LB; LB_p(params(p)) = fitpar_p(params(p));
                                 UB_p = UB; UB_p(params(p)) = fitpar_p(params(p));
-                                fitpar_p = optimize_all_methods_SPA(h,fitfun,fitpar_p,LB_p,UB_p,fixed_p,A_p,b_p);
+                                fitpar_temp = optimize_all_methods_SPA(h,fitfun,fitpar_p,LB_p,UB_p,fixed_p,A_p,b_p);
                                 chi2(r,p) = PDAMeta.chi2(i);
                                 Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Performing SPA');
                                 Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Performing SPA');
@@ -3475,7 +3475,7 @@ else
                     %%% get confidence intervals for parameters                    
                     ci = max(0.5,10*err(1,params));
                     
-                    range = -4:0.5:4;
+                    range = -30:3:30;
                     chi2 = zeros(numel(range),numel(params));
                     %%% read out fixed and fitpar
                     fixed0 = PDAMeta.Fixed;
@@ -3484,7 +3484,7 @@ else
                     for p = 1:numel(params)
                         %%% fix parameter at value
                         fixed_p = fixed0; fixed_p(:,params(p)) = 1;
-                        global_p = global0; global_p(:,params(p)) = false;
+                        global_p = global0; global_p(1,params(p)) = false;
                         PDAMeta.Fixed = fixed_p;
                         PDAMeta.Global = global_p;
                         %%% re-read fitparameters after fixing
@@ -3502,7 +3502,7 @@ else
                             fitparams_p = fitparams0;
                             fitparams_p(:,params(p)) = fitparams0(:,params(p))+ci(p)*range(r);
                             PDAMeta.FitParams = fitparams_p;
-                            fitpar_p = optimize_all_methods_SPA_global(h,fitfun,fitpar_p,LB_p,UB_p);
+                            fitpar_temp = optimize_all_methods_SPA_global(h,fitfun,fitpar_p,LB_p,UB_p);
                             chi2(r,p) = PDAMeta.global_chi2;
                             Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Performing SPA');
                             Progress(((p-1)*numel(range)+r)/(numel(params)*numel(range)), h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Performing SPA');

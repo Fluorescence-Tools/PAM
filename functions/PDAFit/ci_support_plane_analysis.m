@@ -35,12 +35,12 @@ end
 colors = lines(size(chi2,2));
 legend_str = {};
 figure; hold on;
-for i = 1:size(chi2,2)
-    scatter(param_val(:,i),chi2(:,i),'filled','MarkerFaceColor',colors(i,:),'MarkerEdgeColor',[0,0,0]);
+for i = 1:size(chi2,2)    
     chi2_temp = chi2_fine(:,i); chi2_temp(~valid(:,i)) = NaN;
     l(i) = plot(param_fine(:,i),chi2_temp,'-','LineWidth',1.5,'Color',colors(i,:));
     chi2_temp = chi2_fine(:,i); chi2_temp(valid(:,i)) = NaN;
     plot(param_fine(:,i),chi2_temp,'--','LineWidth',1.5,'Color',colors(i,:));
+    scatter(param_val(:,i),chi2(:,i),'filled','MarkerFaceColor',colors(i,:),'MarkerEdgeColor',[0,0,0]);
     legend_str{i} = sprintf('R%d = %.2f \\pm %.2f (%.2f, %.2f)',i,best_val(i),0.5*(ci(2,i)-ci(1,i)),ci(1,i),ci(2,i));
 end
 xlabel('Distance [A]');
