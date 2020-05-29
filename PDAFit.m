@@ -3162,10 +3162,8 @@ else
                     PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                     %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
                     %PDAMeta.SampleGlobal(14) = true; %half globally link R5
-                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                     %PDAMeta.SampleGlobal(15) = true; %half globally link sigma5
-                    %PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
+                    PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
                 case 2
                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
