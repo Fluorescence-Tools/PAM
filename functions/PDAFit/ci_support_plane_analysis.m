@@ -72,7 +72,7 @@ fprintf(fid,'\n');
 fprintf(fid,'Parameter Scan Results:\n');
 fprintf(fid,'R1\tchi2');
 for i = 2:numel(legend_str)
-    fprintf(fid,'\tR%d\tchi2',2);
+    fprintf(fid,'\tR%d\tchi2',i);
 end
 fprintf(fid,'\n');
 mat = [param_val(:,1),chi2(:,1)];
@@ -84,10 +84,9 @@ dlmwrite(fn_text,mat,'-append','Delimiter','\t');
 fid = fopen(fn_text,'a');
 fprintf(fid,'\n');
 fprintf(fid,'Parameter Scan Results (interpolated):\n');
-fprintf(fid,'R1\tchi2\n');
-fprintf(fid,'\n');
+fprintf(fid,'R1\tchi2');
 for i = 2:numel(legend_str)
-    fprintf(fid,'\tR%d\tchi2',2);
+    fprintf(fid,'\tR%d\tchi2',i);
 end
 fprintf(fid,'\n');
 mat = [param_fine(:,1),chi2_fine(:,1)];

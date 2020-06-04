@@ -3473,9 +3473,9 @@ else
                     %%% define arameters
                     params = [2,5]; %%% distances of the first two populations
                     %%% get confidence intervals for parameters                    
-                    ci = max(0.5,10*err(1,params));
+                    ci = max(min(0.5,10*err(1,params)),0.25);
                     
-                    range = -30:3:30;
+                    range = (-10:1:10);
                     chi2 = zeros(numel(range),numel(params));
                     %%% read out fixed and fitpar
                     fixed0 = PDAMeta.Fixed;
