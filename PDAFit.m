@@ -3158,8 +3158,8 @@ else
                     %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
                     PDAMeta.SampleGlobal(2) = true; %half globally link R1
                     PDAMeta.SampleGlobal(5) = true; %half globally link R2
-                    PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-                    PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
                     %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
                     %PDAMeta.SampleGlobal(14) = true; %half globally link R5
                     %PDAMeta.SampleGlobal(15) = true; %half globally link sigma5
@@ -4111,6 +4111,9 @@ if fitpar(end) > 0
     hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
     for k = 1:numel(hFit_Ind)
         hFit_Ind{k} = hFit_Ind{k}*(1-fitpar(end));
+    end
+    if h.SettingsTab.DynamicModel.Value
+        PDAMeta.hFit_onlyDyn{i} = (1-fitpar(end))*PDAMeta.hFit_onlyDyn{i};
     end
 end
 
