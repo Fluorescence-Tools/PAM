@@ -7139,16 +7139,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
         Intensity=flip(permute(Intensity,[2 1 3]),1);
         
-        
+        % capital G and S are the phasor coordinates of the TCSPC channels
         G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
         %% Actual Calculation
 
         %%% Actual calculation in C++
-        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
+        % lowercase g and s are the mean phasor coordinates of each pixel
+        % Mean_LT is the mean arrival time per pixel in TCSPC bins
+        [Mean_LT, g,s] = DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
         
         %%% Reshapes data to images
+        % g, s and Mean_LT are pixels x lines x frames
         g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
         s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
         Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
