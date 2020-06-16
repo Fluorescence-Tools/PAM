@@ -1940,7 +1940,10 @@ for i=1:size(FCSMeta.Plots,1)
                 B=FCSMeta.Data{i,2}(T);
                 if  Normalization_Method == 9
                     P = FCSMeta.Params(:,i);
-                    B = B - P(end);
+                    offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+                    if ~isempty(offset_idx)
+                        B = B - P(offset_idx);
+                    end
                 end
             case 8
                 
