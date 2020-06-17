@@ -3667,6 +3667,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                
+                h.PlotDynamicFRETLine.Visible = 'on';
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data      
@@ -3865,6 +3867,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(9) = FitResult{14};
                 UserValues.TauFit.FitParams{chan}(11) = FitResult{15};
                 UserValues.TauFit.IRFShift{chan} = FitResult{16};
+                
+                h.PlotDynamicFRETLine.Visible = 'on';
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1}),...
                     sprintf('red. Chi2 (DA): %.2f',chi2_DA),...
@@ -4632,6 +4636,20 @@ switch obj
                 % store FitResult TauFitData also for use in export
                 TauFitData.FitResult = [Fit_par; Fit_per];
             else
+                % change colors
+                h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+                h.Plots.DecayResult.Color = [0 0 0];
+                h.Plots.Residuals.Color = [0 0 0];
+                h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+                % hide plots
+                h.Plots.IRFResult_Perp.Visible = 'off';
+                h.Plots.FitResult_Perp.Visible = 'off';
+                h.Plots.FitResult_Perp_ignore.Visible = 'off';
+                h.Plots.DecayResult_Perp.Visible = 'off';
+                h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+                h.Plots.Residuals_Perp.Visible = 'off';
+                h.Plots.Residuals_Perp_ignore.Visible = 'off';
+            
                 Decay_par = Decay;
                 Decay_per = Decay;
                 Fit_par = FitFun;
@@ -4797,6 +4815,8 @@ switch obj
                 legend_str = {'I_{DA}','I_{D0}'};
                 l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
                 l.Box = 'off';
+            else
+                legend(h.Result_Plot,'off');
             end
         else
             % hide plots
@@ -7320,10 +7340,48 @@ switch obj
         %%% get tau values and plot dynamic FRET line in Burst Browser
         BBgui = guidata(findobj('Tag','BurstBrowser'));
         file = BurstMeta.SelectedFile;
+        %%% get lifetimes
+        switch TauFitData.FitType
+            case 'Biexponential' % biexponential fit
+                tau1 = cell2mat(h.FitPar_Table.Data(1,1));
+                tau2 = cell2mat(h.FitPar_Table.Data(2,1));
+            case {'Two Distributions plus Donor only','Distribution Fit - Global Model'} % two distribution fit
+                R1 = cell2mat(h.FitPar_Table.Data(1,1));
+                s1 = cell2mat(h.FitPar_Table.Data(2,1));
+                R2 = cell2mat(h.FitPar_Table.Data(3,1));
+                s2 = cell2mat(h.FitPar_Table.Data(4,1));
+                R = 1:1:200;
+                pR1 = normpdf(R,R1,s1); pR1 = pR1./sum(pR1);
+                pR2 = normpdf(R,R2,s2); pR2 = pR2./sum(pR2);
+                switch TauFitData.FitType
+                    case 'Two Distributions plus Donor only'
+                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
+                        tauD0 = cell2mat(h.FitPar_Table.Data(10,1));   
+                        t = (1+(R0./R).^6).^(-1)*tauD0;
+                        tau1 = sum(pR1.*t.^2)./sum(pR1.*t);
+                        tau2 = sum(pR2.*t.^2)./sum(pR2.*t);
+                    case 'Distribution Fit - Global Model'
+                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
+                        tau0 = cell2mat(h.FitPar_Table.Data(10,1));
+                        tauD01 = cell2mat(h.FitPar_Table.Data(11,1));
+                        tauD02 = cell2mat(h.FitPar_Table.Data(12,1));
+                        x_tauD01 = cell2mat(h.FitPar_Table.Data(13,1));
+                        k_RET = (1./tau0).*((R0./R).^6); % k_RET as a function of R
+                        t1 = ((1./tauD01) + k_RET).^(-1);
+                        t2 = ((1./tauD02) + k_RET).^(-1);
+                        tau1 = (x_tauD01.*sum(pR1.*t1.^2)+(1-x_tauD01).*sum(pR1.*t2.^2))./...
+                            (x_tauD01.*sum(pR1.*t1)+(1-x_tauD01).*sum(pR1.*t2));
+                        tau2 = (x_tauD01.*sum(pR2.*t1.^2)+(1-x_tauD01).*sum(pR2.*t2.^2))./...
+                            (x_tauD01.*sum(pR2.*t1)+(1-x_tauD01).*sum(pR2.*t2));
+                end
+                
+            otherwise
+                return;
+        end
         %%% Query using edit box
-        %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
         data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
-            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(cell2mat(h.FitPar_Table.Data(1,1))),num2str(cell2mat(h.FitPar_Table.Data(2,1)))});
+            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),...
+            num2str(tau1),num2str(tau2)});
         data = cellfun(@str2double,data);
         if any(isnan(data)) || isempty(data)
             return;
