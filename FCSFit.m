@@ -2283,9 +2283,9 @@ switch mode
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
         end
         %% Sets axes parameters   
-        set(H.FCS.Children,'LineWidth',1.5);
+        %set(H.FCS.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
-            set(H.Residuals.Children,'LineWidth',1.5);
+            %set(H.Residuals.Children,'LineWidth',1.5);
             linkaxes([H.FCS,H.Residuals],'x');
         end
         H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
