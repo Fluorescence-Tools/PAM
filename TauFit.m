@@ -1792,7 +1792,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt','Tab-separated text file (*.txt)'},'Choose data file...',UserValues.File.TauFitPath);
+                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt;*.csv','Tab-separated text file (*.txt;*.csv)'},'Choose data file...',UserValues.File.TauFitPath);
                     if isempty(FileName)
                         return;
                     end
@@ -1814,6 +1814,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             TACChannelWidth = double(res{1})*1E-3;
                         case 2
                             data = dlmread(fullfile(PathName,FileName{1}))';
+                            if size(data,1) < size(data,2) % flip if needed
+                                data = data';
+                            end
                             time = data(:,1); time = time-time(1);
                             decay = data(:,2);
                             TAC = max(time)*1E-9;
