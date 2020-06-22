@@ -5839,7 +5839,7 @@ switch mode
                     % make the fix checkbox false
                     Data(end-2,3*(i-1)+2) = {false};
                     % make the ALL row the mean of all values for that parameter
-                    Data(end-2,3*(i-1)+1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1))))};
+                    Data(end-2,3*(i-1)+1) = {mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1)))};
                 else
                     % this parameter is not global for all files
                     % so make it not global for all files
