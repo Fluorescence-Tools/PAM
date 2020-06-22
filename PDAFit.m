@@ -3941,7 +3941,7 @@ else %%% dynamic model
                 DynRates(end+1,:) = ones(1,n_states);
                 b = zeros(n_states,1); b(end+1) = 1;
                 p_eq = DynRates\b;
-                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                FracT = Gillespie_inf_states_PDA(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
                 % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)         
                 PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
                 PofT = PofT./sum(PofT(:));
