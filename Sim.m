@@ -1806,6 +1806,7 @@ switch Obj
         SimData.Species(Sel).Name=h.Sim_Name.String;
         %%% update kinetic table
         h.Sim_Dyn_Table.ColumnName(Sel) = {h.Sim_Name.String};
+        h.Sim_Dyn_Table.RowName(Sel) = {h.Sim_Name.String};
     case h.Sim_Brightness %%% Changed brightness
         for i=1:4
             SimData.Species(Sel).Brightness(i)=str2double(h.Sim_Brightness{i}.String);
