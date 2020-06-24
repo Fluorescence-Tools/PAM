@@ -293,10 +293,10 @@ void Simulate_Diffusion(
             ///////////////////////////////////////////////////////////////
             for (k=0; k<4; k++)
             {
-                if (Active[k] && ExP[4*j+k]>0) /// Only calculates, if particle is not bleached and direct excitation enabled
+                if (Active[k] && ExP[16*state+4*j+k]>0) /// Only calculates, if particle is not bleached and direct excitation enabled
                 {
                     /// Calculate absolute excitation probability
-                    Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
+                    Ex = ExP[16*state+4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
                     + (Pos[1]-Box[1]/2+ShiftY[j]-y)*(Pos[1]-Box[1]/2+ShiftY[j]-y))/(Wr[j]*Wr[j]) ///Y
                     -2*(Pos[2]-Box[2]/2+ShiftZ[j])*(Pos[2]-Box[2]/2+ShiftZ[j])/(Wz[j]*Wz[j])); ///Z
                     
@@ -384,9 +384,9 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             // printf("Emitted after excitation: %i Microtime: %i, Pol: %i\n",j,Microtimes[NPhotons[0]],Polarization[NPhotons[0]]);
-                            if (BlP[m] > 0.0) /// If bleaching is enabled
+                            if (BlP[16*state+m] > 0.0) /// If bleaching is enabled
                             {
-                                binomial_distribution<__int64_t> binomial(1, BlP[4*k+m]);
+                                binomial_distribution<__int64_t> binomial(1, BlP[16*state+4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle
                                 { Active[m] = false; }
                                 
@@ -396,7 +396,7 @@ void Simulate_Diffusion(
                                 ///////////////////////////////////////////
                                 /// Determines detection channel //////////
                                 ///////////////////////////////////////////
-                                for (p=0; p<4; p++) { CROSS[p] = Cross[4*m+p]; } /// Extracts crosstalk rates
+                                for (p=0; p<4; p++) { CROSS[p] = Cross[16*state+4*m+p]; } /// Extracts crosstalk rates
                                 for (p=1; p<4; p++) { CROSS[p] = CROSS[p] + CROSS[p-1]; } /// Extracts cummulative crosstalk rates
                                 
                                 if ((CROSS[3]-1) > 1E-5) /// Crosstalk is realistic
@@ -411,9 +411,9 @@ void Simulate_Diffusion(
                                 ///////////////////////////////////////////
                                 /// Determines, if photon was emitted/detected
                                 ///////////////////////////////////////////
-                                if (DetP[4*m+n] > 1E-5)
+                                if (DetP[16*state+4*m+n] > 1E-5)
                                 {
-                                    binomial_distribution<__int64_t> binomial(1, DetP[4*m+n]);
+                                    binomial_distribution<__int64_t> binomial(1, DetP[16*state+4*m+n]);
                                     if ( ((double) binomial(mt)) ) /// Detects particle
                                     {
                                         /// Adds photon
@@ -423,7 +423,7 @@ void Simulate_Diffusion(
                                         NPhotons[0]++;
                                     }
                                 }
-                                else if (DetP[4*m+n] >= 1)
+                                else if (DetP[16*state+4*m+n] >= 1)
                                 {
                                     /// Adds photon
                                     Macrotimes[NPhotons[0]] = (double) i;

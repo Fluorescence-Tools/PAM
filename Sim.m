@@ -2766,6 +2766,16 @@ if advanced
         p = [p,pTrans(i,:)];
     end
     
+    %%% read out and linearize ExP, DetP, Cross and BlP
+    ExP_lin = []; DetP_lin = [];
+    Cross_lin = []; BlP_lin = [];
+    for i = 1:numel(ExP)
+        ExP_lin = [ExP_lin; ExP{i}(:)];
+        DetP_lin = [DetP_lin; DetP{i}(:)];
+        Cross_lin = [Cross_lin; Cross{i}(:)];
+        BlP_lin = [BlP_lin; BlP{i}(:)];
+    end
+        
     %% Start simulation
     
     %%% When looping over species, reassign Number of Particles and start
@@ -2800,11 +2810,7 @@ if advanced
             'Period',1,...
             'ExecutionMode','fixedDelay');
         start(Update)
-        %%% read out ExP, DetP, Cross and BlP
-        ExP_i = ExP{i};
-        DetP_i = DetP{i};
-        Cross_i = Cross{i};
-        BlP_i = BlP{i};
+       
         %%% set random number seed
         rng(seed);
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)            
@@ -2853,9 +2859,9 @@ if advanced
                     D*sqrt(DiffStep),Pos,... Particle parameters
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
-                    ExP_i,DetP_i,BlP_i,... %%% Probability parameters (excitation, Detection and Bleaching)
+                    ExP_lin,DetP_lin,BlP_lin,... %%% Probability parameters (excitation, Detection and Bleaching)
                     LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
-                    Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross_i,... %%% Relative FRET and Crosstalk rates
+                    Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross_lin,... %%% Relative FRET and Crosstalk rates
                     n_states, p, final_state_temp(j), DynamicStep,...
                     uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
