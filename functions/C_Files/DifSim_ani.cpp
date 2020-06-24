@@ -383,7 +383,7 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             
-                            if (BlP[16*state+m] > 0.0) /// If bleaching is enabled
+                            if (BlP[16*state+4*k+m] > 0.0) /// If bleaching is enabled
                             {
                                 binomial_distribution<__int64> binomial(1, BlP[16*state+4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle

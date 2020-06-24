@@ -384,7 +384,8 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             // printf("Emitted after excitation: %i Microtime: %i, Pol: %i\n",j,Microtimes[NPhotons[0]],Polarization[NPhotons[0]]);
-                            if (BlP[16*state+m] > 0.0) /// If bleaching is enabled
+                            //printf("Bleaching probability: %f (k=%i, m=%i)\n",BlP[16*state+4*k+m],k,m);
+                            if (BlP[16*state+4*k+m] > 0.0) /// If bleaching is enabled
                             {
                                 binomial_distribution<__int64_t> binomial(1, BlP[16*state+4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle
