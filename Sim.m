@@ -3572,7 +3572,14 @@ global SimData
 h = guidata(findobj('Tag','Sim'));
 
 [file,path] = uigetfile('*.json','Please choose the initialization file to load');
-SimData.General(end+1) = loadjson(fullfile(path,file));
+data = loadjson(fullfile(path,file));
+%%% fix species formatting
+% loaded json has cell array of structs
+% Sim.m expects an array of structs
+if iscell(data.Species)
+    data.Species = cell2mat(data.Species);
+end
+SimData.General(end+1) = data;
 h.Sim_File_List.String{end+1} = SimData.General(end).Name;
 File_List_Callback([],[],3);
 
