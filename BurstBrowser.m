@@ -4981,6 +4981,7 @@ end
                 end
             end
         end
+        h.DatabaseBB.FileHistory.listHandle.FontSize =   h.DatabaseBB.FileHistory.listHandle.FontSize*scale_factor;
     end
     %% add keypress function to all gui elements
     fields = fieldnames(h); %%% loop through h structure
