@@ -2089,7 +2089,7 @@ switch mode
         end
         
         % dynamic FRET
-        % h.Sim_Dyn_Table = ?
+        h.Sim_Dyn_Table.Data = num2cell(SimData.General(File).DynamicRate);
         
         Sim_Settings(h.Sim_Scan,[]);
         Species_List_Callback([],e,3);
