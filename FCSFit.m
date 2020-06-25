@@ -799,15 +799,15 @@ switch Type
                 Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
                 Text = Text{1};
                 Data.Header = Text{1};
-                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); 
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); 
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); 
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
                 k=1;
                 for j = Start+1:numel(Text)
-                    Values(k,:) = str2num(Text{j});  %#ok<ST2NM>
+                    Values(k,:) = str2num(Text{j}); 
                     k = k+1;
                 end
                 Data.Cor_Times = Values(:,1);
