@@ -3877,6 +3877,7 @@ end
         'ForegroundColor', Look.Fore,...
         'Position',[0.01 0.01 0.98 0.48]);
     h.DatabaseBB.FileHistory = FileHistory(h.DatabaseBB.FileHistoryContainer,'BurstBrowser',@(x) Load_Burst_Data_Callback([],[],x));
+    h.DatabaseBB.FileHistory.listHandle.FontSize = fontsize_normal;
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
