@@ -247,7 +247,13 @@ if ~advanced
     BurstMeta.Plots.Main_Plot(2).ZData = HHcontour;
     BurstMeta.Plots.Main_Plot(2).LevelList = max(HH(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     h.axes_general.CLimMode = 'auto';
-    h.axes_general.CLim(1) = 0;
+    switch UserValues.BurstBrowser.Display.PlotType
+        case 'Contour'
+            offset = UserValues.BurstBrowser.Display.ContourOffset/100;
+        case {'Image','Scatter','Hex'}
+            offset = UserValues.BurstBrowser.Display.ImageOffset/100;
+    end
+    h.axes_general.CLim(1) = max(HH(:))*offset;
     h.axes_general.CLim(2) = max(HH(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
     %%% Disable ZScale Axis
     h.axes_ZScale.Visible = 'off';
