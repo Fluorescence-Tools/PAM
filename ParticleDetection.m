@@ -1225,8 +1225,8 @@ if mode == 1
             Part_Array(f,1) = {repmat(Part_Array{f,1},To-From+1,1)}; %Area
             Part_Array(f,2) = {repmat(Part_Array{f,2},To-From+1,1)}; %Centroid
             Part_Array(f,3) = {repmat(Part_Array{f,3},To-From+1,1)}; %Eccentricity
-            %Part_Array(f,4) = {repmat(Part_Array{f,4},To-From+1,1)+repelem(((From:To)-1)'.*numel(Int_f),numel(Part_Array{f,4}))}; %PixelIdxList
-            Part_Array(f,4) = {repmat(Part_Array{f,4},To-From+1,1)}; %PixelIdxList
+            Part_Array(f,4) = {repmat(Part_Array{f,4},To-From+1,1)+repelem(((From:To)-1)'.*numel(Int_f),numel(Part_Array{f,4}),1)}; %PixelIdxList
+            %Part_Array(f,4) = {repmat(Part_Array{f,4},To-From+1,1)}; %PixelIdxList
             Part_Array(f,5) = {repmat(Part_Array{f,5},To-From+1,1)}; %PixelList
             Part_Array(f,6) = {ParticleData.Data.Intensity(Part_Array{f,4})}; %PixelValues
             Part_Array(f,7) = {mean(reshape(ParticleData.Data.Intensity(Part_Array{f,4}),[],To-From+1),1)'}; %MeanIntensity
