@@ -1,6 +1,6 @@
-function GlobalTauFit(obj,~)
-global UserValues FCSData FCSMeta PathToApp
-h.FCSFit=findobj('Tag','FCSFit');
+function GTauFit(obj,~)
+global UserValues GTauData GTauMeta PathToApp
+h.GTauFit=findobj('Tag','GTauFit');
 
 addpath(genpath(['.' filesep 'functions']));
 
@@ -12,20 +12,20 @@ addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
 method = '';
 %%% If called from command line, or from Launcher
-if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'FCSFit_Launcher'))
-    if ~isempty(findobj('Tag','FCSFit'))
-        CloseWindow(findobj('Tag','FCSFit'))
+if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'GTauFit_Launcher'))
+    if ~isempty(findobj('Tag','GTauFit'))
+        CloseWindow(findobj('Tag','GTauFit'))
     end
     %disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     %return;
-    FCSData.Who = 'External';
+    GTauData.Who = 'External';
     method = 'ensemble';
     obj = false;
 end
 
-if ~isempty(h.FCSFit)
+if ~isempty(h.GTauFit)
     % Close TauFit cause it might be called from somewhere else than before
-    CloseWindow(h.FCSFit);
+    CloseWindow(h.GTauFit);
 end
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
@@ -34,10 +34,7 @@ if ~isempty(findobj('Tag','BurstBrowser'))
     bh = guidata(findobj('Tag','BurstBrowser'));
 end
 
-
-
-
-if isempty(h.FCSFit) % Creates new figure, if none exists
+if isempty(h.GTauFit) % Creates new figure, if none exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -47,11 +44,11 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     [~,~]=LSUserValues(0);
     %%% To save typing
     Look=UserValues.Look;    
-    %%% Generates the FCSFit figure
-    h.FCSFit = figure(...
+    %%% Generates the GTauFit figure
+    h.GTauFit = figure(...
         'Units','normalized',...
-        'Tag','FCSFit',...
-        'Name','FCSFit',...
+        'Tag','GTauFit',...
+        'Name','Global Decay Analysis',...
         'NumberTitle','off',...
         'Menu','none',...
         'defaultUicontrolFontName',Look.Font,...
@@ -62,9 +59,9 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'OuterPosition',[0.01 0.1 0.98 0.9],...
         'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
-    %h.FCSFit.Visible='off';
+    %h.GTauFit.Visible='off';
     %%% Remove unneeded items from toolbar
-    toolbar = findall(h.FCSFit,'Type','uitoolbar');
+    toolbar = findall(h.GTauFit,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
     if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
         delete(toolbar_items([2:7 9 13:17]));
@@ -76,7 +73,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
-    h.FCSFit.Color=Look.Back;
+    h.GTauFit.Color=Look.Back;
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,19 +81,19 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
     %%% File menu with loading, saving and exporting functions
     h.File = uimenu(...
-        'Parent',h.FCSFit,...
+        'Parent',h.GTauFit,...
         'Tag','File',...
         'Label','File');
-    %%% Menu to load new Cor file
-    h.LoadCor = uimenu(h.File,...
-        'Tag','LoadCor',...
+    %%% Menu to load new Dec file
+    h.LoadDec = uimenu(h.File,...
+        'Tag','LoadDec',...
         'Label','Load New Files',...
-        'Callback',{@Load_Cor,1});
-    %%% Menu to add Cor files to existing
-    h.AddCor = uimenu(h.File,...
-        'Tag','AddCor',...
+        'Callback',{@Load_Dec,1});
+    %%% Menu to add Dec files to existing
+    h.AddDec = uimenu(h.File,...
+        'Tag','AddDec',...
         'Label','Add Files',...
-        'Callback',{@Load_Cor,2});
+        'Callback',{@Load_Dec,2});
     %%% Menu to load fit function
     h.LoadFit = uimenu(h.File,...
         'Tag','LoadFit',...
@@ -105,46 +102,46 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     %%% Menu to load fit function
     h.LoadSession = uimenu(h.File,...
         'Tag','LoadSession',...
-        'Label','Load FCSFit Session',...
+        'Label','Load GTauFit Session',...
         'Separator','on',...
         'Callback',@LoadSave_Session);
      h.SaveSession = uimenu(h.File,...
         'Tag','SaveSession',...
-        'Label','Save FCSFit Session',...
+        'Label','Save GTauFit Session',...
         'Callback',@LoadSave_Session);
-    %%% Menu to merge loaded Cor files
-    h.MergeCor = uimenu(h.File,...
-        'Tag','MergeCor',...
-        'Label','Merge Loaded Cor Files',...
+    %%% Menu to merge loaded Dec files
+    h.MergeDec = uimenu(h.File,...
+        'Tag','MergeDec',...
+        'Label','Merge Loaded Dec Files',...
         'Separator','on',...
-        'Callback',@Merge_Cor);
+        'Callback',@Merge_Dec);
     
     %%% File menu to stop fitting
     h.AbortFit = uimenu(...
-        'Parent',h.FCSFit,...
+        'Parent',h.GTauFit,...
         'Tag','AbortFit',...
         'Label',' Stop....'); 
     h.StopFit = uimenu(...
         'Parent',h.AbortFit,...
         'Tag','StopFit',...
         'Label','...Fit',...
-        'Callback',@Stop_FCSFit);   
+        'Callback',@Stop_GTauFit);   
     %%% File menu for fitting
     h.StartFit = uimenu(...
-        'Parent',h.FCSFit,...
+        'Parent',h.GTauFit,...
         'Tag','StartFit',...
         'Label','Start...');
     h.DoFit = uimenu(...
         'Parent',h.StartFit,...
         'Tag','Fit',...
         'Label','...Fit',...
-        'Callback',@Do_FCSFit);
+        'Callback',@Do_GTauFit);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     h.FitParams_Tab = uitabgroup(...
-        'Parent',h.FCSFit,...
+        'Parent',h.GTauFit,...
         'Tag','FitParams_Tab',...
         'Units','normalized',...
         'Position',[0.005 0.01 0.99 0.24]);
@@ -727,12 +724,12 @@ if exist('ph','var')
     if isobject(obj)
         switch obj
             case ph.Menu.OpenTauFit
-                FCSData.Who = 'GlobalTauFit';
+                GTauData.Who = 'GlobalTauFit';
                 % user called TauFit from Pam
                 % fit a lifetime from data in a PIE channel
                 method = 'ensemble';
             case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}
-                FCSData.Who = 'Burstwise';
+                GTauData.Who = 'Burstwise';
                 %%% User Clicks Burstwise Lifetime button in Pam, Burst 
                 %%% Analysis button in Pam with lifetime checkbox checked or 
                 %%% Burst Analysis on database tab in Pam, with lifetime
@@ -1048,7 +1045,7 @@ end
       'Callback',@Update_Plots,...
       'Position',[0.01 0.18 0.27 0.07]);
   
-    if strcmp(FCSData.Who,'External')
+    if strcmp(GTauData.Who,'External')
         %%% hide buttons that relate to loading data from PAM
         h.PIEChannelPar_Popupmenu.Value = 1;
         h.PIEChannelPer_Popupmenu.Value = 1;
@@ -1060,7 +1057,7 @@ end
     end
 if exist('bh','var')
     if bh.SendToTauFit.equals(obj) || obj == bh.Send_to_TauFit_Button
-        FCSData.Who = 'BurstBrowser';
+        GTauData.Who = 'BurstBrowser';
         global BurstMeta BurstData
         % User clicked Send Species to TauFit in BurstBrowser
         % fit a lifetime to the bulk data from selected bursts
@@ -1418,11 +1415,11 @@ h.Output_Text = uicontrol(...
         'Parent',h.FitParams_Tab,...
         'Tag','Fit_Function_Tab',...
         'Title','File History');
-    h.FileHistory = FileHistory(h.Fit_Function_Tab,'FCSFit',@(x) Load_Cor('FileHistory',[],1,x));
+    h.FileHistory = FileHistory(h.Fit_Function_Tab,'GTauFit',@(x) Load_Dec('FileHistory',[],1,x));
 %% %% Main Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for fit plots
     h.Fit_Plots_Panel = uibuttongroup(...
-        'Parent',h.FCSFit,...
+        'Parent',h.GTauFit,...
         'Tag','Fit_Plots_Panel',...
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
@@ -1632,39 +1629,39 @@ if ismac
 end
     
 %% Initializes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    FCSData=[];
-    FCSData.Data=[];
-    FCSData.FileName=[];
-    FCSMeta=[];
-    FCSMeta.Data=[];
-    FCSMeta.Params=[];
-    FCSMeta.Confidence_Intervals = cell(1,1);
-    FCSMeta.Plots=cell(0);
-    FCSMeta.Model=[];
-    FCSMeta.Fits=[];
-    FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
-    FCSMeta.FitInProgress = 0;    
-    FCSMeta.DataType = 'FCS averaged';
+    GTauData=[];
+    GTauData.Data=[];
+    GTauData.FileName=[];
+    GTauMeta=[];
+    GTauMeta.Data=[];
+    GTauMeta.Params=[];
+    GTauMeta.Confidence_Intervals = cell(1,1);
+    GTauMeta.Plots=cell(0);
+    GTauMeta.Model=[];
+    GTauMeta.Fits=[];
+    GTauMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
+    GTauMeta.FitInProgress = 0;    
+    GTauMeta.DataType = 'GTauFit averaged';
     
-    h.CurrentGui = 'FCS';
-    guidata(h.FCSFit,h); 
+    h.CurrentGui = 'GTauFit';
+    guidata(h.GTauFit,h); 
     Load_Fit([],[],0);
      
 else
-    figure(h.FCSFit); % Gives focus to Pam figure  
+    figure(h.GTauFit); % Gives focus to Pam figure  
 end
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to load .Dec files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Cor(obj,~,~,mode,filenames)
-global UserValues FCSData FCSMeta
-h = guidata(findobj('Tag','FCSFit'));
+function Load_Dec(obj,~,~,mode,filenames)
+global UserValues GTauData GTauMeta
+h = guidata(findobj('Tag','GTauFit'));
 
 if nargin > 3 %%% called from file history
-    %%% only implemented for loading of *.mcor files at the moment, remove
+    %%% only implemented for loading of *.dec files at the moment, remove
     %%% all other files
     Type = 1;
     %%% split filenames into FileName and pathname
@@ -1674,7 +1671,7 @@ if nargin > 3 %%% called from file history
     end
 else
     %%% there is an issue with selecting multiple files on MacOS Catalina,
-    %%% where only the first filter (.mcor) works, and no other file types 
+    %%% where only the first filter (.dec) works, and no other file types 
     %%% can be selected.
     %%% As a workaround, we avoid using the system file selection for now.
     %%% 11/2019    
@@ -1682,13 +1679,14 @@ else
         %%% Choose files to load
         [FileName,path,Type] = uigetfile({'*.dec','Pam decay file (*.dec)'},...
                                           'Choose GlobalTau data files',...
-                                          UserValues.File.FCSPath,... 
+                                          UserValues.File.GTauFitPath,... 
                                           'MultiSelect', 'on');
     else
         %%% use workaround
         %%% Choose files to load
         [FileName, path, Type] = uigetfile_with_preview({'*.dec','Pam decay file (*.dec)'},...
-                                          UserValues.File.FCSPath,... 
+                                          'Choose GlobalTau data files',...
+                                          UserValues.File.GTauFitPath,... 
                                           '',... % empty callback
                                           true); % Multiselect on
     end
@@ -1709,35 +1707,35 @@ if all(FileName{1}==0)
 end
 
 %%% Saves pathname to uservalues
-UserValues.File.FCSPath=PathName{1};
+UserValues.File.GTauFitPath=PathName{1};
 LSUserValues(1);
 %%% Deletes loaded data
 
-    FCSData=[];
-    FCSData.Data=[];
-    FCSData.FileName=[];
-    cellfun(@delete,FCSMeta.Plots);
-    FCSMeta.Data=[];
-    FCSMeta.Params=[];
-    FCSMeta.Plots=cell(0);
+    GTauData=[];
+    GTauData.Data=[];
+    GTauData.FileName=[];
+    cellfun(@delete,GTauMeta.Plots);
+    GTauMeta.Data=[];
+    GTauMeta.Params=[];
+    GTauMeta.Plots=cell(0);
     %h.Fit_Table.RowName(1:end-3)=[];
     h.Fit_Table.Data(1:end-3,:)=[];
     h.Style_Table.RowName(1:end-1,:)=[];
     h.Style_Table.Data(1:end-1,:)=[];
 
-                    FCSData.External = struct;
-                    FCSData.External.MI_Hist = {};
-                    FCSData.External.IRF = {};
-                    FCSData.External.Scat = {};
+                    GTauData.External = struct;
+                    GTauData.External.MI_Hist = {};
+                    GTauData.External.IRF = {};
+                    GTauData.External.Scat = {};
                     
-if obj == h.LoadCor
+if obj == h.LoadDec
         for j=1:numel(FileName)              
                  %%% read other data
                  decay_data = dlmread(fullfile(path,FileName{j}),'\t',6,0);
                  fid = fopen(fullfile(path,FileName{j}),'r');
-                 TAC = textscan(fid,'TAC range [ns]:\t%f\n'); FCSData.Data.TACRange = TAC{1}*1E-9;
-                 MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); FCSData.Data.MI_Bins = MI_Bins{1};
-                 TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); FCSData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+                 TAC = textscan(fid,'TAC range [ns]:\t%f\n'); GTauData.Data.TACRange = TAC{1}*1E-9;
+                 MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); GTauData.Data.MI_Bins = MI_Bins{1};
+                 TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); GTauData.TACChannelWidth = TACChannelWidth{1}*1E-3;
                  fid = fopen(fullfile(path,FileName{j}),'r');
                for j = 1:5
                    line = fgetl(fid);
@@ -1752,17 +1750,17 @@ if obj == h.LoadCor
               %%% sort data into TauFitData structure (MI,IRF,Scat)
               
                for i = 1:(size(decay_data,2)/3)
-                   FCSData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
-                   FCSData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
-                   FCSData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
+                   GTauData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
+                   GTauData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
+                   GTauData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
                end
                PIEchans = horzcat(PIEchans{:});
                     %%% update PIE channel selection with available PIE channels
                     h.PIEChannelPar_Popupmenu.String = PIEchans;
                     h.PIEChannelPer_Popupmenu.String = PIEchans;
                     %%% mark TauFit mode as external
-                    FCSData.Who = 'External';
-                    FCSData.FileName = fullfile(path,FileName{1});
+                    GTauData.Who = 'External';
+                    GTauData.FileName{end+1} = FileName{i}(1:end-4);%fullfile(path,FileName{1});
                     if numel(PIEchans) == 1
                         PIEChannel_Par = 1; PIEChannel_Per = 1;
                     else
@@ -1771,76 +1769,76 @@ if obj == h.LoadCor
                     h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
                     h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;  
                     
-            FCSData.FileName = FileName{1};
+            %GTauData.FileName = FileName{1};
         end
 end
         
 
         
 %%% set the channel variable
-    chan = 4; FCSData.chan = chan; 
+    chan = 4; GTauData.chan = chan; 
              
 %%% Microtime Histograms
-    FCSData.hMI_Par{chan} = FCSData.External.MI_Hist{PIEChannel_Par};
-    FCSData.hMI_Per{chan} = FCSData.External.MI_Hist{PIEChannel_Per};
+    GTauData.hMI_Par{chan} = GTauData.External.MI_Hist{PIEChannel_Par};
+    GTauData.hMI_Per{chan} = GTauData.External.MI_Hist{PIEChannel_Per};
 
 %%% Read out the Microtime Histograms of the IRF for the two channels
-    FCSData.hIRF_Par{chan} = FCSData.External.IRF{PIEChannel_Par}';
-    FCSData.hIRF_Per{chan} = FCSData.External.IRF{PIEChannel_Per}';
+    GTauData.hIRF_Par{chan} = GTauData.External.IRF{PIEChannel_Par}';
+    GTauData.hIRF_Per{chan} = GTauData.External.IRF{PIEChannel_Per}';
 %%% Normalize IRF for better Visibility
-    FCSData.hIRF_Par{chan} = (FCSData.hIRF_Par{chan}./max(FCSData.hIRF_Par{chan})).*max(FCSData.hMI_Par{chan});
-    FCSData.hIRF_Per{chan} = (FCSData.hIRF_Per{chan}./max(FCSData.hIRF_Per{chan})).*max(FCSData.hMI_Per{chan});
+    GTauData.hIRF_Par{chan} = (GTauData.hIRF_Par{chan}./max(GTauData.hIRF_Par{chan})).*max(GTauData.hMI_Par{chan});
+    GTauData.hIRF_Per{chan} = (GTauData.hIRF_Per{chan}./max(GTauData.hIRF_Per{chan})).*max(GTauData.hMI_Per{chan});
 %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    FCSData.hScat_Par{chan} = FCSData.External.Scat{PIEChannel_Par}';
-    FCSData.hScat_Per{chan} = FCSData.External.Scat{PIEChannel_Per}';
+    GTauData.hScat_Par{chan} = GTauData.External.Scat{PIEChannel_Par}';
+    GTauData.hScat_Per{chan} = GTauData.External.Scat{PIEChannel_Per}';
 %%% Normalize Scatter for better Visibility
-    if ~(sum(FCSData.hScat_Par{chan})==0)
-        FCSData.hScat_Par{chan} = (FCSData.hScat_Par{chan}./max(FCSData.hScat_Par{chan})).*max(FCSData.hMI_Par{chan});
+    if ~(sum(GTauData.hScat_Par{chan})==0)
+        GTauData.hScat_Par{chan} = (GTauData.hScat_Par{chan}./max(GTauData.hScat_Par{chan})).*max(GTauData.hMI_Par{chan});
     end
-    if ~(sum(FCSData.hScat_Per{chan})==0)
-        FCSData.hScat_Per{chan} = (FCSData.hScat_Per{chan}./max(FCSData.hScat_Per{chan})).*max(FCSData.hMI_Per{chan});
+    if ~(sum(GTauData.hScat_Per{chan})==0)
+        GTauData.hScat_Per{chan} = (GTauData.hScat_Per{chan}./max(GTauData.hScat_Per{chan})).*max(GTauData.hMI_Per{chan});
     end
 %%% Generate XData
-    FCSData.XData_Par{chan} = 1:numel(FCSData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
-    FCSData.XData_Per{chan} = 1:numel(FCSData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
+    GTauData.XData_Par{chan} = 1:numel(GTauData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
+    GTauData.XData_Per{chan} = 1:numel(GTauData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
     
 %%% Update PIEchannelSelection
     UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
     UserValues.TauFit.PIEChannelSelection{2} = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};        
 
 %%% disable reconvolution fitting if no IRF is defined
-if all(isnan(FCSData.hIRF_Par{chan})) || all(isnan(FCSData.hIRF_Per{chan}))
+if all(isnan(GTauData.hIRF_Par{chan})) || all(isnan(GTauData.hIRF_Per{chan}))
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
-elseif all(isnan(FCSData.hScat_Par{chan})) || all(isnan(FCSData.hScat_Per{chan}))
+elseif all(isnan(GTauData.hScat_Par{chan})) || all(isnan(GTauData.hScat_Per{chan}))
     disp('Scatter pattern undefined, using IRF instead.');
-    FCSData.hScat_Par{chan} = FCSData.hIRF_Par{chan};
-    FCSData.hScat_Per{chan} = FCSData.hIRF_Per{chan};
+    GTauData.hScat_Par{chan} = GTauData.hIRF_Par{chan};
+    GTauData.hScat_Per{chan} = GTauData.hIRF_Per{chan};
 else
     h.Fit_Button.Enable = 'on';
 end
 
 %%% fix wrong length of IRF or Scatter pattern
-len = numel(FCSData.hMI_Par{chan});
-if numel(FCSData.hIRF_Par{chan}) < len
-    FCSData.hIRF_Par{chan} = [FCSData.hIRF_Par{chan},zeros(1,len-numel(FCSData.hIRF_Par{chan}))];
-elseif numel(FCSData.hIRF_Par{chan}) > len
-    FCSData.hIRF_Par{chan} = FCSData.hIRF_Par{chan}(1:len);
+len = numel(GTauData.hMI_Par{chan});
+if numel(GTauData.hIRF_Par{chan}) < len
+    GTauData.hIRF_Par{chan} = [GTauData.hIRF_Par{chan},zeros(1,len-numel(GTauData.hIRF_Par{chan}))];
+elseif numel(GTauData.hIRF_Par{chan}) > len
+    GTauData.hIRF_Par{chan} = GTauData.hIRF_Par{chan}(1:len);
 end
-if numel(FCSData.hIRF_Per{chan}) < len
-    FCSData.hIRF_Per{chan} = [FCSData.hIRF_Per{chan},zeros(1,len-numel(FCSData.hIRF_Per{chan}))];
-elseif numel(FCSData.hIRF_Per{chan}) > len
-    FCSData.hIRF_Per{chan} = FCSData.hIRF_Per{chan}(1:len);
+if numel(GTauData.hIRF_Per{chan}) < len
+    GTauData.hIRF_Per{chan} = [GTauData.hIRF_Per{chan},zeros(1,len-numel(GTauData.hIRF_Per{chan}))];
+elseif numel(GTauData.hIRF_Per{chan}) > len
+    GTauData.hIRF_Per{chan} = GTauData.hIRF_Per{chan}(1:len);
 end
-if numel(FCSData.hScat_Par{chan}) < len
-    FCSData.hScat_Par{chan} = [FCSData.hScat_Par{chan},zeros(1,len-numel(FCSData.hScat_Par{chan}))];
-elseif numel(FCSData.hScat_Par{chan}) > len
-    FCSData.hScat_Par{chan} = FCSData.hScat_Par{chan}(1:len);
+if numel(GTauData.hScat_Par{chan}) < len
+    GTauData.hScat_Par{chan} = [GTauData.hScat_Par{chan},zeros(1,len-numel(GTauData.hScat_Par{chan}))];
+elseif numel(GTauData.hScat_Par{chan}) > len
+    GTauData.hScat_Par{chan} = GTauData.hScat_Par{chan}(1:len);
 end
-if numel(FCSData.hScat_Per{chan}) < len
-    FCSData.hScat_Per{chan} = [FCSData.hScat_Per{chan},zeros(1,len-numel(FCSData.hScat_Per{chan}))];
-elseif numel(FCSData.hScat_Per{chan}) > len
-    FCSData.hScat_Per{chan} = FCSData.hScat_Per{chan}(1:len);
+if numel(GTauData.hScat_Per{chan}) < len
+    GTauData.hScat_Per{chan} = [GTauData.hScat_Per{chan},zeros(1,len-numel(GTauData.hScat_Per{chan}))];
+elseif numel(GTauData.hScat_Per{chan}) > len
+    GTauData.hScat_Per{chan} = GTauData.hScat_Per{chan}(1:len);
 end
 
 
@@ -1851,11 +1849,11 @@ Update_Table([],[],1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function to save merged .cor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to save merged .Dec file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Merge_Cor(~,~)
-global UserValues FCSData FCSMeta
-h = guidata(findobj('Tag','FCSFit'));
+function Merge_Dec(~,~)
+global UserValues GTauData GTauMeta
+h = guidata(findobj('Tag','GTauFit'));
 
 %%% Merge only the active files
 active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
@@ -1863,46 +1861,46 @@ active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
 len = zeros(1,numel(active));
 k = 1;
 for i = active'
-    len(k) = numel(FCSData.Data{i}.Cor_Times);
+    len(k) = numel(GTauData.Data{i}.Dec_Times);
     k = k+1;
 end
 minlen = min(len);
 minlen_ix = find(len == min(len));
 
 Valid = [];
-Cor_Array = [];
+Dec_Array = [];
 Header = cell(0);
 Counts = [0,0];
-switch FCSMeta.DataType
-    case 'FCS averaged'
+switch GTauMeta.DataType
+    case 'GTauFit averaged'
         % multiple averaged file were loaded
-        Cor_Times = FCSData.Data{active(minlen_ix(1))}.Cor_Times; % Take Cor_Times from first file, should be same for all.
+        Dec_Times = GTauData.Data{active(minlen_ix(1))}.Dec_Times; % Take Dec_Times from first file, should be same for all.
         for i = active'
-            Valid = [Valid, FCSData.Data{i}.Valid];
-            Cor_Array = [Cor_Array, FCSData.Data{i}.Cor_Array(1:minlen,:)];
-            Header{end+1} = FCSData.Data{i}.Header;
-            Counts = Counts + FCSData.Data{i}.Counts;
+            Valid = [Valid, GTauData.Data{i}.Valid];
+            Dec_Array = [Dec_Array, GTauData.Data{i}.Dec_Array(1:minlen,:)];
+            Header{end+1} = GTauData.Data{i}.Header;
+            Counts = Counts + GTauData.Data{i}.Counts;
         end
-    case 'FCS individual'
+    case 'GTauFit individual'
         % individual curves from 1 file were loaded
-        Cor_Times = FCSMeta.Data{active(minlen_ix(1)),1}; % Take Cor_Times from first file, should be same for all.
+        Dec_Times = GTauMeta.Data{active(minlen_ix(1)),1}; % Take Dec_Times from first file, should be same for all.
         for i = active'
             Valid = [Valid, 1];
-            Cor_Array = [Cor_Array, FCSMeta.Data{i,2}(1:minlen,:)];
-            Header{end+1} = FCSData.Data{i}.Header;
-            Counts = Counts + FCSData.Data{i}.Counts;
+            Dec_Array = [Dec_Array, GTauMeta.Data{i,2}(1:minlen,:)];
+            Header{end+1} = GTauData.Data{i}.Header;
+            Counts = Counts + GTauData.Data{i}.Counts;
         end
 end
 Counts = Counts./numel(active);
 
 %%% Recalculate Average and SEM
-Cor_Average=mean(Cor_Array,2);
+Dec_Average=mean(Dec_Array,2);
 %%% Averages files before saving to reduce errorbars
-Amplitude=sum(Cor_Array,1);
-Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+Amplitude=sum(Dec_Array,1);
+Dec_Norm=Dec_Array./repmat(Amplitude,[size(Dec_Array,1),1])*mean(Amplitude);
+Dec_SEM=std(Dec_Norm,0,2)/sqrt(size(Dec_Array,2));
 %%% Pick FileName
-[FileName,PathName] = uiputfile({'*.mcor'},'Choose a filename for the merged file',fullfile(UserValues.File.FCSPath,FCSData.FileName{active(1)}));
+[FileName,PathName] = uiputfile({'*.dec'},'Choose a filename for the merged file',fullfile(UserValues.File.GTauFitPath,GTauData.FileName{active(1)}));
 if FileName == 0
     m = msgbox('No valid filepath specified... Canceling');
     pause(1);
@@ -1911,39 +1909,39 @@ if FileName == 0
 end
 Current_FileName = fullfile(PathName,FileName);
 %%% Save
-save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
+save(Current_FileName,'Header','Counts','Valid','Dec_Times','Dec_Average','Dec_SEM','Dec_Array');  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
-global FCSMeta UserValues PathToApp
-h = guidata(findobj('Tag','FCSFit'));
+global GTauMeta UserValues PathToApp
+h = guidata(findobj('Tag','GTauFit'));
 FileName=[];
 FilterIndex = 1;
 if mode
     %% Select a new model to load
     [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [PathToApp filesep 'Models']);
     FileName=fullfile(PathName,FileName);
-elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Standard,'file') 
+elseif isempty(UserValues.File.GTauFit_Standard) || ~exist(UserValues.File.GTauFit_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
     Models=dir([PathToApp filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-3:end),'.txt') 
            FileName=[PathToApp filesep 'Models' filesep Models(1).name];
-           UserValues.File.FCS_Standard=FileName;
+           UserValues.File.GTauFit_Standard=FileName;
        else
            Models(1)=[];
        end
     end
 else
     %% Opens last model used before closing program
-    FileName=UserValues.File.FCS_Standard;
+    FileName=UserValues.File.GTauFit_Standard;
 end
 
 if ~isempty(FileName) && ~(FilterIndex == 0)
-    UserValues.File.FCS_Standard=FileName;
+    UserValues.File.GTauFit_Standard=FileName;
     LSUserValues(1);
     
     %%% change encoding on mac
@@ -1970,49 +1968,49 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     end
     %%% Defines the number of parameters
     NParams=B_Start-Param_Start-1;
-    FCSMeta.Model=[];
-    FCSMeta.Model.Name=FileName;
-    FCSMeta.Model.Description = description;
-    FCSMeta.Model.Brightness=Text{B_Start+1};
+    GTauMeta.Model=[];
+    GTauMeta.Model.Name=FileName;
+    GTauMeta.Model.Description = description;
+    GTauMeta.Model.Brightness=Text{B_Start+1};
     %%% Concaternates the function string
-    FCSMeta.Model.Function=[];
+    GTauMeta.Model.Function=[];
     for i=Fun_Start+1:numel(Text)
-        FCSMeta.Model.Function=[FCSMeta.Model.Function Text(i)];
+        GTauMeta.Model.Function=[GTauMeta.Model.Function Text(i)];
     end
-    FCSMeta.Model.Function=cell2mat(FCSMeta.Model.Function);
+    GTauMeta.Model.Function=cell2mat(GTauMeta.Model.Function);
     %%% Convert to function handle
-    FunctionStart = strfind(FCSMeta.Model.Function,'=');
-    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function((FunctionStart(1)+1):end) ';']);
+    FunctionStart = strfind(GTauMeta.Model.Function,'=');
+    eval(['GTauMeta.Model.Function = @(P,x) ' GTauMeta.Model.Function((FunctionStart(1)+1):end) ';']);
     %%% Extracts parameter names and initial values
-    FCSMeta.Model.Params=cell(NParams,1);
-    FCSMeta.Model.Value=zeros(NParams,1);
-    FCSMeta.Model.LowerBoundaries = zeros(NParams,1);
-    FCSMeta.Model.UpperBoundaries = zeros(NParams,1);
-    FCSMeta.Model.State = zeros(NParams,1);
+    GTauMeta.Model.Params=cell(NParams,1);
+    GTauMeta.Model.Value=zeros(NParams,1);
+    GTauMeta.Model.LowerBoundaries = zeros(NParams,1);
+    GTauMeta.Model.UpperBoundaries = zeros(NParams,1);
+    GTauMeta.Model.State = zeros(NParams,1);
     %%% Reads parameters and values from file
     for i=1:NParams
         Param_Pos=strfind(Text{i+Param_Start},' ');
-        FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
+        GTauMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
         Start = strfind(Text{i+Param_Start},'=');
         %Stop = strfind(Text{i+Param_Start},';');
         % Filter more specifically (this enables the use of html greek
         % letters like &mu; etc.)
         [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
-        FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
-        FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
-        FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
+        GTauMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
+        GTauMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
+        GTauMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
         if numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'g'))
-            FCSMeta.Model.State(i) = 2;
+            GTauMeta.Model.State(i) = 2;
         elseif numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'f'))
-            FCSMeta.Model.State(i) = 1;
+            GTauMeta.Model.State(i) = 1;
         end
     end    
-    FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
+    GTauMeta.Params=repmat(GTauMeta.Model.Value,[1,size(GTauMeta.Data,1)]);
     
     %%% Updates table to new model
     Update_Table([],[],0);
     %%% Updates model text
-    [~,name,~] = fileparts(FCSMeta.Model.Name);
+    [~,name,~] = fileparts(GTauMeta.Model.Name);
     name_text = {'Loaded Fit Model:';name;};
     h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
     h.Loaded_Model_Description.String = sprintf('%s\n',description{:});
@@ -2023,27 +2021,27 @@ end
 %%% Function that updates fit table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Table(~,e,mode)
-h = guidata(findobj('Tag','FCSFit'));
-global FCSMeta FCSData
+h = guidata(findobj('Tag','GTauFit'));
+global GTauMeta GTauData
 switch mode
     case 0 %%% Updates whole table (Load Fit etc.)
         
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];        
         %%% Generates column names and resized them
-        Columns=cell(3*numel(FCSMeta.Model.Params)+5,1);
+        Columns=cell(3*numel(GTauMeta.Model.Params)+5,1);
         Columns{1} = '<HTML><b>File</b>';
         Columns{2}='<HTML><b>Active</b>';
         Columns{3}='<HTML><b>Counts [kHz]</b>';
         Columns{4}='<HTML><b>Brightness [kHz]</b>';
-        for i=1:numel(FCSMeta.Model.Params)
-            Columns{3*i+2}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
+        for i=1:numel(GTauMeta.Model.Params)
+            Columns{3*i+2}=['<HTML><b>' GTauMeta.Model.Params{i} '</b>'];
             Columns{3*i+3}='<HTML><b>F</b>';
             Columns{3*i+4}='<HTML><b>G</b>';
         end
         Columns{end}='<HTML><b>Chi2</b>';
         ColumnWidth=cell(1,numel(Columns));
-        %ColumnWidth(4:3:end-1)=cellfun('length',FCSMeta.Model.Params).*7;
+        %ColumnWidth(4:3:end-1)=cellfun('length',GTauMeta.Model.Params).*7;
         ColumnWidth(5:3:end-1) = {80};
         %ColumnWidth(ColumnWidth>0 & ColumnWidth<30)=45;
         ColumnWidth(6:3:end-1)={20};
@@ -2057,12 +2055,12 @@ switch mode
         h.Fit_Table.ColumnWidth = ColumnWidth;
         %h.Fit_Table.ColumnWidth=num2cell(ColumnWidth');        
         %%% Sets row names to file names 
-        Rows=cell(numel(FCSData.Data)+3,1);
-        tmp = FCSData.FileName;
+        Rows=cell(numel(GTauData.Data)+3,1);
+        tmp = GTauData.FileName;
         for i = 1:numel(tmp)
             tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
         end
-        Rows(1:numel(FCSData.Data))=deal(tmp);
+        Rows(1:numel(GTauData.Data))=deal(tmp);
         Rows{end-2}='<HTML><b>ALL</b>';
         Rows{end-1}='<HTML><b>Lower bound</b>';
         Rows{end}='<HTML><b>Upper bound</b>';
@@ -2078,22 +2076,22 @@ switch mode
         for i=1:(numel(Rows)-3)
             %%% Distinguish between Autocorrelation (only take Counts of
             %%% Channel) and Crosscorrelation (take sum of Channels)
-            if FCSData.Data{i}.Counts(1) == FCSData.Data{i}.Counts(2)
+            if GTauData.Data{i}.Counts(1) == GTauData.Data{i}.Counts(2)
                 %%% Autocorrelation
-                Data{i,2}=num2str(FCSData.Data{i}.Counts(1));
-            elseif FCSData.Data{i}.Counts(1) ~= FCSData.Data{i}.Counts(2)
+                Data{i,2}=num2str(GTauData.Data{i}.Counts(1));
+            elseif GTauData.Data{i}.Counts(1) ~= GTauData.Data{i}.Counts(2)
                 %%% Crosscorrelation
-                Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
+                Data{i,2}=num2str(sum(GTauData.Data{i}.Counts));
             end
         end
-        Data(1:end-3,4:3:end-1)=deal(num2cell(FCSMeta.Params)');
-        Data(end-2,4:3:end-1)=deal(num2cell(FCSMeta.Model.Value)');
-        Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
-        Data(end,4:3:end-1)=deal(num2cell(FCSMeta.Model.UpperBoundaries)');
+        Data(1:end-3,4:3:end-1)=deal(num2cell(GTauMeta.Params)');
+        Data(end-2,4:3:end-1)=deal(num2cell(GTauMeta.Model.Value)');
+        Data(end-1,4:3:end-1)=deal(num2cell(GTauMeta.Model.LowerBoundaries)');
+        Data(end,4:3:end-1)=deal(num2cell(GTauMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
-        Data(1:end-2,5:3:end-1) = repmat(num2cell(FCSMeta.Model.State==1)',size(Data,1)-2,1);        
+        Data(1:end-2,5:3:end-1) = repmat(num2cell(GTauMeta.Model.State==1)',size(Data,1)-2,1);        
         Data(end-1:end,5:3:end-1)=deal({[]});
-        Data(1:end-2,6:3:end-1) = repmat(num2cell(FCSMeta.Model.State==2)',size(Data,1)-2,1);
+        Data(1:end-2,6:3:end-1) = repmat(num2cell(GTauMeta.Model.State==2)',size(Data,1)-2,1);
         Data(end-1:end,6:3:end-1)=deal({[]});
         Data(1:end-2,1)=deal({true});
         Data(end-1:end,1)=deal({[]});
@@ -2107,9 +2105,9 @@ switch mode
     case 1 %%% Updates tables when new data is loaded
         h.Fit_Table.CellEditCallback=[];
         %%% Sets row names to file names
-        Rows=cell(numel(FCSData)+3,1);
-        tmp = FCSData.FileName;
-        Rows(1:numel(tmp))=cellstr(tmp);
+        Rows=cell(numel(GTauData)+3,1);
+        tmp = GTauData.FileName;
+        Rows(1:numel(tmp))=deal(tmp);
         Rows{end-2}='ALL';
         Rows{end-1}='Lower bound';
         Rows{end}='Upper bound';
@@ -2132,12 +2130,12 @@ switch mode
         h.Fit_Table.CellEditCallback=[];
         %%% Updates Brightness in Table
         for i=1:(size(h.Fit_Table.Data,1)-3)
-            P=FCSMeta.Params(:,i);
-            eval(FCSMeta.Model.Brightness);
+            P=GTauMeta.Params(:,i);
+            eval(GTauMeta.Model.Brightness);
             h.Fit_Table.Data{i,4}= num2str(str2double(h.Fit_Table.Data{i,3}).*B);
         end
         %%% Updates parameter values in table
-        h.Fit_Table.Data(1:end-3,5:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
+        h.Fit_Table.Data(1:end-3,5:3:end-1)=cellfun(@num2str,num2cell(GTauMeta.Params)','UniformOutput',false);
         %%% Updates plots
         %Update_Plots        
         %%% Enables cell callback again        
@@ -2205,7 +2203,7 @@ switch mode
                 h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
                 if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
                     %% Value was changed => Apply value to global variables
-                    FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
+                    GTauMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
                 elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
                     %% Value was fixed => Uncheck global
                     h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
@@ -2214,7 +2212,7 @@ switch mode
                     %%% Apply value to all files
                     h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
                     %%% Apply value to global variables
-                    FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                    GTauMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
                     %%% Unfixes all files to prohibit fixed and global
                     h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
                 end
@@ -2226,7 +2224,7 @@ switch mode
                 %%% Apply value to all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
                 %%% Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                GTauMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
                 %%% Unfixes all file to prohibit fixed and global
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
             end
@@ -2245,10 +2243,10 @@ switch mode
             if h.Fit_Table.Data{e.Indices(1),e.Indices(2)+2}
                 %% Global => changes value of all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-                FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
+                GTauMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
             else
                 %% Not global => only changes value
-                FCSMeta.Params((e.Indices(2)-2)/3,e.Indices(1))=str2double(NewData);
+                GTauMeta.Params((e.Indices(2)-2)/3,e.Indices(1))=str2double(NewData);
                 
             end
         elseif e.Indices(2)==1
@@ -2268,8 +2266,8 @@ end
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~)
-global UserValues FCSData
-h = guidata(findobj('Tag','FCSFit'));
+global UserValues GTauData
+h = guidata(findobj('Tag','GTauFit'));
 
 
 G = str2double(h.G_factor_edit.String);
@@ -2278,28 +2276,28 @@ l2 = str2double(h.l2_edit.String);
 
 
 % nanoseconds per microtime bin
-TACtoTime = FCSData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 
 
     %LoadData button or Burstwise lifetime button was pressed
     %%% Plot the Data
-    h.Plots.Decay_Par.XData = FCSData.XData_Par{FCSData.chan}*TACtoTime; 
-    h.Plots.Decay_Per.XData = FCSData.XData_Per{FCSData.chan}*TACtoTime; 
-    h.Plots.IRF_Par.XData = FCSData.XData_Par{FCSData.chan}*TACtoTime;
-    h.Plots.IRF_Per.XData = FCSData.XData_Per{FCSData.chan}*TACtoTime;
-    h.Plots.Scat_Par.XData = FCSData.XData_Par{FCSData.chan}*TACtoTime;
-    h.Plots.Scat_Per.XData = FCSData.XData_Per{FCSData.chan}*TACtoTime;
-    h.Plots.Decay_Par.YData = FCSData.hMI_Par{FCSData.chan};
-    h.Plots.Decay_Per.YData = FCSData.hMI_Per{FCSData.chan};
-    h.Plots.IRF_Par.YData = FCSData.hIRF_Par{FCSData.chan};
-    h.Plots.IRF_Per.YData = FCSData.hIRF_Per{FCSData.chan};
-    h.Plots.Scat_Par.YData = FCSData.hScat_Par{FCSData.chan};
-    h.Plots.Scat_Per.YData = FCSData.hScat_Per{FCSData.chan};
+    h.Plots.Decay_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime; 
+    h.Plots.Decay_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime; 
+    h.Plots.IRF_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime;
+    h.Plots.IRF_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime;
+    h.Plots.Scat_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime;
+    h.Plots.Scat_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime;
+    h.Plots.Decay_Par.YData = GTauData.hMI_Par{GTauData.chan};
+    h.Plots.Decay_Per.YData = GTauData.hMI_Per{GTauData.chan};
+    h.Plots.IRF_Par.YData = GTauData.hIRF_Par{GTauData.chan};
+    h.Plots.IRF_Per.YData = GTauData.hIRF_Per{GTauData.chan};
+    h.Plots.Scat_Par.YData = GTauData.hScat_Par{GTauData.chan};
+    h.Plots.Scat_Per.YData = GTauData.hScat_Per{GTauData.chan};
 
-    h.Microtime_Plot.XLim = [min([FCSData.XData_Par{FCSData.chan}*TACtoTime FCSData.XData_Per{FCSData.chan}*TACtoTime]) max([FCSData.XData_Par{FCSData.chan}*TACtoTime FCSData.XData_Per{FCSData.chan}*TACtoTime])];
+    h.Microtime_Plot.XLim = [min([GTauData.XData_Par{GTauData.chan}*TACtoTime GTauData.XData_Per{GTauData.chan}*TACtoTime]) max([GTauData.XData_Par{GTauData.chan}*TACtoTime GTauData.XData_Per{GTauData.chan}*TACtoTime])];
     
     try
-        h.Microtime_Plot.YLim = [min([FCSData.hMI_Par{FCSData.chan}; FCSData.hMI_Per{FCSData.chan}]) 10/9*max([FCSData.hMI_Par{FCSData.chan}; FCSData.hMI_Per{FCSData.chan}])];
+        h.Microtime_Plot.YLim = [min([GTauData.hMI_Par{GTauData.chan}; GTauData.hMI_Per{GTauData.chan}]) 10/9*max([GTauData.hMI_Par{GTauData.chan}; GTauData.hMI_Per{GTauData.chan}])];
     catch
         % if there is no data, disable channel and stop
         h.IncludeChannel_checkbox.Value = 0;
@@ -2310,150 +2308,150 @@ TACtoTime = FCSData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e
     %%% Define the Slider properties
     %%% Values to consider:
     %%% The length of the shortest PIE channel
-    FCSData.MaxLength{FCSData.chan} = min([numel(FCSData.hMI_Par{FCSData.chan}) numel(FCSData.hMI_Per{FCSData.chan})]);
+    GTauData.MaxLength{GTauData.chan} = min([numel(GTauData.hMI_Par{GTauData.chan}) numel(GTauData.hMI_Per{GTauData.chan})]);
     
     %%% The Length Slider defaults to the length of the shortest PIE
     %%% channel and should not assume larger values
     h.Length_Slider.Min = 1;
-    h.Length_Slider.Max = FCSData.MaxLength{FCSData.chan};
+    h.Length_Slider.Max = GTauData.MaxLength{GTauData.chan};
     h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
-    if UserValues.TauFit.Length{FCSData.chan} > 0 && UserValues.TauFit.Length{FCSData.chan} < FCSData.MaxLength{FCSData.chan}+1
-        tmp = UserValues.TauFit.Length{FCSData.chan};
+    if UserValues.TauFit.Length{GTauData.chan} > 0 && UserValues.TauFit.Length{GTauData.chan} < GTauData.MaxLength{GTauData.chan}+1
+        tmp = UserValues.TauFit.Length{GTauData.chan};
     else
-        tmp = FCSData.MaxLength{FCSData.chan};
+        tmp = GTauData.MaxLength{GTauData.chan};
     end
     h.Length_Slider.Value = tmp;
-    FCSData.Length{FCSData.chan} = tmp;
+    GTauData.Length{GTauData.chan} = tmp;
     h.Length_Edit.String = num2str(tmp);
     
     %%% Start Parallel Slider can assume values from 0 (no shift) up to the
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
-    h.StartPar_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/5);
+    h.StartPar_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/5);
     h.StartPar_Slider.SliderStep =[1, 10]*(1/(h.StartPar_Slider.Max-h.StartPar_Slider.Min));
-    if UserValues.TauFit.StartPar{FCSData.chan} >= 0 && UserValues.TauFit.StartPar{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/5)
-        tmp = UserValues.TauFit.StartPar{FCSData.chan};
+    if UserValues.TauFit.StartPar{GTauData.chan} >= 0 && UserValues.TauFit.StartPar{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/5)
+        tmp = UserValues.TauFit.StartPar{GTauData.chan};
     else
         tmp = 0;
     end
     h.StartPar_Slider.Value = tmp;
-    FCSData.StartPar{FCSData.chan} = tmp;
+    GTauData.StartPar{GTauData.chan} = tmp;
     h.StartPar_Edit.String = num2str(tmp);
     
     %%% Shift Perpendicular Slider can assume values from the difference in
     %%% start point between parallel and perpendicular up to the difference
     %%% between the end point of the parallel channel and the start point
     %%% of the perpendicular channel
-    h.ShiftPer_Slider.Min = -floor(FCSData.MaxLength{FCSData.chan}/20);
-    h.ShiftPer_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/20);
+    h.ShiftPer_Slider.Min = -floor(GTauData.MaxLength{GTauData.chan}/20);
+    h.ShiftPer_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/20);
     %%% Note: (!)
     %%% While shift of < 1 (e.g. 0.1) are in principle possible, they
     %%% change the noise characteristics and thus the obtained chi2 is
     %%% wrong!
     h.ShiftPer_Slider.SliderStep = [1, 10]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));%[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
-    if UserValues.TauFit.ShiftPer{FCSData.chan} >= -floor(FCSData.MaxLength{FCSData.chan}/20)...
-            && UserValues.TauFit.ShiftPer{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/20)
-        tmp = round(UserValues.TauFit.ShiftPer{FCSData.chan});
+    if UserValues.TauFit.ShiftPer{GTauData.chan} >= -floor(GTauData.MaxLength{GTauData.chan}/20)...
+            && UserValues.TauFit.ShiftPer{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/20)
+        tmp = round(UserValues.TauFit.ShiftPer{GTauData.chan});
     else
         tmp = 0;
     end
     h.ShiftPer_Slider.Value = tmp;
-    FCSData.ShiftPer{FCSData.chan} = tmp;
+    GTauData.ShiftPer{GTauData.chan} = tmp;
     h.ShiftPer_Edit.String = num2str(tmp);
 
     %%% IRF Length has the same limits as the Length property
     h.IRFLength_Slider.Min = 1;
-    h.IRFLength_Slider.Max = FCSData.MaxLength{FCSData.chan};
+    h.IRFLength_Slider.Max = GTauData.MaxLength{GTauData.chan};
     h.IRFLength_Slider.SliderStep =[1, 10]*(1/(h.IRFLength_Slider.Max-h.IRFLength_Slider.Min));
-    if UserValues.TauFit.IRFLength{FCSData.chan} >= 0 && UserValues.TauFit.IRFLength{FCSData.chan} <= FCSData.MaxLength{FCSData.chan}
-        tmp = UserValues.TauFit.IRFLength{FCSData.chan};
+    if UserValues.TauFit.IRFLength{GTauData.chan} >= 0 && UserValues.TauFit.IRFLength{GTauData.chan} <= GTauData.MaxLength{GTauData.chan}
+        tmp = UserValues.TauFit.IRFLength{GTauData.chan};
     else
-        tmp = FCSData.MaxLength{FCSData.chan};
+        tmp = GTauData.MaxLength{GTauData.chan};
     end
     h.IRFLength_Slider.Value = tmp;
-    FCSData.IRFLength{FCSData.chan} = tmp;
+    GTauData.IRFLength{GTauData.chan} = tmp;
     h.IRFLength_Edit.String = num2str(tmp);
     
     %%% IRF Shift has the same limits as the perp shift property
-    h.IRFShift_Slider.Min = -floor(FCSData.MaxLength{FCSData.chan}/20);
-    h.IRFShift_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/20);
+    h.IRFShift_Slider.Min = -floor(GTauData.MaxLength{GTauData.chan}/20);
+    h.IRFShift_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/20);
     h.IRFShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFShift_Slider.Max-h.IRFShift_Slider.Min));
-    tmp = UserValues.TauFit.IRFShift{FCSData.chan};
+    tmp = UserValues.TauFit.IRFShift{GTauData.chan};
     
     limit_IRF_range = false; % reset to 0 if IRFshift does not make sense
     if limit_IRF_range
-        if UserValues.TauFit.IRFShift{FCSData.chan} >= -floor(FCSData.MaxLength{FCSData.chan}/20)...
-                && UserValues.TauFit.IRFShift{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/20)
-            tmp = UserValues.TauFit.IRFShift{FCSData.chan};
+        if UserValues.TauFit.IRFShift{GTauData.chan} >= -floor(GTauData.MaxLength{GTauData.chan}/20)...
+                && UserValues.TauFit.IRFShift{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/20)
+            tmp = UserValues.TauFit.IRFShift{GTauData.chan};
         else
             tmp = 0;
         end
     end
     
     h.IRFShift_Slider.Value = tmp;
-    FCSData.IRFShift{FCSData.chan} = tmp;
+    GTauData.IRFShift{GTauData.chan} = tmp;
     h.IRFShift_Edit.String = num2str(tmp);
     
     %%% IRF rel. Shift has the same limits as the perp shift property
-    h.IRFrelShift_Slider.Min = -floor(FCSData.MaxLength{FCSData.chan}/20);
-    h.IRFrelShift_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/20);
+    h.IRFrelShift_Slider.Min = -floor(GTauData.MaxLength{GTauData.chan}/20);
+    h.IRFrelShift_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/20);
     h.IRFrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFrelShift_Slider.Max-h.IRFrelShift_Slider.Min));
-    if UserValues.TauFit.IRFrelShift{FCSData.chan} >= -floor(FCSData.MaxLength{FCSData.chan}/20)...
-            && UserValues.TauFit.IRFrelShift{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/20)
-        tmp = UserValues.TauFit.IRFrelShift{FCSData.chan};
+    if UserValues.TauFit.IRFrelShift{GTauData.chan} >= -floor(GTauData.MaxLength{GTauData.chan}/20)...
+            && UserValues.TauFit.IRFrelShift{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/20)
+        tmp = UserValues.TauFit.IRFrelShift{GTauData.chan};
     else
         tmp = 0;
     end
     h.IRFrelShift_Slider.Value = tmp;
-    FCSData.IRFrelShift{FCSData.chan} = tmp;
+    GTauData.IRFrelShift{GTauData.chan} = tmp;
     h.IRFrelShift_Edit.String = num2str(tmp);
     
     %%% Scat Shift has the same limits as the perp shift property
-    h.ScatShift_Slider.Min = -floor(FCSData.MaxLength{FCSData.chan}/20);
-    h.ScatShift_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/20);
+    h.ScatShift_Slider.Min = -floor(GTauData.MaxLength{GTauData.chan}/20);
+    h.ScatShift_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/20);
     h.ScatShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatShift_Slider.Max-h.ScatShift_Slider.Min));
-    if UserValues.TauFit.ScatShift{FCSData.chan} >= -floor(FCSData.MaxLength{FCSData.chan}/20)...
-            && UserValues.TauFit.ScatShift{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/20)
-        tmp = UserValues.TauFit.ScatShift{FCSData.chan};
+    if UserValues.TauFit.ScatShift{GTauData.chan} >= -floor(GTauData.MaxLength{GTauData.chan}/20)...
+            && UserValues.TauFit.ScatShift{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/20)
+        tmp = UserValues.TauFit.ScatShift{GTauData.chan};
     else
         tmp = 0;
     end
     h.ScatShift_Slider.Value = tmp;
-    FCSData.ScatShift{FCSData.chan} = tmp;
+    GTauData.ScatShift{GTauData.chan} = tmp;
     h.ScatShift_Edit.String = num2str(tmp);
     
     %%% Scat rel. Shift has the same limits as the perp shift property
-    h.ScatrelShift_Slider.Min = -floor(FCSData.MaxLength{FCSData.chan}/20);
-    h.ScatrelShift_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/20);
+    h.ScatrelShift_Slider.Min = -floor(GTauData.MaxLength{GTauData.chan}/20);
+    h.ScatrelShift_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/20);
     h.ScatrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatrelShift_Slider.Max-h.ScatrelShift_Slider.Min));
-    if UserValues.TauFit.ScatrelShift{FCSData.chan} >= -floor(FCSData.MaxLength{FCSData.chan}/20)...
-            && UserValues.TauFit.ScatrelShift{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/20)
-        tmp = UserValues.TauFit.ScatrelShift{FCSData.chan};
+    if UserValues.TauFit.ScatrelShift{GTauData.chan} >= -floor(GTauData.MaxLength{GTauData.chan}/20)...
+            && UserValues.TauFit.ScatrelShift{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/20)
+        tmp = UserValues.TauFit.ScatrelShift{GTauData.chan};
     else
         tmp = 0;
     end
     h.ScatrelShift_Slider.Value = tmp;
-    FCSData.ScatrelShift{FCSData.chan} = tmp;
+    GTauData.ScatrelShift{GTauData.chan} = tmp;
     h.ScatrelShift_Edit.String = num2str(tmp);
     
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
-    h.Ignore_Slider.Max = floor(FCSData.MaxLength{FCSData.chan}/5);
+    h.Ignore_Slider.Max = floor(GTauData.MaxLength{GTauData.chan}/5);
     h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
-    if UserValues.TauFit.Ignore{FCSData.chan} >= 1 && UserValues.TauFit.Ignore{FCSData.chan} <= floor(FCSData.MaxLength{FCSData.chan}/5)
-        tmp = UserValues.TauFit.Ignore{FCSData.chan};
+    if UserValues.TauFit.Ignore{GTauData.chan} >= 1 && UserValues.TauFit.Ignore{GTauData.chan} <= floor(GTauData.MaxLength{GTauData.chan}/5)
+        tmp = UserValues.TauFit.Ignore{GTauData.chan};
     else
         tmp = 1;
     end
     h.Ignore_Slider.Value = tmp;
-    FCSData.Ignore{FCSData.chan} = tmp;
+    GTauData.Ignore{GTauData.chan} = tmp;
     h.Ignore_Edit.String = num2str(tmp);
     
     % when the popup has changed, the table has to be updated with the
     % UserValues data
   % h.FitPar_Table.Data = GetTableData(h.FitMethod_Popupmenu.Value, chan);
     % G factor is channel specific
-    h.G_factor_edit.String = UserValues.TauFit.G{FCSData.chan};
+    h.G_factor_edit.String = UserValues.TauFit.G{GTauData.chan};
 
 
 %%% Update Slider Values
@@ -2461,24 +2459,24 @@ if isobject(obj) % check if matlab object
     switch obj
         case {h.StartPar_Slider, h.StartPar_Edit}
             if obj == h.StartPar_Slider
-                FCSData.StartPar{FCSData.chan} = floor(obj.Value);
+                GTauData.StartPar{GTauData.chan} = floor(obj.Value);
             elseif obj == h.StartPar_Edit
-                FCSData.StartPar{FCSData.chan} = floor(str2double(obj.String));
-                obj.String = num2str(FCSData.StartPar{FCSData.chan});
+                GTauData.StartPar{GTauData.chan} = floor(str2double(obj.String));
+                obj.String = num2str(GTauData.StartPar{GTauData.chan});
             end
         case {h.Length_Slider, h.Length_Edit}
             %%% Update Value
             if obj == h.Length_Slider
-                FCSData.Length{FCSData.chan} = floor(obj.Value);
+                GTauData.Length{GTauData.chan} = floor(obj.Value);
             elseif obj == h.Length_Edit
-                FCSData.Length{FCSData.chan} = floor(str2double(obj.String));
-                obj.String = num2str(FCSData.Length{FCSData.chan});
+                GTauData.Length{GTauData.chan} = floor(str2double(obj.String));
+                obj.String = num2str(GTauData.Length{GTauData.chan});
             end
             %%% Correct if IRFLength exceeds the Length
-            if FCSData.IRFLength{FCSData.chan} > FCSData.Length{FCSData.chan}
-                FCSData.IRFLength{FCSData.chan} = FCSData.Length{FCSData.chan};
-                h.IRFLength_Edit.String = num2str(FCSData.IRFLength{FCSData.chan});
-                h.IRFLength_Slider.Value = FCSData.IRFLength{FCSData.chan};
+            if GTauData.IRFLength{GTauData.chan} > GTauData.Length{GTauData.chan}
+                GTauData.IRFLength{GTauData.chan} = GTauData.Length{GTauData.chan};
+                h.IRFLength_Edit.String = num2str(GTauData.IRFLength{GTauData.chan});
+                h.IRFLength_Slider.Value = GTauData.IRFLength{GTauData.chan};
             end
         case {h.ShiftPer_Slider, h.ShiftPer_Edit}
             %%% Update Value
@@ -2487,65 +2485,65 @@ if isobject(obj) % check if matlab object
             %%% change the noise characteristics and thus the obtained chi2 is
             %%% wrong!
             if obj == h.ShiftPer_Slider
-                FCSData.ShiftPer{FCSData.chan} = floor(obj.Value);%round(obj.Value*h.subresolution)/h.subresolution;
+                GTauData.ShiftPer{GTauData.chan} = floor(obj.Value);%round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ShiftPer_Edit
-                FCSData.ShiftPer{FCSData.chan} = floor(str2double(obj.String));%round(str2double(obj.String)*h.subresolution)/h.subresolution;
-                obj.String = num2str(FCSData.ShiftPer{FCSData.chan});
+                GTauData.ShiftPer{GTauData.chan} = floor(str2double(obj.String));%round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(GTauData.ShiftPer{GTauData.chan});
             end
         case {h.IRFLength_Slider, h.IRFLength_Edit}
             %%% Update Value
             if obj == h.IRFLength_Slider
-                FCSData.IRFLength{FCSData.chan} = floor(obj.Value);
+                GTauData.IRFLength{GTauData.chan} = floor(obj.Value);
             elseif obj == h.IRFLength_Edit
-                FCSData.IRFLength{FCSData.chan} = floor(str2double(obj.String));
-                obj.String = num2str(FCSData.IRFLength{FCSData.chan});
+                GTauData.IRFLength{GTauData.chan} = floor(str2double(obj.String));
+                obj.String = num2str(GTauData.IRFLength{GTauData.chan});
             end
             %%% Correct if IRFLength exceeds the Length
-            if FCSData.IRFLength{FCSData.chan} > FCSData.Length{FCSData.chan}
-                FCSData.IRFLength{FCSData.chan} = FCSData.Length{FCSData.chan};
+            if GTauData.IRFLength{GTauData.chan} > GTauData.Length{GTauData.chan}
+                GTauData.IRFLength{GTauData.chan} = GTauData.Length{GTauData.chan};
             end
         case {h.IRFShift_Slider, h.IRFShift_Edit}
             %%% Update Value
             if obj == h.IRFShift_Slider
-                FCSData.IRFShift{FCSData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
+                GTauData.IRFShift{GTauData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFShift_Edit
-                FCSData.IRFShift{FCSData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
-                obj.String = num2str(FCSData.IRFShift{FCSData.chan});
+                GTauData.IRFShift{GTauData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(GTauData.IRFShift{GTauData.chan});
             end
         case {h.IRFrelShift_Slider, h.IRFrelShift_Edit}
             %%% Update Value
             if obj == h.IRFrelShift_Slider
-                FCSData.IRFrelShift{FCSData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
+                GTauData.IRFrelShift{GTauData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFrelShift_Edit
-                FCSData.IRFrelShift{FCSData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
-                obj.String = num2str(FCSData.IRFrelShift{FCSData.chan});
+                GTauData.IRFrelShift{GTauData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(GTauData.IRFrelShift{GTauData.chan});
             end
         case {h.ScatShift_Slider, h.ScatShift_Edit}
             %%% Update Value
             if obj == h.ScatShift_Slider
-                FCSData.ScatShift{FCSData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
+                GTauData.ScatShift{GTauData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatShift_Edit
-                FCSData.ScatShift{FCSData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
-                obj.String = num2str(FCSData.ScatShift{FCSData.chan});
+                GTauData.ScatShift{GTauData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(GTauData.ScatShift{GTauData.chan});
             end
         case {h.ScatrelShift_Slider, h.ScatrelShift_Edit}
             %%% Update Value
             if obj == h.ScatrelShift_Slider
-                FCSData.ScatrelShift{FCSData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
+                GTauData.ScatrelShift{GTauData.chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatrelShift_Edit
-                FCSData.ScatrelShift{FCSData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
-                obj.String = num2str(FCSData.ScatrelShift{FCSData.chan});
+                GTauData.ScatrelShift{GTauData.chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(GTauData.ScatrelShift{GTauData.chan});
             end
         case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
             if obj == h.Ignore_Slider
-                FCSData.Ignore{FCSData.chan} = floor(obj.Value);
+                GTauData.Ignore{GTauData.chan} = floor(obj.Value);
             elseif obj == h.Ignore_Edit
                 if str2double(obj.String) <  1
-                    FCSData.Ignore{FCSData.chan} = 1;
+                    GTauData.Ignore{GTauData.chan} = 1;
                     obj.String = '1';
                 else
-                    FCSData.Ignore{chan} = floor(str2double(obj.String));
-                    obj.String = num2str(FCSData.Ignore{FCSData.chan});
+                    GTauData.Ignore{chan} = floor(str2double(obj.String));
+                    obj.String = num2str(GTauData.Ignore{GTauData.chan});
                 end
             end     
     end
@@ -2554,37 +2552,37 @@ end
 if isprop(obj,'Style')
     switch obj.Style
         case 'slider'
-            h.StartPar_Edit.String = num2str(FCSData.StartPar{FCSData.chan});
-            h.Length_Edit.String = num2str(FCSData.Length{FCSData.chan});
-            h.ShiftPer_Edit.String = num2str(FCSData.ShiftPer{FCSData.chan});
-            h.IRFLength_Edit.String = num2str(FCSData.IRFLength{FCSData.chan});
-            h.IRFShift_Edit.String = num2str(FCSData.IRFShift{FCSData.chan});
-            h.IRFrelShift_Edit.String = num2str(FCSData.IRFrelShift{FCSData.chan});
-            h.ScatShift_Edit.String = num2str(FCSData.ScatShift{FCSData.chan});
-            h.ScatrelShift_Edit.String = num2str(FCSData.ScatrelShift{FCSData.chan});
-            h.Fit_Table.Data{end,1} = FCSData.IRFShift{FCSData.chan};
-            h.Ignore_Edit.String = num2str(FCSData.Ignore{FCSData.chan});
+            h.StartPar_Edit.String = num2str(GTauData.StartPar{GTauData.chan});
+            h.Length_Edit.String = num2str(GTauData.Length{GTauData.chan});
+            h.ShiftPer_Edit.String = num2str(GTauData.ShiftPer{GTauData.chan});
+            h.IRFLength_Edit.String = num2str(GTauData.IRFLength{GTauData.chan});
+            h.IRFShift_Edit.String = num2str(GTauData.IRFShift{GTauData.chan});
+            h.IRFrelShift_Edit.String = num2str(GTauData.IRFrelShift{GTauData.chan});
+            h.ScatShift_Edit.String = num2str(GTauData.ScatShift{GTauData.chan});
+            h.ScatrelShift_Edit.String = num2str(GTauData.ScatrelShift{GTauData.chan});
+            h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
+            h.Ignore_Edit.String = num2str(GTauData.Ignore{GTauData.chan});
         case 'edit'
-            h.StartPar_Slider.Value = FCSData.StartPar{FCSData.chan};
-            h.Length_Slider.Value = FCSData.Length{FCSData.chan};
-            h.ShiftPer_Slider.Value = FCSData.ShiftPer{FCSData.chan};
-            h.IRFLength_Slider.Value = FCSData.IRFLength{FCSData.chan};
-            h.IRFShift_Slider.Value = FCSData.IRFShift{FCSData.chan};
-            h.IRFrelShift_Slider.Value = FCSData.IRFrelShift{FCSData.chan};
-            h.ScatShift_Slider.Value = FCSData.ScatShift{FCSData.chan};
-            h.ScatrelShift_Slider.Value = FCSData.ScatrelShift{FCSData.chan};
-            h.Fit_Table.Data{end,1} = FCSData.IRFShift{FCSData.chan};
-            h.Ignore_Slider.Value = FCSData.Ignore{FCSData.chan};
+            h.StartPar_Slider.Value = GTauData.StartPar{GTauData.chan};
+            h.Length_Slider.Value = GTauData.Length{GTauData.chan};
+            h.ShiftPer_Slider.Value = GTauData.ShiftPer{GTauData.chan};
+            h.IRFLength_Slider.Value = GTauData.IRFLength{GTauData.chan};
+            h.IRFShift_Slider.Value = GTauData.IRFShift{GTauData.chan};
+            h.IRFrelShift_Slider.Value = GTauData.IRFrelShift{GTauData.chan};
+            h.ScatShift_Slider.Value = GTauData.ScatShift{GTauData.chan};
+            h.ScatrelShift_Slider.Value = GTauData.ScatrelShift{GTauData.chan};
+            h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
+            h.Ignore_Slider.Value = GTauData.Ignore{GTauData.chan};
     end
-    UserValues.TauFit.StartPar{FCSData.chan} = FCSData.StartPar{FCSData.chan};
-    UserValues.TauFit.Length{FCSData.chan} = FCSData.Length{FCSData.chan};
-    UserValues.TauFit.ShiftPer{FCSData.chan} = FCSData.ShiftPer{FCSData.chan};
-    UserValues.TauFit.IRFLength{FCSData.chan} = FCSData.IRFLength{FCSData.chan};
-    UserValues.TauFit.IRFShift{FCSData.chan} = FCSData.IRFShift{FCSData.chan};
-    UserValues.TauFit.IRFrelShift{FCSData.chan} = FCSData.IRFrelShift{FCSData.chan};
-    UserValues.TauFit.ScatShift{FCSData.chan} = FCSData.ScatShift{FCSData.chan};
-    UserValues.TauFit.ScatrelShift{FCSData.chan} = FCSData.ScatrelShift{FCSData.chan};
-    UserValues.TauFit.Ignore{FCSData.chan} = FCSData.Ignore{FCSData.chan};
+    UserValues.TauFit.StartPar{GTauData.chan} = GTauData.StartPar{GTauData.chan};
+    UserValues.TauFit.Length{GTauData.chan} = GTauData.Length{GTauData.chan};
+    UserValues.TauFit.ShiftPer{GTauData.chan} = GTauData.ShiftPer{GTauData.chan};
+    UserValues.TauFit.IRFLength{GTauData.chan} = GTauData.IRFLength{GTauData.chan};
+    UserValues.TauFit.IRFShift{GTauData.chan} = GTauData.IRFShift{GTauData.chan};
+    UserValues.TauFit.IRFrelShift{GTauData.chan} = GTauData.IRFrelShift{GTauData.chan};
+    UserValues.TauFit.ScatShift{GTauData.chan} = GTauData.ScatShift{GTauData.chan};
+    UserValues.TauFit.ScatrelShift{GTauData.chan} = GTauData.ScatrelShift{GTauData.chan};
+    UserValues.TauFit.Ignore{GTauData.chan} = GTauData.Ignore{GTauData.chan};
     LSUserValues(1);
 end
 
@@ -2598,46 +2596,46 @@ h.Result_Plot_Aniso.Parent = h.HidePanel;
 set([h.Plots.Residuals,h.Plots.Residuals_ignore,h.Plots.Residuals_Perp,h.Plots.Residuals_Perp_ignore],'Visible','off');
 %%% Apply the shift to the parallel channel
 % if you change something here, change it too in Start_BurstWise Fit!
-h.Plots.Decay_Par.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.Length{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
-h.Plots.Decay_Par.YData = FCSData.hMI_Par{FCSData.chan}((FCSData.StartPar{FCSData.chan}+1):FCSData.Length{FCSData.chan})';
+h.Plots.Decay_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
+h.Plots.Decay_Par.YData = GTauData.hMI_Par{GTauData.chan}((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan})';
 %%% Apply the shift to the perpendicular channel
-h.Plots.Decay_Per.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.Length{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
+h.Plots.Decay_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
-tmp = shift_by_fraction(FCSData.hMI_Per{FCSData.chan}, FCSData.ShiftPer{FCSData.chan});
-h.Plots.Decay_Per.YData = tmp((FCSData.StartPar{FCSData.chan}+1):FCSData.Length{FCSData.chan});
+tmp = shift_by_fraction(GTauData.hMI_Per{GTauData.chan}, GTauData.ShiftPer{GTauData.chan});
+h.Plots.Decay_Per.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
 %%% Apply the shift to the parallel IRF channel
-h.Plots.IRF_Par.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.IRFLength{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
+h.Plots.IRF_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.IRFLength{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
-tmp = shift_by_fraction(FCSData.hIRF_Par{FCSData.chan},FCSData.IRFShift{FCSData.chan});
-h.Plots.IRF_Par.YData = tmp((FCSData.StartPar{FCSData.chan}+1):FCSData.IRFLength{FCSData.chan});
+tmp = shift_by_fraction(GTauData.hIRF_Par{GTauData.chan},GTauData.IRFShift{GTauData.chan});
+h.Plots.IRF_Par.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.IRFLength{GTauData.chan});
 %%% Apply the shift to the perpendicular IRF channel
-h.Plots.IRF_Per.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.IRFLength{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
+h.Plots.IRF_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.IRFLength{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-tmp = shift_by_fraction(FCSData.hIRF_Per{FCSData.chan},FCSData.IRFShift{FCSData.chan}+FCSData.ShiftPer{FCSData.chan}+FCSData.IRFrelShift{FCSData.chan});
-h.Plots.IRF_Per.YData = tmp((FCSData.StartPar{FCSData.chan}+1):FCSData.IRFLength{FCSData.chan});
+tmp = shift_by_fraction(GTauData.hIRF_Per{GTauData.chan},GTauData.IRFShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.IRFrelShift{GTauData.chan});
+h.Plots.IRF_Per.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.IRFLength{GTauData.chan});
 %%% Apply the shift to the parallel Scat channel
-h.Plots.Scat_Par.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.Length{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
+h.Plots.Scat_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
-tmp = shift_by_fraction(FCSData.hScat_Par{FCSData.chan},FCSData.ScatShift{FCSData.chan});
+tmp = shift_by_fraction(GTauData.hScat_Par{GTauData.chan},GTauData.ScatShift{GTauData.chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
     %subtract the constant offset and renormalize the amplitude to what it was
-    tmp = (tmp-mean(tmp(end-floor(FCSData.MI_Bins/50):end)));
+    tmp = (tmp-mean(tmp(end-floor(GTauData.MI_Bins/50):end)));
     tmp = tmp/max(tmp)*maxscat;
     %tmp(tmp < 0) = 0;
     tmp(isnan(tmp)) = 0;
 end
-h.Plots.Scat_Par.YData = tmp((FCSData.StartPar{FCSData.chan}+1):FCSData.Length{FCSData.chan});
+h.Plots.Scat_Par.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
 %%% Apply the shift to the perpendicular Scat channel
-h.Plots.Scat_Per.XData = ((FCSData.StartPar{FCSData.chan}:(FCSData.Length{FCSData.chan}-1)) - FCSData.StartPar{FCSData.chan})*TACtoTime;
+h.Plots.Scat_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
-tmp = shift_by_fraction(FCSData.hScat_Per{FCSData.chan},FCSData.ScatShift{FCSData.chan}+FCSData.ShiftPer{FCSData.chan}+FCSData.ScatrelShift{FCSData.chan});
-tmp = tmp((FCSData.StartPar{FCSData.chan}+1):FCSData.Length{FCSData.chan});
+tmp = shift_by_fraction(GTauData.hScat_Per{GTauData.chan},GTauData.ScatShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.ScatrelShift{GTauData.chan});
+tmp = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
-    tmp = tmp-mean(tmp(end-floor(FCSData.MI_Bins/50):end));
+    tmp = tmp-mean(tmp(end-floor(GTauData.MI_Bins/50):end));
     tmp = tmp/max(tmp)*maxscat;
     tmp(isnan(tmp)) = 0;
     %tmp(tmp < 0) = 0;
@@ -2666,7 +2664,7 @@ elseif h.ShowDecay_radiobutton.Value == 1
     h.Microtime_Plot.YLimMode = 'auto';
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
-    if ~any(strcmp(FCSData.Who,{'BurstBrowser','Burstwise'}))
+    if ~any(strcmp(GTauData.Who,{'BurstBrowser','Burstwise'}))
         if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
             %%% show legend
             l = legend([h.Plots.Decay_Par,h.Plots.Decay_Per], {'I_{||}','I_\perp'});
@@ -2697,10 +2695,10 @@ axes(h.Microtime_Plot);
 xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 
 %%% Update Ignore Plot
-if FCSData.Ignore{FCSData.chan} > 1
+if GTauData.Ignore{GTauData.chan} > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
-    h.Ignore_Plot.XData = [FCSData.Ignore{FCSData.chan}*TACtoTime FCSData.Ignore{FCSData.chan}*TACtoTime];
+    h.Ignore_Plot.XData = [GTauData.Ignore{GTauData.chan}*TACtoTime GTauData.Ignore{GTauData.chan}*TACtoTime];
     if strcmp(h.Microtime_Plot.YScale,'log')
         if h.ShowDecay_radiobutton.Value == 1
             ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
@@ -2720,7 +2718,7 @@ if FCSData.Ignore{FCSData.chan} > 1
             h.Microtime_Plot.YLim(1),...
             h.Microtime_Plot.YLim(2)];
     end
-elseif FCSData.Ignore{FCSData.chan} == 1
+elseif GTauData.Ignore{GTauData.chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
 end
@@ -2743,17 +2741,17 @@ drawnow;
 %%% 3: Export to Workspace
 %%% 4: Export Params to Clipboard
 function Plot_Menu_Callback(Obj,~,mode)
-h = guidata(findobj('Tag','FCSFit'));
-global FCSMeta FCSData
+h = guidata(findobj('Tag','GTauFit'));
+global GTauMeta GTauData
 
 switch mode
     case 1 %%% Change X scale
         if strcmp(Obj.Checked,'off')
-            h.FCS_Axes.XScale='log';
+            h.GTauFit_Axes.XScale='log';
             h.Residuals_Axes.XScale = 'log';
             Obj.Checked='on';
         else
-            h.FCS_Axes.XScale='lin';
+            h.GTauFit_Axes.XScale='lin';
             h.Residuals_Axes.XScale = 'lin';
             Obj.Checked='off';
         end
@@ -2762,8 +2760,8 @@ switch mode
         Size = [str2double(h.Export_XSize.String) str2double(h.Export_YSize.String) str2double(h.Export_YSizeRes.String)];
         FontSize = h.Export_Font.UserData.FontSize;
         
-        if ~strcmp(FCSMeta.DataType,'FRET')
-            Scale = [floor(log10(max(h.FCS_Axes.XLim(1),h.FCS_Axes.Children(1).XData(1)))), ceil(h.FCS_Axes.XLim(2))];
+        if ~strcmp(GTauMeta.DataType,'FRET')
+            Scale = [floor(log10(max(h.GTauFit_Axes.XLim(1),h.GTauFit_Axes.Children(1).XData(1)))), ceil(h.GTauFit_Axes.XLim(2))];
             XTicks = zeros(diff(Scale),1);
             XTickLabels = cell(diff(Scale),1);
             j=1;        
@@ -2792,8 +2790,8 @@ switch mode
             'Position',[50 150 Size(1)+5*FontSize+25 Size(2)+Size(3)+6.5*FontSize]);
         whitebg([1 1 1]);   
         %% Creates axes for correlation and residuals
-        if ~strcmp(FCSMeta.DataType,'FRET')
-            H.FCS=axes(...
+        if ~strcmp(GTauMeta.DataType,'FRET')
+            H.GTauFit=axes(...
                 'Parent',H.Fig,...
                 'XScale','log',...
                 'FontSize', FontSize,...
@@ -2815,10 +2813,10 @@ switch mode
                     'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)],...
                     'LineWidth',1.5);
             else
-                H.FCS.Position(4) = H.FCS.Position(4)+Size(3)+1.5*FontSize;
+                H.GTauFit.Position(4) = H.GTauFit.Position(4)+Size(3)+1.5*FontSize;
             end
         else
-            H.FCS=axes(...
+            H.GTauFit=axes(...
                 'Parent',H.Fig,...
                 'XScale','lin',...
                 'FontSize', FontSize,...
@@ -2837,19 +2835,19 @@ switch mode
                     'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)],...
                     'LineWidth',1.5);
             else
-                H.FCS.Position(4) = H.FCS.Position(4)+Size(3)+1.5*FontSize;
+                H.GTauFit.Position(4) = H.GTauFit.Position(4)+Size(3)+1.5*FontSize;
             end
         end
             
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
         % if h.Fit_Errorbars.Value
-        %     UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
+        %     UseCurves = sort(numel(h.GTauFit_Axes.Children)+1-[3*Active-2; 3*Active-1]);
         % else
-        %    UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
+        %    UseCurves = reshape(flip(sort(numel(h.GTauFit_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
         % end
-        % UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
-        % H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
+        % UseCurves = sort(numel(h.GTauFit_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        % H.GTauFit_Plots=copyobj(h.GTauFit_Axes.Children(UseCurves),H.GTauFit);
         
         if h.Fit_Errorbars.Value
             UseCurves = [1,2];
@@ -2857,61 +2855,61 @@ switch mode
             UseCurves = [4,2];
         end
 
-        CopyCurves = FCSMeta.Plots(Active,UseCurves);
-        H.FCS_Plots = [];
+        CopyCurves = GTauMeta.Plots(Active,UseCurves);
+        H.GTauFit_Plots = [];
         for i = Active'
             for j = UseCurves
-                H.FCS_Plots(i,j) = copyobj(FCSMeta.Plots{i,j},H.FCS);
+                H.GTauFit_Plots(i,j) = copyobj(GTauMeta.Plots{i,j},H.GTauFit);
             end
         end
 
         if h.Export_FitsLegend.Value
-               H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none'); 
+               H.GTauFit_Legend=legend(H.GTauFit,h.GTauFit_Legend.String,'Interpreter','none'); 
         else
-            if isfield(h,'FCS_Legend')
-                if h.FCS_Legend.isvalid
-                    LegendString = h.FCS_Legend.String(1:2:end-1);
+            if isfield(h,'GTauFit_Legend')
+                if h.GTauFit_Legend.isvalid
+                    LegendString = h.GTauFit_Legend.String(1:2:end-1);
                     for i=1:numel(LegendString)
                         LegendString{i} = LegendString{i}(7:end);
                     end
                     if h.Fit_Errorbars.Value
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
+                        H.GTauFit_Legend=legend(H.GTauFit,H.GTauFit_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     else
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
+                        H.GTauFit_Legend=legend(H.GTauFit,H.GTauFit_Plots(Active,UseCurves(1)),LegendString,'Interpreter','none');
                     end
 
                 end
             end
         end
-        if strcmp(FCSMeta.DataType,'FRET')
+        if strcmp(GTauMeta.DataType,'FRET')
             %%% add invidividual plots
-            UseCurves = [5:size(FCSMeta.Plots,2)];
-            N = numel(H.FCS_Legend.String);
+            UseCurves = [5:size(GTauMeta.Plots,2)];
+            N = numel(H.GTauFit_Legend.String);
             for i = Active'
                 for j = UseCurves
-                    copyobj(FCSMeta.Plots{i,j},H.FCS);
+                    copyobj(GTauMeta.Plots{i,j},H.GTauFit);
                 end
             end
-            H.FCS_Legend.String = H.FCS_Legend.String(1:N);
+            H.GTauFit_Legend.String = H.GTauFit_Legend.String(1:N);
         end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
         end
         %% Sets axes parameters   
-        set(H.FCS.Children,'LineWidth',1.5);
+        set(H.GTauFit.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
             set(H.Residuals.Children,'LineWidth',1.5);
-            linkaxes([H.FCS,H.Residuals],'x');
+            linkaxes([H.GTauFit,H.Residuals],'x');
         end
-        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
-        H.FCS.YLim=h.FCS_Axes.YLim;
-        switch FCSMeta.DataType
-            case {'FCS','FCS averaged'}
-                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
-                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+        H.GTauFit.XLim=[h.GTauFit_Axes.XLim(1),h.GTauFit_Axes.XLim(2)];
+        H.GTauFit.YLim=h.GTauFit_Axes.YLim;
+        switch GTauMeta.DataType
+            case {'GTauFit','GTauFit averaged'}
+                H.GTauFit.XLabel.String = 'time lag {\it\tau{}} [s]';
+                H.GTauFit.YLabel.String = 'G({\it\tau{}})'; 
             case 'FRET'
-                H.FCS.XLabel.String = 'FRET efficiency';
-                H.FCS.YLabel.String = 'PDF'; 
+                H.GTauFit.XLabel.String = 'FRET efficiency';
+                H.GTauFit.YLabel.String = 'PDF'; 
         end
         if h.Export_Residuals.Value
             H.Residuals.YLim=h.Residuals_Axes.YLim;
@@ -2924,31 +2922,31 @@ switch mode
         end        
         %% Toggles box and grid
         if h.Export_Grid.Value
-            grid(H.FCS,'on');
+            grid(H.GTauFit,'on');
             if h.Export_Residuals.Value
                 grid(H.Residuals,'on');
             end
         end
         if h.Export_MinorGrid.Value
-            grid(H.FCS,'minor');
+            grid(H.GTauFit,'minor');
             if h.Export_Residuals.Value
                 grid(H.Residuals,'minor');
             end
         else
-            grid(H.FCS,'minor');
-            grid(H.FCS,'minor');
+            grid(H.GTauFit,'minor');
+            grid(H.GTauFit,'minor');
             if h.Export_Residuals.Value
                 grid(H.Residuals,'minor');
                 grid(H.Residuals,'minor');
             end
         end
         if h.Export_Box.Value
-            H.FCS.Box = 'on';
+            H.GTauFit.Box = 'on';
             if h.Export_Residuals.Value
                 H.Residuals.Box = 'on';
             end
         else
-            H.FCS.Box = 'off';
+            H.GTauFit.Box = 'off';
             if h.Export_Residuals.Value
                 H.Residuals.Box = 'off';
             end
@@ -2959,53 +2957,53 @@ switch mode
         assignin('base','H',H);
     case 3 %%% Exports data to workspace
         Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
-        FCS=[];
-        FCS.Model=FCSMeta.Model.Function;
-        FCS.FileName=FCSData.FileName(Active)';
-        FCS.Params=FCSMeta.Params(:,Active)';        
-        time=FCSMeta.Data(Active,1);
-        data=FCSMeta.Data(Active,2);
-        error=FCSMeta.Data(Active,3);
-        %Fit=cell(numel(FCS.Time),1); 
-        FCS.Graphs=cell(numel(time)+1,1);
-        FCS.Graphs{1}={'time', 'data', 'error', 'fit', 'res'};
+        GTauFit=[];
+        GTauFit.Model=GTauMeta.Model.Function;
+        GTauFit.FileName=GTauData.FileName(Active)';
+        GTauFit.Params=GTauMeta.Params(:,Active)';        
+        time=GTauMeta.Data(Active,1);
+        data=GTauMeta.Data(Active,2);
+        error=GTauMeta.Data(Active,3);
+        %Fit=cell(numel(GTauFit.Time),1); 
+        GTauFit.Graphs=cell(numel(time)+1,1);
+        GTauFit.Graphs{1}={'time', 'data', 'error', 'fit', 'res'};
         %%% Calculates y data for fit
         for i=1:numel(time)
-            P=FCS.Params(i,:);
-            %eval(FCSMeta.Model.Function);
-            OUT = feval(FCSMeta.Model.Function,P,time{i});
+            P=GTauFit.Params(i,:);
+            %eval(GTauMeta.Model.Function);
+            OUT = feval(GTauMeta.Model.Function,P,time{i});
             OUT=real(OUT);
             res=(data{i}-OUT)./error{i};
-            FCS.Graphs{i+1} = [time{i}, data{i}, error{i}, OUT, res];
+            GTauFit.Graphs{i+1} = [time{i}, data{i}, error{i}, OUT, res];
         end
         %%% Copies data to workspace
-        assignin('base','FCS',FCS);
+        assignin('base','GTauFit',GTauFit);
     case 4 %%% Exports Fit Result to Clipboard
-        FitResult = cell(numel(FCSData.FileName),1);
+        FitResult = cell(numel(GTauData.FileName),1);
         active = cell2mat(h.Fit_Table.Data(1:end-2,2));
-        for i = 1:numel(FCSData.FileName)
+        for i = 1:numel(GTauData.FileName)
             if active(i)
-                FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
-                FitResult{i}{1} = FCSData.FileName{i};
+                FitResult{i} = cell(size(GTauMeta.Params,1)+2,1);
+                FitResult{i}{1} = GTauData.FileName{i};
                 FitResult{i}{2} = str2double(h.Fit_Table.Data{i,end});
                 FitResult{i}{3} = str2double(h.Fit_Table.Data{i,4});
-                for j = 4:(size(FCSMeta.Params,1)+3)
-                    FitResult{i}{j} = FCSMeta.Params(j-3,i);
+                for j = 4:(size(GTauMeta.Params,1)+3)
+                    FitResult{i}{j} = GTauMeta.Params(j-3,i);
                 end
             end
         end
-        [~,ModelName,~] = fileparts(FCSMeta.Model.Name);
-        Params = vertcat({ModelName;'Chi2';'Mol. Bright. [kHz]'},FCSMeta.Model.Params);
+        [~,ModelName,~] = fileparts(GTauMeta.Model.Name);
+        Params = vertcat({ModelName;'Chi2';'Mol. Bright. [kHz]'},GTauMeta.Model.Params);
         if h.Conf_Interval.Value
-            if isfield(FCSMeta,'Confidence_Intervals')
-                for i = 1:numel(FCSData.FileName)
+            if isfield(GTauMeta,'Confidence_Intervals')
+                for i = 1:numel(GTauData.FileName)
                     if active(i)
-                        Nlow = FCSMeta.Confidence_Intervals{i}(1,1);
-                        Nhigh = FCSMeta.Confidence_Intervals{i}(1,2);
+                        Nlow = GTauMeta.Confidence_Intervals{i}(1,1);
+                        Nhigh = GTauMeta.Confidence_Intervals{i}(1,2);
                         N = FitResult{i}{4};
                         Blow = FitResult{i}{3}*Nlow/N;
                         Bhigh = FitResult{i}{3}*Nhigh/N;
-                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'','';num2str(Blow),num2str(Bhigh)},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'','';num2str(Blow),num2str(Bhigh)},num2cell([GTauMeta.Confidence_Intervals{i}])));
                     end
                 end
             end
@@ -3017,21 +3015,21 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Stops fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Stop_FCSFit(~,~)
-global FCSMeta
-h = guidata(findobj('Tag','FCSFit'));
-FCSMeta.FitInProgress = 0;
+function Stop_GTauFit(~,~)
+global GTauMeta
+h = guidata(findobj('Tag','GTauFit'));
+GTauMeta.FitInProgress = 0;
 h.Fit_Table.Enable='on';
-h.FCSFit.Name='FCS Fit';
+h.GTauFit.Name='GTauFit Fit';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_FCSFit(~,~)
-global FCSMeta UserValues
-h = guidata(findobj('Tag','FCSFit'));
+function Do_GTauFit(~,~)
+global GTauMeta UserValues
+h = guidata(findobj('Tag','GTauFit'));
 %%% Indicates fit in progress
-FCSMeta.FitInProgress = 1;
-h.FCSFit.Name='FCS Fit  FITTING';
+GTauMeta.FitInProgress = 1;
+h.GTauFit.Name='GTauFit Fit  FITTING';
 h.Fit_Table.Enable='off';
 drawnow;
 %%% Reads parameters from table
@@ -3045,10 +3043,10 @@ ub = cellfun(@str2double,ub);
 %%% Read fit settings and store in UserValues
 MaxIter = str2double(h.Iterations.String);
 TolFun = str2double(h.Tolerance.String);
-UserValues.FCSFit.Max_Iterations = MaxIter;
-UserValues.FCSFit.Fit_Tolerance = TolFun;
+UserValues.GTauFit.Max_Iterations = MaxIter;
+UserValues.GTauFit.Fit_Tolerance = TolFun;
 Use_Weights = h.Fit_Weights.Value;
-UserValues.FCSFit.Use_Weights = Use_Weights;
+UserValues.GTauFit.Use_Weights = Use_Weights;
 LSUserValues(1);
 %%% Optimization settings
 opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
@@ -3056,13 +3054,13 @@ opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
 if sum(Global)==0
     %% Individual fits, not global
     for i=find(Active)'
-        if ~FCSMeta.FitInProgress
+        if ~GTauMeta.FitInProgress
             break;
         end
         %%% Reads in parameters
-        XData=FCSMeta.Data{i,1};
-        YData=FCSMeta.Data{i,2};
-        EData=FCSMeta.Data{i,3};
+        XData=GTauMeta.Data{i,1};
+        YData=GTauMeta.Data{i,2};
+        EData=GTauMeta.Data{i,3};
         Min=find(XData>=str2double(h.Fit_Min.String),1,'first');
         Max=find(XData<=str2double(h.Fit_Max.String),1,'last');
         if ~isempty(Min) && ~isempty(Max)
@@ -3075,14 +3073,14 @@ if sum(Global)==0
                 EData(:)=1;
             end
             %%% Sets initial values and bounds for non fixed parameters
-            Fit_Params=FCSMeta.Params(~Fixed(i,:),i);
+            Fit_Params=GTauMeta.Params(~Fixed(i,:),i);
             Lb=lb(~Fixed(i,:));
             Ub=ub(~Fixed(i,:));                      
             %%% Performs fit
             [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i,Fixed(i,:)},YData./EData,Lb,Ub,opts);
             %%% calculate confidence intervals
             if h.Conf_Interval.Value
-                ConfInt = zeros(size(FCSMeta.Params,1),2);
+                ConfInt = zeros(size(GTauMeta.Params,1),2);
                 method = h.Conf_Interval_Method.Value;
                 alpha = 0.05; %95% confidence interval
                 if method == 1
@@ -3134,14 +3132,14 @@ if sum(Global)==0
                     assignin('base',['Samples' num2str(i)],samples(1:spacing:end,:));
                     assignin('base',['acceptance' num2str(i)],acceptance);                    
                 end
-                FCSMeta.Confidence_Intervals{i} = ConfInt;  
+                GTauMeta.Confidence_Intervals{i} = ConfInt;  
                 %%% we can also make a prediction for the curve based on
                 %%% the confidence intervals, using the following code:
                 % [y,delta] = nlpredci(@(x,xdat) Fit_Single(x,{xdat,EData,i,Fixed(i,:)}).*EData,XData,Fitted_Params,weighted_residuals,'jacobian',full(jacobian));
                 % figure;semilogx(XData,y-delta);hold on;semilogx(XData,y+delta);
             end
             %%% Updates parameters
-            FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
+            GTauMeta.Params(~Fixed(i,:),i)=Fitted_Params;
         end
     end  
 else
@@ -3151,14 +3149,14 @@ else
     EData=[];
     Points=[];
     %%% Sets initial value and bounds for global parameters
-    Fit_Params=FCSMeta.Params(Global,1);
+    Fit_Params=GTauMeta.Params(Global,1);
     Lb=lb(Global);
     Ub=ub(Global);
     for  i=find(Active)'
         %%% Reads in parameters of current file
-        xdata=FCSMeta.Data{i,1};
-        ydata=FCSMeta.Data{i,2};
-        edata=FCSMeta.Data{i,3};
+        xdata=GTauMeta.Data{i,1};
+        ydata=GTauMeta.Data{i,2};
+        edata=GTauMeta.Data{i,3};
         %%% Disables weights
         if ~Use_Weights
             edata(:)=1;
@@ -3174,7 +3172,7 @@ else
             Points(end+1)=numel(xdata(Min:Max));
         end
         %%% Concatenates initial values and bounds for non fixed parameters
-        Fit_Params=[Fit_Params; FCSMeta.Params(~Fixed(i,:)& ~Global,i)];
+        Fit_Params=[Fit_Params; GTauMeta.Params(~Fixed(i,:)& ~Global,i)];
         Lb=[Lb lb(~Fixed(i,:) & ~Global)];
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
@@ -3225,17 +3223,17 @@ else
         GlobConfInt = ConfInt(1:sum(Global),:);
         ConfInt(1:sum(Global),:) = [];        
         for i = find(Active)'
-            FCSMeta.Confidence_Intervals{i} = zeros(size(FCSMeta.Params,1),2);
-            FCSMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
-            FCSMeta.Confidence_Intervals{i}(~Fixed(i,:) & ~Global,:) = ConfInt(1:sum(~Fixed(i,:) & ~Global),:);
+            GTauMeta.Confidence_Intervals{i} = zeros(size(GTauMeta.Params,1),2);
+            GTauMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
+            GTauMeta.Confidence_Intervals{i}(~Fixed(i,:) & ~Global,:) = ConfInt(1:sum(~Fixed(i,:) & ~Global),:);
             ConfInt(1:sum(~Fixed(i,:)& ~Global),:)=[]; 
         end
     end
     %%% Updates parameters
-    FCSMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(FCSMeta.Params,2)]) ;
+    GTauMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(GTauMeta.Params,2)]) ;
     Fitted_Params(1:sum(Global))=[];
     for i=find(Active)'
-        FCSMeta.Params(~Fixed(i,:) & ~Global,i)=Fitted_Params(1:sum(~Fixed(i,:) & ~Global)); 
+        GTauMeta.Params(~Fixed(i,:) & ~Global,i)=Fitted_Params(1:sum(~Fixed(i,:) & ~Global)); 
         Fitted_Params(1:sum(~Fixed(i,:)& ~Global))=[]; 
     end    
 end
@@ -3262,8 +3260,8 @@ switch Flag
 end
 %%% Indicates end of fitting procedure
 h.Fit_Table.Enable='on';
-h.FCSFit.Name='FCS Fit';
-FCSMeta.FitInProgress = 0;
+h.GTauFit.Name='GTauFit Fit';
+GTauMeta.FitInProgress = 0;
 %%% Updates table values and plots
 Update_Table([],[],2);
 
@@ -3275,11 +3273,11 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{1}:    X values of current file
 %%% Data{2}:    Weights of current file
 %%% Data{3}:    Indentifier of current file
-global FCSMeta
+global GTauMeta
 
 %%% Aborts Fit
 %drawnow;
-if ~FCSMeta.FitInProgress
+if ~GTauMeta.FitInProgress
     Out = zeros(size(Data{2}));
     return;
 end
@@ -3295,10 +3293,10 @@ P=zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
 P(~Fixed)=Fit_Params;
 %%% Assigns parameters from table to fixed parameters
-P(Fixed)=FCSMeta.Params(Fixed,file);
+P(Fixed)=GTauMeta.Params(Fixed,file);
 %%% Applies function on parameters
-%eval(FCSMeta.Model.Function);
-OUT = feval(FCSMeta.Model.Function,P,x);
+%eval(GTauMeta.Model.Function);
+OUT = feval(GTauMeta.Model.Function,P,x);
 %%% Applies weights
 Out=OUT./Weights;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3309,12 +3307,12 @@ function [Out] = Fit_Global(Fit_Params,Data)
 %%% Data{1}:    X values of all files
 %%% Data{2}:    Weights of all files
 %%% Data{3}:    Length indentifier for X and Weights data of each file
-global FCSMeta
-%h = guidata(findobj('Tag','FCSFit'));
+global GTauMeta
+%h = guidata(findobj('Tag','GTauFit'));
 
 %%% Aborts Fit
 %drawnow;
-if ~FCSMeta.FitInProgress
+if ~GTauMeta.FitInProgress
     Out = zeros(size(Data{2}));
     return;
 end
@@ -3341,14 +3339,14 @@ for i=find(Active)'
   P(~Fixed(i,:) & ~Global)=Fit_Params(1:sum(~Fixed(i,:) & ~Global)); 
   Fit_Params(1:sum(~Fixed(i,:)& ~Global))=[];  
   %%% Sets fixed parameters
-  P(Fixed(i,:) & ~Global)= FCSMeta.Params((Fixed(i,:)& ~Global),i);
+  P(Fixed(i,:) & ~Global)= GTauMeta.Params((Fixed(i,:)& ~Global),i);
   %%% Defines XData for the file
   x=X(1:Points(k));
   X(1:Points(k))=[]; 
   k=k+1;
   %%% Calculates function for current file
-  %eval(FCSMeta.Model.Function);
-  OUT = feval(FCSMeta.Model.Function,P,x);
+  %eval(GTauMeta.Model.Function);
+  OUT = feval(GTauMeta.Model.Function,P,x);
   Out=[Out;OUT]; 
 end
 Out=Out./Weights;
@@ -3358,48 +3356,48 @@ Out=Out./Weights;
 %%% Function to recalculate binning for FRET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function rebinFRETdata(obj,~)
-global UserValues FCSData FCSMeta
+global UserValues GTauData GTauMeta
 h = guidata(obj);
 bin = str2double(obj.String);
 %%% round to multiples of 0.005
 bin = ceil(bin/0.005)*0.005;
 x = (-0.1:bin:ceil(1.1/bin)*bin)';
-UserValues.FCSFit.FRETbin = bin;
+UserValues.GTauFit.FRETbin = bin;
 obj.String = num2str(bin);
-for i=1:numel(FCSData.Data)
+for i=1:numel(GTauData.Data)
     %%% Reads data
-    E = FCSData.Data{i}.E;
+    E = GTauData.Data{i}.E;
     Data.E = E;
     his = histcounts(E,x)'; %his = [his'; his(end)];
-    Data.Cor_Average = his./sum(his)./min(diff(x));
+    Data.Dec_Average = his./sum(his)./min(diff(x));
     error = sqrt(his)./sum(his)./min(diff(x));
-    Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
-    Data.Cor_Array = [];
+    Data.Dec_SEM = error; Data.Dec_SEM(Data.Dec_SEM == 0) = 1;
+    Data.Dec_Array = [];
     Data.Valid = [];
     Data.Counts = [numel(E), numel(E)];
-    Data.Cor_Times = x(1:end-1)+bin/2;
-    FCSData.Data{i} = Data;
+    Data.Dec_Times = x(1:end-1)+bin/2;
+    GTauData.Data{i} = Data;
 
     %%% Updates global parameters
-    FCSMeta.Data{i,1} = FCSData.Data{i}.Cor_Times;
-    FCSMeta.Data{i,2} = FCSData.Data{i}.Cor_Average;
-    FCSMeta.Data{i,2}(isnan(FCSMeta.Data{i,2})) = 0;
-    FCSMeta.Data{i,3} = FCSData.Data{i}.Cor_SEM;
-    FCSMeta.Data{i,3}(isnan(FCSMeta.Data{i,3})) = 1;
+    GTauMeta.Data{i,1} = GTauData.Data{i}.Dec_Times;
+    GTauMeta.Data{i,2} = GTauData.Data{i}.Dec_Average;
+    GTauMeta.Data{i,2}(isnan(GTauMeta.Data{i,2})) = 0;
+    GTauMeta.Data{i,3} = GTauData.Data{i}.Dec_SEM;
+    GTauMeta.Data{i,3}(isnan(GTauMeta.Data{i,3})) = 1;
     
     %%% Update Plots
-    FCSMeta.Plots{i,1}.XData = FCSMeta.Data{i,1};
-    FCSMeta.Plots{i,1}.YData = FCSMeta.Data{i,2};
-    if isfield(FCSMeta.Plots{i,1},'YNegativeDelta')
-        FCSMeta.Plots{i,1}.YNegativeDelta = error;
-        FCSMeta.Plots{i,1}.YPOsitiveDelta = error;
+    GTauMeta.Plots{i,1}.XData = GTauMeta.Data{i,1};
+    GTauMeta.Plots{i,1}.YData = GTauMeta.Data{i,2};
+    if isfield(GTauMeta.Plots{i,1},'YNegativeDelta')
+        GTauMeta.Plots{i,1}.YNegativeDelta = error;
+        GTauMeta.Plots{i,1}.YPOsitiveDelta = error;
     else
-        FCSMeta.Plots{i,1}.LData = error;
-        FCSMeta.Plots{i,1}.UData = error;
+        GTauMeta.Plots{i,1}.LData = error;
+        GTauMeta.Plots{i,1}.UData = error;
     end
     
-    FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1}-bin/2;
-    FCSMeta.Plots{i,4}.YData = FCSMeta.Data{i,2};       
+    GTauMeta.Plots{i,4}.XData = GTauMeta.Data{i,1}-bin/2;
+    GTauMeta.Plots{i,4}.YData = GTauMeta.Data{i,2};       
 end
 Update_Plots;
 
@@ -3407,26 +3405,26 @@ Update_Plots;
 %%% Functions to load and save the session %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function LoadSave_Session(obj,e)
-global UserValues FCSData FCSMeta
+global UserValues GTauData GTauMeta
 h = guidata(obj);
 switch obj
     case h.LoadSession
         %%% get file
-        [FileName,PathName] = uigetfile({'*.fcs','FCSFit Session (*.fcs)'},'Load FCSFit Session',UserValues.File.FCSPath,'MultiSelect','off');
+        [FileName,PathName] = uigetfile({'*.GTauFit','GTauFit Session (*.GTauFit)'},'Load GTauFit Session',UserValues.File.GTauFitPath,'MultiSelect','off');
         if numel(FileName) == 1 && FileName == 0
             return;
         end
         %%% Saves pathname to uservalues
-        UserValues.File.FCSPath=PathName;
+        UserValues.File.GTauFitPath=PathName;
         LSUserValues(1);
         %%% Deletes loaded data
-        FCSData=[];
-        FCSData.Data=[];
-        FCSData.FileName=[];
-        cellfun(@delete,FCSMeta.Plots);
-        FCSMeta.Data=[];
-        FCSMeta.Params=[];
-        FCSMeta.Plots=cell(0);
+        GTauData=[];
+        GTauData.Data=[];
+        GTauData.FileName=[];
+        cellfun(@delete,GTauMeta.Plots);
+        GTauMeta.Data=[];
+        GTauMeta.Params=[];
+        GTauMeta.Plots=cell(0);
         h.Fit_Table.Data(1:end-3,:)=[];
         h.Style_Table.RowName(1:end-1,:)=[];
         h.Style_Table.Data(1:end-1,:)=[];
@@ -3434,34 +3432,34 @@ switch obj
         %%% load data
         data = load(fullfile(PathName,FileName),'-mat');
         %%% update global variables
-        FCSData = data.FCSData;
-        FCSMeta = data.FCSMeta;
+        GTauData = data.GTauData;
+        GTauMeta = data.GTauMeta;
         %%% update UserValues settings, with exception of export settings
-        UserValues.FCSFit.Fit_Min = data.Settings.Fit_Min;
-        UserValues.FCSFit.Fit_Max = data.Settings.Fit_Max;
-        UserValues.FCSFit.Plot_Errorbars = data.Settings.Plot_Errorbars;
-        UserValues.FCSFit.Fit_Tolerance = data.Settings.Fit_Tolerance;
-        UserValues.FCSFit.Use_Weights = data.Settings.Use_Weights;
-        UserValues.FCSFit.Max_Iterations = data.Settings.Max_Iterations;
-        UserValues.FCSFit.NormalizationMethod = data.Settings.NormalizationMethod;
-        UserValues.FCSFit.Hide_Legend = data.Settings.Hide_Legend;
-        UserValues.FCSFit.Conf_Interval = data.Settings.Conf_Interval;
-        UserValues.FCSFit.FRETbin = data.Settings.FRETbin;
-        UserValues.FCSFit.PlotStyles = data.Settings.PlotStyles;
-        UserValues.FCSFit.PlotStyleAll = data.Settings.PlotStyleAll;
-        UserValues.File.FCS_Standard = FCSMeta.Model.Name;
+        UserValues.GTauFit.Fit_Min = data.Settings.Fit_Min;
+        UserValues.GTauFit.Fit_Max = data.Settings.Fit_Max;
+        UserValues.GTauFit.Plot_Errorbars = data.Settings.Plot_Errorbars;
+        UserValues.GTauFit.Fit_Tolerance = data.Settings.Fit_Tolerance;
+        UserValues.GTauFit.Use_Weights = data.Settings.Use_Weights;
+        UserValues.GTauFit.Max_Iterations = data.Settings.Max_Iterations;
+        UserValues.GTauFit.NormalizationMethod = data.Settings.NormalizationMethod;
+        UserValues.GTauFit.Hide_Legend = data.Settings.Hide_Legend;
+        UserValues.GTauFit.Conf_Interval = data.Settings.Conf_Interval;
+        UserValues.GTauFit.FRETbin = data.Settings.FRETbin;
+        UserValues.GTauFit.PlotStyles = data.Settings.PlotStyles;
+        UserValues.GTauFit.PlotStyleAll = data.Settings.PlotStyleAll;
+        UserValues.File.GTauFit_Standard = GTauMeta.Model.Name;
         LSUserValues(1);
         %%% update GUI according to loaded settings
-        h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
-        h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
-        h.Fit_Errorbars.Value = UserValues.FCSFit.Plot_Errorbars;
-        h.Tolerance.String = num2str(UserValues.FCSFit.Fit_Tolerance);
-        h.Fit_Weights.Value = UserValues.FCSFit.Use_Weights;
-        h.Iterations.String = num2str(UserValues.FCSFit.Max_Iterations);
-        h.Normalize.Value = UserValues.FCSFit.NormalizationMethod;
-        h.Conf_Interval.Value = UserValues.FCSFit.Conf_Interval;
-        h.Hide_Legend.Value = UserValues.FCSFit.Hide_Legend;
-        h.FRETbin.String = num2str(UserValues.FCSFit.FRETbin);
+        h.Fit_Min.String = num2str(UserValues.GTauFit.Fit_Min);
+        h.Fit_Max.String = num2str(UserValues.GTauFit.Fit_Max);
+        h.Fit_Errorbars.Value = UserValues.GTauFit.Plot_Errorbars;
+        h.Tolerance.String = num2str(UserValues.GTauFit.Fit_Tolerance);
+        h.Fit_Weights.Value = UserValues.GTauFit.Use_Weights;
+        h.Iterations.String = num2str(UserValues.GTauFit.Max_Iterations);
+        h.Normalize.Value = UserValues.GTauFit.NormalizationMethod;
+        h.Conf_Interval.Value = UserValues.GTauFit.Conf_Interval;
+        h.Hide_Legend.Value = UserValues.GTauFit.Hide_Legend;
+        h.FRETbin.String = num2str(UserValues.GTauFit.FRETbin);
         %%% update visuals
         Create_Plots([],[]);
         %%% Updates table and plot data and style to new size
@@ -3477,19 +3475,19 @@ switch obj
             Update_Plots;
         end
         %%% Updates model text
-        [~,name,~] = fileparts(FCSMeta.Model.Name);
+        [~,name,~] = fileparts(GTauMeta.Model.Name);
         name_text = {'Loaded Fit Model:';name;};
         h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
-        h.Loaded_Model_Description.String = sprintf('%s\n',FCSMeta.Model.Description{:});
-        h.Loaded_Model_Description.TooltipString = sprintf('%s\n',FCSMeta.Model.Description{:});
+        h.Loaded_Model_Description.String = sprintf('%s\n',GTauMeta.Model.Description{:});
+        h.Loaded_Model_Description.TooltipString = sprintf('%s\n',GTauMeta.Model.Description{:});
     case h.SaveSession
         %%% get filename
-        [FileName, PathName] = uiputfile({'*.fcs','FCSFit Session (*.fcs)'},'Save Session as ...',fullfile(UserValues.File.FCSPath,[FCSData.FileName{1},'.fcs']));
+        [FileName, PathName] = uiputfile({'*.GTauFit','GTauFit Session (*.GTauFit)'},'Save Session as ...',fullfile(UserValues.File.GTauFitPath,[GTauData.FileName{1},'.GTauFit']));
         %%% save all data
-        data.FCSMeta = FCSMeta;
-        data.FCSMeta.Plots = cell(0);
-        data.FCSData = FCSData;
-        data.Settings = UserValues.FCSFit;
+        data.GTauMeta = GTauMeta;
+        data.GTauMeta.Plots = cell(0);
+        data.GTauData = GTauData;
+        data.Settings = UserValues.GTauFit;
         data.FixState = h.Fit_Table.Data(1:end-3,6:3:end);
         data.GlobalState = h.Fit_Table.Data(1:end-3,7:3:end);
         data.ActiveState = h.Fit_Table.Data(1:end-3,2);
@@ -3500,52 +3498,52 @@ end
 %%% Functions to create basic plots on data load %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Create_Plots(~,~)
-global UserValues FCSMeta FCSData
-h = guidata(findobj('Tag','FCSFit'));
-switch FCSMeta.DataType
-    case {'FCS averaged','FCS individual','FCS'} %%% Correlation files
-        for i=1:numel(FCSData.FileName)
+global UserValues GTauMeta GTauData
+h = guidata(findobj('Tag','GTauFit'));
+switch GTauMeta.DataType
+    case {'GTauFit averaged','GTauFit individual','GTauFit'} %%% Correlation files
+        for i=1:numel(GTauData.FileName)
             %%% Creates new plots
-            FCSMeta.Plots{end+1,1} = errorbar(...
-                FCSMeta.Data{i,1},...
-                FCSMeta.Data{i,2},...
-                FCSMeta.Data{i,3},...
-                'Parent',h.FCS_Axes);
-            FCSMeta.Plots{end,2} = line(...
-                'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{i,1},...
-                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
-            FCSMeta.Plots{end,3} = line(...
+            GTauMeta.Plots{end+1,1} = errorbar(...
+                GTauMeta.Data{i,1},...
+                GTauMeta.Data{i,2},...
+                GTauMeta.Data{i,3},...
+                'Parent',h.GTauFit_Axes);
+            GTauMeta.Plots{end,2} = line(...
+                'Parent',h.GTauFit_Axes,...
+                'XData',GTauMeta.Data{i,1},...
+                'YData',zeros(numel(GTauMeta.Data{i,1}),1));
+            GTauMeta.Plots{end,3} = line(...
                 'Parent',h.Residuals_Axes,...
-                'XData',FCSMeta.Data{i,1},...
-                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
-            FCSMeta.Plots{end,4} = line(...
-                'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{i,1},...
-                'YData',FCSMeta.Data{i,2});
+                'XData',GTauMeta.Data{i,1},...
+                'YData',zeros(numel(GTauMeta.Data{i,1}),1));
+            GTauMeta.Plots{end,4} = line(...
+                'Parent',h.GTauFit_Axes,...
+                'XData',GTauMeta.Data{i,1},...
+                'YData',GTauMeta.Data{i,2});
         end
         %%% change the gui
-        SwitchGUI(h,'FCS');
+        SwitchGUI(h,'GTauFit');
     case 'FRET'   %% 2color FRET data from BurstBrowser
-        for i=1:numel(FCSData.FileName)
+        for i=1:numel(GTauData.FileName)
             %%% Creates new plots
-            FCSMeta.Plots{end+1,1} = errorbar(...
-                FCSMeta.Data{i,1},...
-                FCSMeta.Data{i,2},...
-                FCSMeta.Data{i,3},...
-                'Parent',h.FCS_Axes);
-            FCSMeta.Plots{end,2} = line(...
-                'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{i,1},...
-                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
-            FCSMeta.Plots{end,3} = line(...
+            GTauMeta.Plots{end+1,1} = errorbar(...
+                GTauMeta.Data{i,1},...
+                GTauMeta.Data{i,2},...
+                GTauMeta.Data{i,3},...
+                'Parent',h.GTauFit_Axes);
+            GTauMeta.Plots{end,2} = line(...
+                'Parent',h.GTauFit_Axes,...
+                'XData',GTauMeta.Data{i,1},...
+                'YData',zeros(numel(GTauMeta.Data{i,1}),1));
+            GTauMeta.Plots{end,3} = line(...
                 'Parent',h.Residuals_Axes,...
-                'XData',FCSMeta.Data{i,1},...
-                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
-            FCSMeta.Plots{end,4} = stairs(...
-                FCSMeta.Data{i,1}-UserValues.FCSFit.FRETbin/2,...
-                FCSMeta.Data{i,2},...
-                'Parent',h.FCS_Axes);            
+                'XData',GTauMeta.Data{i,1},...
+                'YData',zeros(numel(GTauMeta.Data{i,1}),1));
+            GTauMeta.Plots{end,4} = stairs(...
+                GTauMeta.Data{i,1}-UserValues.GTauFit.FRETbin/2,...
+                GTauMeta.Data{i,2},...
+                'Parent',h.GTauFit_Axes);            
         end
         %%% change the gui
         SwitchGUI(h,'FRET');
@@ -3555,7 +3553,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Misc (obj,e,mode)
 global UserValues
-h = guidata(findobj('Tag','FCSFit'));
+h = guidata(findobj('Tag','GTauFit'));
 
 if nargin<3
    switch obj %%% Export Font Selection
@@ -3575,7 +3573,7 @@ if nargin<3
            
            obj.UserData = f;
            obj.String = f.FontString;
-           UserValues.FCSFit.Export_Font = f;
+           UserValues.GTauFit.Export_Font = f;
            LSUserValues(1);
    end
     

@@ -231,6 +231,11 @@ if Mode==0 %%% Loads user values
         S.File.FCSPath=pwd;
     end
     P.File.FCSPath = S.File.FCSPath;
+    if ~isfield(S.File, 'GTauFitPath') || isempty(S.File.GTauFitPath)  || ~ischar(S.File.GTauFitPath) || ~exist(S.File.GTauFitPath,'dir')
+        S.File.GTauFitPath=pwd;
+    end
+    P.File.GTauFitPath = S.File.GTauFitPath;
+    
     if ~isfield(S.File, 'MIAPath') || isempty(S.File.MIAPath)  || ~ischar(S.File.MIAPath) || ~exist(S.File.MIAPath,'dir')
         S.File.MIAPath=pwd;
     end
@@ -272,6 +277,12 @@ if Mode==0 %%% Loads user values
         S.File.FCS_Standard=[];
     end
     P.File.FCS_Standard = S.File.FCS_Standard;
+    
+    if ~isfield(S.File,'GTauFit_Standard')
+        S.File.GTauFit_Standard=[];
+    end
+    P.File.GTauFit_Standard = S.File.GTauFit_Standard;
+    
     if ~isfield(S.File,'MIAFit_Standard')
         S.File.MIAFit_Standard=[];
     end
@@ -297,6 +308,11 @@ if Mode==0 %%% Loads user values
         S.File.FileHistory.FCSFit=[];
     end
     P.File.FileHistory.FCSFit = S.File.FileHistory.FCSFit;
+    
+    if ~isfield(S.File.FileHistory,'GTauFit')
+        S.File.FileHistory.GTauFit=[];
+    end
+    P.File.FileHistory.GTauFit = S.File.FileHistory.GTauFit;
     
     if ~isfield(S.File.FileHistory,'PAM')
         S.File.FileHistory.PAM=[];
@@ -731,6 +747,148 @@ if Mode==0 %%% Loads user values
         disp('UserValues.FCSFit.Export_Residuals was incomplete');
     end
     P.FCSFit.Export_Residuals = S.FCSFit.Export_Residuals;
+    
+    %% Global TauFit
+    %%% Checks, if GTauFit subfield exists
+    if ~isfield(S, 'GTauFit')
+        S.GTauFit=[];
+        disp('UserValues.GTauFit was incomplete');
+    end
+    P.GTauFit = [];
+    %%% Checks if GTauFit.Fit_Min subfield exists
+    if ~isfield(S.GTauFit, 'Fit_Min') || numel(S.GTauFit.Fit_Min)~=1 || ~isnumeric(S.GTauFit.Fit_Min)
+        S.GTauFit.Fit_Min = 0;
+        disp('UserValues.GTauFit.Fit_Min was incomplete');
+    end
+    P.GTauFit.Fit_Min = S.GTauFit.Fit_Min;
+    %%% Checks if GTauFit.Fit_Min subfield exists
+    if ~isfield(S.GTauFit, 'Fit_Max') || numel(S.GTauFit.Fit_Max)~=1 || ~isnumeric(S.GTauFit.Fit_Max)
+        S.GTauFit.Fit_Max=1;
+        disp('UserValues.GTauFit.Fit_Max was incomplete');
+    end
+    P.GTauFit.Fit_Max = S.GTauFit.Fit_Max;
+    %%% Checks if GTauFit.Plot_Errorbars subfield exists
+    if ~isfield(S.GTauFit, 'Plot_Errorbars') || numel(S.GTauFit.Plot_Errorbars)~=1 || (~isnumeric(S.GTauFit.Plot_Errorbars) && ~islogical(S.GTauFit.Plot_Errorbars))
+        S.GTauFit.Plot_Errorbars=1;
+        disp('UserValues.GTauFit.Plot_Errorbars was incomplete');
+    end
+    P.GTauFit.Plot_Errorbars = S.GTauFit.Plot_Errorbars;
+    %%% Checks if GTauFit.Fit_Tolerance subfield exists
+    if ~isfield(S.GTauFit, 'Fit_Tolerance') || numel(S.GTauFit.Fit_Tolerance)~=1 || ~isnumeric(S.GTauFit.Fit_Tolerance)
+        S.GTauFit.Fit_Tolerance=1e-6;
+        disp('UserValues.GTauFit.Fit_Tolerance was incomplete');
+    end
+    P.GTauFit.Fit_Tolerance = S.GTauFit.Fit_Tolerance;
+    %%% Checks if GTauFit.Use_Weights subfield exists
+    if ~isfield(S.GTauFit, 'Use_Weights') || numel(S.GTauFit.Use_Weights)~=1 || (~isnumeric(S.GTauFit.Use_Weights) && ~islogical(S.GTauFit.Use_Weights))
+        S.GTauFit.Use_Weights=1;
+        disp('UserValues.GTauFit.Use_Weights was incomplete');
+    end
+    P.GTauFit.Use_Weights = S.GTauFit.Use_Weights;
+    %%% Checks if GTauFit.Max_Iterations subfield exists
+    if ~isfield(S.GTauFit, 'Max_Iterations') || numel(S.GTauFit.Max_Iterations)~=1 || ~isnumeric(S.GTauFit.Max_Iterations)
+        S.GTauFit.Max_Iterations=1000;
+        disp('UserValues.GTauFit.Max_Iterations was incomplete');
+    end
+    P.GTauFit.Max_Iterations = S.GTauFit.Max_Iterations;
+    %%% Checks if GTauFit.NormalizationMethod subfield exists
+    if ~isfield(S.GTauFit, 'NormalizationMethod') || numel(S.GTauFit.NormalizationMethod)~=1 || ~isnumeric(S.GTauFit.NormalizationMethod)
+        S.GTauFit.NormalizationMethod = 1;
+        disp('UserValues.GTauFit.NormalizationMethod was incomplete');
+    end
+    P.GTauFit.NormalizationMethod = S.GTauFit.NormalizationMethod;
+    %%% Checks if GTauFit.Conf_Interval subfield exists
+    if ~isfield(S.GTauFit, 'Conf_Interval') || numel(S.GTauFit.Conf_Interval)~=1 || (~isnumeric(S.GTauFit.Conf_Interval) && ~islogical(S.GTauFit.Conf_Interval))
+        S.GTauFit.Conf_Interval=1;
+        disp('UserValues.GTauFit.Conf_Interval was incomplete');
+    end
+    P.GTauFit.Conf_Interval = S.GTauFit.Conf_Interval;
+    %%% Checks if GTauFit.Hide_Legend subfield exists
+    if ~isfield(S.GTauFit, 'Hide_Legend') || ~isscalar(S.GTauFit.Hide_Legend)
+        S.GTauFit.Hide_Legend=0;
+        disp('UserValues.GTauFit.Hide_Legend was incomplete');
+    end
+    P.GTauFit.Hide_Legend = S.GTauFit.Hide_Legend;
+    %%% Checks if GTauFit.FRETbin subfield exists
+    if ~isfield(S.GTauFit, 'FRETbin')
+        S.GTauFit.FRETbin=0.01;
+        disp('UserValues.GTauFit.FRETbin was incomplete');
+    end
+    P.GTauFit.FRETbin = S.GTauFit.FRETbin;
+    %%% Checks, if GTauFit.PlotStyles subfield exists
+    if ~isfield(S.GTauFit,'PlotStyles')
+        S.GTauFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
+        S.GTauFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
+        disp('UserValues.GTauFit.PlotStyles was incomplete');
+    end
+    P.GTauFit.PlotStyles = S.GTauFit.PlotStyles;
+    if ~isfield(S.GTauFit,'PlotStyleAll')
+        S.GTauFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
+        disp('UserValues.GTauFit.PlotStyleAll was incomplete');
+    end
+    P.GTauFit.PlotStyleAll = S.GTauFit.PlotStyleAll;
+    %%% Chacks, if GTauFit.Export subfields exist
+    if ~isfield(S.GTauFit,'Export_X')
+        S.GTauFit.Export_X = '300';
+        disp('UserValues.GTauFit.Export_X was incomplete');
+    end
+    P.GTauFit.Export_X = S.GTauFit.Export_X;
+    
+    if ~isfield(S.GTauFit,'Export_Y')
+        S.GTauFit.Export_Y = '150';
+        disp('UserValues.GTauFit.Export_Y was incomplete');
+    end
+    P.GTauFit.Export_Y = S.GTauFit.Export_Y;
+    
+    if ~isfield(S.GTauFit,'Export_Res')
+        S.GTauFit.Export_Res = '50';
+        disp('UserValues.GTauFit.Export_Res was incomplete');
+    end
+    P.GTauFit.Export_Res = S.GTauFit.Export_Res;
+    
+    if ~isfield(S.GTauFit,'Export_Font') || ~isfield(S.GTauFit.Export_Font,'FontName') || ~isfield(S.GTauFit.Export_Font,'FontWeight')...
+    || ~isfield(S.GTauFit.Export_Font,'FontAngle') || ~isfield(S.GTauFit.Export_Font,'FontUnits') || ~isfield(S.GTauFit.Export_Font,'FontSize')...
+    || ~isfield(S.GTauFit.Export_Font,'FontString')
+
+        S.GTauFit.Export_Font.FontName = 'Arial';
+        S.GTauFit.Export_Font.FontWeight = 'normal';
+        S.GTauFit.Export_Font.FontAngle = 'normal';
+        S.GTauFit.Export_Font.FontUnits = 'points';
+        S.GTauFit.Export_Font.FontSize = 10;
+        S.GTauFit.Export_Font.FontString = 'Export Font: Arial, 10';
+        disp('UserValues.GTauFit.Export_Font was incomplete');
+    end
+    P.GTauFit.Export_Font = S.GTauFit.Export_Font;
+    
+    if ~isfield(S.GTauFit,'Export_Grid')
+        S.GTauFit.Export_Grid = 1;
+        disp('UserValues.GTauFit.Export_Grid was incomplete');
+    end
+    P.GTauFit.Export_Grid = S.GTauFit.Export_Grid;
+    
+    if ~isfield(S.GTauFit,'Export_GridM')
+        S.GTauFit.Export_GridM = 1;
+        disp('UserValues.GTauFit.Export_GridM was incomplete');
+    end
+    P.GTauFit.Export_GridM = S.GTauFit.Export_GridM;
+    
+    if ~isfield(S.GTauFit,'Export_Box')
+        S.GTauFit.Export_Box = 1;
+        disp('UserValues.GTauFit.Export_Box was incomplete');
+    end
+    P.GTauFit.Export_Box = S.GTauFit.Export_Box;
+    
+    if ~isfield(S.GTauFit,'Export_Legend')
+        S.GTauFit.Export_Legend = 0;
+        disp('UserValues.GTauFit.Export_Legend was incomplete');
+    end
+    P.GTauFit.Export_Legend = S.GTauFit.Export_Legend;
+    
+    if ~isfield(S.GTauFit,'Export_Residuals')
+        S.GTauFit.Export_Residuals = 0;
+        disp('UserValues.GTauFit.Export_Residuals was incomplete');
+    end
+    P.GTauFit.Export_Residuals = S.GTauFit.Export_Residuals;
     
     %% MIAFit
     %%% Checks, if MIAFit subfield exists
