@@ -10,7 +10,7 @@ switch PDAMeta.xAxisUnit
     case 'Proximity Ratio'
         E_temp = Sr./(Sg+Sr);
         limits = [0,1];
-    case 'log(FD/FA)'
+    case 'log(SD/SA)'
         E_temp = real(log10(Sg./Sr));
     case {'FRET efficiency','Distance'}
         % Background correction (F = fluorescence photons)

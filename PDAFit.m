@@ -1053,7 +1053,7 @@ if isempty(h.GlobalPDAFit)
         'FontSize',12,...
         'String','Seidel PDA Algorithm',...
         'Tooltipstring', 'Use the PDA algorithm of the Seidel lib, based on a C library from Stas.',...
-        'Callback',[],...
+        'Callback',{@Update_Plots,3,1},...
         'Position',[0.9 0.3 0.2 0.15],...
         'Tag','UseStasAlgorithm');
     h.SettingsTab.GaussAmp_Fix = uicontrol(...
@@ -2661,7 +2661,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         eps_grid = linspace(eps_min,1,NobinsE+1);
         if calc
             PDAMeta.P(i,:) = cell(1,NobinsE+1);
-            StasApproach = logical(h.SettingsTab.UseStasAlgorith);
+            StasApproach = logical(h.SettingsTab.UseStasAlgorithm.Value);
             if StasApproach
                 %%% Note: Background deconvolution is currently NOT supported with this approach!
                 limits = h.AllTab.Main_Axes.XLim;
@@ -3921,8 +3921,7 @@ else %%% dynamic model
                 end
                 DynRates(end+1,:) = ones(1,n_states);
                 b = zeros(n_states,1); b(end+1) = 1;
-                p_eq = DynRates\b;
-                dyn_line_MP1
+                p_eq = DynRates\b;                
                 FracT = Gillespie_inf_states_PDA(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
                 % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)         
                 PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));

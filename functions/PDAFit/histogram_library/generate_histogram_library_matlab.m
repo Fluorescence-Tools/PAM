@@ -95,7 +95,7 @@ if NBG == 0 && NBR == 0
             case 'Proximity Ratio'
                 E_temp = NF(:,:,j)./N(:,:,j);
                 minE = 0; maxE = 1;
-            case 'log(FD/FA)'
+            case 'log(SD/SA)'
                 E_temp = real(log10((N(:,:,j)-NF(:,:,j))./NF(:,:,j)));
                 %minE = min(E_temp(:)); maxE = max(E_temp(:));
                 minE = h.AllTab.Main_Axes.XLim(1);
@@ -156,7 +156,7 @@ else
                     case 'Proximity Ratio'
                         E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
                         minE = 0; maxE = 1;
-                    case 'log(FD/FA)'
+                    case 'log(SD/SA)'
                         E_temp = real(log10((N(1:end-g-r,:,1)-NF(1:end-g-r,:,1)+g)./(NF(1:end-g-r,:,1)+r)));
                         %minE = min(E_temp(:)); maxE = max(E_temp(:));
                         minE = h.AllTab.Main_Axes.XLim(1);
@@ -245,7 +245,7 @@ if NBG == 0 && NBR == 0
         case 'Proximity Ratio'
             E_temp = NF(:,:,1)./N(:,:,1);
             minE = 0; maxE = 1;
-        case 'log(FD/FA)'
+        case 'log(SD/SA)'
             E_temp = real(log10((N(:,:,1)-NF(:,:,1))./NF(:,:,1)));
             %minE = min(E_temp(:)); maxE = max(E_temp(:));
             minE = h.AllTab.Main_Axes.XLim(1);
@@ -289,7 +289,7 @@ else
                 case 'Proximity Ratio'
                     E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
                     minE = 0; maxE = 1;
-                case 'log(FD/FA)'
+                case 'log(SD/SA)'
                     E_temp = real(log10((N(1:end-g-r,:,1)-NF(1:end-g-r,:,1)+g)./(NF(1:end-g-r,:,1)+r)));
                     %minE = min(E_temp(:)); maxE = max(E_temp(:));
                     minE = h.AllTab.Main_Axes.XLim(1);
