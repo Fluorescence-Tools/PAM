@@ -67,6 +67,8 @@ end
 h.Menu.File = uimenu(h.TauFit,'Label','File');
 h.Menu.OpenDecayData = uimenu(h.Menu.File,'Label','Load decay data (*.dec)',...
     'Callback',@Load_Data);
+h.Menu.SaveDecayData = uimenu(h.Menu.File,'Label','Save decay data (*.dec)',...
+    'Callback',@Save_Data);
 h.Menu.OpenDecayData_PQ = uimenu(h.Menu.File,'Label','Load decay data from text file',...
     'Callback',@Load_Data,'Separator','on');
 h.Menu.OpenIRFData_PQ = uimenu(h.Menu.File,'Label','Load IRF data from text file',...
@@ -74,7 +76,7 @@ h.Menu.OpenIRFData_PQ = uimenu(h.Menu.File,'Label','Load IRF data from text file
 h.Menu.OpenDecayDOnlyData_PQ = uimenu(h.Menu.File,'Label','Load DOnly data from text file',...
     'Callback',@Load_Data,'Enable','off');
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
-h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
+h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Plots to *.csv',...
     'Callback',@Export);
 h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
     'Separator','off',...
@@ -164,7 +166,7 @@ h.Plots.Decay_Per = plot([0 1],[0 0],'Color',[0,0.4510,0.7412],'LineWidth',1,'Di
 h.Plots.IRF_Sum = plot([0 1],[0 0],'.r','Color',[0,0.4510,0.7412],'MarkerSize',5,'DisplayName','IRF (sum)');
 h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5,'DisplayName','IRF (par)');
 h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5,'DisplayName','IRF (perp)');
-h.Ignore_Plot = plot([0 0],[1e-6 1],'Color','k','Visible','off','LineWidth',1,'DisplayName','Decay (ignore)');
+h.Ignore_Plot = patch([0 0 0 0],[1e-6 1e-6 1 1],[0,0,0],'FaceAlpha',0.25,'Visible','off','LineWidth',1,'EdgeColor','none','DisplayName','Decay (ignore)');
 h.Plots.Aniso_Preview = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy');
 h.Microtime_Plot.XLim = [0 1];
 h.Microtime_Plot.YLim = [0 1];
@@ -1153,7 +1155,7 @@ if exist('bh','var')
             'String',{'DOnly population','Stored reference'},...
             'Value', UserValues.TauFit.DonorOnlyReferenceSource,...
             'Visible','off',...
-            'FontSize',8,...
+            'FontSize',10,...
             'Callback',@UpdateOptions);
         
         %%% radio buttons to select the plotted data (decay or
@@ -1393,7 +1395,7 @@ h.Output_Text = uicontrol(...
     'Units','normalized',...
     'Position',[0 0 1 1],...
     'String','',...
-    'FontSize',9,...
+    'FontSize',10,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'TooltipString',ToolTip_average_lifetime,...
@@ -1600,7 +1602,7 @@ end
 fields = fieldnames(h); %%% loop through h structure
 for i = 1:numel(fields)
     if isprop(h.(fields{i}),'FontSize')
-        h.(fields{i}).FontSize = 11;
+        h.(fields{i}).FontSize = 10;
     end
 end
 h.SpeciesSelect_Text.FontSize = 10;
@@ -1695,12 +1697,12 @@ switch obj.Tag
             ydat = [h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
             ydat = ydat(ydat > 0);
             h.Ignore_Plot.YData = [...
-                min(ydat),...
-                h.Microtime_Plot.YLim(2)];
+                min(ydat),min(ydat)...
+                h.Microtime_Plot.YLim(2),h.Microtime_Plot.YLim(2)];
         else
             h.Ignore_Plot.YData = [...
-                0,...
-                h.Microtime_Plot.YLim(2)];
+                0,0,...
+                h.Microtime_Plot.YLim(2),h.Microtime_Plot.YLim(2)];
         end
     case {'Plot_XLogscale_MIPlot','Plot_XLogscale_ResultPlot'}
         if strcmp(obj.Checked,'off')
@@ -1725,7 +1727,7 @@ end
 LSUserValues(1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%
+%%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(obj,~)
 global UserValues TauFitData FileInfo TcspcData PamMeta
@@ -1792,7 +1794,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt','Tab-separated text file (*.txt)'},'Choose data file...',UserValues.File.TauFitPath);
+                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt;*.csv','Tab-separated text file (*.txt;*.csv)'},'Choose data file...',UserValues.File.TauFitPath);
                     if isempty(FileName)
                         return;
                     end
@@ -1814,6 +1816,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             TACChannelWidth = double(res{1})*1E-3;
                         case 2
                             data = dlmread(fullfile(PathName,FileName{1}))';
+                            if size(data,1) < size(data,2) % flip if needed
+                                data = data';
+                            end
                             time = data(:,1); time = time-time(1);
                             decay = data(:,2);
                             TAC = max(time)*1E-9;
@@ -2136,6 +2141,58 @@ else
     h.FitMethod_Popupmenu.String = h.FitMethods;
 end
 Update_Plots(obj)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Save Data to decay (*.dec) file format %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Save_Data(obj,~)
+global UserValues TauFitData FileInfo TcspcData PamMeta
+h = guidata(findobj('Tag','TauFit'));
+                   
+% read the channel names
+if (h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value)
+    channel_names = {h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value},...
+        h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}};
+else
+    channel_names = {h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}};
+end
+fn = [strjoin(channel_names,'_') '.dec'];
+% get filename
+[FileName, PathName] = uiputfile('*.dec','Choose file location...',fullfile(UserValues.File.TauFitPath,fn));
+FileName = fullfile(PathName,FileName);
+% get the data
+microtimeHistograms = [];
+switch TauFitData.Who
+    case 'External'
+        microtimeHistograms = [TauFitData.External.MI_Hist{h.PIEChannelPar_Popupmenu.Value},...
+            TauFitData.External.IRF{h.PIEChannelPar_Popupmenu.Value},...
+            TauFitData.External.Scat{h.PIEChannelPar_Popupmenu.Value}];
+        if (h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value)
+            microtimeHistograms = [microtimeHistograms,...
+                TauFitData.External.MI_Hist{h.PIEChannelPer_Popupmenu.Value},...
+                TauFitData.External.IRF{h.PIEChannelPer_Popupmenu.Value},...
+                TauFitData.External.Scat{h.PIEChannelPer_Popupmenu.Value}];
+        end
+end
+%%% write to *.dec file
+fid = fopen(FileName,'w');
+%%% write header
+%%% general info
+fprintf(fid,'TAC range [ns]:\t\t %.2f\nMicrotime Bins:\t\t %d\nResolution [ps]:\t %.2f\n\n',...
+    1E9*TauFitData.TACRange,...
+    TauFitData.MI_Bins,...
+    1E12*TauFitData.TACRange/TauFitData.MI_Bins);
+%%% PIE channel names
+for i = 1:numel(channel_names)
+    fprintf(fid,'%s\t\t\t',channel_names{i});
+end
+fprintf(fid,'\n');
+for i = 1:numel(channel_names)
+    fprintf(fid,'%s\t%s\t%s\t','Decay','IRF','Scatter');
+end
+fprintf(fid,'\n');
+fclose(fid);
+dlmwrite(FileName,microtimeHistograms,'-append','delimiter','\t');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
@@ -2650,7 +2707,7 @@ xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 if TauFitData.Ignore{chan} > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
-    h.Ignore_Plot.XData = [TauFitData.Ignore{chan}*TACtoTime TauFitData.Ignore{chan}*TACtoTime];
+    h.Ignore_Plot.XData = [h.Microtime_Plot.XLim(1),TauFitData.Ignore{chan}*TACtoTime TauFitData.Ignore{chan}*TACtoTime,h.Microtime_Plot.XLim(1)];
     if strcmp(h.Microtime_Plot.YScale,'log')
         if h.ShowDecay_radiobutton.Value == 1
             ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
@@ -2663,12 +2720,12 @@ if TauFitData.Ignore{chan} > 1
         end
         ydat = ydat(ydat > 0);
         h.Ignore_Plot.YData = [...
-            min(ydat),...
-            h.Microtime_Plot.YLim(2)];
+            min(ydat),min(ydat),...
+            h.Microtime_Plot.YLim(2),h.Microtime_Plot.YLim(2)];
     else
         h.Ignore_Plot.YData = [...
-            h.Microtime_Plot.YLim(1),...
-            h.Microtime_Plot.YLim(2)];
+            h.Microtime_Plot.YLim(1),h.Microtime_Plot.YLim(1)...
+            h.Microtime_Plot.YLim(2),h.Microtime_Plot.YLim(2)];
     end
 elseif TauFitData.Ignore{chan} == 1
     %%% Hide Plot Again
@@ -3667,6 +3724,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
                 UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                
+                h.PlotDynamicFRETLine.Visible = 'on';
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data      
@@ -3865,6 +3924,8 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(9) = FitResult{14};
                 UserValues.TauFit.FitParams{chan}(11) = FitResult{15};
                 UserValues.TauFit.IRFShift{chan} = FitResult{16};
+                
+                h.PlotDynamicFRETLine.Visible = 'on';
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1}),...
                     sprintf('red. Chi2 (DA): %.2f',chi2_DA),...
@@ -4632,6 +4693,20 @@ switch obj
                 % store FitResult TauFitData also for use in export
                 TauFitData.FitResult = [Fit_par; Fit_per];
             else
+                % change colors
+                h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+                h.Plots.DecayResult.Color = [0 0 0];
+                h.Plots.Residuals.Color = [0 0 0];
+                h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+                % hide plots
+                h.Plots.IRFResult_Perp.Visible = 'off';
+                h.Plots.FitResult_Perp.Visible = 'off';
+                h.Plots.FitResult_Perp_ignore.Visible = 'off';
+                h.Plots.DecayResult_Perp.Visible = 'off';
+                h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+                h.Plots.Residuals_Perp.Visible = 'off';
+                h.Plots.Residuals_Perp_ignore.Visible = 'off';
+            
                 Decay_par = Decay;
                 Decay_per = Decay;
                 Fit_par = FitFun;
@@ -4797,6 +4872,8 @@ switch obj
                 legend_str = {'I_{DA}','I_{D0}'};
                 l = legend([h.Plots.FitResult,h.Plots.FitResult_Perp],legend_str);
                 l.Box = 'off';
+            else
+                legend(h.Result_Plot,'off');
             end
         else
             % hide plots
@@ -7024,19 +7101,38 @@ switch obj
             end
             tab = table(time',data',fit',res','VariableNames',names);
         else
-            %%% anisotropy reconvolution fit
-            time = h.Plots.DecayResult.XData; %time = time-time(1);
-            data_par = h.Plots.DecayResult.YData;
-            data_per = h.Plots.DecayResult_Perp.YData;
-            fit_par =  h.Plots.FitResult.YData;
-            fit_per =  h.Plots.FitResult_Perp.YData;
-            res_par = h.Plots.Residuals.YData;
-            res_per = h.Plots.Residuals_Perp.YData;
-            aniso_data = h.Plots.AnisoResult.YData;
-            aniso_fit = h.Plots.FitAnisoResult.YData;
-            names = {'time_ns','intensity_par','intensity_per','fit_par','fit_per','wres_par','wres_per','anisotropy','anisotropy_fit'};
-            tab= table(time',data_par',data_per',fit_par',fit_per',res_par',res_per',aniso_data',aniso_fit','VariableNames',names);
-            ext = '_tau_aniso';
+            if ~strfind(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution')
+                %%% anisotropy reconvolution fit
+                time = h.Plots.DecayResult.XData; %time = time-time(1);
+                data_par = h.Plots.DecayResult.YData;
+                data_per = h.Plots.DecayResult_Perp.YData;
+                fit_par =  h.Plots.FitResult.YData;
+                fit_per =  h.Plots.FitResult_Perp.YData;
+                res_par = h.Plots.Residuals.YData;
+                res_per = h.Plots.Residuals_Perp.YData;
+                aniso_data = h.Plots.AnisoResult.YData;
+                aniso_fit = h.Plots.FitAnisoResult.YData;
+                names = {'time_ns','intensity_par','intensity_per','fit_par','fit_per','wres_par','wres_per','anisotropy','anisotropy_fit'};
+                tab= table(time',data_par',data_per',fit_par',fit_per',res_par',res_per',aniso_data',aniso_fit','VariableNames',names);
+                ext = '_tau_aniso';
+            else
+                %%% anisotropy reconvolution fit
+                time = h.Plots.DecayResult.XData; %time = time-time(1);
+                data_par = h.Plots.DecayResult.YData;
+                data_per = h.Plots.DecayResult_Perp.YData;
+                fit_par =  h.Plots.FitResult.YData;
+                fit_per =  h.Plots.FitResult_Perp.YData;
+                res_par = h.Plots.Residuals.YData;
+                res_per = h.Plots.Residuals_Perp.YData;
+                r = h.Plots.FitAnisoResult.XData;
+                dist = h.Plots.FitAnisoResult.YData;
+                % interpolate distance distribution to same number as time axis
+                ri = linspace(r(1),r(end),numel(time));
+                dist_i = interp1(r,dist,ri);
+                names = {'time_ns','intensity_par','intensity_per','fit_par','fit_per','wres_par','wres_per','distance','prob_distance'};
+                tab = table(time',data_par',data_per',fit_par',fit_per',res_par',res_per',ri',dist_i','VariableNames',names);
+                ext = '_tau_dist';
+            end
         end
         %%% get path
         if ~strcmp(TauFitData.Who,'BurstBrowser')
@@ -7056,7 +7152,7 @@ switch obj
         end
         filename = strrep(filename,' - ','-');
         filename = strrep(filename,' ','_');
-        [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file',[path filesep filename ext '.txt']);
+        [filename, pathname, FilterIndex] = uiputfile('*.csv','Save *.csv file',[path filesep filename ext '.csv']);
         if FilterIndex == 0
             return;
         end
@@ -7320,10 +7416,48 @@ switch obj
         %%% get tau values and plot dynamic FRET line in Burst Browser
         BBgui = guidata(findobj('Tag','BurstBrowser'));
         file = BurstMeta.SelectedFile;
+        %%% get lifetimes
+        switch TauFitData.FitType
+            case 'Biexponential' % biexponential fit
+                tau1 = cell2mat(h.FitPar_Table.Data(1,1));
+                tau2 = cell2mat(h.FitPar_Table.Data(2,1));
+            case {'Two Distributions plus Donor only','Distribution Fit - Global Model'} % two distribution fit
+                R1 = cell2mat(h.FitPar_Table.Data(1,1));
+                s1 = cell2mat(h.FitPar_Table.Data(2,1));
+                R2 = cell2mat(h.FitPar_Table.Data(3,1));
+                s2 = cell2mat(h.FitPar_Table.Data(4,1));
+                R = 1:1:200;
+                pR1 = normpdf(R,R1,s1); pR1 = pR1./sum(pR1);
+                pR2 = normpdf(R,R2,s2); pR2 = pR2./sum(pR2);
+                switch TauFitData.FitType
+                    case 'Two Distributions plus Donor only'
+                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
+                        tauD0 = cell2mat(h.FitPar_Table.Data(10,1));   
+                        t = (1+(R0./R).^6).^(-1)*tauD0;
+                        tau1 = sum(pR1.*t.^2)./sum(pR1.*t);
+                        tau2 = sum(pR2.*t.^2)./sum(pR2.*t);
+                    case 'Distribution Fit - Global Model'
+                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
+                        tau0 = cell2mat(h.FitPar_Table.Data(10,1));
+                        tauD01 = cell2mat(h.FitPar_Table.Data(11,1));
+                        tauD02 = cell2mat(h.FitPar_Table.Data(12,1));
+                        x_tauD01 = cell2mat(h.FitPar_Table.Data(13,1));
+                        k_RET = (1./tau0).*((R0./R).^6); % k_RET as a function of R
+                        t1 = ((1./tauD01) + k_RET).^(-1);
+                        t2 = ((1./tauD02) + k_RET).^(-1);
+                        tau1 = (x_tauD01.*sum(pR1.*t1.^2)+(1-x_tauD01).*sum(pR1.*t2.^2))./...
+                            (x_tauD01.*sum(pR1.*t1)+(1-x_tauD01).*sum(pR1.*t2));
+                        tau2 = (x_tauD01.*sum(pR2.*t1.^2)+(1-x_tauD01).*sum(pR2.*t2.^2))./...
+                            (x_tauD01.*sum(pR2.*t1)+(1-x_tauD01).*sum(pR2.*t2));
+                end
+                
+            otherwise
+                return;
+        end
         %%% Query using edit box
-        %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
         data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
-            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(cell2mat(h.FitPar_Table.Data(1,1))),num2str(cell2mat(h.FitPar_Table.Data(2,1)))});
+            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),...
+            num2str(tau1),num2str(tau2)});
         data = cellfun(@str2double,data);
         if any(isnan(data)) || isempty(data)
             return;

@@ -261,7 +261,7 @@ switch TTResultFormat_TTTRRecType
             if exist('ImgHdr_LineStart','var')
                 Header.LineStartMarker = ImgHdr_LineStart;
                 Header.LineStopMarker = ImgHdr_LineStop;
-                Header.FrameStartMarker = imgHdr_Frame;
+                Header.FrameStartMarker = ImgHdr_Frame;
             end
         end
         

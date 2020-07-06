@@ -295,10 +295,13 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
 % 08/01/20: (3.00) Added check for newer version online (initialized to version 3.00)
 % 15/01/20: (3.01) Clarified/fixed error messages; added error IDs; easier -update; various other small fixes
 % 20/01/20: (3.02) Attempted fix for issue #285: unsupported patch transparency in some Ghostscript versions; improved suggested fixes message upon error
+% 03/03/20: (3.03) Suggest to upload problematic EPS file in case of a Ghostscript error in eps2pdf (& don't delete this file)
+% 22/03/20: (3.04) Workaround for issue #15; alert if ghostscript file not found on Matlab path
+% 10/05/20: (3.05) Fix the generated SVG file, based on Cris Luengo's SVG_FIX_VIEWBOX; don't generate PNG when only SVG is requested
 %}
 
     % Check for newer version (not too often)
-    checkForNewerVersion(3.02);
+    checkForNewerVersion(3.05);
 
     if nargout
         [imageData, alpha] = deal([]);
@@ -327,6 +330,8 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
     fig = get(0, 'CurrentFigure');
     [fig, options] = parse_args(nargout, fig, varargin{:});
 
+    % exportgraphics/copygraphics - here & in README.md
+    
     % Ensure that we have a figure handle
     if isequal(fig,-1)
         return  % silent bail-out
@@ -534,6 +539,8 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
     end
 
     try
+        tmp_nam = '';  % initialize
+
         % Do the bitmap formats first
         if isbitmap(options)
             if abs(options.bb_padding) > 1
@@ -608,6 +615,14 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
 
                 % Set the background colour (and size) back to normal
                 set(fig, 'Color', tcol, 'Position', pos);
+                % Workaround for issue #15
+                szA = size(A);
+                szB = size(B);
+                if ~isequal(szA,szB)
+                    A = A(1:min(szA(1),szB(1)), 1:min(szA(2),szB(2)), :);
+                    B = B(1:min(szA(1),szB(1)), 1:min(szA(2),szB(2)), :);
+                    warning('export_fig:bitmap:sizeMismatch','Problem detected by export_fig generation of a bitmap image; the generated export may look bad. Try to reduce the figure size to fit the screen, or avoid using export_fig''s -transparent option.')
+                end
                 % Compute the alpha map
                 alpha = round(sum(B - A, 3)) / (255 * 3) + 1;
                 A = alpha;
@@ -874,8 +889,8 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
             catch ex
                 % Restore the figure's previous background color (in case it was not already restored)
                 try set(fig,'Color',originalBgColor); drawnow; catch, end
-                % Delete the eps
-                delete(tmp_nam);
+                % Delete the temporary eps file - NOT! (Yair 3/3/2020)
+                %delete(tmp_nam);
                 % Rethrow the EPS/PDF-generation error
                 rethrow(ex);
             end
@@ -965,6 +980,27 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
             % Add warning about unsupported export_fig options with SVG output
             if any(~isnan(options.crop_amounts)) || any(options.bb_padding)
                 warning('export_fig:SVG:options', 'export_fig''s SVG output does not [currently] support cropping/padding.');
+            end
+
+            % Fix the generated SVG file, based on Cris Luengo's SVG_FIX_VIEWBOX:
+            % https://www.mathworks.com/matlabcentral/fileexchange/49617-svg_fix_viewbox-in_name-varargin
+            try
+                % Read SVG file
+                s = read_write_entire_textfile(filename);
+                % Fix fonts #1: 'SansSerif' doesn't work on my browser, the correct CSS is 'sans-serif'
+                s = regexprep(s,'font-family:SansSerif;|font-family:''SansSerif'';','font-family:''sans-serif'';');
+                % Fix fonts #1: The document-wide default font is 'Dialog'. What is this anyway?
+                s = regexprep(s,'font-family:''Dialog'';','font-family:''sans-serif'';');
+                % Replace 'width="xxx" height="yyy"' with 'width="100%" viewBox="0 0 xxx yyy"'
+                t = regexp(s,'<svg.* width="(?<width>[0-9]*)" height="(?<height>[0-9]*)"','names');
+                if ~isempty(t)
+                    relativeWidth = 100;  %TODO - user-settable via input parameter?
+                    s = regexprep(s,'(?<=<svg[^\n]*) width="[0-9]*" height="[0-9]*"',sprintf(' width="%d\\%%" viewBox="0 0 %s %s"',relativeWidth,t.width,t.height));
+                end
+                % Write updated SVG file
+                read_write_entire_textfile(filename, s);
+            catch
+                % never mind - ignore
             end
         end
 
@@ -1125,7 +1161,11 @@ function [imageData, alpha] = export_fig(varargin) %#ok<*STRCL1>
             catch
                 % ignore - maybe an old MAtlab release
             end
-            fprintf(2, '\nIf the problem persists, then please %s.\n\n', hyperlink('https://github.com/altmany/export_fig/issues','report a new issue'));
+            fprintf(2, '\nIf the problem persists, then please %s.\n', hyperlink('https://github.com/altmany/export_fig/issues','report a new issue'));
+            if exist(tmp_nam,'file')
+                fprintf(2, 'In your report, please upload the problematic EPS file: %s (you can then delete this file).\n', tmp_nam);
+            end
+            fprintf(2, '\n');
         end
         rethrow(err)
     end
@@ -1396,7 +1436,7 @@ function [fig, options] = parse_args(nout, fig, varargin)
     end
 
     % Set the default format
-    if ~isvector(options) && ~isbitmap(options)
+    if ~isvector(options) && ~isbitmap(options) && ~options.svg
         options.png = true;
     end
 

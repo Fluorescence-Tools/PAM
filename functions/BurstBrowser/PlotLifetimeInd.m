@@ -15,6 +15,14 @@ if isempty(BurstData)
 end
 
 file = BurstMeta.SelectedFile;
+%%% read out the plot offset
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Contour'
+        offset = UserValues.BurstBrowser.Display.ContourOffset/100;
+    case {'Image','Scatter','Hex'}
+        offset = UserValues.BurstBrowser.Display.ImageOffset/100;
+end
+
 %%% reset axis motion function (used for phasor plot to read out lifetimes)
 h.BurstBrowser.WindowButtonMotionFcn = [];
 h.axes_lifetime_ind_2d_textbox.String = '';
@@ -142,7 +150,8 @@ if exist('origin','var') %%% simply copy the plots
     h.axes_lifetime_ind_2d.XLabel.Color = UserValues.Look.Fore;
     h.axes_lifetime_ind_2d.YLabel.String = origin.YLabel.String;
     h.axes_lifetime_ind_2d.YLabel.Color = UserValues.Look.Fore;
-    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;
+    h.axes_lifetime_ind_2d.CLimMode = 'auto';
+    %h.axes_lifetime_ind_2d.CLim(1) = offset;
     %%% find the image plot
     xdata = plots(strcmp(type,'image')).XData;
     ydata = plots(strcmp(type,'image')).YData;
@@ -261,7 +270,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     end
     xlim(h.axes_lifetime_ind_2d,x_lim);
     ylim(h.axes_lifetime_ind_2d,y_lim);
-    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;    
+    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = offset;    
     %%% plot the universal circle
     if ~isempty(strfind(paramX,'gD'))
         h.axes_lifetime_ind_2d.XLabel.String = 'g_D';
@@ -277,7 +286,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     zdata = H;
     
     origin = []; origin.XLim = x_lim; origin.YLim = y_lim;       
-    origin.CLim = [0,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
+    origin.CLim = [max(H(:))*offset,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
 end
 h.axes_lifetime_ind_2d.CLim = origin.CLim;
 if(get(h.Hist_log10, 'Value')) % transform back for 1d hists

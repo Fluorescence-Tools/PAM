@@ -127,8 +127,8 @@ switch type
         end
         amplitudes(isnan(amplitudes)) = 0;
         amplitudes(isinf(amplitudes)) = 0;
-        cut = round(sum(amplitudes(:))*length(channel));
-        channel(1:cut,1) = channel(1:cut, 2);
+        staticcut = round(sum(amplitudes(:)) / (1+sum(amplitudes(:))) * length(channel));
+        channel(1:staticcut,1) = channel(1:staticcut,2);
         channel(:,2) = [];
         
         % compute resampled average FRET efficiencies
@@ -250,7 +250,7 @@ switch type
                     R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
                 end
                 E_randomized{model,i} = 1./(1+(R_randomized{i}./R0).^6);
-            end 
+            end
             % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
             E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized(model,:),'UniformOutput',false);
             %%% roll photons based on randomized proximity ratio to only have donor photons
@@ -263,10 +263,12 @@ switch type
         end
         amplitudes(isnan(amplitudes)) = 0;
         amplitudes(isinf(amplitudes)) = 0;
-        cut = round(sum(amplitudes(:))*length(channel));
-        channel(1,1:cut) = channel(2,1:cut);
+        % Convert PDA amplitudes, which are defined as A_dyn = 1/(1+sum(A_static)) und Astatic,i = A_static,i/(1+sum(A_static))
+%         dyncut = round(1 / (1+sum(amplitudes(:))) * length(channel));
+        staticcut = round(sum(amplitudes(:)) / (1+sum(amplitudes(:))) * length(channel));
+        channel(1,1:staticcut) = channel(2,1:staticcut);
         channel(2,:) = [];
-        E_randomized(1,1:cut) = E_randomized(2,1:cut);
+        E_randomized(1,1:staticcut) = E_randomized(2,1:staticcut);
         E_randomized(2,:) = [];
         %%% discard acceptor photons
         E_randomized = cellfun(@(x,y) x(y==0),E_randomized,channel,'UniformOutput',false);
