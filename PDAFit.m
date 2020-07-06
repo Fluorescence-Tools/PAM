@@ -1455,6 +1455,9 @@ for i = 1:numel(FileName)
             end
             if isfield(SavedData,'XAxisMethod')
                 %%% XAxisMethod and limits have been saved
+                if strcmp(SavedData.XAxisMethod,'log(FD/FA)')
+                    SavedData.XAxisMethod = 'log(SD/SA)';
+                end
                 if i == 1 % first file, use xAxisMethod and limits of this file
                     h.SettingsTab.XAxisUnit_Menu.Value = find(strcmp(SavedData.XAxisMethod,h.SettingsTab.XAxisUnit_Menu.String));
                     % set the limits
@@ -1695,7 +1698,7 @@ switch mode
                 case 'log(SD/SA)'
                     Prox = real(log10(PDAData.Data{i}.NG(valid)./PDAData.Data{i}.NF(valid)));
                     minX = min(Prox(isfinite(Prox))); maxX = max(Prox(isfinite(Prox)));
-                    h.AllTab.Main_Axes.XLabel.String = 'log(SD/SA)';
+                    h.AllTab.Main_Axes.XLabel.String = 'log(S_D/S_A)';
                 case {'FRET efficiency','Distance'}
                     NF_cor = PDAData.Data{i}.NF(valid) - PDAData.timebin(i)*PDAMeta.BGacc(i);
                     ND_cor = PDAData.Data{i}.NG(valid) - PDAData.timebin(i)*PDAMeta.BGdonor(i);
