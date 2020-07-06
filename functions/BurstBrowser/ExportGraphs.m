@@ -359,6 +359,7 @@ switch obj
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
+            del = [];
             for i = 1:numel(hfig.Children(end).Children)
                 if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
                     del = i;
