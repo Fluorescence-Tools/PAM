@@ -2661,7 +2661,7 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         eps_grid = linspace(eps_min,1,NobinsE+1);
         if calc
             PDAMeta.P(i,:) = cell(1,NobinsE+1);
-            StasApproach = h.SettingsTab.UseStasAlgorithm;
+            StasApproach = logical(h.SettingsTab.UseStasAlgorith);
             if StasApproach
                 %%% Note: Background deconvolution is currently NOT supported with this approach!
                 limits = h.AllTab.Main_Axes.XLim;
