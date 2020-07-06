@@ -5849,29 +5849,28 @@ switch mode
                 end
             else % fill in standard values
                 Data(i,:) = repmat({1,false,false},1,6);
+            end           
+        end
+        for i = 1:6 % all fittable parameters
+            if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
+                % this parameter is global for all files
+                % so make the ALL row also global
+                Data(end-2,3*(i-1)+3) = {true};
+                % make the fix checkbox false
+                Data(end-2,3*(i-1)+2) = {false};
+                % make the ALL row the mean of all values for that parameter
+                Data(end-2,3*(i-1)+1) = {mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1)))};
+            else
+                % this parameter is not global for all files
+                % so make it not global for all files
+                Data(1:end-2,3*(i-1)+3) = {false};
             end
-
-            for i = 1:6 % all fittable parameters
-                if all(cell2mat(Data(1:end-3,3*(i-1)+3)))
-                    % this parameter is global for all files
-                    % so make the ALL row also global
-                    Data(end-2,3*(i-1)+3) = {true};
-                    % make the fix checkbox false
-                    Data(end-2,3*(i-1)+2) = {false};
-                    % make the ALL row the mean of all values for that parameter
-                    Data(end-2,3*(i-1)+1) = {mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1)))};
-                else
-                    % this parameter is not global for all files
-                    % so make it not global for all files
-                    Data(1:end-2,3*(i-1)+3) = {false};
-                end
-                if all(cell2mat(Data(1:end-3,3*(i-1)+2)))
-                    % all of the fix checkboxes are true
-                    % make the ALL fix checkbox true
-                    Data(end-2,3*(i-1)+2) = {true};
-                else
-                    Data(end-2,3*(i-1)+2) = {false};
-                end
+            if all(cell2mat(Data(1:end-3,3*(i-1)+2)))
+                % all of the fix checkboxes are true
+                % make the ALL fix checkbox true
+                Data(end-2,3*(i-1)+2) = {true};
+            else
+                Data(end-2,3*(i-1)+2) = {false};
             end
         end
         h.KineticRates_table.Data=Data;
