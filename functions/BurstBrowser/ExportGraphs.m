@@ -195,7 +195,7 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general],hfig);
+        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general,h.axes_1d_x.Legend],hfig);
         panel_copy = hfig;
         %panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
         %panel_copy.ShadowColor = [1 1 1];
