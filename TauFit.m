@@ -4743,7 +4743,7 @@ switch obj
                 IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
                 h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
                 h.Plots.IRFResult.YData = IRFPat;
-                h.Plots.IRFResult.Color = [0,0,0];
+                h.Plots.IRFResult.Color = [0.6 0.6 0.6];
                 h.Plots.IRFResult_Perp.Visible = 'off';
             else
                 IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
@@ -4751,7 +4751,7 @@ switch obj
                 IRFPat = IRFPat./max(IRFPat).*max(Decay_par);
                 h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
                 h.Plots.IRFResult.YData = IRFPat;
-                h.Plots.IRFResult.Color = [0,0,0];
+                h.Plots.IRFResult.Color = [0.6 0.6 0.6];
                 h.Plots.IRFResult_Perp.Visible = 'off';
             end
             
@@ -6852,10 +6852,10 @@ function ChangeLineStyle(h)
 global UserValues
 switch UserValues.TauFit.LineStyle
     case 'line'
-        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore],...
+        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore,h.Plots.IRFResult,h.Plots.IRFResult_Perp],...
             'Marker','none','LineStyle','-');
     case 'dots'
-        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore],...
+        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore,h.Plots.IRFResult,h.Plots.IRFResult_Perp],...
             'Marker','.','LineStyle','none');
 end
     
