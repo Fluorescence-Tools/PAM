@@ -1,4 +1,4 @@
-function ci = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha)
+function ci = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha,file)
 global PDAData
 %%% calculates the confidence intervals for parameters based on the F-test
 %%% used in support plane analysis
@@ -8,7 +8,9 @@ global PDAData
 % nu - the degrees of freedom (bins)
 % p - the number of fit parameters
 % alpha - the confidence level (0.95 --> 95%, 0.68 --> 68%)
-
+if nargin < 7
+    file = 1;
+end
 % First, the maximum chi2 value chi2_max that is tolerated for a confidence
 % level is calculated based on the F statistic
 chi2_max = chi2_0*(1+(p/nu)*finv(alpha,p,nu));
@@ -50,8 +52,9 @@ plot(get(gca,'XLim'),[chi2_max,chi2_max],'k--','LineWidth',1.5);
 legend(l,legend_str);
 
 %%% save figure as fig and png
-% take first filename
-[~,fn,~] = fileparts(PDAData.FileName{1});
+[~,fn,~] = fileparts(PDAData.FileName{file});
+%%% update title of figure
+title(strrep(fn,'_',' '));
 export_fig([PDAData.PathName{1} filesep fn '.png'],'-r300');
 %export_fig([PDAData.PathName{1} filesep fn '.eps']);
 savefig([PDAData.PathName{1} filesep fn '.fig']);

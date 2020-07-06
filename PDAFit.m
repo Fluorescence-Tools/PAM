@@ -2025,6 +2025,15 @@ switch mode
                 end
                 % in between 1 and 2
                 PDAMeta.Plots.Fit_Single{1,8}.Color = colors(3,:);%[1 1 0];
+                for k = 5:7
+                    PDAMeta.Plots.Fit_Single{1,k}.Color = [0.2,0.2,0.2];
+                end
+            else
+                colors = lines(5);
+                colors(end+1,:) = [0.2,0.2,0.2];
+                for k = 2:7
+                    PDAMeta.Plots.Fit_Single{1,k}.Color = colors(k-1,:);
+                end
             end
             
             % bsd
@@ -3013,13 +3022,13 @@ if ~do_global
                         ff = PDAMeta.Fixed(i,:);
                         %%% Read out best chi2
                         chi2_0 = PDAMeta.chi2(i);
-                        %%% define arameters
-                        params = [2,5]; %%% distances of the first two populations
+                        %%% define parameters
+                        params = [2,5,8]; %%% distances of the first two populations
                         %%% get confidence intervals for parameters
                         confi = zeros(size(fitpar)); confi(~fixed) = ci;
-                        ci = max(confi(params),0.5);
+                        ci = max(min(0.5,confi(params)),0.25);
                         
-                        range = -5:1:5;
+                        range = -15:1:15;
                         chi2 = zeros(numel(range),numel(params));
                         for p = 1:numel(params)
                             %%% fix parameter at value
@@ -3049,7 +3058,7 @@ if ~do_global
                         p = sum(~fixed); % number of parameters of the model
                         nu = sum(PDAMeta.hProx{i} > 0) - p; % degrees of freedom
                         alpha = 0.95; % confidence level
-                        ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha);
+                        ci_SPA = ci_support_plane_analysis(chi2,param_val,chi2_0,nu,p,alpha,i);
 
                         %%% evaluate gain to reset plots
                         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
@@ -3063,7 +3072,7 @@ if ~do_global
                                 PDAMeta.FitInProgress = 1;
                                 PDAHistogramFit_Single(fitpar,h);
                         end
-                     PDAMeta.ConfInt_SPA{i} = ci_SPA;
+                     PDAMeta.ConfInt_SPA{i} =  0.5*(ci_SPA(2,:)-ci_SPA(1,:));
                 end
         end
         %Calculate chi^2
@@ -3177,10 +3186,10 @@ else
                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
             end
         else %static model
-            PDAMeta.SampleGlobal(1) = true; %half globally link Area1
-            PDAMeta.SampleGlobal(4) = true; %half globally link Area2
-            PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-            PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+            %PDAMeta.SampleGlobal(1) = true; %half globally link Area1
+            %PDAMeta.SampleGlobal(4) = true; %half globally link Area2
+            %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+            %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
             %PDAMeta.SampleGlobal(2) = true; %half globally link R1
             %PDAMeta.SampleGlobal(5) = true; %half globally link R2
             %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
@@ -3472,8 +3481,9 @@ else
                     chi2_0 = PDAMeta.global_chi2;
                     %%% define arameters
                     params = [2,5]; %%% distances of the first two populations
-                    %%% get confidence intervals for parameters                    
+                    %%% get confidence intervals for parameters
                     ci = max(min(0.5,10*err(1,params)),0.25);
+                    %ci = err(1,params); % for amplitudes
                     
                     range = (-10:1:10);
                     chi2 = zeros(numel(range),numel(params));
@@ -3625,7 +3635,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC,h.Menu.Estim
         end
         if obj == h.Menu.EstimateErrorSupportPlaneAnalysis
             conf_int_SPA = zeros(numel(fitpar),1);
-            conf_int_SPA(~fixed,:) = PDAMeta.ConfInt_SPA{i}';
+            conf_int_SPA(params,:) = PDAMeta.ConfInt_SPA{i}';
             ConfInt_SPA{count} = [fitpar' conf_int_SPA];
         end
         filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
