@@ -198,22 +198,31 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             %%% store for later use
             BurstMeta.Data.E_raw = E_raw;
             BurstMeta.Data.S_raw = S_raw;
+            
+            xdata = linspace(-0.1,1,1100);
+            funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
+            
             aurelie_approach = false;
             if aurelie_approach
                 % Fit plane into photon counts directly, according to:
                 % Coullomb, A. et al. QuanTI-FRET: a framework for quantitative FRET measurements in living cells. Scientific Reports 10, (2020).
                 model = @(g,b,x,y) b.*g.*x+b.*y;
                 fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
+                
+                coeff = coeffvalues(fitGamma);
+                beta = coeff(1); gamma = coeff(2);
+                ydata = funS(beta,gamma,xdata);
             else
                 %%% Fit using E S relation (x is E)
-                funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
+
                 %fitGamma = fit(E_raw,1./S_raw,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
                 fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
+                ydata = fitGamma(xdata);
             end
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
-            BurstMeta.Plots.Fits.gamma.XData = linspace(-0.1,1,1100);
-            BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(-0.1,1,1100));
+            BurstMeta.Plots.Fits.gamma.XData = xdata;
+            BurstMeta.Plots.Fits.gamma.YData = ydata;
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             xlim(h.Corrections.TwoCMFD.axes_gamma,[-0.1,1]);
             %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
