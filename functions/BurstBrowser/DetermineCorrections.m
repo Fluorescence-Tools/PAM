@@ -206,7 +206,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             if aurelie_approach
                 % Fit plane into photon counts directly, according to:
                 % Coullomb, A. et al. QuanTI-FRET: a framework for quantitative FRET measurements in living cells. Scientific Reports 10, (2020).
-                model = @(g,b,x,y) b.*g.*x+b.*y;
+                model = @(b,g,x,y) b.*g.*x+b.*y;
                 fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
                 
                 coeff = coeffvalues(fitGamma);
