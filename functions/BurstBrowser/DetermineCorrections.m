@@ -51,7 +51,7 @@ end
 
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
-if obj == h.DetermineCorrectionsButton
+if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCounts])
     %%% read raw data
     if ~h.MultiselectOnCheckbox.UserData
         data_for_corrections = BurstData{file}.DataArray;
@@ -76,21 +76,37 @@ if obj == h.DetermineCorrectionsButton
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
     
-    E_raw = NGR./(NGR+NGG);
-    histE_donly = histc(E_raw,x_axis);
-    x_axis = x_axis(1:end-1);
-    histE_donly(end-1) = histE_donly(end-1)+histE_donly(end);
-    histE_donly(end) = [];
-    BurstMeta.Plots.histE_donly.XData = x_axis;
-    BurstMeta.Plots.histE_donly.YData = histE_donly;
-    axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
-    h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Proximity Ratio';
-    h.Corrections.TwoCMFD.axes_crosstalk.Title.String = 'Proximity Ratio of Donor only';
-    %fit single gaussian
-    [mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly);
-    BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
-    BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
-    ct = mean_ct/(1-mean_ct);
+    switch obj 
+        case h.DetermineCorrectionsButton
+            E_raw = NGR./(NGR+NGG);
+            histE_donly = histc(E_raw,x_axis);
+            x_axis = x_axis(1:end-1);
+            histE_donly(end-1) = histE_donly(end-1)+histE_donly(end);
+            histE_donly(end) = [];
+            BurstMeta.Plots.histE_donly.XData = x_axis;
+            BurstMeta.Plots.histE_donly.YData = histE_donly;
+            axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
+            h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Proximity Ratio';
+            h.Corrections.TwoCMFD.axes_crosstalk.Title.String = 'Proximity Ratio of Donor only';
+            %fit single gaussian
+            [mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly);
+            BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
+            BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
+            ct = mean_ct/(1-mean_ct);
+        case h.DetermineCorrectionsFromPhotonCounts
+            %%% instead of gaussian fit, use the proportionality
+            %%% relationship between the photon counts NGR = alpha*NGG
+            lm = fitlm(NGG,NGR,'Intercept',false,'RobustOpts','on');
+            ct = table2array(lm.Coefficients('x1',1));
+            ct_ci = table2array(lm.Coefficients('x1',2));
+            figure('Color',[1,1,1],'Position',[100,100,1000,400]);
+            subplot(1,2,1);
+            plot(lm);
+            set(gca,'Layer','Top','FontSize',18,'LineWidth',2,'Box','on');
+            title(sprintf('Crosstalk \\alpha = %.4f \\pm %.4f',ct,ct_ci),'Interpreter','tex');
+            xlabel('Photon counts NGG');
+            ylabel('Photon counts NGR');
+    end
     if ~isnan(ct) && (ct > 0)
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
     end
@@ -116,21 +132,37 @@ if obj == h.DetermineCorrectionsButton
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
     NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-    S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    histS_aonly = histc(S_raw,x_axis);
-    x_axis = x_axis(1:end-1);
-    histS_aonly(end-1) = histS_aonly(end-1)+histS_aonly(end);
-    histS_aonly(end) = [];
-    BurstMeta.Plots.histS_aonly.XData = x_axis;
-    BurstMeta.Plots.histS_aonly.YData = histS_aonly;
-    axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
-    h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Stoichiometry (raw)';
-    h.Corrections.TwoCMFD.axes_direct_excitation.Title.String = 'Raw Stoichiometry of Acceptor only';
-    %fit single gaussian
-    [mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly);
-    BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
-    BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
-    de = mean_de/(1-mean_de);
+    switch obj 
+        case h.DetermineCorrectionsButton
+            S_raw = (NGG+NGR)./(NGG+NGR+NRR);
+            histS_aonly = histc(S_raw,x_axis);
+            x_axis = x_axis(1:end-1);
+            histS_aonly(end-1) = histS_aonly(end-1)+histS_aonly(end);
+            histS_aonly(end) = [];
+            BurstMeta.Plots.histS_aonly.XData = x_axis;
+            BurstMeta.Plots.histS_aonly.YData = histS_aonly;
+            axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
+            h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Stoichiometry (raw)';
+            h.Corrections.TwoCMFD.axes_direct_excitation.Title.String = 'Raw Stoichiometry of Acceptor only';
+            %fit single gaussian
+            [mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly);
+            BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
+            BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
+            de = mean_de/(1-mean_de);
+        case h.DetermineCorrectionsFromPhotonCounts
+            %%% instead of gaussian fit, use the proportionality
+            %%% relationship between the photon counts NGR = alpha*NGG
+            lm = fitlm(NRR,NGR,'Intercept',false,'RobustOpts','on');
+            de = table2array(lm.Coefficients('x1',1));
+            de_ci = table2array(lm.Coefficients('x1',2));
+            subplot(1,2,2);
+            plot(lm);
+            set(gca,'Layer','Top','FontSize',18,'LineWidth',2,'Box','on');
+            title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',de,de_ci),'Interpreter','tex');
+            xlabel('Photon counts NRR');
+            ylabel('Photon counts NGR');
+    end
+    
     if ~isnan(de) && (de > 0)
         UserValues.BurstBrowser.Corrections.DirectExcitation_GR = de;
     end
@@ -143,7 +175,7 @@ if obj == h.DetermineCorrectionsButton
         end
     end
 end
-if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution])
+if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution, h.FitGammaFromPhotonCounts])
     %% plot gamma plot for two populations (or lifetime versus E)
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
@@ -190,7 +222,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
     BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     switch obj
-        case h.FitGammaButton
+        case {h.FitGammaButton, h.FitGammaFromPhotonCounts}
             %%% Update/Reset Axis Labels
             xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
             ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
@@ -202,22 +234,47 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             xdata = linspace(-0.1,1,1100);
             funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
             
-            aurelie_approach = false;
-            if aurelie_approach
+            if obj == h.FitGammaFromPhotonCounts
                 % Fit plane into photon counts directly, according to:
                 % Coullomb, A. et al. QuanTI-FRET: a framework for quantitative FRET measurements in living cells. Scientific Reports 10, (2020).
-                model = @(b,g,x,y) b.*g.*x+b.*y;
-                fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
                 
-                coeff = coeffvalues(fitGamma);
-                beta = coeff(1); gamma = coeff(2);
+                % using linear regression
+                fitGamma = fitlm([NGG,NGR],NRR,'Intercept',false,'RobustOpts','on');
+                x1 = table2array(fitGamma.Coefficients('x1',1));
+                x1_ci = table2array(fitGamma.Coefficients('x1',2));
+                x2 = table2array(fitGamma.Coefficients('x2',1));
+                x2_ci = table2array(fitGamma.Coefficients('x2',2));
+                beta = x2;
+                gamma = x1./beta;
+                beta_ci = x2_ci;
+                gamma_ci = gamma.*sqrt(x1_ci.^2+x2_ci.^2);
+                %model = @(b,g,x,y) b.*g.*x+b.*y;
+                %fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
+                %coeff = coeffvalues(fitGamma);
+                %beta = coeff(1); gamma = coeff(2);
                 ydata = funS(beta,gamma,xdata);
+                
+                % plot the regression result
+                figure('Color',[1,1,1]); hold on;
+                [x,y] = meshgrid(linspace(min(NGG),max(NGG),100),linspace(min(NGR),max(NGR),100));
+                z = gamma.*beta.*x+beta.*y;
+                surf(x,y,z,'EdgeColor','none','Facecolor','r','FaceAlpha',0.25);
+                scatter3(NGG,NGR,NRR,'.k');
+                xlim([0,prctile(NGG,95)]);
+                ylim([0,prctile(NGR,95)]);
+                zlim([0,prctile(NRR,95)]);
+                set(gca,'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',20,'View',[40,50]);
+                xlabel('NGG'); ylabel('NGR'); zlabel('NRR');
+                title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f',gamma,gamma_ci,beta,beta_ci),'Interpreter','tex');
             else
                 %%% Fit using E S relation (x is E)
 
                 %fitGamma = fit(E_raw,1./S_raw,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
                 fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
                 ydata = fitGamma(xdata);
+                
+                coeff = coeffvalues(fitGamma);
+                beta = coeff(1); gamma = coeff(2);
             end
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
@@ -227,9 +284,6 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             xlim(h.Corrections.TwoCMFD.axes_gamma,[-0.1,1]);
             %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
-            %%% Determine Gamma and Beta
-            coeff = coeffvalues(fitGamma); %m = coeff(1); b = coeff(2);
-            beta = coeff(1); gamma = coeff(2);
         case h.DetermineGammaManuallyButton
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             %%% Update Axis Labels
