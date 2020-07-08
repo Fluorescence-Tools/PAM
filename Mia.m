@@ -2137,7 +2137,7 @@ h.Mia_Image.Calculations.Coloc_Pearsons = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.47, 0.96 0.1],...
     'String','mean Pearson`s: ',...
-    'ToolTipString', 'Pearsons correlation coefficient for the corrected images within the AROI');% %%% Text
+    'ToolTipString', 'Pearsons correlation coefficient for the displayed rightmost images in Mia within the AROI');% %%% Text
 if ismac
     h.Mia_Image.Calculations.Save_Coloc.ForegroundColor = [0 0 0];
     h.Mia_Image.Calculations.Save_Coloc.BackgroundColor = [1 1 1];
@@ -6453,7 +6453,7 @@ end
 %%% Determins, which correlations to perform
 if mode == 2 %Van Steensel type colocalization
     Auto = 1:2; Cross = 1;
-    channel=2; %the CCF is stored at channe 2
+    channel=2; %the CCF is stored at channel 2
 elseif h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto=1:2; Cross=1;
     channel=1:3;
@@ -8679,6 +8679,9 @@ if size(MIAData.Data,1) > 1
                 AROI = MIAData.AR{1,2}; %for now top right AROI
             else
                 AROI = true(size(Image));
+            end
+            if iscell(MIAData.MS) %include manually drawn ROI if it exists
+                AROI = AROI & MIAData.MS{1,2}; %for now top right AROI
             end
             Image = Image(AROI); %linear array of only the included pixels
             Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image
