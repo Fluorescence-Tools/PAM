@@ -3503,11 +3503,11 @@ switch obj
                 
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
-                FitFun = FitFun(ignore:end);
+                FitFun = FitFun(1:end);
                 wres_ignore = wres(1:ignore);
-                wres = wres(ignore:end);
+                wres = wres(1:end);
                 Decay_ignore = Decay(1:ignore);
-                Decay = Decay(ignore:end);
+                Decay = Decay(1:end);
                 
                 %%% Update FitResult
                 FitResult = num2cell(x');
@@ -3591,11 +3591,11 @@ switch obj
                 end
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
-                FitFun = FitFun(ignore:end);
+                FitFun = FitFun(1:end);
                 wres_ignore = wres(1:ignore);
-                wres = wres(ignore:end);
+                wres = wres(1:end);
                 Decay_ignore = Decay(1:ignore);
-                Decay = Decay(ignore:end);
+                Decay = Decay(1:end);
                 
                 %%% Update FitResult
                 FitResult = num2cell(x');
@@ -3684,11 +3684,11 @@ switch obj
                 end
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
-                FitFun = FitFun(ignore:end);
+                FitFun = FitFun(1:end);
                 wres_ignore = wres(1:ignore);
-                wres = wres(ignore:end);
+                wres = wres(1:end);
                 Decay_ignore = Decay(1:ignore);
-                Decay = Decay(ignore:end);
+                Decay = Decay(1:end);
                 
                 %%% Update FitResult
                 FitResult = num2cell(x');
