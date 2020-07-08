@@ -102,10 +102,11 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             figure('Color',[1,1,1],'Position',[100,100,1000,400]);
             subplot(1,2,1);
             plot(lm);
-            set(gca,'Layer','Top','FontSize',18,'LineWidth',2,'Box','on');
+            set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
             title(sprintf('Crosstalk \\alpha = %.4f \\pm %.4f',ct,ct_ci),'Interpreter','tex');
             xlabel('Photon counts NGG');
             ylabel('Photon counts NGR');
+            legend('off');
     end
     if ~isnan(ct) && (ct > 0)
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
@@ -157,10 +158,11 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             de_ci = table2array(lm.Coefficients('x1',2));
             subplot(1,2,2);
             plot(lm);
-            set(gca,'Layer','Top','FontSize',18,'LineWidth',2,'Box','on');
+            set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
             title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',de,de_ci),'Interpreter','tex');
             xlabel('Photon counts NRR');
             ylabel('Photon counts NGR');
+            legend('off');
     end
     
     if ~isnan(de) && (de > 0)
@@ -255,7 +257,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 ydata = funS(beta,gamma,xdata);
                 
                 % plot the regression result
-                figure('Color',[1,1,1]); hold on;
+                figure('Color',[1,1,1],'Position',[100,100,600,550]); hold on;
                 [x,y] = meshgrid(linspace(min(NGG),max(NGG),100),linspace(min(NGR),max(NGR),100));
                 z = gamma.*beta.*x+beta.*y;
                 surf(x,y,z,'EdgeColor','none','Facecolor','r','FaceAlpha',0.25);
@@ -263,7 +265,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 xlim([0,prctile(NGG,95)]);
                 ylim([0,prctile(NGR,95)]);
                 zlim([0,prctile(NRR,95)]);
-                set(gca,'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',20,'View',[40,50]);
+                set(gca,'Color',[1,1,1],'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',16,'View',[40,50]);
                 xlabel('NGG'); ylabel('NGR'); zlabel('NRR');
                 title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f',gamma,gamma_ci,beta,beta_ci),'Interpreter','tex');
             else
@@ -371,7 +373,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             xlim(range);
             title(sprintf('\\gamma = %.4f',fitGamma));
             %title('Kullback-Leibler divergence of the stoichiometry distributions vs. \gamma-factor');
-            set(gca,'LineWidth',2,'FontSize',20,'Layer','top');
+            set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',20,'Layer','top');
             gamma = fitGamma;
             beta = UserValues.BurstBrowser.Corrections.Beta_GR; %unchanged
     end
