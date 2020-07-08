@@ -106,6 +106,8 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             title(sprintf('Crosstalk \\alpha = %.4f \\pm %.4f',ct,ct_ci),'Interpreter','tex');
             xlabel('Photon counts NGG');
             ylabel('Photon counts NGR');
+            xlim([0,prctile(NGG,99)]);
+            ylim([0,prctile(NGR,99)]);
             legend('off');
     end
     if ~isnan(ct) && (ct > 0)
@@ -162,6 +164,8 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',de,de_ci),'Interpreter','tex');
             xlabel('Photon counts NRR');
             ylabel('Photon counts NGR');
+            xlim([0,prctile(NRR,99)]);
+            ylim([0,prctile(NGR,99)]);
             legend('off');
     end
     
@@ -262,9 +266,9 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 z = gamma.*beta.*x+beta.*y;
                 surf(x,y,z,'EdgeColor','none','Facecolor','r','FaceAlpha',0.25);
                 scatter3(NGG,NGR,NRR,'.k');
-                xlim([0,prctile(NGG,95)]);
-                ylim([0,prctile(NGR,95)]);
-                zlim([0,prctile(NRR,95)]);
+                xlim([0,prctile(NGG,99)]);
+                ylim([0,prctile(NGR,99)]);
+                zlim([0,prctile(NRR,99)]);
                 set(gca,'Color',[1,1,1],'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',16,'View',[40,50]);
                 xlabel('NGG'); ylabel('NGR'); zlabel('NRR');
                 title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f',gamma,gamma_ci,beta,beta_ci),'Interpreter','tex');
