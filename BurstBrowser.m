@@ -3238,7 +3238,14 @@ end
         'ForegroundColor', Look.Fore,...
         'HorizontalAlignment','center');
     
-    Colormaps_String = {'jet','parula','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv','seidel'};
+    Colormaps_String = {'jet','parula','spectral','hot','gray','redblue',... % standard maps for BurstBrowser
+        'inferno','magma','plasma','viridis',... % Matplotlib type colormaps
+        'seidel',... % Seidel type colormap
+        'greys','blues','reds','greens','oranges','purples',... % BrewerMap colormaps (pure colors)
+        'bluegreen','bluepurple','greenblue','orangered','purpleblue','purpleorange','purplered','redgray','redpurple','yellowgreen',... % BrewerMap colormaps (binary mixed colors)
+        'brownbluegreen','pinkyellowgreen','purplebluegreen','purpleredgreen','redyellowblue','redyellowgreen','yellowgreenblue','yelloworangebrown','yelloworangered',... % BrewerMap colormaps (ternary mixed colors)
+        'cool','spring','summer','autumn','winter','bone','copper','pink','hsv'... % Matlab colormaps
+        };
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         try
             colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));

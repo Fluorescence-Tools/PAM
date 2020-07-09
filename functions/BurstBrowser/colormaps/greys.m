@@ -2,4 +2,4 @@ function [cm_data]=greys(m)
 if nargin < 1
     m = [];
 end
-cm_data = brewermap(m,'Greys');
+cm_data = flipud(brewermap(m,'Greys'));
