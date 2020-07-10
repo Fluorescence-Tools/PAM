@@ -271,7 +271,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 zlim([0,prctile(NRR,99)]);
                 set(gca,'Color',[1,1,1],'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',16,'View',[40,50]);
                 xlabel('NGG'); ylabel('NGR'); zlabel('NRR');
-                title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f',gamma,gamma_ci,beta,beta_ci),'Interpreter','tex');
+                title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f\nAdj. R^2 = %.4f',gamma,gamma_ci,beta,beta_ci,fitGamma.Rsquared.Adjusted),'Interpreter','tex');
             else
                 %%% Fit using E S relation (x is E)
 
