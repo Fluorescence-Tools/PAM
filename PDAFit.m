@@ -2665,10 +2665,10 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
             if StasApproach
                 %%% Note: Background deconvolution is currently NOT supported with this approach!
                 limits = h.AllTab.Main_Axes.XLim;
+                %%% get background
+                BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
+                BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;
                 for e = 1:numel(eps_grid)
-                    %%% get background
-                    BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
-                    BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;
                     PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins,maxN,PN,BG,BR,limits,i);
                 end
                 %%% add donor only histogram

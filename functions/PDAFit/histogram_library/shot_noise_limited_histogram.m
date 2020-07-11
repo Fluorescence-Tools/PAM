@@ -1,5 +1,9 @@
 function H = shot_noise_limited_histogram(eps,Nobins,maxN,PN,BG,BR,limits,i)
 global PDAMeta UserValues
+%%% convert to C-code convention
+% add 0 bin to P(N) histogram
+maxN = maxN+1;
+PN = [0,PN];
 %%% Evaluate probability of combination of photon counts Sg and Sr
 P_SgSr = PDA_histogram(maxN,PN,1-eps,BG,BR,UserValues.PDA.DeconvoluteBackground); % takes pG = probability to see donor photon
 P_SgSr = reshape(P_SgSr,[maxN+1,maxN+1]);
