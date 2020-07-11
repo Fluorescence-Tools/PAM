@@ -6493,9 +6493,13 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             h.SettingsTab.FixSigmaAtFractionOfR_Fix.Enable = 'off';
             %%% Reset the fixed status of the fit table
             Data = h.FitTab.Table.Data;
+            ix_sigma = 9:9:size(Data,2);
             for i = 1:(size(Data,1)-2)
-                %%% Un-Fix all sigmas
-                Data(i,9:9:end) = deal({false});
+                %%% Un-Fix all sigmas of populations with non-zero
+                %%% amplitude or unfixed
+                used_populations = (cellfun(@str2num,Data(i,2:9:47)) > 0) | ...
+                    (cell2mat(Data(i,3:9:48)) == 0);
+                Data(i,ix_sigma(used_populations)) = deal({false});
             end
             h.FitTab.Table.Data = Data;
             %%% Reenable Columns
