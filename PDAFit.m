@@ -6497,8 +6497,8 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             for i = 1:(size(Data,1)-2)
                 %%% Un-Fix all sigmas of populations with non-zero
                 %%% amplitude or unfixed
-                used_populations = (cellfun(@str2num,Data(i,2:9:end)) > 0) | ...
-                    (cell2mat(Data(i,3:9:end)) == 0);
+                used_populations = (cellfun(@str2num,Data(i,2:9:47)) > 0) | ...
+                    (cell2mat(Data(i,3:9:48)) == 0);
                 Data(i,ix_sigma(used_populations)) = deal({false});
             end
             h.FitTab.Table.Data = Data;
