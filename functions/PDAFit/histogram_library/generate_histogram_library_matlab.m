@@ -347,5 +347,7 @@ else
         end
     end
 end
-% different files = different rows
-% different Ps = different columns
+
+%%% correct for slight number deviations between histogram library and measured histogram
+P = cellfun(@(x) (x./sum(x)).*sum(PDAMeta.hProx{i}),P,'UniformOutput',false);
+P_donly = (P_donly./sum(P_donly)).*sum(PDAMeta.hProx{i});

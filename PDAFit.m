@@ -2670,10 +2670,14 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
                 BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;
                 for e = 1:numel(eps_grid)
                     PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins,maxN,PN,BG,BR,limits,i);
+                    %%% correct for slight number deviations between histogram library and measured histogram
+                    PDAMeta.P{i,e} = (PDAMeta.P{i,e}./sum(PDAMeta.P{i,e})).*sum(PDAMeta.hProx{i});
                 end
                 %%% add donor only histogram
                 eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
                 PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins,maxN,PN,BG,BR,limits,i);
+                %%% correct for slight number deviations between histogram library and measured histogram
+                PDAMeta.P_donly{i} = (PDAMeta.P_donly{i}./sum(PDAMeta.P_donly{i})).*sum(PDAMeta.hProx{i});
             else
                 [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
             end
@@ -4144,20 +4148,20 @@ if fitpar(end) > 0
 end
 
 %%% correct for slight number deviations between hFit and hMeasured
-if sum(hFit) ~= sum(PDAMeta.hProx{i})
-    f = sum(PDAMeta.hProx{i})./sum(hFit);
-    hFit = f*hFit;
-    for k = 1:numel(hFit_Ind)
-        hFit_Ind{k} = f*hFit_Ind{k};
-    end
-    if h.SettingsTab.DynamicModel.Value
-        PDAMeta.hFit_onlyDyn{i} = f*PDAMeta.hFit_onlyDyn{i};
-    end
-    if fitpar(end) > 0
-        %%% Dnor only exists
-        PDAMeta.hFit_Donly{i} = f*PDAMeta.hFit_Donly{i};
-    end
-end
+% if sum(hFit) ~= sum(PDAMeta.hProx{i})
+%     f = sum(PDAMeta.hProx{i})./sum(hFit);
+%     hFit = f*hFit;
+%     for k = 1:numel(hFit_Ind)
+%         hFit_Ind{k} = f*hFit_Ind{k};
+%     end
+%     if h.SettingsTab.DynamicModel.Value
+%         PDAMeta.hFit_onlyDyn{i} = f*PDAMeta.hFit_onlyDyn{i};
+%     end
+%     if fitpar(end) > 0
+%         %%% Dnor only exists
+%         PDAMeta.hFit_Donly{i} = f*PDAMeta.hFit_Donly{i};
+%     end
+% end
 
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
