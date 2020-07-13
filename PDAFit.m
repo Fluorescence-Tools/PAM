@@ -160,7 +160,7 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.GlobalPDAFit,...
         'Tag','MainPlotTab',...
         'Units','normalized',...
-        'Position',[0 0.2 1 0.8]);
+        'Position',[0 0.25 1 0.75]);
     
     %% All tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -525,7 +525,7 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.GlobalPDAFit,...
         'Tag','Params_Tab',...
         'Units','normalized',...
-        'Position',[0 0 1 0.2]);
+        'Position',[0 0 1 0.25]);
     
     %% Fit tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1110,6 +1110,19 @@ if isempty(h.GlobalPDAFit)
         'String','Live plot update',...
         'Value',0,...
         'Position',[0.8 0.55 0.1 0.15]);
+%     h.SettingsTab.SampleGlobal = uicontrol(...
+%         'Parent',h.SettingsTab.Panel,...
+%         'Tag','SampleGlobal',...
+%         'Units','normalized',...
+%         'FontSize',12,...
+%         'BackgroundColor', Look.Back,...
+%         'ForegroundColor', Look.Fore,...
+%         'Style','checkbox',...
+%         'String','Sample-based Global',...
+%         'Tooltipstring', 'Check this if you want to globally link defined (check the code!) parameters within a set of time windows per file. Do not F that parameter but G it in the UI. Every loaded dataset needs to have the same number of TWs!',...
+%         'Value',UserValues.PDA.HalfGlobal,...
+%         'Callback', {@Update_Plots, 0},...
+%         'Position',[0.65 0.05 0.1 0.15]);
     h.SettingsTab.SampleGlobal = uicontrol(...
         'Parent',h.SettingsTab.Panel,...
         'Tag','SampleGlobal',...
@@ -1118,9 +1131,8 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
-        'String','Sample-based Global',...
-        'Tooltipstring', 'Check this if you want to globally link defined (check the code!) parameters within a set of time windows per file. Do not F that parameter but G it in the UI. Every loaded dataset needs to have the same number of TWs!',...
-        'Value',UserValues.PDA.HalfGlobal,...
+        'String','Blocksize for Sample-based Global',...
+        'Tooltipstring', 'Every loaded dataset needs to have the same number of TWs!',...
         'Callback', {@Update_Plots, 0},...
         'Position',[0.65 0.05 0.1 0.15]);
     h.SettingsTab.TW_edit = uicontrol(...
@@ -1132,7 +1144,7 @@ if isempty(h.GlobalPDAFit)
         'String',4,...
         'Tooltipstring', 'Enter the number of loaded time windows per file',...
         'FontSize',12,...
-        'Position',[0.75 0.05 0.025 0.15],...
+        'Position',[0.8 0.05 0.025 0.15],...
         'Enable','on',...
         'Tag','TW_edit');
     h.SettingsTab.DeconvoluteBackground = uicontrol(...
@@ -1465,10 +1477,10 @@ for i = 1:numel(FileName)
                     h.SettingsTab.MainAxisLimtsHigh_Edit.String = num2str(SavedData.XAxisLimitHigh);
                 end
             end
-            if isfield(SavedData,'HalfGlobal')
+            if isfield(SavedData,'HalfGlobalSubsetSize')
                 % HalfGlobal settings were saved
                 if i == 1 % first file, use settings of this file for all
-                    h.SettingsTab.SampleGlobal.Value = SavedData.HalfGlobal;
+                    %h.SettingsTab.SampleGlobal.Value = SavedData.HalfGlobal;
                     h.SettingsTab.TW_edit.String = num2str(SavedData.HalfGlobalSubsetSize);
                 end
             end
@@ -1557,7 +1569,7 @@ for i = 1:numel(PDAData.FileName)
     SavedData.XAxisMethod = h.SettingsTab.XAxisUnit_Menu.String{h.SettingsTab.XAxisUnit_Menu.Value};
     SavedData.XAxisLimitLow = str2double(h.SettingsTab.MainAxisLimtsLow_Edit.String);
     SavedData.XAxisLimitHigh = str2double(h.SettingsTab.MainAxisLimtsHigh_Edit.String);
-    SavedData.HalfGlobal = h.SettingsTab.SampleGlobal.Value;
+    %SavedData.HalfGlobal = h.SettingsTab.SampleGlobal.Value;
     SavedData.HalfGlobalSubsetSize = str2double(h.SettingsTab.TW_edit.String);
     SavedData.ScaleNumberOfPhotons = h.SettingsTab.ScaleNumberOfPhotons_Checkbox.Value;
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
@@ -2474,7 +2486,7 @@ UserValues.PDA.FixSigmaAtFraction = h.SettingsTab.FixSigmaAtFractionOfR.Value;
 UserValues.PDA.SigmaAtFractionOfR = h.SettingsTab.SigmaAtFractionOfR_edit.String;
 UserValues.PDA.FixSigmaAtFractionFix = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
 UserValues.PDA.IgnoreOuterBins = h.SettingsTab.OuterBins_Fix.Value;
-UserValues.PDA.HalfGlobal = h.SettingsTab.SampleGlobal.Value;
+%UserValues.PDA.HalfGlobal = h.SettingsTab.SampleGlobal.Value;
 UserValues.PDA.DeconvoluteBackground =  h.SettingsTab.DeconvoluteBackground.Value;
 if obj == h.SettingsTab.DeconvoluteBackground
     PDAMeta.PreparationDone(:) = 0;
@@ -2659,31 +2671,31 @@ if (any(PDAMeta.PreparationDone(PDAMeta.Active) == 0)) || ~isfield(PDAMeta,'eps_
         end
         eps_min = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((0+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-0))).^(-1);
         eps_grid = linspace(eps_min,1,NobinsE+1);
-        if calc
-            PDAMeta.P(i,:) = cell(1,NobinsE+1);
-            StasApproach = logical(h.SettingsTab.UseStasAlgorithm.Value);
-            if StasApproach
-                %%% Note: Background deconvolution is currently NOT supported with this approach!
-                limits = h.AllTab.Main_Axes.XLim;
-                %%% get background
-                BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
-                BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;
-                for e = 1:numel(eps_grid)
-                    PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins,maxN,PN,BG,BR,limits,i);
-                    %%% correct for slight number deviations between histogram library and measured histogram
-                    PDAMeta.P{i,e} = (PDAMeta.P{i,e}./sum(PDAMeta.P{i,e})).*sum(PDAMeta.hProx{i});
-                end
-                %%% add donor only histogram
-                eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
-                PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins,maxN,PN,BG,BR,limits,i);
+
+        PDAMeta.P(i,:) = cell(1,NobinsE+1);
+        StasApproach = logical(h.SettingsTab.UseStasAlgorithm.Value);
+        if StasApproach
+            %%% Note: Background deconvolution is currently NOT supported with this approach!
+            limits = h.AllTab.Main_Axes.XLim;
+            %%% get background
+            BG = PDAMeta.BGdonor(i)*PDAData.timebin(i)*1000;
+            BR = PDAMeta.BGacc(i)*PDAData.timebin(i)*1000;
+            for e = 1:numel(eps_grid)
+                PDAMeta.P{i,e} = shot_noise_limited_histogram(eps_grid(e),Nobins,maxN,PN,BG,BR,limits,i);
                 %%% correct for slight number deviations between histogram library and measured histogram
-                PDAMeta.P_donly{i} = (PDAMeta.P_donly{i}./sum(PDAMeta.P_donly{i})).*sum(PDAMeta.hProx{i});
-            else
-                [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
+                PDAMeta.P{i,e} = (PDAMeta.P{i,e}./sum(PDAMeta.P{i,e})).*sum(PDAMeta.hProx{i});
             end
-            PDAMeta.PreparationDone(i) = 1;
-            Progress(i./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+            %%% add donor only histogram
+            eps_donor_only = PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i));
+            PDAMeta.P_donly{i} = shot_noise_limited_histogram(eps_donor_only,Nobins,maxN,PN,BG,BR,limits,i);
+            %%% correct for slight number deviations between histogram library and measured histogram
+            PDAMeta.P_donly{i} = (PDAMeta.P_donly{i}./sum(PDAMeta.P_donly{i})).*sum(PDAMeta.hProx{i});
+        else
+            [PDAMeta.P(i,:), PDAMeta.P_donly{i}] = generate_histogram_library_matlab(i,NobinsE,Nobins,maxN,h);
         end
+        PDAMeta.PreparationDone(i) = 1;
+        Progress(i./numel(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing fit...');
+
         PDAMeta.eps_grid{i} = eps_grid;
         PDAMeta.PN{i} = PN;
         PDAMeta.maxN{i} = maxN;
@@ -2727,6 +2739,7 @@ end
 %% Store fit parameters globally
 PDAMeta.Fixed = cell2mat(h.FitTab.Table.Data(1:end-3,3:3:end-1));
 PDAMeta.Global = cell2mat(h.FitTab.Table.Data(end-2,4:3:end-1));
+PDAMeta.SampleGlobal = cell2mat(h.FitTab.Table.Data(end-1,4:3:end-1));
 LB = h.FitTab.Table.Data(end-1,2:3:end-1);
 PDAMeta.LB = cellfun(@str2double,LB);
 UB = h.FitTab.Table.Data(end  ,2:3:end-1);
@@ -3172,58 +3185,60 @@ else
     % check 'Sample-based Global' if you want to globally link a parameter
     % within a set of time windows of one file.
     % Do not F that parameter but G it in the UI.
-    PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global));
-    if UserValues.PDA.HalfGlobal
+    
+    % Read sample-based global parameters from fit table
+    %PDAMeta.SampleGlobal = false(1,numel(PDAMeta.Global));
+    if any(PDAMeta.SampleGlobal)
         % number of time windows per file
         PDAMeta.BlockSize = str2double(h.SettingsTab.TW_edit.String);
-        if h.SettingsTab.DynamicModel.Value
-            % hardcode here which parameters are global only within a set of time windows of one file
-            % standard is to link the rates of the dynamic states for each block
-            switch h.SettingsTab.DynamicSystem.Value
-                case 1 % two state system
-                    %PDAMeta.SampleGlobal(1) = true; %half globally link k12
-                    %PDAMeta.SampleGlobal(4) = true; %half globally link k21
-                    %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-                    %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
-                    PDAMeta.SampleGlobal(2) = true; %half globally link R1
-                    PDAMeta.SampleGlobal(5) = true; %half globally link R2
-                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-                    %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
-                    %PDAMeta.SampleGlobal(14) = true; %half globally link R5
-                    %PDAMeta.SampleGlobal(15) = true; %half globally link sigma5
-                    PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
-                case 2
-                    PDAMeta.SampleGlobal(1) = true; %half globally link k12
-                    PDAMeta.SampleGlobal(4) = true; %half globally link k21
-                    PDAMeta.SampleGlobal(7) = true; %half globally link k31
-                    PDAMeta.SampleGlobal(end-2) = true; %half globally link k32
-                    PDAMeta.SampleGlobal(end-1) = true; %half globally link k13
-                    PDAMeta.SampleGlobal(end) = true; %half globally link k23
-                    %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
-                    %PDAMeta.SampleGlobal(5) = true; %half globally link R2
-                    %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-                    %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-            end
-        else %static model
-            %PDAMeta.SampleGlobal(1) = true; %half globally link Area1
-            %PDAMeta.SampleGlobal(4) = true; %half globally link Area2
-            %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
-            %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
-            %PDAMeta.SampleGlobal(2) = true; %half globally link R1
-            %PDAMeta.SampleGlobal(5) = true; %half globally link R2
-            %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
-            %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
-            %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
-            %PDAMeta.SampleGlobal(14) = true; %half globally link R5
-            %PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
-        end
         PDAMeta.Blocks = numel(PDAData.Data)/PDAMeta.BlockSize; %number of data blocks
         if ~isequal(round(PDAMeta.Blocks), PDAMeta.Blocks)
             msgbox(['The "Sample-based global" checkbox is checked; each loaded dataset needs to consist of exactly ' h.SettingsTab.TW_edit.String ' time windows!'])
             return
         end
         PDAMeta.Global = PDAMeta.Global | PDAMeta.SampleGlobal;
+%         if h.SettingsTab.DynamicModel.Value
+%             % hardcode here which parameters are global only within a set of time windows of one file
+%             % standard is to link the rates of the dynamic states for each block
+%             switch h.SettingsTab.DynamicSystem.Value
+%                 case 1 % two state system
+%                     %PDAMeta.SampleGlobal(1) = true; %half globally link k12
+%                     %PDAMeta.SampleGlobal(4) = true; %half globally link k21
+%                     %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+%                     %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+%                     PDAMeta.SampleGlobal(2) = true; %half globally link R1
+%                     PDAMeta.SampleGlobal(5) = true; %half globally link R2
+%                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+%                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+%                     %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
+%                     %PDAMeta.SampleGlobal(14) = true; %half globally link R5
+%                     %PDAMeta.SampleGlobal(15) = true; %half globally link sigma5
+%                     PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
+%                 case 2
+%                     PDAMeta.SampleGlobal(1) = true; %half globally link k12
+%                     PDAMeta.SampleGlobal(4) = true; %half globally link k21
+%                     PDAMeta.SampleGlobal(7) = true; %half globally link k31
+%                     PDAMeta.SampleGlobal(end-2) = true; %half globally link k32
+%                     PDAMeta.SampleGlobal(end-1) = true; %half globally link k13
+%                     PDAMeta.SampleGlobal(end) = true; %half globally link k23
+%                     %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+%                     %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+%                     %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+%                     %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+%             end
+%         else %static model
+%             %PDAMeta.SampleGlobal(1) = true; %half globally link Area1
+%             %PDAMeta.SampleGlobal(4) = true; %half globally link Area2
+%             %PDAMeta.SampleGlobal(7) = true; %half globally link Area3
+%             %PDAMeta.SampleGlobal(10) = true; %half globally link Area4
+%             %PDAMeta.SampleGlobal(2) = true; %half globally link R1
+%             %PDAMeta.SampleGlobal(5) = true; %half globally link R2
+%             %PDAMeta.SampleGlobal(3) = true; %half globally link sigma1
+%             %PDAMeta.SampleGlobal(6) = true; %half globally link sigma2
+%             %PDAMeta.SampleGlobal(13) = true; %half globally link Area5
+%             %PDAMeta.SampleGlobal(14) = true; %half globally link R5
+%             %PDAMeta.SampleGlobal(19) = true; %half globally link donor-only fraction
+%         end
     end
     
     PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
@@ -3242,7 +3257,7 @@ else
         UB=[UB PDAMeta.UB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
     end
     
-    if UserValues.PDA.HalfGlobal
+    if any(PDAMeta.SampleGlobal)
         % put the sample-globally linked parameters at the end
         for i = 2:PDAMeta.Blocks
             fitpar = [fitpar PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal)];
@@ -3333,7 +3348,7 @@ else
                 PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             end
-            if UserValues.PDA.HalfGlobal
+            if any(PDAMeta.SampleGlobal)
                 for i = 2:PDAMeta.Blocks
                     PDAMeta.FitParams((i-1)*PDAMeta.BlockSize+1:i*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(fitpar(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
                     fitpar(1:sum(PDAMeta.SampleGlobal))=[];
@@ -3427,7 +3442,7 @@ else
             %%% Sort confidence intervals back to fitparameters
             err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
             ci(1:sum(PDAMeta.Global))=[];
-            if UserValues.PDA.HalfGlobal
+            if any(PDAMeta.SampleGlobal)
                 for i = 1:(PDAMeta.Blocks-1)
                     err(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(ci(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
                     ci(1:sum(PDAMeta.SampleGlobal))=[];
@@ -3463,7 +3478,7 @@ else
                         param_names(cell2mat(cellfun(@(x) strcmp(x,'F3'),param_names,'UniformOutput',false))) = deal({'k31'});
                     end
                     names = param_names(1,PDAMeta.Global);
-                    if UserValues.PDA.HalfGlobal
+                    if any(PDAMeta.SampleGlobal)
                         % put the half-globally linked parameter after the global ones
                         for i = 1:(PDAMeta.Blocks-1)
                             names = [names cellfun(@(x) [x sprintf(' (%i)',i)],param_names(i*PDAMeta.BlockSize+1, PDAMeta.SampleGlobal),'UniformOutput',false)];
@@ -3556,7 +3571,7 @@ else
                         %%% Sort MCMC_mean value back to fit parameters
                         MCMC_mean(:,PDAMeta.Global)=repmat(m_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
                         m_mc(1:sum(PDAMeta.Global))=[];
-                        if UserValues.PDA.HalfGlobal
+                        if any(PDAMeta.SampleGlobal)
                             for i = 1:(PDAMeta.Blocks-1)
                                 MCMC_mean(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(m_mc(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
                                 m_mc(1:sum(PDAMeta.SampleGlobal))=[];
@@ -3578,7 +3593,7 @@ else
                 %%% Sort ci back to fit parameters
                 err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
                 ci(1:sum(PDAMeta.Global))=[];
-                if UserValues.PDA.HalfGlobal
+                if any(PDAMeta.SampleGlobal)
                     for i = 1:(PDAMeta.Blocks-1)
                         err(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(ci(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
                         ci(1:sum(PDAMeta.SampleGlobal))=[];
@@ -4272,7 +4287,7 @@ P=zeros(numel(Global),1);
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
 
-if UserValues.PDA.HalfGlobal
+if any(PDAMeta.SampleGlobal)
     % extract out half-global parameters (stored at the end)
     fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
 end
@@ -4282,7 +4297,7 @@ chi2 = cell(1,sum(PDAMeta.Active));
 for j=1:sum(PDAMeta.Active)
     i = Active(j);
     PDAMeta.file = i;
-    if UserValues.PDA.HalfGlobal
+    if any(PDAMeta.SampleGlobal)
         if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==j)
             % if arriving at the next block, replace sample-based global values and delete from fitpar
             P(PDAMeta.SampleGlobal)=fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal));
@@ -4310,7 +4325,7 @@ usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
 % DOF = non-fixed
 f = PDAMeta.Fixed(Active,:); g = PDAMeta.Global;
 DOF = sum(f(:) == 0);
-if ~UserValues.PDA.HalfGlobal
+if ~any(PDAMeta.SampleGlobal)
     % DOF = non_fixed - global*(number_of_datasets-1);
     DOF = DOF - sum(g)*(numel(Active)-1);
 else
@@ -5351,14 +5366,14 @@ P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
 PDAMeta.chi2 = zeros(numel(PDAMeta.Active),1);
 
-if UserValues.PDA.HalfGlobal
+if any(PDAMeta.SampleGlobal)
     % extract out half-global parameters (stored at the end)
     fitpar_halfglobal = fitpar(end-sum(PDAMeta.SampleGlobal)*(PDAMeta.Blocks-1)+1:end);
 end
 chi2 = {};
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
-    if UserValues.PDA.HalfGlobal
+    if any(PDAMeta.SampleGlobal)
         if any((PDAMeta.BlockSize+1):PDAMeta.BlockSize:(PDAMeta.BlockSize*PDAMeta.Blocks)==i)
             % if arriving at the next block, replace sample-based global values and delete from fitpar
             P(PDAMeta.SampleGlobal)=fitpar_halfglobal(1:sum(PDAMeta.SampleGlobal));
@@ -5388,7 +5403,7 @@ usedBins = sum(horzcat(PDAMeta.hProx{Active}) ~= 0);
 % DOF = non-fixed
 f = PDAMeta.Fixed(Active,:); g = PDAMeta.Global;
 DOF = sum(f(:) == 0);
-if ~UserValues.PDA.HalfGlobal
+if ~any(PDAMeta.SampleGlobal)
     % DOF = non_fixed - global*(number_of_datasets-1);
     DOF = DOF - sum(g)*(numel(Active)-1);
 else
@@ -5745,7 +5760,7 @@ switch mode
         Data(end-2,2:3:end-3)=deal(num2cell(tmp)');
         % fill in boundaries
         Data(end-1,2:3:end)=deal({0});
-        Data(end,2:3:end)=deal({inf});
+        Data(end,2:3:end)=deal({inf});        
         Data=cellfun(@num2str,Data,'UniformOutput',false);
         % active checkbox
         Data(:,1)=deal({true});
@@ -5759,6 +5774,10 @@ switch mode
         % global checkboxes
         Data(1,4:3:end)=deal({false});
         Data(2:end,4:3:end)=deal({[]});
+        % fill in fields for sample-based global
+        Data(end-1,3:3:end) = deal({'S'});
+        Data(end-1,4:3:end) = deal({false});
+        
         h.FitTab.Table.Data=Data;
         PDAMeta.Params = cellfun(@str2double,h.FitTab.Table.Data(end-2,2:3:end));
         h.FitTab.Table.ColumnEditable=[true(1,numel(Columns)-1),false];
@@ -5905,6 +5924,7 @@ switch mode
                 if isprop(e,'NewData')
                     NewData = e.NewData;
                 end
+                
                 if e.Indices(1)==size(tab.Data,1)-2
                     %%% ALL row was used => Applies to all files
                     tab.Data(1:end-2,e.Indices(2))=deal({NewData});
@@ -5936,6 +5956,10 @@ switch mode
                         tab.Data(1:end-2,e.Indices(2)-2)=tab.Data(e.Indices(1),e.Indices(2)-2);
                         %%% Unfixes all file to prohibit fixed and global
                         tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                    else
+                        %%% global was disabled
+                        %%% also disable sample-based global
+                        tab.Data(end-1,e.Indices(2)) = {false};
                     end
                 elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=3 && e.Indices(1)<size(tab.Data,1)-1
                     %%% Value was fixed
@@ -5963,12 +5987,44 @@ switch mode
                 elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
                     %%% Value was changed
                     if tab.Data{e.Indices(1),e.Indices(2)+2}
-                        %%% Global => changes value of all files
-                        tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                        if ~tab.Data{end-1,e.Indices(2)+2} % check for sample-based global
+                            %%% Global => changes value of all files
+                            tab.Data(1:end-2,e.Indices(2))=deal({NewData});
+                        else
+                            %%% Sample-based global => synchronising values of a "block"
+                            % find block of selected file
+                            blocksize = str2double(h.SettingsTab.TW_edit.String);
+                            block = floor(e.Indices(1)./blocksize);
+                            % synchronize value for all files of this block
+                            tab.Data((blocksize*(block-1)+1):(blocksize*block),e.Indices(2))=deal({NewData});
+                        end
                     else
                         %%% Not global => only changes value
                     end
-                end
+                elseif e.Indices(1) == size(tab.Data,1)-1 && mod(e.Indices(2)-3,3)==0
+                    %%% Field for sample-based global was changed, revert
+                    %%% back to default label
+                    tab.Data(e.Indices(1),e.Indices(2)) = {'S'};
+                elseif e.Indices(1) == size(tab.Data,1)-1 && mod(e.Indices(2)-4,3)==0
+                    %%% Sample-based global logical field was changed
+                    if NewData == 1
+                        %%% enable global also
+                        tab.Data(1:end-2,e.Indices(2)) = deal({true});
+                        %%% Sample-based global => synchronising values of a "block"
+                        % find block of selected file
+                        blocksize = str2double(h.SettingsTab.TW_edit.String);
+                        % synchronize value for all files of this block
+                        for block = 1:floor((size(tab.Data,1)-3)/blocksize)
+                            % get the average value of block
+                            val = mean(cellfun(@str2double,tab.Data((blocksize*(block-1)+1):(blocksize*block),e.Indices(2)-2)));
+                            tab.Data((blocksize*(block-1)+1):(blocksize*block),e.Indices(2)-2)=deal({num2str(val)});
+                        end
+                    else
+                        %%% disable global
+                        tab.Data(1:end-2,e.Indices(2)) = deal({false});
+                    end
+                end               
+                
                 if e.Indices(2)==1
                     %%% Active was changed
                     %%% check if at least one fit is still active
