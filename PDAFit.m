@@ -90,10 +90,12 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.Menu.File,...
         'Label','Export Figure(s), Figure and Table Data',...
         'Callback',@Export_Figure,...
+        'Separator','on',...
         'Tag','Export');
     h.Menu.Params = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Reload Parameters',...
+        'Separator','on',...
         'Callback',{@Update_ParamTable, 2},...
         'Tag','Params');
     h.Menu.FitParams = uimenu(...
@@ -101,6 +103,12 @@ if isempty(h.GlobalPDAFit)
         'Label','Reload Fit Parameters',...
         'Callback',{@Update_FitTable, 2},...
         'Tag','Params');
+    h.Menu.ConvertTajanaData = uimenu(...
+        'Parent',h.Menu.File,...
+        'Separator','on',...
+        'Label','Convert data from Tajana software',...
+        'Callback',@convert_tatjana_2DFIDA_file,...
+        'Tag','ConvertTajanaData');
     %%% Fit Menu
     h.Menu.Fit = uimenu(...
         'Parent',h.GlobalPDAFit,...
@@ -1575,6 +1583,50 @@ for i = 1:numel(PDAData.FileName)
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
+% Function to convert txt-based files from the Tatjana software used in the
+% Seidel lab
+function convert_tatjana_2DFIDA_file(obj,~)
+global PDAData PDAMeta UserValues
+[FileName,PathName] = uigetfile({'*.txt','2D FIDA files from Tajana software (*.txt)'},'Select data to convert',UserValues.File.PDAPath, 'MultiSelect', 'on');
+if ~iscell(FileName)
+    FileName = {FileName};
+end
+UserValues.File.PDAPath = PathName;
+
+corrections = struct;
+corrections.CrossTalk_GR = 0;
+corrections.DirectExcitation_GR = 0;
+corrections.Gamma_GR = 0;
+corrections.FoersterRadius = 0;
+background = struct;
+background.Background_GGpar = 0;
+background.Background_GGperp = 0;
+background.Background_GRpar = 0;
+background.Background_GRperp = 0;
+for i = 1:numel(FileName)
+    data = dlmread(fullfile(PathName,FileName{i}),'\t',1,0);
+    % read the timebin
+    timebin = (data(1,4)/1000)*1E-3;
+    data = data(2:end,1:3);
+    %%% 2D FIDA saves the histogram of the pairwise photon counts in the
+    %%% donor and FRET channels
+    %%% -> Reconstruct the unhistogrammed data
+    NG = zeros(sum(data(:,3)),1);
+    NR = zeros(sum(data(:,3)),1);
+    count = 1;
+    for ii = 1:size(data,1)
+        NG(count:count+data(ii,3)-1)=data(ii,1);
+        NR(count:count+data(ii,3)-1)=data(ii,2);
+        count = count++data(ii,3);
+    end
+    PDA.NG = NG;
+    PDA.NF = NR;
+    PDA.NR = NG+NR;
+    PDA.Corrections = corrections;
+    PDA.Background = background;
+    [~,newfilename] = fileparts(FileName{i});
+    save(fullfile(PathName,[newfilename '.pda']), 'PDA', 'timebin')
+end
 % Function that groups things that concern the plots
 function Update_Plots(obj,~,mode,reset)
 % function creates and/or updates the plots after:
