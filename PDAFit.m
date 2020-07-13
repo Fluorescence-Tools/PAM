@@ -1684,9 +1684,9 @@ switch mode
         PDAMeta.Plots.ES_All = cell(n,1);
         PDAMeta.Plots.Gauss_All = cell(n,8);
         % 1 = all
-        % 2:6 = substates
-        % 7 = D only
-        % 8 = all dynamic bursts
+        % 2:7 = substates
+        % 8 = D only
+        % 9 = all dynamic bursts
         PDAMeta.hProx = cell(n,1); %hProx has to be global cause it's used for error calculation during fitting
         cla(h.AllTab.Main_Axes)
         cla(h.AllTab.Res_Axes)
@@ -1873,7 +1873,7 @@ switch mode
                 'Visible','off');
             
             % plots for individual fits
-            for j = 2:8
+            for j = 2:9
                 % 1 = all
                 % 2:6 = substates
                 % 7 = D only
@@ -1926,7 +1926,7 @@ switch mode
             g = zeros(5,200*10+1);
             for j = 1:6
                 g(j,:) = normpdf(x,40+10*j,j);
-            end;
+            end
             % summed distance plot
             PDAMeta.Plots.Gauss_All{i,1} = plot(h.AllTab.Gauss_Axes,...
                 x,sum(g,1),...
@@ -1936,9 +1936,9 @@ switch mode
             %individual distance plots
             for j = 2:7
                 % 1 = all
-                % 2:6 = substates
-                % 7 = D only
-                % 8 = all dynamic bursts
+                % 2:7 = substates
+                % 8 = D only
+                % 9 = all dynamic bursts
                 PDAMeta.Plots.Gauss_All{i,j} = plot(h.AllTab.Gauss_Axes,...
                     x,g(j-1,:),...
                     'Color',light,...
@@ -2082,7 +2082,7 @@ switch mode
             PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
             
             % individual fits
-            for j = 2:8
+            for j = 2:9
                 % 1 = all
                 % 2:6 = substates
                 % 7 = D only
@@ -2092,7 +2092,7 @@ switch mode
                 PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];
                 PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
             end
-            
+
             if h.SettingsTab.DynamicModel.Value
                 colors = lines(4);
                 % state 1
@@ -2104,14 +2104,14 @@ switch mode
                     PDAMeta.Plots.Fit_Single{1,4}.Color = colors(4,:);%[0.4706 0.6706 0.18821];
                 end
                 % in between 1 and 2
-                PDAMeta.Plots.Fit_Single{1,8}.Color = colors(3,:);%[1 1 0];
+                PDAMeta.Plots.Fit_Single{1,9}.Color = colors(3,:);%[1 1 0];
                 for k = 5:7
                     PDAMeta.Plots.Fit_Single{1,k}.Color = [0.2,0.2,0.2];
                 end
             else
-                colors = lines(5);
+                colors = lines(6);
                 colors(end+1,:) = [0.2,0.2,0.2];
-                for k = 2:7
+                for k = 2:8
                     PDAMeta.Plots.Fit_Single{1,k}.Color = colors(k-1,:);
                 end
             end
@@ -2231,7 +2231,7 @@ switch mode
                     'Visible', 'on',...
                     'YData', ydatafitind./sum(ydatafit));
             end
-            %%% donor only plot (plot #7)
+            %%% donor only plot (plot #8)
             if PDAMeta.FitParams(i,19) > 0 %%% donor only existent
                 if h.SettingsTab.OuterBins_Fix.Value
                     % do not display or take into account during fitting, the
@@ -2240,11 +2240,11 @@ switch mode
                 else
                     ydatafitind = [PDAMeta.hFit_Donly{i}'; PDAMeta.hFit_Donly{i}(end)];
                 end
-                PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
-                PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind./sum(ydatafit);
-                PDAMeta.Plots.Gauss_All{i,7}.Visible = 'off'; % hide distance distribution as it does not apply
+                PDAMeta.Plots.Fit_All{i,8}.Visible = 'on';
+                PDAMeta.Plots.Fit_All{i,8}.YData = ydatafitind./sum(ydatafit);
+                PDAMeta.Plots.Gauss_All{i,8}.Visible = 'off'; % hide distance distribution as it does not apply
             else
-                PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
+                PDAMeta.Plots.Fit_All{i,8}.Visible = 'off';
             end
             
             if h.SettingsTab.DynamicModel.Value
@@ -2256,11 +2256,11 @@ switch mode
                 else
                     ydatafitind = [PDAMeta.hFit_onlyDyn{i}; PDAMeta.hFit_onlyDyn{i}(end)];
                 end
-                set(PDAMeta.Plots.Fit_All{i,8},...
+                set(PDAMeta.Plots.Fit_All{i,9},...
                     'Visible', 'on',...
                     'YData', ydatafitind./sum(ydatafit));
             else
-                set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
+                set(PDAMeta.Plots.Fit_All{i,9},'Visible', 'off');
             end
             
             if ~PDAMeta.FittingGlobal
@@ -3762,6 +3762,7 @@ end
 Progress(1, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Done');
 Progress(1, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Done');
 Update_Plots([],[],1)
+Update_Plots([],[],2)
 %%% re-enable Fit Menu
 h.FitTab.Table.Enable='on';
 h.KineticRates_table.Enable = 'on';
