@@ -147,6 +147,6 @@ BurstData.FileName = FileName;
 filename = fullfile(BurstData.PathName,BurstData.FileName);
 save(filename,'BurstData');
 Progress(0.8,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
-save([filename(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
+save([filename(1:end-3) 'bps'],'Macrotime','Microtime','Channel','-v7.3');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
