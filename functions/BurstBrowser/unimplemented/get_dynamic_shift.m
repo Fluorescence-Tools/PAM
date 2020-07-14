@@ -32,7 +32,7 @@ SEM = sigma./sqrt(Nbursts);
 f = figure('Color',[1,1,1]);
 copyobj(h.axes_lifetime_ind_2d,f);
 colormap(colormap(h.BurstBrowser));
-set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.75],'FontSize',14);
+set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.74],'FontSize',14);
 ax = gca;
 % change XData to normalized lifetime
 c = ax.Children;
