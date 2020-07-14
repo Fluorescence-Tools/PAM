@@ -29,10 +29,10 @@ Nbursts = A*size(BurstData{BurstMeta.SelectedFile}.DataCut,1);
 sigma = sqrt(sE.^2+sTau.^2)./sqrt(2);
 SEM = sigma./sqrt(Nbursts);
 
-f = figure;
+f = figure('Color',[1,1,1]);
 copyobj(h.axes_lifetime_ind_2d,f);
 colormap(colormap(h.BurstBrowser));
-set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.75],'FontSize',18);
+set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.75],'FontSize',14);
 ax = gca;
 % change XData to normalized lifetime
 c = ax.Children;
@@ -67,4 +67,4 @@ LevelList = 0.32;
 [c,hC] = contour(x,y,z,'LevelList',LevelList,'Fill','off','LineColor',[0,0,0],'LineWidth',2,'ShowText','off');
 viscircles([point;point],[SEM,sigma],'LineStyle','-');
 
-title(sprintf('dynamic shift = %.3f\nSEM of population = %.4f',ds,SEM),'FontSize',18);
+title(sprintf('dynamic shift = %.3f\nSEM of population = %.4f',ds,SEM),'FontSize',14);
