@@ -8529,17 +8529,24 @@ if any(FileName~=0)
     if size(Image,3)==3       
         Image=Image/max(Image(:))*255;
     else
-        if h.Mia_Image.Settings.AutoScale.Value == 3
-            % manual scaling values for the respective imaging channel
-            mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
-            maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
-            Image(Image<mini)=mini;
-            Image(Image>maxi)=maxi;
-        end
-        
-        cmap=colormap(obj.Parent);
+        %the manual colormap will be only 6bit so rescale the image between 64
+        %gray values
+        Image=Image/obj.Parent.CLim(2)*63; 
+        % this is not necessary, should already be the case:
+%         if h.Mia_Image.Settings.AutoScale.Value == 3
+%             % manual scaling values for the respective imaging channel
+%              mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
+%              maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
+%              Image(Image<mini)=mini;
+%              Image(Image>maxi)=maxi;
+%         end
+%         
+        % The cmap is only 6 bit 
+        cmap=colormap(obj.Parent); 
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
-        CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+        %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+        CData = round(Image)+1;
+        CData(CData>63)=63;
         Image(:,:,1) = reshape(r(CData),size(CData));
         Image(:,:,2) = reshape(g(CData),size(CData));
         Image(:,:,3) = reshape(b(CData),size(CData));
