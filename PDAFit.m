@@ -4173,6 +4173,7 @@ else %%% dynamic model
             %%% additionally normalize the dynamic part to area of 1
             norm_dyn = (sum(fitpar(3*[3,4]-2))+1);
             hFit_Dyn = hFit_Dyn./norm_dyn;
+            hFit_Ind_dyn = cellfun(@(x) x./norm_dyn,hFit_Ind_dyn,'UniformOutput',false);
             for j = 1:2
                 hFit_Ind{j} = hFit_Ind{j}./norm_dyn;
             end
