@@ -8529,17 +8529,27 @@ if any(FileName~=0)
     if size(Image,3)==3       
         Image=Image/max(Image(:))*255;
     else
+        if h.Mia_Image.Settings.AutoScale.Value == 1
+            %just avoid negative values
+            mini = min(min(Image));
+            maxi = max(max(Image));
+        elseif h.Mia_Image.Settings.AutoScale.Value == 3
+            % if manual scale, first include all values within the range
+            mini = obj.Parent.CLim(1);
+            maxi = obj.Parent.CLim(2);
+            Image(Image<mini)=mini;
+            Image(Image>maxi)=maxi;
+        end
         %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
-        Image=(Image-obj.Parent.CLim(1))/(obj.Parent.CLim(2)-obj.Parent.CLim(1))*63; 
-        % this is not necessary, should already be the case:
-%         if h.Mia_Image.Settings.AutoScale.Value == 3
+        Image=(Image-mini)/(maxi-mini)*63;
+       
+%         elseif h.Mia_Image.Settings.AutoScale.Value == 3
 %             % manual scaling values for the respective imaging channel
 %              mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
 %              maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
-%              Image(Image<mini)=mini;
-%              Image(Image>maxi)=maxi;
-%         end
-%         
+% 
+%         end         
+ 
         % The cmap is only 6 bit 
         cmap=colormap(obj.Parent); 
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
