@@ -47,22 +47,22 @@ end
 H_real = H_real./max(H_real(:)); %H(H<UserValues.BurstBrowser.Display.ContourOffset/100) = NaN;
 %% Simulation for PDA comparison
 Progress(0.25,h.Progress_Axes,h.Progress_Text,'Calculating...');
-%         if UserValues.BurstBrowser.Settings.BVA_ModelComparison
-    % simulate dynamic and static models separately
+if UserValues.BurstBrowser.Settings.BVA_ModelComparison
+%     simulate dynamic and static models separately
     Progress(0.25,h.Progress_Axes,h.Progress_Text,'Simulating dynamic Model...');
     [E_sim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates...
         ,rate_matrix,R_states,sigmaR_states,1);
 
     Progress(0.5,h.Progress_Axes,h.Progress_Text,'Simulating static Model...');
-%         else
-%             % simulate dynamic and static species at in one model
-%             Progress(0.25,h.Progress_Axes,h.Progress_Text,'Simulating all species...');
-%             [E_sim,tauD_sim,mean_tauD_sim,~] = ...
-%                 kinetic_consistency_check_2models('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,...
-%                 UserValues.BurstBrowser.Settings.BVA_StaticStates,...
-%                 rate_matrix,R_states,sigmaR_states,...
-%                 rate_matrix_static,R_states_static,sigmaR_states_static);
-%         end
+else
+    % simulate dynamic and static species at in one model
+    Progress(0.25,h.Progress_Axes,h.Progress_Text,'Simulating all species...');
+    [E_sim,tauD_sim,mean_tauD_sim,~] = ...
+        kinetic_consistency_check_2models('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,...
+        UserValues.BurstBrowser.Settings.BVA_StaticStates,...
+        rate_matrix,R_states,sigmaR_states,...
+        rate_matrix_static,R_states_static,sigmaR_states_static);
+end
 %         [E_sim,tauD_sim,mean_tauD_sim,~] = kinetic_consistency_check('Lifetime',UserValues.BurstBrowser.Settings.BVA_DynamicStates,rate_matrix,R_states,sigmaR_states,1);
 
 [H_sim,x_sim,y_sim] = histcounts2(tauD_sim,E_sim,UserValues.BurstBrowser.Display.NumberOfBinsX,'XBinLimits',[-0.1,1.1],'YBinLimits',[-0.1,1.1]);
