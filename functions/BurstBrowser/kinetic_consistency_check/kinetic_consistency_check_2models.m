@@ -49,6 +49,9 @@ switch type
                 dynamic = 1;
                 n_states = n_states_dyn;
             end
+            if sum(rate_matrix) == 0
+                continue
+            end
             states = cell(numel(mt),1);
             % convert macrotime to seconds and subtract first time point
             mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);
