@@ -207,6 +207,18 @@ h.Mia_Image.Clear_Manual_ROI = uimenu(...
     'Parent',h.Mia_Image.Menu,...
     'Label','Clear manual ROI',...
     'Callback',{@Mia_Freehand,3});
+
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Mia_Image.Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','center',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.62 0.95 0.035 0.02],...
+    'String','info',...
+    'ToolTipString',['Left images:' 10 '"left-click": center ROI' 10 '"ctrl"+"left-drag" or "right-drag": draw normal ROI' 10 '"shift"+"left-click" or "middle-click": export image' 10 10 'Right images' 10 '"right-click": draw AROI popupmenu' 10 '"shift"+"left-click" or "middle-click": export image']);
 for i=1:2
     %%% Axes to display images
     h.Mia_Image.Axes(i,1)= axes(...
@@ -2137,7 +2149,7 @@ h.Mia_Image.Calculations.Coloc_Pearsons = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.47, 0.96 0.1],...
     'String','mean Pearson`s: ',...
-    'ToolTipString', 'Pearsons correlation coefficient for the corrected images within the AROI');% %%% Text
+    'ToolTipString', 'Pearsons correlation coefficient for the displayed rightmost images in Mia within the AROI');% %%% Text
 if ismac
     h.Mia_Image.Calculations.Save_Coloc.ForegroundColor = [0 0 0];
     h.Mia_Image.Calculations.Save_Coloc.BackgroundColor = [1 1 1];
@@ -2880,7 +2892,7 @@ h.Mia_TICS.SelectCor = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'ACF1:','CCF:','ACF2:'},...
+    'String',{'ACF1:','ACF2:','CCF:'},...
     'Callback',{@Update_Plots,5,[]},...
     'Position',[0.08 0.67, 0.06 0.03]);
 if ismac
@@ -2910,6 +2922,7 @@ h.Mia_TICS.Clear_Manual_ROI = uimenu(...
     'Label','Clear manual ROI',...
     'Callback',{@Mia_Freehand,6});
 for i=1:3
+    color = [0 1 0;1 0 0;1 1 0];
     h.Plots.TICS(i,1) = errorbar(...
         [0.1 1],...
         [0 0],...
@@ -2919,7 +2932,7 @@ for i=1:3
         'LineStyle','none',...
         'Marker','.',...
         'MarkerSize',8,...
-        'Color',ceil([mod(i-1,3)/2 mod(3-i,3)/2 0]));
+        'Color',color(i,:));
     h.Plots.TICS(i,2) = line(...
         'Parent',h.Mia_TICS.Axes,...
         'XData',[0.1 1],...
@@ -2927,8 +2940,15 @@ for i=1:3
         'LineStyle','-',...
         'Marker','none',...
         'MarkerSize',8,...
-        'Color',ceil([mod(i-1,3)/2 mod(3-i,3)/2 0]));
-    
+        'Color',color(i,:));
+    switch i
+        case 1
+            pos = 0;
+        case 2
+            pos = 0.66;
+        case 3
+            pos = 0.33;
+    end
     h.Text{end+1} = uicontrol(...
         'Parent',h.Mia_TICS.Panel,...
         'Style','text',...
@@ -2937,14 +2957,14 @@ for i=1:3
         'FontWeight','bold',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.02+(i-1)*0.33 0.48 0.3 0.03]);
+        'Position',[0.02+pos 0.48 0.3 0.03]);
     switch i
         case 1
             h.Text{end}.String = 'ACF1';
         case 2
-            h.Text{end}.String = 'CCF';
-        case 3
             h.Text{end}.String = 'ACF2';
+        case 3
+            h.Text{end}.String = 'CCF';
     end
     
     %%% Axes to display correlation images
@@ -2956,7 +2976,7 @@ for i=1:3
         'DataAspectRatio',[1 1 1],...
         'PlotBoxAspectRatio', [1 1 1],...
         'UIContextMenu',h.Mia_TICS.Menu,...
-        'Position',[0.02+(i-1)*0.33 0.02 0.3 0.45]);
+        'Position',[0.02+pos 0.02 0.3 0.45]);
     
     h.Plots.TICSImage(i,1) = imagesc(...
         zeros(2),...
@@ -2971,6 +2991,7 @@ for i=1:3
         'Peer',h.Mia_TICS.Image(i,1),...
         'YColor',Look.Fore,...
         'Visible','off');
+    % switch index again to undo index switch
 end
 h.Mia_TICS.Axes.XColor = Look.Fore;
 h.Mia_TICS.Axes.YColor = Look.Fore;
@@ -5238,8 +5259,8 @@ if any(mode==5)
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
-            %%% 1&3: ACF 1&2
-            %%% 2:   CCF
+            %%% 1&2: ACF 1&2
+            %%% 3:   CCF
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
                 % different images to be plotted
                 %%% G(first lag) - G(last lag) = the amplitude of that part
@@ -5251,14 +5272,14 @@ if any(mode==5)
                     case 1 %ACF1
                         brightness = double(MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
                         counts = double(MIAData.TICS.Int{i,1});
-                    case 2 %CCF
-                        brightness = double(MIAData.TICS.Data{2}(:,:,1).*...
-                            (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
-                            mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2); %#ok<ST2NM>
-                        counts = double((MIAData.TICS.Int{i,1}+MIAData.TICS.Int{i,2}));
-                    case 3 %ACF2
-                        brightness = double(MIAData.TICS.Data{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
+                    case 2 %ACF2
+                        brightness = double(MIAData.TICS.Data{2}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
                         counts = double(MIAData.TICS.Int{i,2});
+                    case 3 %CCF
+                        brightness = double(MIAData.TICS.Data{3}(:,:,1).*...
+                            (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... 
+                            mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2); 
+                        counts = double((MIAData.TICS.Int{i,1}+MIAData.TICS.Int{i,2}));
                 end
                 
                 %%% Find G(0)/2
@@ -5360,8 +5381,8 @@ if any(mode==5)
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
-            %%% 1&3: ACF 1&2
-            %%% 2:   CCF
+            %%% 1&2: ACF 1&2
+            %%% 3:   CCF
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})
 
                     %%% Plots individual pixel data in images
@@ -5392,8 +5413,8 @@ if any(mode==5)
     for i=1:3
         % user has previously pressed the TICS calculate at all
         if isfield(MIAData.TICS,'Data')
-            %%% 1&3: ACF 1&2
-            %%% 2:   CCF
+            %%% 1&2: ACF 1&2
+            %%% 3:   CCF
             if size(MIAData.TICS.Data,2)>=i && ~isempty(MIAData.TICS.Data{i})                
                 TICS = MIAData.TICS.Data{i};
                 TICS(repmat(~mask,1,1,size(TICS,3))) = NaN;
@@ -6444,7 +6465,7 @@ end
 %%% Determins, which correlations to perform
 if mode == 2 %Van Steensel type colocalization
     Auto = 1:2; Cross = 1;
-    channel=2; %the CCF is stored at channe 2
+    channel=2; %the CCF is stored at channel 2
 elseif h.Mia_Image.Calculations.Cor_Type.Value==3
     Auto=1:2; Cross=1;
     channel=1:3;
@@ -7289,18 +7310,6 @@ end
 if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2   
     Save_TICS([],[],data)
 end
-%%% Switches 2nd and 3rd entry to make it conform with ICS
-%%% Cross is 2nd entry
-if size(MIAData.TICS.Data,2)>1
-    if size(MIAData.TICS.Data,2)==2
-        % User calculated ACF2
-        MIAData.TICS.Data{3} = MIAData.TICS.Data{2};
-        MIAData.TICS.Data{2} = [];
-    else
-        % User calculated ACF+CCF
-        MIAData.TICS.Data = MIAData.TICS.Data([1 3 2]);
-    end
-end
 
 Update_Plots(obj,[],5,channel);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7903,7 +7912,7 @@ for i = 1:3
                 Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
             end
         end
-        Header = 'TICS correlation file'; %#ok<NASGU>
+        Header = 'TICS correlation file'; 
         Counts = data{i}.Counts;
         Valid = data{i}.Valid;
         Cor_Times = data{i}.Cor_Times;
@@ -8520,17 +8529,34 @@ if any(FileName~=0)
     if size(Image,3)==3       
         Image=Image/max(Image(:))*255;
     else
-        if h.Mia_Image.Settings.AutoScale.Value == 3
-            % manual scaling values for the respective imaging channel
-            mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
-            maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
+        if h.Mia_Image.Settings.AutoScale.Value == 1
+            %just avoid negative values
+            mini = min(min(Image));
+            maxi = max(max(Image));
+        elseif h.Mia_Image.Settings.AutoScale.Value == 3
+            % if manual scale, first include all values within the range
+            mini = obj.Parent.CLim(1);
+            maxi = obj.Parent.CLim(2);
             Image(Image<mini)=mini;
             Image(Image>maxi)=maxi;
         end
-        
-        cmap=colormap(obj.Parent);
+        %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
+        Image=(Image-mini)/(maxi-mini)*63;
+       
+%         elseif h.Mia_Image.Settings.AutoScale.Value == 3
+%             % manual scaling values for the respective imaging channel
+%              mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
+%              maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
+% 
+%         end         
+ 
+        % The cmap is only 6 bit 
+        cmap=colormap(obj.Parent); 
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
-        CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+        %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+        CData = round(Image)+1;
+        CData(CData>63)=63;
+        CData(CData<0)=0;
         Image(:,:,1) = reshape(r(CData),size(CData));
         Image(:,:,2) = reshape(g(CData),size(CData));
         Image(:,:,3) = reshape(b(CData),size(CData));
@@ -8682,6 +8708,9 @@ if size(MIAData.Data,1) > 1
                 AROI = MIAData.AR{1,2}; %for now top right AROI
             else
                 AROI = true(size(Image));
+            end
+            if iscell(MIAData.MS) %include manually drawn ROI if it exists
+                AROI = AROI & MIAData.MS{1,2}; %for now top right AROI
             end
             Image = Image(AROI); %linear array of only the included pixels
             Image2 = h.Plots.Image(2,2).CData; % channel 2 corrected image

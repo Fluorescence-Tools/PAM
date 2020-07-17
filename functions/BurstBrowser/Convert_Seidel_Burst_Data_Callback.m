@@ -263,7 +263,8 @@ burst_data.FileInfo.ParisInfo = info;
 
 %%% save as *.bur file
 BurstData = burst_data;
-save([PathName filesep burst_data.FileName '.bur'],'BurstData','-v7.3');
-UserValues.File.BurstBrowserPath=PathName;
+[~,fn] = fileparts(fileparts(PathName));
+save([fileparts(PathName) filesep fn '.bur'],'BurstData','-v7.3');
+UserValues.File.BurstBrowserPath=fileparts(PathName);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 LSUserValues(1);

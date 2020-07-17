@@ -3941,7 +3941,7 @@ else %%% dynamic model
                 DynRates(end+1,:) = ones(1,n_states);
                 b = zeros(n_states,1); b(end+1) = 1;
                 p_eq = DynRates\b;
-                FracT = Gillespie_inf_states(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
+                FracT = Gillespie_inf_states_PDA(dT,n_states,dwell_mean,1E5,p_eq,change_prob)./dT;
                 % PofT describes the joint probability to see T3 and T1 (T2=T is in the origin)         
                 PofT = histcounts2(FracT(:,3),FracT(:,1),linspace(0,1,n_bins_T+1),linspace(0,1,n_bins_T+1));
                 PofT = PofT./sum(PofT(:));
@@ -5839,7 +5839,7 @@ switch mode
                     % make the fix checkbox false
                     Data(end-2,3*(i-1)+2) = {false};
                     % make the ALL row the mean of all values for that parameter
-                    Data(end-2,3*(i-1)+1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1))))};
+                    Data(end-2,3*(i-1)+1) = {mean(cellfun(@str2double,Data(1:end-3,3*(i-1)+1)))};
                 else
                     % this parameter is not global for all files
                     % so make it not global for all files
@@ -6493,9 +6493,13 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             h.SettingsTab.FixSigmaAtFractionOfR_Fix.Enable = 'off';
             %%% Reset the fixed status of the fit table
             Data = h.FitTab.Table.Data;
+            ix_sigma = 9:9:size(Data,2);
             for i = 1:(size(Data,1)-2)
-                %%% Un-Fix all sigmas
-                Data(i,9:9:end) = deal({false});
+                %%% Un-Fix all sigmas of populations with non-zero
+                %%% amplitude or unfixed
+                used_populations = (cellfun(@str2num,Data(i,2:9:47)) > 0) | ...
+                    (cell2mat(Data(i,3:9:48)) == 0);
+                Data(i,ix_sigma(used_populations)) = deal({false});
             end
             h.FitTab.Table.Data = Data;
             %%% Reenable Columns

@@ -799,15 +799,15 @@ switch Type
                 Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
                 Text = Text{1};
                 Data.Header = Text{1};
-                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); 
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); 
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); 
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
                 k=1;
                 for j = Start+1:numel(Text)
-                    Values(k,:) = str2num(Text{j});  %#ok<ST2NM>
+                    Values(k,:) = str2num(Text{j}); 
                     k = k+1;
                 end
                 Data.Cor_Times = Values(:,1);
@@ -1940,7 +1940,10 @@ for i=1:size(FCSMeta.Plots,1)
                 B=FCSMeta.Data{i,2}(T);
                 if  Normalization_Method == 9
                     P = FCSMeta.Params(:,i);
-                    B = B - P(end);
+                    offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+                    if ~isempty(offset_idx)
+                        B = B - P(offset_idx);
+                    end
                 end
             case 8
                 
@@ -2280,9 +2283,9 @@ switch mode
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
         end
         %% Sets axes parameters   
-        set(H.FCS.Children,'LineWidth',1.5);
+        %set(H.FCS.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
-            set(H.Residuals.Children,'LineWidth',1.5);
+            %set(H.Residuals.Children,'LineWidth',1.5);
             linkaxes([H.FCS,H.Residuals],'x');
         end
         H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];

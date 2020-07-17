@@ -195,7 +195,7 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general],hfig);
+        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general,h.axes_1d_x.Legend],hfig);
         panel_copy = hfig;
         %panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
         %panel_copy.ShadowColor = [1 1 1];
@@ -359,6 +359,7 @@ switch obj
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
+            del = [];
             for i = 1:numel(hfig.Children(end).Children)
                 if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
                     del = i;
@@ -594,7 +595,7 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        copyobj([h.axes_lifetime_ind_1d_y,h.axes_lifetime_ind_1d_x,h.axes_lifetime_ind_2d],hfig);
+        copyobj([h.axes_lifetime_ind_1d_y,h.axes_lifetime_ind_1d_x,h.axes_lifetime_ind_2d,h.axes_lifetime_ind_1d_x.Legend],hfig);
         panel_copy = hfig;
         %panel_copy = copyobj(h.LifetimePanelInd,hfig);
         %panel_copy.ShadowColor = [1 1 1];
@@ -767,16 +768,19 @@ switch obj
                 end
             end
             %%% refind legend item
+            leg = [];
             for i = 1:numel(panel_copy.Children)
                 if strcmp(panel_copy.Children(i).Type,'legend')
                     leg = i;
                 end
             end
-            if strcmp(panel_copy.Children(leg).Visible,'on')
-                hfig.Position(4) = 660;
-                panel_copy.Position(4) = 660;
-                panel_copy.Children(leg).Position(1) = 10;
-                panel_copy.Children(leg).Position(2) = 590;
+            if ~isempty(leg)
+                if strcmp(panel_copy.Children(leg).Visible,'on')
+                    hfig.Position(4) = 660;
+                    panel_copy.Position(4) = 660;
+                    panel_copy.Children(leg).Position(1) = 10;
+                    panel_copy.Children(leg).Position(2) = 590;
+                end
             end
         end
         if UserValues.BurstBrowser.Display.ColorMapInvert
