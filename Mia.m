@@ -799,7 +799,7 @@ h.Text{end+1} = uicontrol(...
     'Position',[0.02 0.68, 0.4 0.06],...
     'String','Pixel size [nm]:');
 %%% Editbox to set pixel size
-h.Mia_Image.Settings.Image_Size = uicontrol(...
+h.Mia_Image.Settings.Pixel_Size = uicontrol(...
     'Parent',h.Mia_Image.Settings.Image_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -821,6 +821,30 @@ h.Mia_Image.Settings.Image_Mean_CR = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.52, 0.96 0.1],...
     'String','Mean Countrate [kHz]:');
+
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Image_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.42, 0.4 0.06],...
+    'String','Scale bar [um]:');
+%%% Editbox to set scale bar in um
+h.Mia_Image.Settings.ScaleBar = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Image_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.45 0.42, 0.2 0.06],...
+    'Callback',{@Update_Plots, 1,1:2},...
+    'String','');
+
 %% Mia ROI setting tab
 %%% Tab and panel for Mia ROI settings UIs
 h.Mia_Image.Settings.ROI_Tab= uitab(...
@@ -3701,7 +3725,7 @@ switch mode
                     h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
                     h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
                     h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
-                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_Image.Settings.Pixel_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
                     h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
                 elseif numel(Start)==7 && numel(Stop)==7
                     h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
@@ -3709,7 +3733,7 @@ switch mode
                     h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
                     h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
                     h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
-                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_Image.Settings.Pixel_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
                     h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
                     MIAData.RLICS(1,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
                     MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
@@ -4003,7 +4027,7 @@ switch mode
                     h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
                     h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
                     h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
-                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_Image.Settings.Pixel_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
                     h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
                 elseif numel(Start)==7 && numel(Stop)==7
                     h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
@@ -4011,7 +4035,7 @@ switch mode
                     h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
                     h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
                     h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
-                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_Image.Settings.Pixel_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
                     h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
                     MIAData.RLICS(1,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
                     MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
@@ -4236,10 +4260,10 @@ switch mode
         h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000)};
         
         if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
-            h.Mia_Image.Settings.Image_Size.String = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
+            h.Mia_Image.Settings.Pixel_Size.String = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
             h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000)};
         else
-            h.Mia_Image.Settings.Image_Size.String = '50';
+            h.Mia_Image.Settings.Pixel_Size.String = '50';
             h.Mia_ICS.Fit_Table.Data(11,:) = {'50'};
         end
         
@@ -4633,7 +4657,7 @@ if any(mode==1)
                 case 3
                     h.Mia_Image.Axes(i,2).CLim = [str2double(h.Mia_Image.Settings.Scale(i,1).String) str2double(h.Mia_Image.Settings.Scale(i,2).String)];
             end
-
+            
             %%% Sets transparency of NaN pixels to 100%;
             %%% Also sets AlphaData to right size
             h.Plots.Image(i,2).AlphaData = ~isnan(Image);
@@ -4661,6 +4685,27 @@ if any(mode==1)
             h.Mia_Image.Axes(i,2).YLim=[0 size(Image,1)]+0.5;
         end
         drawnow
+        % generate a scale bar in pixels
+        barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
+        if barx~=0 && ~isnan(barx)
+            pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
+            roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
+            roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
+            if  barx > roix*pixsize
+                % scale bar too large, make scale bar 1/10th of the image size
+                barx = round(roix*pixsize/10);
+                h.Mia_Image.Settings.ScaleBar.String = num2str(barx);
+            end
+            barwidth = floor(barx/pixsize); %in pixels
+            y = floor(roiy/40);
+            x = floor(roix/40);
+            for j = 1:2
+                h.Plots.Image(i,j).CData(1+3*y:1+4*y,end-barwidth-4*x:end-4*x) = max(max(h.Plots.Image(i,j).CData));
+            end
+            if ~isempty(MIAData.AR) || ~all(all(MIAData.MS{1}))
+                h.Plots.Image(i,2).AlphaData(1+3*y:1+4*y,end-barwidth-4*x:end-4*x) = 1;
+            end
+        end
     end
 end
 
@@ -5493,7 +5538,7 @@ if any(mode==6)
             h.Plots.STICSImage(i,1).Visible = 'on';
             h.Mia_STICS.Image(i,2).Visible = 'on';
             %% Fitted iMSD plot
-            Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
             Time = (0:(numel(MIAData.iMSD{i,1})-1))*str2double(h.Mia_Image.Settings.Image_Frame.String);
             %%% Data
             h.Plots.STICS(i,1).YData = (MIAData.iMSD{i,1}.*Size/1000).^2;
@@ -6684,7 +6729,7 @@ if savedata > 1
             %%% Pixel [us], Line [ms] and Frametime [s]
             InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
             %%% Pixel size
-            InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            InfoAll(i).Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
             %%% Correction information
             InfoAll(i).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
             if h.Mia_Image.Settings.Correction_Subtract.Value == 4
@@ -6741,7 +6786,7 @@ if savedata > 1
             %%% Pixel [us], Line [ms] and Frametime [s]
             InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
             %%% Pixel size
-            InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            InfoAll(3).Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
             %%% Correction information
             InfoAll(3).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
             if h.Mia_Image.Settings.Correction_Subtract.Value == 4
@@ -7560,7 +7605,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
-        InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+        InfoAll(i).Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
         %%% Correction information
         InfoAll(i).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
         if h.Mia_Image.Settings.Correction_Subtract.Value == 4
@@ -7611,7 +7656,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
-        InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+        InfoAll(3).Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
         %%% Correction information
         InfoAll(3).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
         if h.Mia_Image.Settings.Correction_Subtract.Value == 4
@@ -7927,7 +7972,7 @@ Info = struct;
 %%% Pixel [us], Line [ms] and Frametime [s]
 Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
 %%% Pixel size
-Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+Info.Size = str2double(h.Mia_Image.Settings.Pixel_Size.String);
 %%% ROI and TOI
 Info.Frames = MIAData.TICS.Frames;
 From = h.Plots.ROI(1).Position(1:2)+0.5;
@@ -8566,8 +8611,21 @@ if any(FileName~=0)
             Image(:,:,2) = Image(:,:,2).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(2);
             Image(:,:,3) = Image(:,:,3).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(3);
         end
+        
+        barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
+        if barx~=0 && ~isnan(barx)
+            pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
+            roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
+            roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
+            barwidth = floor(barx/pixsize); %in pixels
+            y = floor(roiy/40);
+            x = floor(roix/40);
+            for i = 1:3
+                Image(1+3*y:1+4*y,end-barwidth-4*x:end-4*x,i) = 255;
+            end
+        end
     end
-    
+    Image = flipud(Image);
     imwrite(uint8(Image),fullfile(PathName,FileName));
 end
 
