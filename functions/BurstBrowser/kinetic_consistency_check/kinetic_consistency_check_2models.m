@@ -49,6 +49,9 @@ switch type
                 dynamic = 1;
                 n_states = n_states_dyn;
             end
+            if sum(rate_matrix) == 0
+                continue
+            end
             states = cell(numel(mt),1);
             % convert macrotime to seconds and subtract first time point
             mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);
@@ -188,7 +191,10 @@ switch type
         %%% get number of photons per burst after donor excitation
         N_phot = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Number of Photons (DX)',BurstData{file}.NameArray)));
         for model = 1:2
-            if model == 2 % static       
+            if model == 2 % static
+                if sum(rate_matrix) == 0
+                    continue
+                end
                 rate_matrix = 1./amplitudes;
                 rate_matrix = rate_matrix*1E-6;
                 rate_matrix(isinf(rate_matrix)) = 1E6;
@@ -202,6 +208,9 @@ switch type
                 if n_states == 3
                     change_prob = cumsum(rate_matrix);
                     change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
+                end
+                if sum(rate_matrix) == 0
+                    continue
                 end
             end 
             
@@ -218,6 +227,7 @@ switch type
                 FracT = Gillespie_2states(dur,dwell_mean,numel(dur),p_eq)./dur;
             end
             %%% correct fractions for brightness differences of the different states
+            Q = zeros(1,n_states);
             for i = 1:n_states
                 Q(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
             end
