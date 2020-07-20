@@ -1,5 +1,5 @@
 function [E,sSelected,sPerBin,mi] = ...
-    kinetic_consistency_check_2models(type,n_states_dyn,...
+    kinetic_consistency_check_2species(type,n_states_dyn,...
     n_states_static,...
     rate_matrix,R_states,sigmaR,...
     amplitudes, R_states_static, sigmaR_static)
@@ -38,8 +38,8 @@ switch type
         %%% full trajectory
         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
         channel = cell(numel(mt),2);
-        for model = 1:2
-            if model == 2
+        for species = 1:2
+            if species == 2
                 rate_matrix = amplitudes;
                 R_states = R_states_static;
                 sigmaR = sigmaR_static;
@@ -49,7 +49,7 @@ switch type
                 dynamic = 1;
                 n_states = n_states_dyn;
             end
-            if sum(rate_matrix) == 0
+            if nansum(rate_matrix) == 0
                 continue
             end
             states = cell(numel(mt),1);
@@ -117,7 +117,7 @@ switch type
                 % with background
                 E_burst{b} = ((numel(mt_freq{b})-BG_Donor(b)-BG_FRET(b)).*E_burst{b}+BG_FRET(b))./numel(mt_freq{b});
             end
-            channel(:,model) = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
+            channel(:,species) = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
         end
         % visualize
         % figure;area(states{i}-1,'FaceAlpha',0.15,'EdgeColor','none');hold on; scatter(mt_freq{i},0.5*ones(size(mt_freq{i})),20,colors(channel{i}+1,:));
@@ -190,9 +190,9 @@ switch type
         E_randomized = cell(2,numel(dur));
         %%% get number of photons per burst after donor excitation
         N_phot = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Number of Photons (DX)',BurstData{file}.NameArray)));
-        for model = 1:2
-            if model == 2 % static
-                if sum(rate_matrix) == 0
+        for species = 1:2
+            if species == 2 % static
+                if nansum(rate_matrix) == 0
                     continue
                 end
                 rate_matrix = 1./amplitudes;
@@ -259,12 +259,12 @@ switch type
                 for s = 1:n_states
                     R_randomized{i} = [R_randomized{i} normrnd(R_burst(i,s),lw,1,f_i(i,s))];
                 end
-                E_randomized{model,i} = 1./(1+(R_randomized{i}./R0).^6);
+                E_randomized{species,i} = 1./(1+(R_randomized{i}./R0).^6);
             end
             % convert idealized FRET efficiency to proximity ratio based on correction factors (see SI of ALEX paper)  
-            E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized(model,:),'UniformOutput',false);
+            E_randomized_PR = cellfun(@(E) (gamma*E+ct*(1-E)+de)./(gamma*E+ct*(1-E)+de + (1-E)), E_randomized(species,:),'UniformOutput',false);
             %%% roll photons based on randomized proximity ratio to only have donor photons
-            channel(model,:) = cellfun(@(x) binornd(1,x),E_randomized_PR,'UniformOutput',false);
+            channel(species,:) = cellfun(@(x) binornd(1,x),E_randomized_PR,'UniformOutput',false);
         end
         if n_states_static == 3
             amplitudes = amplitudes/1E3/2;
