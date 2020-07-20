@@ -103,6 +103,12 @@ if isempty(obj)
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable3')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3;
         end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_DynamicStates')
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates = UserValues.BurstBrowser.Settings.BVA_DynamicStates;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_StaticStates')
+            BurstData{file}.AdditionalParameters.BVA_StaticStates = UserValues.BurstBrowser.Settings.BVA_StaticStates;
+        end
         
         
         
@@ -156,6 +162,12 @@ if isempty(obj)
         end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable3_Model2')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_DynamicStates_Model2')
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2 = UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_StaticStates_Model2')
+            BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2 = UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2;
         end
         
         
@@ -608,6 +620,8 @@ else
             BurstData{file}.AdditionalParameters.BVA_amplitude1_static = str2double(h.state1st_amplitude_edit.String);
             BurstData{file}.AdditionalParameters.BVA_amplitude2_static = str2double(h.state2st_amplitude_edit.String);
             BurstData{file}.AdditionalParameters.BVA_amplitude3_static = str2double(h.state3st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1;
+            BurstData{file}.AdditionalParameters.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1;
             
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2_Model2 = cell2mat(h.KineticRates_table2_Model2.Data);
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2 = cell2mat(h.KineticRates_table3_Model2.Data);
@@ -626,6 +640,8 @@ else
             BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2 = str2double(h.state1st_amplitude_edit_Model2.String);
             BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2 = str2double(h.state2st_amplitude_edit_Model2.String);
             BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2 = str2double(h.state3st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2 = h.DynamicStates_Popupmenu_Model2.Value+1;
+            BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2 = h.StaticStates_Popupmenu_Model2.Value+1;
     end
 end
 LSUserValues(1);
