@@ -48,7 +48,7 @@ else
     colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
 end
 if UserValues.BurstBrowser.Display.ColorMapInvert
-    colormap(flipud(colormap));
+    colormap(h.BurstBrowser,flipud(colormap(h.BurstBrowser)));
 end
 h.colorbar.Visible = 'on';
 %%% Disable/Enable respective plots

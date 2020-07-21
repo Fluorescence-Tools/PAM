@@ -150,7 +150,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         % Plots
-        hfig = figure('color',[1 1 1],'Position',[100 100 600 600]);
+        hfig = figure('color',[1 1 1],'Position',[100 100 650 600]);
         a=gca;
         if ismac
             a.FontSize=24;
@@ -185,12 +185,12 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             % contourplot of per-burst STD
                 contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
                 axis('xy')
-                caxis([0 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ContourOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Image'       
                 Alpha = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
                 imagesc(x(1:end-1),y(1:end-1),H','AlphaData',Alpha');axis('xy');     
                 %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
-                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ImageOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Scatter'
                 scatter(E,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
@@ -226,30 +226,21 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 else
                     legend('Burst SD','Binned SD','Expected SD','Location',loc)
                 end
+                if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+                    BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
+                end
             case {'Image','Hex'}
                 if sampling ~= 0
                     legend('Binned SD','Expected SD','CI','Location',loc)
                 else
                     legend('Binned SD','Expected SD','Location',loc)
                 end
-                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+                BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
         end
         
         
         %%% Update ColorMap
-        if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
-            else
-                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
-                else %%% jet is a special case, use jetvar colormap
-                    colormap(hfig,jetvar);
-                end
-            end
-        else
-            colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
-        end
+        colormap(hfig,colormap(h.BurstBrowser));
         
         %%% Combine the Original FileName and the parameter names
         if isfield(BurstData{file},'FileNameSPC')
