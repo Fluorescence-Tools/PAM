@@ -157,7 +157,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         else
             a.FontSize=18;
         end
-        a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
+        a.LineWidth=2;a.Color =[1 1 1];a.Box='on';a.Layer = 'top';
         hold on;
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
