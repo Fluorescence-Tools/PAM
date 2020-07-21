@@ -4153,8 +4153,7 @@ else %%% dynamic model
         % the k12 and k21 parameters are left untouched here so they will
         % appear in the table. The area fractions are calculated in Update_Plots
         if ~(h.SettingsTab.FixStaticToDynamicSpecies.Value == 1)
-            norm = (sum(fitpar(3*static_states-2))+1);
-            fitpar(3*static_states-2) = fitpar(3*static_states-2)./norm;
+            norm = (sum(fitpar(3*static_states-2))+1);            
         else % special case of linked static and dynamic states
             %%% consider the first two static states as part of the dynamic system
             %%% In this case, the total dynamic system (states 1,2,3,4) are
