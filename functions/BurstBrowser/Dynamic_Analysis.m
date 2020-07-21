@@ -164,12 +164,13 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         switch UserValues.BurstBrowser.Settings.BVA_X_axis
             case 1
                 xlabel('Proximity Ratio, E*'); 
-                ylabel('SD of E*, s');
+                ylabel('Standard Deviation, \sigma_{E*}');
+                %ylabel('SD of E*, s');
                 BinCenters = BinCenters';
                 [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX);
             case 2
-                xlabel('FRET Efficiency'); 
-                ylabel('SD of FRET, s');
+                xlabel('FRET Efficiency, E'); 
+                ylabel('Standard Deviation, \sigma_{E}');%ylabel('SD of FRET, s');
                 %%% conversion betweeen PR and E
                 PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
