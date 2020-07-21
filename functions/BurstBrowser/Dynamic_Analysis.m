@@ -210,8 +210,11 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-            confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
-%             confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            % confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
+            % confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            
+            % only plot for bins which contained enough bursts
+            confint(isnan(sPerBin)) = NaN;
             p2 = area(BinCenters,confint);
             p2.FaceColor = [0.25 0.25 0.25];
             p2.FaceAlpha = 0.25;
