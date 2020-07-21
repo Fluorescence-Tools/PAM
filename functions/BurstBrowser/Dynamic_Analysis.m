@@ -150,8 +150,14 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         % Plots
-        hfig = figure('color',[1 1 1],'Position',[100 100 600 550]);
-        a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
+        hfig = figure('color',[1 1 1],'Position',[100 100 600 600]);
+        a=gca;
+        if ismac
+            a.FontSize=24;
+        else
+            a.FontSize=18;
+        end
+        a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
         hold on;
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
@@ -210,19 +216,20 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             p2.FaceAlpha = 0.25;
             p2.LineStyle = 'none';
         end
-       
+        
+        loc = 'northoutside';
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
-                    legend('Burst SD','Binned SD','Expected SD','CI','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','CI','Location',loc)
                 else
-                    legend('Burst SD','Binned SD','Expected SD','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','Location',loc)
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
-                    legend('Binned SD','Expected SD','CI','Location','northeast')
+                    legend('Binned SD','Expected SD','CI','Location',loc)
                 else
-                    legend('Binned SD','Expected SD','Location','northeast')
+                    legend('Binned SD','Expected SD','Location',loc)
                 end
                 BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
         end
