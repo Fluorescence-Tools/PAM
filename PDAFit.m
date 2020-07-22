@@ -6854,68 +6854,229 @@ switch mode
         PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:})');
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
-        if h.SettingsTab.DynamicModel.Value == 1 & (h.SettingsTab.DynamicSystem.Value > 1) % three-state system
-%             UserValues.BurstBrowser.Settings.KineticRates_table3 = h.KineticRates_table.Data(:,1:3:end);
-            UserValues.BurstBrowser.Settings.KineticRates_table3(2:3,1) = h.KineticRates_table.Data(1,1:3:4);
-            UserValues.BurstBrowser.Settings.KineticRates_table3(1:2:3,2) = h.KineticRates_table.Data(1,7:3:10);
-            UserValues.BurstBrowser.Settings.KineticRates_table3(1:2,3) = h.KineticRates_table.Data(1,13:3:16);
-        end
-        active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
-        params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
         if isempty(findobj('Tag','BurstBrowser'))
             msgbox('BurstBrowser is not open.', 'Error','error');
             return
         end
+        opts.Interpreter = 'tex';
+        opts.Default = '1';
+        answer = questdlg(['\fontsize{16}Model ID?' newline '\fontsize{12}(Parameters of the top active file will be copied.)'], ...
+            'Copy parameters to Burst Browser','1','2','Cancel',opts);
         hb = guidata(findobj('Tag','BurstBrowser'));
-        
-        switch UserValues.PDA.Dynamic
-            case 0 % static
-                for i = 1:numel(PDAData.FileName)
-                    if active(i)
-                        UserValues.BurstBrowser.Settings.BVA_amplitude1_static = params(i,1);
-                        UserValues.BurstBrowser.Settings.BVA_amplitude2_static = params(i,4);
-                        UserValues.BurstBrowser.Settings.BVA_amplitude3_static = params(i,7);
-                        UserValues.BurstBrowser.Settings.BVA_R1_st = params(i,2);
-                        UserValues.BurstBrowser.Settings.BVA_R2_st = params(i,5);
-                        UserValues.BurstBrowser.Settings.BVA_R3_st = params(i,8);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma1_st = params(i,3);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma2_st = params(i,6);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma3_st = params(i,9);
-                        hb.state1st_amplitude_edit.String = num2str(params(i,1));
-                        hb.Rstate1st_edit.String = num2str(params(i,2));
-                        hb.Rsigma1st_edit.String = num2str(params(i,3));
-                        hb.state2st_amplitude_edit.String = num2str(params(i,4));
-                        hb.Rstate2st_edit.String = num2str(params(i,5));
-                        hb.Rsigma2st_edit.String = num2str(params(i,6));
-                        hb.state3st_amplitude_edit.String = num2str(params(i,7));
-                        hb.Rstate3st_edit.String = num2str(params(i,8));
-                        hb.Rsigma3st_edit.String = num2str(params(i,9));
-                        break
-                    end
+        active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
+        params = str2double(h.FitTab.Table.Data(1:end-3,2:3:end));
+        % Handle response
+%         a = zeros(1,length(h.FitTab.Table.ColumnName));
+%         for i = 1:length(h.FitTab.Table.ColumnName)
+%             param = extractHTMLText(h.FitTab.Table.ColumnName(8));
+%             switch param{1}
+%                 case 'k12 [ms-1]'
+%                     disp('y')
+%             end
+%             a(i) = contains(param,'k12');
+%         end 
+        switch answer
+            case '1' % model 1
+                switch UserValues.PDA.Dynamic
+                    case 0 % static
+                        for i = 1:numel(PDAData.FileName)
+                            if active(i)
+                                UserValues.BurstBrowser.Settings.BVA_amplitude1_static = params(i,1);
+                                UserValues.BurstBrowser.Settings.BVA_amplitude2_static = params(i,4);
+                                UserValues.BurstBrowser.Settings.BVA_amplitude3_static = params(i,7);
+                                UserValues.BurstBrowser.Settings.BVA_R1_static = params(i,2);
+                                UserValues.BurstBrowser.Settings.BVA_R2_static = params(i,5);
+                                UserValues.BurstBrowser.Settings.BVA_R3_static = params(i,8);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma1_static = params(i,3);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma2_static = params(i,6);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = params(i,9);
+                                hb.state1st_amplitude_edit.String = num2str(params(i,1));
+                                hb.Rstate1st_edit.String = num2str(params(i,2));
+                                hb.Rsigma1st_edit.String = num2str(params(i,3));
+                                hb.state2st_amplitude_edit.String = num2str(params(i,4));
+                                hb.Rstate2st_edit.String = num2str(params(i,5));
+                                hb.Rsigma2st_edit.String = num2str(params(i,6));
+                                hb.state3st_amplitude_edit.String = num2str(params(i,7));
+                                hb.Rstate3st_edit.String = num2str(params(i,8));
+                                hb.Rsigma3st_edit.String = num2str(params(i,9));
+                                break
+                            end
+                        end
+                    case 1 % dynamic
+                        for i = 1:numel(PDAData.FileName)
+                            if active(i)
+                                % dynamic states
+                                UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
+                                UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
+                                
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
+                                
+                                hb.Rstate1_edit.String = num2str(params(i,2));
+                                hb.Rsigma1_edit.String = num2str(params(i,3));
+                                hb.Rstate2_edit.String = num2str(params(i,5));
+                                hb.Rsigma2_edit.String = num2str(params(i,6));
+                                
+                                if h.SettingsTab.DynamicSystem.Value > 1 % three-state system
+                                    % third dynamic state
+                                    hb.KineticRates_table3.Data(2:3,1) = h.KineticRates_table.Data(1,1:3:4);
+                                    hb.KineticRates_table3.Data(1:2:3,2) = h.KineticRates_table.Data(1,7:3:10);
+                                    hb.KineticRates_table3.Data(1:2,3) = h.KineticRates_table.Data(1,13:3:16);
+                                    UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
+                                    hb.Rstate3_edit.String = num2str(params(i,8));
+                                    hb.Rsigma3_edit.String = num2str(params(i,9));
+                                    
+                                    % static states
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude1_static = params(i,10);
+                                    UserValues.BurstBrowser.Settings.BVA_R1_static = params(i,11);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma1_static = params(i,12);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude2_static = params(i,13);
+                                    UserValues.BurstBrowser.Settings.BVA_R2_static = params(i,14);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma2_static = params(i,15);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude3_static = params(i,16);
+                                    UserValues.BurstBrowser.Settings.BVA_R3_static = params(i,17);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = params(i,18);
+                                    hb.state1st_amplitude_edit.String = num2str(params(i,10));
+                                    hb.Rstate1st_edit.String = num2str(params(i,11));
+                                    hb.Rsigma1st_edit.String = num2str(params(i,12));
+                                    hb.state2st_amplitude_edit.String = num2str(params(i,13));
+                                    hb.Rstate2st_edit.String = num2str(params(i,14));
+                                    hb.Rsigma2st_edit.String = num2str(params(i,15));
+                                    hb.state3st_amplitude_edit.String = num2str(params(i,16));
+                                    hb.Rstate3st_edit.String = num2str(params(i,17));
+                                    hb.Rsigma3st_edit.String = num2str(params(i,18));
+                                else % two-state system
+                                    % dynamic rates
+                                    hb.KineticRates_table2.Data(2,1) = num2cell(params(i,1));
+                                    hb.KineticRates_table2.Data(1,2) = num2cell(params(i,4));
+                                    
+                                    % static states
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude1_static = params(i,7);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude2_static = params(i,10);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude3_static = params(i,13);
+                                    UserValues.BurstBrowser.Settings.BVA_R1_static = params(i,8);
+                                    UserValues.BurstBrowser.Settings.BVA_R2_static = params(i,11);
+                                    UserValues.BurstBrowser.Settings.BVA_R3_static = params(i,14);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma1_static = params(i,9);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma2_static = params(i,12);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = params(i,15);
+                                    hb.state1st_amplitude_edit.String = num2str(params(i,7));
+                                    hb.Rstate1st_edit.String = num2str(params(i,10));
+                                    hb.Rsigma1st_edit.String = num2str(params(i,13));
+                                    hb.state2st_amplitude_edit.String = num2str(params(i,8));
+                                    hb.Rstate2st_edit.String = num2str(params(i,11));
+                                    hb.Rsigma2st_edit.String = num2str(params(i,14));
+                                    hb.state3st_amplitude_edit.String = num2str(params(i,9));
+                                    hb.Rstate3st_edit.String = num2str(params(i,12));
+                                    hb.Rsigma3st_edit.String = num2str(params(i,15));
+                                end
+                                break
+                            end
+                        end
                 end
-            case 1 % dynamic
-                for i = 1:numel(PDAData.FileName)
-                    if active(i)
-                        UserValues.BurstBrowser.Settings.BVA_R1 = params(i,2);
-                        UserValues.BurstBrowser.Settings.BVA_R2 = params(i,5);
-                        UserValues.BurstBrowser.Settings.BVA_R3 = params(i,8);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma1 = params(i,3);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma2 = params(i,6);
-                        UserValues.BurstBrowser.Settings.BVA_Rsigma3 = params(i,9);
-                        hb.KineticRates_table2.Data(2,1) = num2cell(params(i,1));
-                        hb.KineticRates_table2.Data(1,2) = num2cell(params(i,4));
-                        hb.KineticRates_table3.Data(2:3,1) = h.KineticRates_table.Data(1,1:3:4);
-                        hb.KineticRates_table3.Data(1:2:3,2) = h.KineticRates_table.Data(1,7:3:10);
-                        hb.KineticRates_table3.Data(1:2,3) = h.KineticRates_table.Data(1,13:3:16);
-                        hb.Rstate1_edit.String = num2str(params(i,2));
-                        hb.Rsigma1_edit.String = num2str(params(i,3));
-                        hb.Rstate2_edit.String = num2str(params(i,5));
-                        hb.Rsigma2_edit.String = num2str(params(i,6));
-                        hb.Rstate3_edit.String = num2str(params(i,8));
-                        hb.Rsigma3_edit.String = num2str(params(i,9));
-                        break
-                    end
+                disp('Copied parameters to Burst Browser Model 1.')
+            case '2' % model 2
+                switch UserValues.PDA.Dynamic
+                    case 0 % static
+                        for i = 1:numel(PDAData.FileName)
+                            if active(i)
+                                UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2 = params(i,1);
+                                UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2 = params(i,4);
+                                UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2 = params(i,7);
+                                UserValues.BurstBrowser.Settings.BVA_R1_static_Model2 = params(i,2);
+                                UserValues.BurstBrowser.Settings.BVA_R2_static_Model2 = params(i,5);
+                                UserValues.BurstBrowser.Settings.BVA_R3_static_Model2 = params(i,8);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2 = params(i,3);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2 = params(i,6);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2 = params(i,9);
+                                hb.state1st_amplitude_edit_Model2.String = num2str(params(i,1));
+                                hb.Rstate1st_edit_Model2.String = num2str(params(i,2));
+                                hb.Rsigma1st_edit_Model2.String = num2str(params(i,3));
+                                hb.state2st_amplitude_edit_Model2.String = num2str(params(i,4));
+                                hb.Rstate2st_edit_Model2.String = num2str(params(i,5));
+                                hb.Rsigma2st_edit_Model2.String = num2str(params(i,6));
+                                hb.state3st_amplitude_edit_Model2.String = num2str(params(i,7));
+                                hb.Rstate3st_edit_Model2.String = num2str(params(i,8));
+                                hb.Rsigma3st_edit_Model2.String = num2str(params(i,9));
+                                break
+                            end
+                        end
+                    case 1 % dynamic
+                        for i = 1:numel(PDAData.FileName)
+                            if active(i)
+                                % dynamic states
+                                UserValues.BurstBrowser.Settings.BVA_R1_Model2 = params(i,2);
+                                UserValues.BurstBrowser.Settings.BVA_R2_Model2 = params(i,5);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma1_Model2 = params(i,3);
+                                UserValues.BurstBrowser.Settings.BVA_Rsigma2_Model2 = params(i,6);
+                                hb.Rstate1_edit_Model2.String = num2str(params(i,2));
+                                hb.Rsigma1_edit_Model2.String = num2str(params(i,3));
+                                hb.Rstate2_edit_Model2.String = num2str(params(i,5));
+                                hb.Rsigma2_edit_Model2.String = num2str(params(i,6));
+                                
+                                if h.SettingsTab.DynamicSystem.Value > 1 % three-state system
+                                    % third dynamic state
+                                    hb.KineticRates_table3_Model2.Data(2:3,1) = h.KineticRates_table.Data(1,1:3:4);
+                                    hb.KineticRates_table3_Model2.Data(1:2:3,2) = h.KineticRates_table.Data(1,7:3:10);
+                                    hb.KineticRates_table3_Model2.Data(1:2,3) = h.KineticRates_table.Data(1,13:3:16);
+                                    UserValues.BurstBrowser.Settings.BVA_R3_Model2 = params(i,8);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3_Model2 = params(i,9);
+                                    hb.Rstate3_edit_Model2.String = num2str(params(i,8));
+                                    hb.Rsigma3_edit_Model2.String = num2str(params(i,9));
+                                    
+                                    % static states
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2 = params(i,10);
+                                    UserValues.BurstBrowser.Settings.BVA_R1_static_Model2 = params(i,11);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2 = params(i,12);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2 = params(i,13);
+                                    UserValues.BurstBrowser.Settings.BVA_R2_static_Model2 = params(i,14);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2 = params(i,15);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2 = params(i,16);
+                                    UserValues.BurstBrowser.Settings.BVA_R3_static_Model2 = params(i,17);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2 = params(i,18);
+                                    hb.state1st_amplitude_edit_Model2.String = num2str(params(i,10));
+                                    hb.Rstate1st_edit_Model2.String = num2str(params(i,11));
+                                    hb.Rsigma1st_edit_Model2.String = num2str(params(i,12));
+                                    hb.state2st_amplitude_edit_Model2.String = num2str(params(i,13));
+                                    hb.Rstate2st_edit_Model2.String = num2str(params(i,14));
+                                    hb.Rsigma2st_edit_Model2.String = num2str(params(i,15));
+                                    hb.state3st_amplitude_edit_Model2.String = num2str(params(i,16));
+                                    hb.Rstate3st_edit_Model2.String = num2str(params(i,17));
+                                    hb.Rsigma3st_edit_Model2.String = num2str(params(i,18));
+                                else % two-state system
+                                    % dynamic rates
+                                    hb.KineticRates_table2_Model2.Data(2,1) = num2cell(params(i,1));
+                                    hb.KineticRates_table2_Model2.Data(1,2) = num2cell(params(i,4));
+                                    
+                                    % static states
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2 = params(i,7);
+                                    UserValues.BurstBrowser.Settings.BVA_R1_static_Model2 = params(i,8);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2 = params(i,9);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2 = params(i,10);
+                                    UserValues.BurstBrowser.Settings.BVA_R2_static_Model2 = params(i,11);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2 = params(i,12);
+                                    UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2 = params(i,13);
+                                    UserValues.BurstBrowser.Settings.BVA_R3_static_Model2 = params(i,14);
+                                    UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2 = params(i,15);
+                                    hb.state1st_amplitude_edit_Model2.String = num2str(params(i,7));
+                                    hb.Rstate1st_edit_Model2.String = num2str(params(i,8));
+                                    hb.Rsigma1st_edit_Model2.String = num2str(params(i,9));
+                                    hb.state2st_amplitude_edit_Model2.String = num2str(params(i,10));
+                                    hb.Rstate2st_edit_Model2.String = num2str(params(i,11));
+                                    hb.Rsigma2st_edit_Model2.String = num2str(params(i,12));
+                                    hb.state3st_amplitude_edit_Model2.String = num2str(params(i,13));
+                                    hb.Rstate3st_edit_Model2.String = num2str(params(i,14));
+                                    hb.Rsigma3st_edit_Model2.String = num2str(params(i,15));
+                                end
+                                break
+                            end
+                        end
                 end
+                disp('Copied parameters to Burst Browser Model 2.')
+            case 'Cancel'
+                disp('Canceled.')
+                return
         end
         UpdateBVATab(hb.ConsistencyAnalysis_Button,[],hb);
 end
