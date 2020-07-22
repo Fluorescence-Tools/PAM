@@ -7037,13 +7037,13 @@ switch mode
                                     UserValues.BurstBrowser.Settings.BVA_Rsigma2_static = params(i,12);
                                     UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = params(i,15);
                                     hb.state1st_amplitude_edit.String = num2str(params(i,7));
-                                    hb.Rstate1st_edit.String = num2str(params(i,10));
-                                    hb.Rsigma1st_edit.String = num2str(params(i,13));
-                                    hb.state2st_amplitude_edit.String = num2str(params(i,8));
+                                    hb.Rstate1st_edit.String = num2str(params(i,8));
+                                    hb.Rsigma1st_edit.String = num2str(params(i,9));
+                                    hb.state2st_amplitude_edit.String = num2str(params(i,10));
                                     hb.Rstate2st_edit.String = num2str(params(i,11));
-                                    hb.Rsigma2st_edit.String = num2str(params(i,14));
-                                    hb.state3st_amplitude_edit.String = num2str(params(i,9));
-                                    hb.Rstate3st_edit.String = num2str(params(i,12));
+                                    hb.Rsigma2st_edit.String = num2str(params(i,12));
+                                    hb.state3st_amplitude_edit.String = num2str(params(i,13));
+                                    hb.Rstate3st_edit.String = num2str(params(i,14));
                                     hb.Rsigma3st_edit.String = num2str(params(i,15));
                                 end
                                 break
