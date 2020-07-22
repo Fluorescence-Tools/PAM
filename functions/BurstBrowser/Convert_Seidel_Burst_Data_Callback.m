@@ -10,7 +10,7 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Converting data...');
 % check if conversion was already done
 folder  = strsplit(PathName,filesep); folder = folder{end};
 [~,fn] = fileparts(fileparts(PathName));
-burfilename = [fileparts(PathName) filesep fn '.bur'];
+burfilename = [fileparts(PathName) filesep fn '_' folder '.bur'];
 if exist(burfilename,'file') == 2
     disp('File was already converted.')
     Progress(1,h.Progress_Axes,h.Progress_Text);
