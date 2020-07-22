@@ -2570,12 +2570,12 @@ if Mode==0 %%% Loads user values
         S.PDA.IgnoreOuterBins = 0;
     end
     P.PDA.IgnoreOuterBins = S.PDA.IgnoreOuterBins;
-
-    if ~isfield(S.PDA, 'HalfGlobal')
-        disp('WARNING: UserValues structure incomplete, field "PDA.HalfGlobal" missing');
-        S.PDA.HalfGlobal = 0;
+    
+    if ~isfield(S.PDA, 'SeidelPDA')
+        disp('WARNING: UserValues structure incomplete, field "PDA.SeidelPDA" missing');
+        S.PDA.SeidelPDA = 0;
     end
-    P.PDA.HalfGlobal = S.PDA.HalfGlobal;
+    P.PDA.SeidelPDA = S.PDA.SeidelPDA;
     
     if ~isfield(S.PDA, 'DeconvoluteBackground')
         disp('WARNING: UserValues structure incomplete, field "PDA.DeconvoluteBackground" missing');

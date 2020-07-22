@@ -150,20 +150,27 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         % Plots
-        hfig = figure('color',[1 1 1],'Position',[100 100 600 550]);
-        a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
+        hfig = figure('color',[1 1 1],'Position',[100 100 650 600]);
+        a=gca;
+        if ismac
+            a.FontSize=24;
+        else
+            a.FontSize=18;
+        end
+        a.LineWidth=2;a.Color =[1 1 1];a.Box='on';a.Layer = 'top';
         hold on;
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         switch UserValues.BurstBrowser.Settings.BVA_X_axis
             case 1
                 xlabel('Proximity Ratio, E*'); 
-                ylabel('SD of E*, s');
+                ylabel('Standard Deviation, \sigma_{E*}');
+                %ylabel('SD of E*, s');
                 BinCenters = BinCenters';
                 [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX);
             case 2
-                xlabel('FRET Efficiency'); 
-                ylabel('SD of FRET, s');
+                xlabel('FRET Efficiency, E'); 
+                ylabel('Standard Deviation, \sigma_{E}');%ylabel('SD of FRET, s');
                 %%% conversion betweeen PR and E
                 PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
@@ -178,12 +185,12 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             % contourplot of per-burst STD
                 contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
                 axis('xy')
-                caxis([0 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ContourOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Image'       
                 Alpha = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
                 imagesc(x(1:end-1),y(1:end-1),H','AlphaData',Alpha');axis('xy');     
                 %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
-                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ImageOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Scatter'
                 scatter(E,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
@@ -203,45 +210,40 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             % Plot confidence intervals
             alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
             confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-            confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
-%             confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            % confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
+            % confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            
+            % only plot for bins which contained enough bursts
+            confint(isnan(sPerBin)) = NaN;
             p2 = area(BinCenters,confint);
             p2.FaceColor = [0.25 0.25 0.25];
             p2.FaceAlpha = 0.25;
             p2.LineStyle = 'none';
         end
-       
+        
+        loc = 'northoutside';
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
-                    legend('Burst SD','Binned SD','Expected SD','CI','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','CI','Location',loc)
                 else
-                    legend('Burst SD','Binned SD','Expected SD','Location','northeast')
+                    legend('Burst SD','Binned SD','Expected SD','Location',loc)
+                end
+                if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+                    BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
-                    legend('Binned SD','Expected SD','CI','Location','northeast')
+                    legend('Binned SD','Expected SD','CI','Location',loc)
                 else
-                    legend('Binned SD','Expected SD','Location','northeast')
+                    legend('Binned SD','Expected SD','Location',loc)
                 end
-                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+                BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
         end
         
         
         %%% Update ColorMap
-        if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
-            else
-                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
-                else %%% jet is a special case, use jetvar colormap
-                    colormap(hfig,jetvar);
-                end
-            end
-        else
-            colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
-        end
+        colormap(hfig,colormap(h.BurstBrowser));
         
         %%% Combine the Original FileName and the parameter names
         if isfield(BurstData{file},'FileNameSPC')

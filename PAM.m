@@ -3868,8 +3868,18 @@ elseif obj == h.Trace.Log
         UserValues.Settings.Pam.PlotIRF = 'on';
     end
     Update_Display([],[],8);
-elseif obj == h.MI.ScatterPattern
+elseif obj == h.MI.IRF
     %%% Switches IRF Check Display
+    if strcmp(h.MI.IRF.Checked,'on')
+        h.MI.IRF.Checked = 'off';
+        UserValues.Settings.Pam.PlotIRF = 'off';
+    else
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+    end
+    Update_Display([],[],8);
+elseif obj == h.MI.ScatterPattern
+    %%% Switches Scatter Pattern Check Display
     if strcmp(h.MI.ScatterPattern.Checked,'on')
         h.MI.ScatterPattern.Checked = 'off';
         UserValues.Settings.Pam.PlotScat = 'off';

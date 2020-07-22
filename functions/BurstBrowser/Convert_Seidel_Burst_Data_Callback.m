@@ -9,7 +9,9 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Converting data...');
 
 % check if conversion was already done
 folder  = strsplit(PathName,filesep); folder = folder{end};
-if exist([PathName filesep folder '.bur'],'file') == 2
+[~,fn] = fileparts(fileparts(PathName));
+burfilename = [fileparts(PathName) filesep fn '_' folder '.bur'];
+if exist(burfilename,'file') == 2
     disp('File was already converted.')
     Progress(1,h.Progress_Axes,h.Progress_Text);
     return;
@@ -263,8 +265,7 @@ burst_data.FileInfo.ParisInfo = info;
 
 %%% save as *.bur file
 BurstData = burst_data;
-[~,fn] = fileparts(fileparts(PathName));
-save([fileparts(PathName) filesep fn '.bur'],'BurstData','-v7.3');
+save(burfilename,'BurstData','-v7.3');
 UserValues.File.BurstBrowserPath=fileparts(PathName);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 LSUserValues(1);
