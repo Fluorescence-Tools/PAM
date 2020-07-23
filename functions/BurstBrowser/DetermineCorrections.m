@@ -50,6 +50,7 @@ elseif BurstData{file}.BAMethod == 5
 end
 
 %% 2cMFD Corrections
+use_countrate = false;
 %% Crosstalk and direct excitation
 if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCounts])
     %%% read raw data
@@ -73,8 +74,9 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
     Smin = UserValues.BurstBrowser.Settings.S_Donly_Min;
     Smax = UserValues.BurstBrowser.Settings.S_Donly_Max;
     S_threshold = (data_for_corrections(:,indS)>Smin) & (data_for_corrections(:,indS)<Smax);
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+    dur = data_for_corrections(S_threshold,indDur);
+    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*dur;
+    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*dur;
     
     switch obj 
         case h.DetermineCorrectionsButton
@@ -96,6 +98,10 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         case h.DetermineCorrectionsFromPhotonCounts
             %%% instead of gaussian fit, use the proportionality
             %%% relationship between the photon counts NGR = alpha*NGG
+            if use_countrate % use countrate: normalize by duration
+                NGG = NGG./dur;
+                NGR = NGR./dur;
+            end
             lm = fitlm(NGG,NGR,'Intercept',false,'RobustOpts','on');
             ct = table2array(lm.Coefficients('x1',1));
             ct_ci = table2array(lm.Coefficients('x1',2));
@@ -104,8 +110,8 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             plot(lm);
             set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
             title(sprintf('Crosstalk \\alpha = %.4f \\pm %.4f',ct,ct_ci),'Interpreter','tex');
-            xlabel('Photon counts NGG');
-            ylabel('Photon counts NGR');
+            xlabel('Photon counts N_{GG}','Interpreter','tex');
+            ylabel('Photon counts N_{GR}','Interpreter','tex');
             xlim([0,prctile(NGG,99)]);
             ylim([0,prctile(NGR,99)]);
             legend('off');
@@ -132,9 +138,10 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
     S_threshold = (data_for_corrections(:,indS)<Smax) & (data_for_corrections(:,indS)>Smin) & ...
         (data_for_corrections(:,indE)>Emin) & ...
         (data_for_corrections(:,indE)<Emax);
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+    dur = data_for_corrections(S_threshold,indDur);
+    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*dur;
+    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*dur;
+    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*dur;
     switch obj 
         case h.DetermineCorrectionsButton
             S_raw = (NGG+NGR)./(NGG+NGR+NRR);
@@ -155,6 +162,10 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         case h.DetermineCorrectionsFromPhotonCounts
             %%% instead of gaussian fit, use the proportionality
             %%% relationship between the photon counts NGR = alpha*NGG
+            if use_countrate % use countrate: normalize by duration
+                NRR = NRR./dur;
+                NGR = NGR./dur;
+            end
             lm = fitlm(NRR,NGR,'Intercept',false,'RobustOpts','on');
             de = table2array(lm.Coefficients('x1',1));
             de_ci = table2array(lm.Coefficients('x1',2));
@@ -162,8 +173,8 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
             plot(lm);
             set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
             title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',de,de_ci),'Interpreter','tex');
-            xlabel('Photon counts NRR');
-            ylabel('Photon counts NGR');
+            xlabel('Photon counts N_{RR}','Interpreter','tex');
+            ylabel('Photon counts N_{GR}','Interpreter','tex');
             xlim([0,prctile(NRR,99)]);
             ylim([0,prctile(NGR,99)]);
             legend('off');
@@ -181,16 +192,17 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         end
     end
 end
-if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution, h.FitGammaFromPhotonCounts])
+if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution, h.FitGammaFromPhotonCounts, h.FitGammaFromPhotonCountsBetaFixed])
     %% plot gamma plot for two populations (or lifetime versus E)
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
         %%% excitation,crosstalk, and background corrections!
-        NGR = BurstData{file}.DataArray(Valid,indNGR) - Background_GR.*BurstData{file}.DataArray(Valid,indDur);
-        NGG = BurstData{file}.DataArray(Valid,indNGG) - Background_GG.*BurstData{file}.DataArray(Valid,indDur);
-        NRR = BurstData{file}.DataArray(Valid,indNRR) - Background_RR.*BurstData{file}.DataArray(Valid,indDur);
+        dur = BurstData{file}.DataArray(Valid,indDur);
+        NGR = BurstData{file}.DataArray(Valid,indNGR) - Background_GR.*dur;
+        NGG = BurstData{file}.DataArray(Valid,indNGG) - Background_GG.*dur;
+        NRR = BurstData{file}.DataArray(Valid,indNRR) - Background_RR.*dur;
         NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     else
         switch BurstData{file}.BAMethod
@@ -228,7 +240,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
     BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     switch obj
-        case {h.FitGammaButton, h.FitGammaFromPhotonCounts}
+        case {h.FitGammaButton, h.FitGammaFromPhotonCounts, h.FitGammaFromPhotonCountsBetaFixed}
             %%% Update/Reset Axis Labels
             xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
             ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
@@ -240,38 +252,66 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             xdata = linspace(-0.1,1,1100);
             funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
             
-            if obj == h.FitGammaFromPhotonCounts
-                % Fit plane into photon counts directly, according to:
-                % Coullomb, A. et al. QuanTI-FRET: a framework for quantitative FRET measurements in living cells. Scientific Reports 10, (2020).
+            if any(obj == [h.FitGammaFromPhotonCounts,h.FitGammaFromPhotonCountsBetaFixed])
+                if use_countrate % use countrate: normalize by duration
+                    NGG = NGG./dur;
+                    NGR = NGR./dur;
+                    NRR = NRR./dur;
+                end
+                switch obj
+                    case h.FitGammaFromPhotonCounts
+                        % Fit plane into photon counts directly, according to:
+                        % Coullomb, A. et al. QuanTI-FRET: a framework for quantitative FRET measurements in living cells. Scientific Reports 10, (2020).
                 
-                % using linear regression
-                fitGamma = fitlm([NGG,NGR],NRR,'Intercept',false,'RobustOpts','on');
-                x1 = table2array(fitGamma.Coefficients('x1',1));
-                x1_ci = table2array(fitGamma.Coefficients('x1',2));
-                x2 = table2array(fitGamma.Coefficients('x2',1));
-                x2_ci = table2array(fitGamma.Coefficients('x2',2));
-                beta = x2;
-                gamma = x1./beta;
-                beta_ci = x2_ci;
-                gamma_ci = gamma.*sqrt(x1_ci.^2+x2_ci.^2);
-                %model = @(b,g,x,y) b.*g.*x+b.*y;
-                %fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
-                %coeff = coeffvalues(fitGamma);
-                %beta = coeff(1); gamma = coeff(2);
-                ydata = funS(beta,gamma,xdata);
-                
-                % plot the regression result
-                figure('Color',[1,1,1],'Position',[100,100,600,550]); hold on;
-                [x,y] = meshgrid(linspace(min(NGG),max(NGG),100),linspace(min(NGR),max(NGR),100));
-                z = gamma.*beta.*x+beta.*y;
-                surf(x,y,z,'EdgeColor','none','Facecolor','r','FaceAlpha',0.25);
-                scatter3(NGG,NGR,NRR,'.k');
-                xlim([0,prctile(NGG,99)]);
-                ylim([0,prctile(NGR,99)]);
-                zlim([0,prctile(NRR,99)]);
-                set(gca,'Color',[1,1,1],'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',16,'View',[40,50]);
-                xlabel('NGG'); ylabel('NGR'); zlabel('NRR');
-                title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f\nAdj. R^2 = %.4f',gamma,gamma_ci,beta,beta_ci,fitGamma.Rsquared.Adjusted),'Interpreter','tex');
+                        % using linear regression
+                        fitGamma = fitlm([NGG,NGR],NRR,'Intercept',false,'RobustOpts','on');
+                        x1 = table2array(fitGamma.Coefficients('x1',1));
+                        x1_ci = table2array(fitGamma.Coefficients('x1',2));
+                        x2 = table2array(fitGamma.Coefficients('x2',1));
+                        x2_ci = table2array(fitGamma.Coefficients('x2',2));
+                        beta = x2;
+                        gamma = x1./beta;
+                        beta_ci = x2_ci;
+                        gamma_ci = gamma.*sqrt(x1_ci.^2+x2_ci.^2);
+                        %model = @(b,g,x,y) b.*g.*x+b.*y;
+                        %fitGamma = fit([NGG,NGR],NRR,model,'StartPoint',[1,1],'Lower',[0,0],'Robust','LAR');
+                        %coeff = coeffvalues(fitGamma);
+                        %beta = coeff(1); gamma = coeff(2);
+                        ydata = funS(beta,gamma,xdata);
+
+                        % plot the regression result
+                        figure('Color',[1,1,1],'Position',[100,100,600,550]); hold on;
+                        [x,y] = meshgrid(linspace(min(NGG),max(NGG),100),linspace(min(NGR),max(NGR),100));
+                        z = gamma.*beta.*x+beta.*y;
+                        surf(x,y,z,'EdgeColor','none','Facecolor','interp','FaceLighting','gouraud','FaceAlpha',0.5);
+                        scatter3(NGG,NGR,NRR,'.k');
+                        xlim([0,prctile(NGG,99)]);
+                        ylim([0,prctile(NGR,99)]);
+                        zlim([0,prctile(NRR,99)]);
+                        set(gca,'Color',[1,1,1],'Box','on','LineWidth',1.5,'XGrid','on','YGrid','on','FontSize',16,'View',[40,50]);
+                        xlabel('N_{GG}','Interpreter','tex'); ylabel('N_{GR}','Interpreter','tex'); zlabel('N_{RR}','Interpreter','tex');
+                        title(sprintf('\\gamma = %.4f \\pm %.4f\n\\beta = %.4f \\pm %.4f\nAdj. R^2 = %.4f',gamma,gamma_ci,beta,beta_ci,fitGamma.Rsquared.Adjusted),'Interpreter','tex');
+                    case h.FitGammaFromPhotonCountsBetaFixed
+                        %%% only fit gamma by linear regression
+                        %%% NRR/beta-NGR = gamma*NGG
+                        
+                        % read out beta
+                        beta = BurstData{file}.Corrections.Beta_GR;
+                        lm = fitlm(NGG,NRR./beta-NGR,'Intercept',false,'RobustOpts','on');
+                        figure('Color',[1,1,1]);
+                        gamma = table2array(lm.Coefficients('x1',1));
+                        gamma_ci = table2array(lm.Coefficients('x1',2));
+                        plot(lm);
+                        set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
+                        title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',gamma,gamma_ci),'Interpreter','tex');
+                        xlabel('N_{GG}','Interpreter','tex');
+                        ylabel('N_{RR}/\beta - N_{GR}','Interpreter','tex');                        
+                        xlim([0,prctile(NRR./beta-NGR,99)]);
+                        ylim([0,prctile(NGG,99)]);
+                        legend('off');
+                        
+                        ydata = funS(beta,gamma,xdata);
+                end
             else
                 %%% Fit using E S relation (x is E)
 
