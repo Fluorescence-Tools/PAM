@@ -874,6 +874,9 @@ P = P./sum(P);
 Q = ksdensity(S2,linspace(0,1,100));
 Q = Q./sum(Q);
 % calculate KBL
-k = P.*log(P./Q);
+%k = P.*log(P./Q);
+%k = Q.*log(Q./P);
+% KBL is not symmetric, so take the average of KBL(P|Q) and KBL(Q|P)
+k = (1/2).*(P.*log(P./Q)+Q.*log(Q./P));
 k(~isfinite(k)) = 0;
 k = abs(sum(k));
