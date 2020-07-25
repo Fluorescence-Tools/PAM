@@ -303,7 +303,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                         gamma_ci = table2array(lm.Coefficients('x1',2));
                         plot(lm);
                         set(gca,'Color',[1,1,1],'Layer','Top','FontSize',16,'LineWidth',2,'Box','on');
-                        title(sprintf('Direct excitation \\delta = %.4f \\pm %.4f',gamma,gamma_ci),'Interpreter','tex');
+                        title(sprintf('\\gamma = %.4f \\pm %.4f',gamma,gamma_ci),'Interpreter','tex');
                         xlabel('N_{GG}','Interpreter','tex');
                         ylabel('N_{RR}/\beta - N_{GR}','Interpreter','tex');                        
                         xlim([0,prctile(NRR./beta-NGR,99)]);
@@ -914,9 +914,11 @@ P = P./sum(P);
 Q = ksdensity(S2,linspace(0,1,100));
 Q = Q./sum(Q);
 % calculate KBL
-%k = P.*log(P./Q);
-%k = Q.*log(Q./P);
+k_PQ = P.*log(P./Q);
+k_PQ(~isfinite(k_PQ)) = 0;
+k_PQ = sum(k_PQ);
+k_QP = Q.*log(Q./P);
+k_QP(~isfinite(k_QP)) = 0;
+k_QP = sum(k_QP);
 % KBL is not symmetric, so take the average of KBL(P|Q) and KBL(Q|P)
-k = (1/2).*(P.*log(P./Q)+Q.*log(Q./P));
-k(~isfinite(k)) = 0;
-k = abs(sum(k));
+k = (1/2).*(k_PQ+k_QP);
