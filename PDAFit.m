@@ -2804,6 +2804,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     PDAMeta.FitParams(:,end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
     %%% Set either not fixed and global, or fixed and not global
     PDAMeta.Global(:,end+1) = 1-h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+    PDAMeta.SampleGlobal(:,end+1) = false;
     PDAMeta.Fixed(:,end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
     PDAMeta.LB(:,end+1) = 0;
     PDAMeta.UB(:,end+1) = 1;
