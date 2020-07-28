@@ -5611,13 +5611,13 @@ else
             main_ax.Children(j).Color = colors(9-j,:);
         end
         main_ax.Children(1).Color = yellow; % dynamic mixing component
-        uistack(main_ax.Children(8),'top')
+        uistack(main_ax.Children(9),'top')
         gauss_ax.Layer = 'top';
         gauss_ax.XGrid = 'off';
         gauss_ax.YGrid = 'off';
         gauss_ax.LineWidth = linewidth;
         gauss_ax.XLabel.String = 'Distance [A]';
-        uistack(gauss_ax.Children(7),'top');
+        uistack(gauss_ax.Children(8),'top');
         set(gauss_ax.Children,'LineWidth',linewidth);
         
         %%% add filename
