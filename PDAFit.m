@@ -5988,7 +5988,7 @@ switch mode
                     elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
                         %%% Value was fixed => Uncheck global
                         %%% Uncheck global for all files to prohibit fixed and global
-                        tab.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                        tab.Data(1:end-1,e.Indices(2)+1)=deal({false});
                     elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
                         %%% Global was change
                         %%% Apply value to all files
@@ -6037,8 +6037,8 @@ switch mode
                     else
                         tab.Data{end-2,e.Indices(2)}=false;
                     end
-                    %%% Unchecks global to prohibit fixed and global
-                    tab.Data(1:end-2,e.Indices(2)+1)=deal({false;});
+                    %%% Unchecks global and sample-global to prohibit fixed and global
+                    tab.Data(1:end-1,e.Indices(2)+1)=deal({false;});
                 elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
                     %%% Value was changed
                     if tab.Data{e.Indices(1),e.Indices(2)+2}
@@ -6065,6 +6065,8 @@ switch mode
                     if NewData == 1
                         %%% enable global also
                         tab.Data(1:end-2,e.Indices(2)) = deal({true});
+                        %%% Unfixes all file to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
                         %%% Sample-based global => synchronising values of a "block"
                         % find block of selected file
                         blocksize = str2double(h.SettingsTab.TW_edit.String);
