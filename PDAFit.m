@@ -6341,8 +6341,11 @@ switch mode
             PDAData.Corrections{i}.Gamma_GR = Data{i,1};
             PDAData.Corrections{i}.DirectExcitationProb = Data{i,2};
             PDAData.Corrections{i}.CrossTalk_GR = Data{i,3};
-            % left out background countrates here because they should
-            % barely ever change
+            % ignore anisotropy information for background here
+            PDAData.Background{i}.Background_GGpar = Data{i,4};
+            PDAData.Background{i}.Background_GGperp = 0;
+            PDAData.Background{i}.Background_GRpar = Data{i,5};
+            PDAData.Background{i}.Background_GRperp = 0;
             PDAData.Corrections{i}.FoersterRadius = Data{i,6};
         end
 end
