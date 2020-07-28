@@ -2158,7 +2158,7 @@ switch mode
         if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
             Active(:) = false;
             %%% find which is selected
-            selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+            selected = h.SingleTab.Popup.Value;%find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
             Active(selected) = true;
             Active = find(Active);
         end
@@ -2639,7 +2639,7 @@ PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
     PDAMeta.Active(:) = false;
     %%% find which is selected
-    selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+    selected = h.SingleTab.Popup.Value; %find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
     PDAMeta.Active(selected) = true;
 end
 
