@@ -5606,8 +5606,9 @@ else
         %main_ax.YLabel.Position(1) = -0.105;
         %res_ax.YLabel.Position(1) = -0.09;
         colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
-        for j = 2:7
-            main_ax.Children(j).Color = colors(8-j,:);
+        colors(end+1,:) = [0.25,0.25,0.25]; % donor only;
+        for j = 2:8
+            main_ax.Children(j).Color = colors(9-j,:);
         end
         main_ax.Children(1).Color = yellow; % dynamic mixing component
         uistack(main_ax.Children(8),'top')
