@@ -5492,7 +5492,7 @@ Path = uigetdir(fullfile(UserValues.File.PDAPath),...
     'Specify directory name');
 fontsize = 16;
 if ispc
-    fontsize = fontsize/1.2;
+    fontsize = fontsize/1.4;
 end
 linewidth = 1.5;
 if Path == 0
@@ -5506,7 +5506,7 @@ else
     main_ax = copyobj(h.AllTab.Main_Axes,fig);
     res_ax = copyobj(h.AllTab.Res_Axes,fig);
     gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
-    main_ax.Children(end).Position = [1.35,1.09];
+    main_ax.Children(end).Position = [1.3,1.09];
     main_ax.Color = [1 1 1];
     res_ax.Color = [1 1 1];
     main_ax.XColor = [0 0 0];
@@ -5536,6 +5536,7 @@ else
     main_ax.FontSize = fontsize;
     res_ax.FontSize = fontsize;
     main_ax.Children(end).Units = 'pixel';
+    main_ax.Children(end).FontSize = fontsize;
     
     set(fig,'PaperPositionMode','auto');
     print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
@@ -5621,7 +5622,7 @@ else
         %%% add filename
         fs = 14;
         if ispc
-            fs = fs/1.2;
+            fs = fs/1.4;
         end
         uicontrol(gcf,'Style','text',...
             'String',PDAData.FileName{Active(i)}(1:end-4),...
