@@ -24,7 +24,7 @@ end
 fcenterPlotPos = [0.1 0.11 0.6 0.6];
 %%% Burst per bin threshold
 min_bursts_per_bin = UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
-
+n = UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA;
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating...');
 
 
