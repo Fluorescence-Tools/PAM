@@ -2158,7 +2158,7 @@ switch mode
         if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
             Active(:) = false;
             %%% find which is selected
-            selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+            selected = h.SingleTab.Popup.Value;%find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
             Active(selected) = true;
             Active = find(Active);
         end
@@ -2639,7 +2639,7 @@ PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
     PDAMeta.Active(:) = false;
     %%% find which is selected
-    selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+    selected = h.SingleTab.Popup.Value; %find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
     PDAMeta.Active(selected) = true;
 end
 
@@ -5492,7 +5492,7 @@ Path = uigetdir(fullfile(UserValues.File.PDAPath),...
     'Specify directory name');
 fontsize = 16;
 if ispc
-    fontsize = fontsize/1.2;
+    fontsize = fontsize/1.4;
 end
 linewidth = 1.5;
 if Path == 0
@@ -5506,7 +5506,7 @@ else
     main_ax = copyobj(h.AllTab.Main_Axes,fig);
     res_ax = copyobj(h.AllTab.Res_Axes,fig);
     gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
-    main_ax.Children(end).Position = [1.35,1.09];
+    main_ax.Children(end).Position = [1.3,1.09];
     main_ax.Color = [1 1 1];
     res_ax.Color = [1 1 1];
     main_ax.XColor = [0 0 0];
@@ -5536,6 +5536,7 @@ else
     main_ax.FontSize = fontsize;
     res_ax.FontSize = fontsize;
     main_ax.Children(end).Units = 'pixel';
+    main_ax.Children(end).FontSize = fontsize;
     
     set(fig,'PaperPositionMode','auto');
     print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
@@ -5605,23 +5606,24 @@ else
         %main_ax.YLabel.Position(1) = -0.105;
         %res_ax.YLabel.Position(1) = -0.09;
         colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
-        for j = 2:7
-            main_ax.Children(j).Color = colors(8-j,:);
+        colors(end+1,:) = [0.25,0.25,0.25]; % donor only;
+        for j = 2:8
+            main_ax.Children(j).Color = colors(9-j,:);
         end
         main_ax.Children(1).Color = yellow; % dynamic mixing component
-        uistack(main_ax.Children(8),'top')
+        uistack(main_ax.Children(9),'top')
         gauss_ax.Layer = 'top';
         gauss_ax.XGrid = 'off';
         gauss_ax.YGrid = 'off';
         gauss_ax.LineWidth = linewidth;
         gauss_ax.XLabel.String = 'Distance [A]';
-        uistack(gauss_ax.Children(7),'top');
+        uistack(gauss_ax.Children(8),'top');
         set(gauss_ax.Children,'LineWidth',linewidth);
         
         %%% add filename
         fs = 14;
         if ispc
-            fs = fs/1.2;
+            fs = fs/1.4;
         end
         uicontrol(gcf,'Style','text',...
             'String',PDAData.FileName{Active(i)}(1:end-4),...
@@ -5988,7 +5990,7 @@ switch mode
                     elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
                         %%% Value was fixed => Uncheck global
                         %%% Uncheck global for all files to prohibit fixed and global
-                        tab.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                        tab.Data(1:end-1,e.Indices(2)+1)=deal({false});
                     elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
                         %%% Global was change
                         %%% Apply value to all files
@@ -6037,8 +6039,8 @@ switch mode
                     else
                         tab.Data{end-2,e.Indices(2)}=false;
                     end
-                    %%% Unchecks global to prohibit fixed and global
-                    tab.Data(1:end-2,e.Indices(2)+1)=deal({false;});
+                    %%% Unchecks global and sample-global to prohibit fixed and global
+                    tab.Data(1:end-1,e.Indices(2)+1)=deal({false;});
                 elseif mod(e.Indices(2)-2,3)==0 && e.Indices(2)>=2 && e.Indices(1)<size(tab.Data,1)-1
                     %%% Value was changed
                     if tab.Data{e.Indices(1),e.Indices(2)+2}
@@ -6065,6 +6067,8 @@ switch mode
                     if NewData == 1
                         %%% enable global also
                         tab.Data(1:end-2,e.Indices(2)) = deal({true});
+                        %%% Unfixes all file to prohibit fixed and global
+                        tab.Data(1:end-2,e.Indices(2)-1)=deal({false});
                         %%% Sample-based global => synchronising values of a "block"
                         % find block of selected file
                         blocksize = str2double(h.SettingsTab.TW_edit.String);
@@ -6339,8 +6343,11 @@ switch mode
             PDAData.Corrections{i}.Gamma_GR = Data{i,1};
             PDAData.Corrections{i}.DirectExcitationProb = Data{i,2};
             PDAData.Corrections{i}.CrossTalk_GR = Data{i,3};
-            % left out background countrates here because they should
-            % barely ever change
+            % ignore anisotropy information for background here
+            PDAData.Background{i}.Background_GGpar = Data{i,4};
+            PDAData.Background{i}.Background_GGperp = 0;
+            PDAData.Background{i}.Background_GRpar = Data{i,5};
+            PDAData.Background{i}.Background_GRperp = 0;
             PDAData.Corrections{i}.FoersterRadius = Data{i,6};
         end
 end
