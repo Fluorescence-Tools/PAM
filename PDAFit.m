@@ -5617,7 +5617,7 @@ else
         gauss_ax.YGrid = 'off';
         gauss_ax.LineWidth = linewidth;
         gauss_ax.XLabel.String = 'Distance [A]';
-        uistack(gauss_ax.Children(8),'top');
+        uistack(gauss_ax.Children(7),'top');
         set(gauss_ax.Children,'LineWidth',linewidth);
         
         %%% add filename
