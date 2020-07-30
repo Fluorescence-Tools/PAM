@@ -173,7 +173,7 @@ if isempty(obj)
         
         
         %%% Update GUI with values stored in BurstData Structure
-        h.DynamicStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates-1
+        h.DynamicStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates-1;
         h.StaticStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_StaticStates-1;
         BurstData{file}.AdditionalParameters.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1;
         h.state1st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static);
