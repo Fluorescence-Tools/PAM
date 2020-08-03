@@ -35,21 +35,18 @@ f = figure('Color',[1,1,1]);
 copyobj(h.axes_general,f);
 colormap(colormap(h.BurstBrowser));
 set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.63],'FontSize',14);%,'DataAspectRatioMode','manual','DataAspectRatio',[1,1,1]);
-if ispc
-    set(gca,'FontSize',get(gca,'FontSize')/1.4);
-end
 xlim([0,1]);
 ax = gca; ax.YLim(1) = 0;
 
 point = [muPR,muBVA];
 % calculate the shot-noise line
-x_line = 0:0.001:1;
+x_line = 0:0.0001:1;
 y_line = sqrt(x_line.*(1-x_line)./N);
 
 % find radial distance = dynamic shift
 % construct the radial line
-x = linspace(0.5,point(1),1000);
-y = linspace(0,point(2),1000);
+x = linspace(0.5,point(1),10000);
+y = linspace(0,point(2),10000);
 
 [X1,X2] = meshgrid(x_line,x);
 [Y1,Y2] = meshgrid(y_line,y);
@@ -90,7 +87,11 @@ scatter(muPR,BVA_bin,200,'o','MarkerEdgeColor','k','LineWidth',2);
 scatter(muPR,confint,200,'square','MarkerEdgeColor','k','LineWidth',2);
 plot([muPR,muPR],[BVA_stat,BVA_bin],'k--','LineWidth',2);
 
-title(sprintf('dynamic shift (radial) = %.3f\ndynamic shift (minimum) = %.3f\nSEM of population = %.4f\ndynamic shift (bin) = %.3f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',14);
+fs = 14;
+if ispc
+    fs = 10;
+end
+title(sprintf('dynamic shift (radial) = %.3f\ndynamic shift (minimum) = %.3f\nSEM of population = %.4f\ndynamic shift (bin) = %.3f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',fs);
 
 Mat2clip([ds,ds_min,SEM,ds_bin,ds_confint]);
 
