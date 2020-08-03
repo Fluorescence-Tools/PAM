@@ -24,7 +24,7 @@ end
 fcenterPlotPos = [0.1 0.11 0.6 0.6];
 %%% Burst per bin threshold
 min_bursts_per_bin = UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
-
+n = UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA;
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating...');
 
 
@@ -455,11 +455,11 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         w_res_dyn = (mean_tauD-mean_tauD_sim);
         w_res_dyn(isnan(w_res_dyn)) = 0;
         
-        SSR_Model1_legend = ['SIM data' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
+        SSR_Model1_legend = ['Model 1' newline 'SSR:' ' ' sprintf('%.0e',round(sum(w_res_dyn.^2),1,'significant'))];
 %         maxXLim = [0 max([tauD;tauD_sim'])+0.01];
         switch UserValues.BurstBrowser.Settings.BVA_ModelComparison
             case 1
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%s%%%%%%%%%%%%%
                 %%%%%%% Compare two models to experimental data %%%%%%%
                 %%%%%%% and plot separately                     %%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

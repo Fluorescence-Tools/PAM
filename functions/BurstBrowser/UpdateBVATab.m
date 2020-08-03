@@ -173,6 +173,9 @@ if isempty(obj)
         
         
         %%% Update GUI with values stored in BurstData Structure
+        h.DynamicStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates-1;
+        h.StaticStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_StaticStates-1;
+        BurstData{file}.AdditionalParameters.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1;
         h.state1st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static);
         h.state2st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude2_static);
         h.state3st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude3_static);
@@ -194,6 +197,8 @@ if isempty(obj)
         h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
         h.KineticRates_table3.Data(3,3) = {NaN};
         
+        h.DynamicStates_Popupmenu_Model2.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2-1;
+        h.StaticStates_Popupmenu_Model2.Value = BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2-1;
         h.state1st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2);
         h.state2st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2);
         h.state3st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2);

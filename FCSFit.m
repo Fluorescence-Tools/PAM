@@ -2459,6 +2459,8 @@ if sum(Global)==0
             if ~Use_Weights
                 EData(:)=1;
             end
+            %%% Fix zeros in error estimate
+            EData(EData==0) = 1;
             %%% Sets initial values and bounds for non fixed parameters
             Fit_Params=FCSMeta.Params(~Fixed(i,:),i);
             Lb=lb(~Fixed(i,:));
@@ -2563,6 +2565,8 @@ else
         Lb=[Lb lb(~Fixed(i,:) & ~Global)];
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
+    %%% Fix zeros in error estimate
+    EData(EData==0) = 1;
     %%% Puts current Data into global variable to be able to stop fitting
     %%% Performs fit
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points,Fixed,Global,Active},YData./EData,Lb,Ub,opts);
