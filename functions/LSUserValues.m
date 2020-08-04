@@ -890,6 +890,283 @@ if Mode==0 %%% Loads user values
     end
     P.GTauFit.Export_Residuals = S.GTauFit.Export_Residuals;
     
+
+    %%% Checks, if TauFit.StartPar exists
+    %%% (This field contains the Start Parallel editbox/slider value)
+    if ~isfield(S.GTauFit,'StartPar')
+        S.GTauFit.StartPar={0,0,0,0};
+        disp('UserValues.GTauFit.StartPar was incomplete');
+    end
+    if numel(S.GTauFit.StartPar) < 5
+        S.GTauFit.StartPar{end+1} = 0;
+        disp('UserValues.GTauFit.StartPar was wrong size');
+    end
+    P.GTauFit.StartPar = S.GTauFit.StartPar;
+
+    %%% Checks, if TauFit.Length exists
+    %%% (This field contains the Length editbox/slider value)
+    if ~isfield(S.GTauFit,'Length')
+        S.GTauFit.Length={0,0,0,0};
+        disp('UserValues.GTauFit.Length was incomplete');
+    end
+    if numel(S.GTauFit.Length) < 5
+        S.GTauFit.Length{end+1} = 0;
+        disp('UserValues.GTauFit.Length was wrong size');
+    end
+    P.GTauFit.Length = S.GTauFit.Length;
+
+    %%% Checks, if TauFit.ShiftPer exists
+    %%% (This field contains the Shift perpendicular editbox/slider value)
+    if ~isfield(S.GTauFit,'ShiftPer')
+        S.GTauFit.ShiftPer={1,1,1,1};
+        disp('UserValues.GTauFit.ShiftPer was incomplete');
+    end
+    if numel(S.GTauFit.ShiftPer) < 5
+        S.GTauFit.ShiftPer{end+1} = 1;
+        disp('UserValues.GTauFit.ShiftPer was wrong size');
+    end
+    P.GTauFit.ShiftPer = S.GTauFit.ShiftPer;
+
+    %%% Checks, if TauFit.IRFLength exists
+    %%% (This field contains the IRF Length editbox/slider value)
+    if ~isfield(S.GTauFit,'IRFLength')
+        S.GTauFit.IRFLength={100,100,100,100};
+        disp('UserValues.GTauFit.IRFLength was incomplete');
+    end
+    if numel(S.GTauFit.IRFLength) < 5
+        S.GTauFit.IRFLength{end+1} = 100;
+        disp('UserValues.GTauFit.IRFLength was wrong size');
+    end
+    P.GTauFit.IRFLength = S.GTauFit.IRFLength;
+    %%% Checks, if TauFit.IRFShift exists
+    %%% (This field contains the IRF Shift editbox/slider value)
+    if ~isfield(S.GTauFit,'IRFShift')
+        S.GTauFit.IRFShift={0,0,0,0};
+        disp('UserValues.GTauFit.IRFShift was incomplete');
+    end
+    if numel(S.GTauFit.IRFShift) < 5
+        S.GTauFit.IRFShift{end+1} = 0;
+        disp('UserValues.GTauFit.IRFShift was wrong size');
+    end
+    P.GTauFit.IRFShift = S.GTauFit.IRFShift;
+
+    %%% Checks, if TauFit.IRFrelShift exists
+    %%% (This field contains the relative shift of the perpendicular IRF editbox/slider value)
+    if ~isfield(S.GTauFit,'IRFrelShift')
+        S.GTauFit.IRFrelShift={0,0,0,0};
+        disp('UserValues.GTauFit.IRFrelShift was incomplete');
+    end
+    if numel(S.GTauFit.IRFrelShift) < 5
+        S.GTauFit.IRFrelShift{end+1} = 0;
+        disp('UserValues.GTauFit.IRFrelShift was wrong size');
+    end
+    P.GTauFit.IRFrelShift = S.GTauFit.IRFrelShift;
+
+    %%% Checks, if TauFit.ScatShift exists
+    %%% (This field contains the Scatter pattern shift editbox/slider value)
+    if ~isfield(S.GTauFit,'ScatShift')
+        S.GTauFit.ScatShift={0,0,0,0};
+        disp('UserValues.GTauFit.ScatShift was incomplete');
+    end
+    if numel(S.GTauFit.ScatShift) < 5
+        S.GTauFit.ScatShift{end+1} = 0;
+        disp('UserValues.GTauFit.ScatShift was wrong size');
+    end
+    P.GTauFit.ScatShift = S.GTauFit.ScatShift;
+
+    %%% Checks, if TauFit.ScatrelShift exists
+    %%% (This field contains the relative shift of the perpendicular scatter editbox/slider value)
+    if ~isfield(S.GTauFit,'ScatrelShift')
+        S.GTauFit.ScatrelShift={0,0,0,0};
+        disp('UserValues.GTauFit.ScatrelShift was incomplete');
+    end
+    if numel(S.GTauFit.ScatrelShift) < 5
+        S.GTauFit.ScatrelShift{end+1} = 0;
+        disp('UserValues.GTauFit.ScatrelShift was wrong size');
+    end
+    P.GTauFit.ScatrelShift = S.GTauFit.ScatrelShift;
+
+    %%% Checks, if TauFit.Ignore exists
+    %%% (This field contains the editbox/slider value for ignoring the first part of the TAC from fitting quality estimation)
+    if ~isfield(S.GTauFit,'Ignore')
+        S.GTauFit.Ignore={1,1,1,1};
+        disp('UserValues.GTauFit.Ignore was incomplete');
+    end
+    if numel(S.GTauFit.Ignore) < 5
+        S.GTauFit.Ignore{end+1} = 1;
+        disp('UserValues.GTauFit.Ignore was wrong size');
+    end
+    P.GTauFit.Ignore = S.GTauFit.Ignore;
+
+    %%% Checks, if TauFit.PIEChannelSelection exists
+    %%% (This field contains the PIE Channel Selection as String/Name for
+    %%% Parallel and Perpendicular Channel)
+    if ~isfield(S.GTauFit,'PIEChannelSelection')
+        dummy = S.PIE.Name{1};
+        S.GTauFit.PIEChannelSelection={dummy,dummy};
+            disp('UserValues.GTauFit.PIEChannelSelection was incomplete');
+    end
+    P.GTauFit.PIEChannelSelection = S.GTauFit.PIEChannelSelection;
+
+    %%% Checks, if TauFit.G exists
+    %%% (Gfactors)
+    if ~isfield(S.GTauFit,'G')
+        S.GTauFit.G={1,1,1,1};
+        disp('UserValues.GTauFit.G was incomplete');
+    end
+    if numel(S.GTauFit.G) < 5
+        S.GTauFit.G{end+1} = 1;
+        disp('UserValues.GTauFit.G was wrong size');
+    end
+    P.GTauFit.G = S.GTauFit.G;
+
+    %%% Checks, if TauFit.l1 exists
+    %%% (First of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
+    if ~isfield(S.GTauFit,'l1')
+        S.GTauFit.l1=0;
+        disp('UserValues.TauFit.l1 was incomplete');
+    end
+    P.GTauFit.l1 = S.GTauFit.l1;
+    %%% Checks, if TauFit.l2 exists
+    %%% (Second of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
+    if ~isfield(S.GTauFit,'l2')
+        S.GTauFit.l2=0;
+        disp('UserValues.GTauFit.l2 was incomplete');
+    end
+    P.GTauFit.l2 = S.GTauFit.l2;
+    %%% Checks, if TauFit.ConvolutionType exists
+    %%% (Options: linear and circular == periodic convolution)
+    if ~isfield(S.GTauFit,'ConvolutionType')
+        S.GTauFit.ConvolutionType='linear';
+        disp('UserValues.GTauFit.ConvolutionType was incomplete');
+    end
+    P.GTauFit.ConvolutionType = S.GTauFit.ConvolutionType;
+    %%% Checks, if TauFit.LineStyle exists
+    %%% (Options: line and dot)
+    if ~isfield(S.GTauFit,'LineStyle')
+        S.GTauFit.LineStyle='line';
+        disp('UserValues.GTauFit.LineStyle was incomplete');
+    end
+    P.GTauFit.LineStyle = S.GTauFit.LineStyle;
+    
+    %%% Checks, if TauFit.use_weighted_residuals exists
+    if ~isfield(S.GTauFit,'use_weighted_residuals')
+        S.GTauFit.use_weighted_residuals=1;
+        disp('UserValues.GTauFit.use_weighted_residuals was incomplete');
+    end
+    P.GTauFit.use_weighted_residuals = S.GTauFit.use_weighted_residuals;
+    %%% Checks, if TauFit.WeightedResidualsType exists
+    %%% (Options: Gaussian and Poissonian)
+    if ~isfield(S.GTauFit,'WeightedResidualsType')
+        S.GTauFit.WeightedResidualsType='Gaussian';
+        disp('UserValues.GTauFit.WeightedResidualsType was incomplete');
+    end
+    P.GTauFit.WeightedResidualsType = S.GTauFit.WeightedResidualsType;
+    %%% Checks, if TauFit.cleanup_IRF exists
+    if ~isfield(S.GTauFit,'cleanup_IRF')
+        S.GTauFit.cleanup_IRF=0;
+        disp('UserValues.GTauFit.cleanup_IRF was incomplete');
+    end
+    P.GTauFit.cleanup_IRF = S.GTauFit.cleanup_IRF;
+    
+    %%% Checks, if TauFit.IncludeChannel exists
+    if ~isfield(S.GTauFit,'IncludeChannel')
+        S.GTauFit.IncludeChannel=[1,1,1];
+        disp('UserValues.GTauFit.IncludeChannel was incomplete');
+    end
+    P.GTauFit.IncludeChannel = S.GTauFit.IncludeChannel;
+
+    %%% Checks, if TauFit.FitMethod exists
+    if ~isfield(S.GTauFit,'FitMethod')
+        S.GTauFit.FitMethod=1;
+        disp('UserValues.GTauFit.FitMethod was incomplete');
+    end
+    P.GTauFit.FitMethod = S.GTauFit.FitMethod;
+    %%% Checks, if TauFit.YScaleLog exists
+    if ~isfield(S.GTauFit,'YScaleLog')
+        S.GTauFit.YScaleLog='off';
+        disp('UserValues.GTauFit.YScaleLog was incomplete');
+    end
+    P.GTauFit.YScaleLog = S.GTauFit.YScaleLog;
+    %%% Checks, if TauFit.XScaleLog exists
+    if ~isfield(S.GTauFit,'XScaleLog')
+        S.GTauFit.XScaleLog='off';
+        disp('UserValues.GTauFit.XScaleLog was incomplete');
+    end
+    P.GTauFit.XScaleLog = S.GTauFit.XScaleLog;    
+    %%% Checks, if TauFit.DonorOnlyReferenceSource exists
+    if ~isfield(S.GTauFit,'DonorOnlyReferenceSource')
+        S.GTauFit.DonorOnlyReferenceSource=1;
+        disp('UserValues.GTauFit.DonorOnlyReferenceSource was incomplete');
+    end
+    P.GTauFit.DonorOnlyReferenceSource = S.GTauFit.DonorOnlyReferenceSource;
+    %%% Checks, if TauFit.FitParams exists
+    % 1  tau1
+    % 2  tau2
+    % 3  tau3
+    % 4  tau4
+    % 5  F1
+    % 6  F2
+    % 7  F3
+    % 8  ScatPar
+    % 9  ScatPer
+    % 10 BackPar
+    % 11 BackPer
+    % 12 IRF
+    % 13 R0
+    % 14 tauD0
+    % 15 l1
+    % 16 l2
+    % 17 Rho1
+    % 18 Rho2
+    % 19 r0
+    % 20 rinf
+    % 21 R
+    % 22 sigR
+    % 23 FD0
+    % 24 rinf2 (used for "Dip and Rise" model)
+    % 25 beta parameter for stretched exponential
+    % 26 R2 (second distance for distance dsitribution)
+    % 27 sigR2
+    % 28 Tau0(R0) (the lifetime of the donor for which R0 was determined)
+    
+    % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
+    if ~isfield(S.GTauFit,'FitParams') || any(cellfun(@numel,S.GTauFit.FitParams) ~= 28)
+        params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2 4];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0 1]);
+        S.GTauFit.FitParams = {params,params,params,params};
+        S.GTauFit.FitFix = {fix,fix,fix,fix};
+        disp('UserValues.GTauFit.FitParams/FitFix was incomplete');
+    end
+
+    if numel(S.GTauFit.FitParams{4}) ~= 28
+        params =      [2 2 2 2 0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2 4];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0 1]);
+        S.GTauFit.FitParams{4} = params;
+        S.GTauFit.FitFix{4} = fix;
+        disp('UserValues.GTauFit.FitParams/FitFix was incomplete');
+    end
+    
+    if numel(S.GTauFit.FitParams) < 5
+        params =      [2 2 2 2  0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2 4];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0 1]);
+        S.GTauFit.FitParams{end+1} = params;
+        S.GTauFit.FitFix{end+1} = fix;
+        disp('UserValues.GTauFit.FitParams/FitFix was incomplete');
+    end
+    
+    if numel(S.GTauFit.FitParams{5}) ~= 28
+        params =      [2 2 2 2 0.5 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 50 2 4];
+        fix = logical([0 0 0 0   0  0   0   1 1 1 1 1 1  1 1 1 0 0   1 0  0 0 0 0 0 0 0 1]);
+        S.GTauFit.FitParams{5} = params;
+        S.GTauFit.FitFix{5} = fix;
+        disp('UserValues.GTauFit.FitParams/FitFix was incomplete');
+    end
+    
+    P.GTauFit.FitParams = S.GTauFit.FitParams;
+    P.GTauFit.FitFix = S.GTauFit.FitFix;
+    
+    
     %% MIAFit
     %%% Checks, if MIAFit subfield exists
     if ~isfield(S, 'MIAFit')
