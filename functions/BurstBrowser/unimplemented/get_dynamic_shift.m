@@ -71,3 +71,4 @@ LevelList = 0.32;
 viscircles([point;point],[SEM,sigma],'LineStyle','-');
 
 title(sprintf('dynamic shift = %.3f\nSEM of population = %.4f',ds,SEM),'FontSize',14);
+Mat2clip([ds,SEM]);
