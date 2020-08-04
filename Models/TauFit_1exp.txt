@@ -1,0 +1,11 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+TauFit - single exponential
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): Tau             = 2;     LB = 0;   UB = Inf;
+Param(2): Scatter     = 0;   LB = 0;	UB = Inf;   
+Param(3): Background       = 0;   LB = 0;	UB = Inf;
+Param(4): IRF Shift       = 1;	LB = 0;   UB = Inf;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/P(1); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=exp(-(P-1)*(1./x(2)))*diag(1./(1-exp(-x(1)./x(2))));
