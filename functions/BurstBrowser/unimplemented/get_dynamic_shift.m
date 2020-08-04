@@ -7,6 +7,9 @@ if ~strcmp(BurstMeta.Fitting.ParamX,'Lifetime D [ns]') || ~strcmp(BurstMeta.Fitt
     disp('Perform a 2D fit of FRET efficiency vs Lifetime D [ns]');
     return;
 end
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
+
 % get tauD0
 tauD0 = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
 
