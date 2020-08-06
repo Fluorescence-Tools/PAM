@@ -208,8 +208,11 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         if sampling ~=0
             % Plot confidence intervals
-            alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
-            confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
+            % Bonferroni correction for multiple hyptothesis testing
+            alpha_corr = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters);
+            
+            confint = mean(PsdPerBin,2) + std(PsdPerBin,1,2)*norminv(1-alpha_corr);
+%             confint = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,1,2));
             % confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
             % confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
             
