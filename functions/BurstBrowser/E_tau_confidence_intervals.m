@@ -157,10 +157,10 @@ mean_tau_static_R = mean(tau_int_R,1);
 mean_tau_species_R = mean(tau_species_R,1);
 bin_centers_cor = 1-mean_tau_species_R;
 mean_E_resampled = mean(E_resampled,1);
-% get percentiles
-alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(bin_centers_cor)/100;
+% get percentiles (99.9% with bonferroni correction)
+alpha = 0.1/numel(bin_centers_cor)/100;%UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(bin_centers_cor)/100;
 %upper_bound = prctile(tau_int_R,100-alpha/(numel(bin_edges)-1),1);
-upper_bound = mean(tau_int_R,1) + std(tau_int_R,0,1)*norminv(1-alpha/(numel(bin_edges)-1)/100);
+upper_bound = mean(tau_int_R,1) + std(tau_int_R,0,1)*norminv(1-alpha);
 
 if do_phasor
     %%% get upper and lower bounds of "static" species

@@ -172,7 +172,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 xlabel('FRET Efficiency, E'); 
                 ylabel('Standard Deviation, \sigma_{E}');%ylabel('SD of FRET, s');
                 %%% conversion betweeen PR and E
-                PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
+                PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR*BurstData{file}.Corrections.Gamma_GR*BurstData{file}.Corrections.Beta_GR).*(1-PR))./ ...
                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
                 BinCenters = PRtoFRET(BinCenters);
                 X_expectedSD = PRtoFRET(X_expectedSD);
@@ -208,14 +208,10 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         if sampling ~=0
             % Plot confidence intervals
-            % Bonferroni correction for multiple hyptothesis testing
+            % Bonferroni correction for multiple hyptothesis testing 
+            % according to Torella et al,2011
             alpha_corr = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters);
-            
             confint = mean(PsdPerBin,2) + std(PsdPerBin,1,2)*norminv(1-alpha_corr);
-%             confint = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,1,2));
-            % confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
-            % confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
-            
             % only plot for bins which contained enough bursts
             confint(isnan(sPerBin)) = NaN;
             p2 = area(BinCenters,confint);

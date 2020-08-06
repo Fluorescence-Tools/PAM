@@ -6648,6 +6648,7 @@ clear Image ImageFluct ImageCor;
 
 Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
 %%% Corrects the amplitude changes due to temporal moving average addition/subtraction
+%%% Does NOT take into account pixel-based moving averages!
 %%% The Formula assumes 2 or 3 species with different brightnesses and corrects the amplitude accordingly
 if h.Mia_Image.Settings.Correction_Add.Value==5 && h.Mia_Image.Settings.Correction_Subtract.Value==4 %%% Subtracts and Adds moving average
     Sub=str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String);
@@ -6662,7 +6663,11 @@ elseif h.Mia_Image.Settings.Correction_Add.Value==5
     Correct=1/((1+1/Add)^2+(1/Add)^2*(Add-1));
 elseif h.Mia_Image.Settings.Correction_Subtract.Value==4
     Sub=str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String);
-    Correct=1/((1-1/Sub)^2+(1/Sub)^2*(Sub-1));
+    if Sub ~= 1
+        Correct=1/((1-1/Sub)^2+(1/Sub)^2*(Sub-1));
+    else
+        Correct = 1;
+    end
 else
     Correct=1;
 end
