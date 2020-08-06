@@ -208,13 +208,10 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         if sampling ~=0
             % Plot confidence intervals
-            % 99.9% confidence level with bonferroni correction according
-            % to Torella et al,2011
-            alpha = 0.1/numel(BinCenters)/100; %UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
-            confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-            % confint2 = norminv(1-alpha,mean(PsdPerBin,2),std(PsdPerBin,0,2));
-            % confint = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
-            
+            % Bonferroni correction for multiple hyptothesis testing 
+            % according to Torella et al,2011
+            alpha_corr = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters);
+            confint = mean(PsdPerBin,2) + std(PsdPerBin,1,2)*norminv(1-alpha_corr);
             % only plot for bins which contained enough bursts
             confint(isnan(sPerBin)) = NaN;
             p2 = area(BinCenters,confint);
