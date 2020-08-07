@@ -218,7 +218,7 @@ h.Text{end+1} = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.95 0.035 0.02],...
     'String','info',...
-    'ToolTipString',['Left images:' 10 '"left-click": center ROI' 10 '"ctrl"+"left-drag" or "right-drag": draw normal ROI' 10 '"shift"+"left-click" or "middle-click": export image' 10 10 'Right images' 10 '"right-click": draw AROI popupmenu' 10 '"shift"+"left-click" or "middle-click": export image']);
+    'ToolTipString',['Left images:' 10 '"left-click": center ROI' 10 '"ctrl"+"left-drag" or "right-drag": draw normal ROI' 10 '"shift"+"left-click" or "middle-click": export image' 10 10 'Right images:' 10 '"right-click": draw AROI popupmenu' 10 '"shift"+"left-click" or "middle-click": export image' 10 '' 10 'When arbitrary ROI is selected, "right-click" on any image' 10 'gives a context menu for manually drawing an ROI using "left-drag"']);
 for i=1:2
     %%% Axes to display images
     h.Mia_Image.Axes(i,1)= axes(...
@@ -6132,7 +6132,27 @@ switch mode
                     MIAData.MS{2,2} = Mask;
                     MIAData.MS{1,2} = Mask;
                 end
-        end          
+            case h.Mia_Image.Axes(1,1)
+                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                            str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+                if any(~MIAData.MS{1,2}(:))
+                    MIAData.MS{1,2} = MIAData.MS{1,2} | Mask;
+                    MIAData.MS{2,2} = MIAData.MS{2,2} | Mask;
+                else
+                    MIAData.MS{1,2} = Mask;
+                    MIAData.MS{2,2} = Mask;
+                end
+            case h.Mia_Image.Axes(2,1)
+                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                            str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+                if any(~MIAData.MS{2,2}(:))
+                    MIAData.MS{2,2} = MIAData.MS{2,2} | Mask;
+                    MIAData.MS{1,2} = MIAData.MS{1,2} | Mask;
+                else
+                    MIAData.MS{2,2} = Mask;
+                    MIAData.MS{1,2} = Mask;
+                end
+        end
         switch UserValues.MIA.AR_Same
             case 1 %%% Individual channels
                 MIAData.MS{1,1} = MIAData.MS{1,2};
@@ -6168,7 +6188,17 @@ switch mode
             case h.Mia_Image.Axes(2,2)
                 MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
                 MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
-        end      
+            case h.Mia_Image.Axes(1,1)
+                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                    str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+            case h.Mia_Image.Axes(2,1)
+                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                    str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+        end
         if UserValues.MIA.AR_Same == 4 && size(MIAData.Data,1)>1
             MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
             MIAData.MS{2,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
@@ -8450,6 +8480,11 @@ for i=mode
                     end
                     h.Plots.Image(1,2).UIContextMenu = [];
                     h.Plots.Image(2,2).UIContextMenu = [];
+                    % right-click left image to drag normal ROI
+                    h.Plots.Image(1,1).UIContextMenu = [];
+                    h.Plots.Image(2,1).UIContextMenu = [];
+                    h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
+                    h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
                     Update_Plots([],[],1,1:size(MIAData.Data,1));
                 case 3 %%% Show arbitrary region controls
                     h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.Visible = 'on';
@@ -8470,6 +8505,11 @@ for i=mode
                     end
                     h.Plots.Image(1,2).UIContextMenu = h.Mia_Image.Menu;
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
+                    % right-click left image to draw AROI
+                    h.Plots.Image(1,1).UIContextMenu = h.Mia_Image.Menu;
+                    h.Plots.Image(2,1).UIContextMenu = h.Mia_Image.Menu;
+                    h.Plots.Image(1,1).ButtonDownFcn = [];
+                    h.Plots.Image(2,1).ButtonDownFcn = [];
                     Mia_Correct([],[],1);
             end
         case 4
@@ -8536,6 +8576,7 @@ for i=mode
             h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value = UserValues.MIA.AR_Framewise;
             Mia_Correct([],[],1)
         case 8
+            %% Update Scale bar when pixel size is changed
             Update_Plots([],[],1,1:2);
             Update_Plots([],[],6,1:3);
     end
