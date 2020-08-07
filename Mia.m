@@ -141,6 +141,19 @@ h.Mia_Open_Spectral = uimenu(...
     'Label','Spectral',...
     'Callback',@Spectral,...
     'Tag','Mia_Open_Spectral');
+
+%%% Menu to load mia data
+h.Mia_Save = uimenu(...
+    'Parent',h.Mia,...
+    'Label','Save...',...
+    'Tag','Save_Mia');
+%%% Load TIFF
+h.Mia_Save_TwoColorImage = uimenu(...
+    'Parent',h.Mia_Save,...
+    'Label','...Dual color image',...
+    'Callback',{@Mia_Export,2},...
+    'Tag','Save_TwoColorImage');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -238,13 +251,14 @@ for i=1:2
     %%% Initializes empty plots
     h.Plots.Image(i,1)=imagesc(zeros(1),...
         'Parent',h.Mia_Image.Axes(i,1),...
-        'ButtonDownFcn',{@Mia_ROI,2});
+        'ButtonDownFcn',{@Mia_ROI,2},...
+        'Tag',['im' num2str(i)]);
     h.Mia_Image.Axes(i,1).DataAspectRatio=[1 1 1];
     h.Mia_Image.Axes(i,1).XTick=[];
     h.Mia_Image.Axes(i,1).YTick=[];
     h.Plots.Image(i,2)=imagesc(zeros(1),...
         'Parent',h.Mia_Image.Axes(i,2),...
-        'ButtonDownFcn',@Mia_Export);
+        'ButtonDownFcn',{@Mia_Export,1});
     h.Mia_Image.Axes(i,2).DataAspectRatio=[1 1 1];
     h.Mia_Image.Axes(i,2).XTick=[];
     h.Mia_Image.Axes(i,2).YTick=[];
@@ -6416,7 +6430,7 @@ if ~isempty(MIAData.Data)
                     h.Plots.ROI(3).Visible='on';
                     h.Plots.ROI(4).Visible='on';
                 case 'extend' %%% Export Frame
-                    Mia_Export(obj,e);
+                    Mia_Export(obj,e,1);
                     %% Updates filename display
                     if numel(MIAData.FileName)==2
                         h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
@@ -6797,16 +6811,23 @@ if savedata > 1
                     Image = double(MIAData.Data{i,2}(:,:,frames));
                     %InfoAll(i).Mean = mean(Image(Use{i}));
                     %%% Arbitrary region information
-                    InfoAll(i).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-                    InfoAll(i).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-                    InfoAll(i).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-                    InfoAll(i).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-                    InfoAll(i).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-                    InfoAll(i).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-                    InfoAll(i).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-                    InfoAll(i).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-                    InfoAll(i).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-                    InfoAll(i).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+                    InfoAll(i).AR.Int_Max(1) = UserValues.MIA.AR_Int(3);
+                    InfoAll(i).AR.Int_Max(2) = UserValues.MIA.AR_Int(4);
+                    InfoAll(i).AR.Int_Min(1) = UserValues.MIA.AR_Int(1);
+                    InfoAll(i).AR.Int_Min(2) = UserValues.MIA.AR_Int(2);
+                    InfoAll(i).AR.Int_Fold_Max(1) = UserValues.MIA.AR_Int_Fold(3);
+                    InfoAll(i).AR.Int_Fold_Min(1) = UserValues.MIA.AR_Int_Fold(1);
+                    InfoAll(i).AR.Int_Fold_Max(2) = UserValues.MIA.AR_Int_Fold(4);
+                    InfoAll(i).AR.Int_Fold_Min(2) = UserValues.MIA.AR_Int_Fold(2);
+                    InfoAll(i).AR.Var_Fold_Max(1) = UserValues.MIA.AR_Var_Fold(3);
+                    InfoAll(i).AR.Var_Fold_Min(1) = UserValues.MIA.AR_Var_Fold(1);
+                    InfoAll(i).AR.Var_Fold_Max(2) = UserValues.MIA.AR_Var_Fold(4);
+                    InfoAll(i).AR.Var_Fold_Min(2) = UserValues.MIA.AR_Var_Fold(2);
+                    InfoAll(i).AR.Var_Sub=UserValues.MIA.AR_Region(2);
+                    InfoAll(i).AR.Var_SubSub=UserValues.MIA.AR_Region(1);
+                    InfoAll(i).AR.Same = UserValues.MIA.AR_Same;
+                    InfoAll(i).AR.Median = UserValues.MIA.AR_Median;
+                    InfoAll(i).AR.Framewise = UserValues.MIA.AR_Framewise;
             end
             %%% Mean intensity
             InfoAll(i).Counts = MeanInt(i); %Waldi
@@ -6857,16 +6878,23 @@ if savedata > 1
                     Image2 = double(MIAData.Data{2,2}(:,:,frames));
                     InfoAll(3).Mean = (mean(Image1(Use1 & Use2)) + mean(Image2(Use1 & Use2)))/2;
                     %%% Arbitrary region information
-                    InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-                    InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-                    InfoAll(3).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-                    InfoAll(3).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-                    InfoAll(3).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-                    InfoAll(3).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-                    InfoAll(3).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-                    InfoAll(3).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-                    InfoAll(3).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-                    InfoAll(3).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+                    InfoAll(3).AR.Int_Max(1) = UserValues.MIA.AR_Int(3);
+                    InfoAll(3).AR.Int_Max(2) = UserValues.MIA.AR_Int(4);
+                    InfoAll(3).AR.Int_Min(1) = UserValues.MIA.AR_Int(1);
+                    InfoAll(3).AR.Int_Min(2) = UserValues.MIA.AR_Int(2);
+                    InfoAll(3).AR.Int_Fold_Max(1) = UserValues.MIA.AR_Int_Fold(3);
+                    InfoAll(3).AR.Int_Fold_Min(1) = UserValues.MIA.AR_Int_Fold(1);
+                    InfoAll(3).AR.Int_Fold_Max(2) = UserValues.MIA.AR_Int_Fold(4);
+                    InfoAll(3).AR.Int_Fold_Min(2) = UserValues.MIA.AR_Int_Fold(2);
+                    InfoAll(3).AR.Var_Fold_Max(1) = UserValues.MIA.AR_Var_Fold(3);
+                    InfoAll(3).AR.Var_Fold_Min(1) = UserValues.MIA.AR_Var_Fold(1);
+                    InfoAll(3).AR.Var_Fold_Max(2) = UserValues.MIA.AR_Var_Fold(4);
+                    InfoAll(3).AR.Var_Fold_Min(2) = UserValues.MIA.AR_Var_Fold(2);
+                    InfoAll(3).AR.Var_Sub=UserValues.MIA.AR_Region(2);
+                    InfoAll(3).AR.Var_SubSub=UserValues.MIA.AR_Region(1);
+                    InfoAll(3).AR.Same = UserValues.MIA.AR_Same;
+                    InfoAll(3).AR.Median = UserValues.MIA.AR_Median;
+                    InfoAll(3).AR.Framewise = UserValues.MIA.AR_Framewise;
             end
             %%% Mean intensity
             InfoAll(3).Counts = sum(MeanInt);
@@ -6975,7 +7003,7 @@ if savedata > 1
                         fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
                 end
                 %%% Addition used
-                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                switch h.Mia_Image.Settings.Correction_Add.Value
                     case 1
                         fprintf(FID,'%s\n','Nothing added');
                     case 2
@@ -6990,11 +7018,11 @@ if savedata > 1
                 %%% Arbitrary region
                 if h.Mia_Image.Settings.ROI_FramesUse.Value==3
                     fprintf(FID,'%s\n','Arbitrary region used:');
-                    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ', InfoAll(i).AR.Int_Min(2));
-                    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ', InfoAll(i).AR.Int_Max(2));
+                    fprintf(FID,'%s\t%f\n','Minimal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Min(1),'; ',InfoAll(i).AR.Int_Min(2));
+                    fprintf(FID,'%s\t%f\n','Maximal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Max(1),'; ',InfoAll(i).AR.Int_Max(2));
                     fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
-                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
+                    fprintf(FID,'%s\t%f\n','Minimal\Maximal intensity fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Int_Fold_Min(1),'; ',InfoAll(i).AR.Int_Fold_Max(1),'; ',InfoAll(i).AR.Int_Fold_Min(2),'; ',InfoAll(i).AR.Int_Fold_Max(2));
+                    fprintf(FID,'%s\t%f\n','Minimal\Maximal variance fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Var_Fold_Min(1),'; ',InfoAll(i).AR.Var_Fold_Max(1),'; ',InfoAll(i).AR.Var_Fold_Min(2),'; ',InfoAll(i).AR.Var_Fold_Max(2));
                     
                 end
                 fclose(FID);
@@ -7080,7 +7108,7 @@ if savedata > 1
                         fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
                 end
                 %%% Addition used
-                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                switch h.Mia_Image.Settings.Correction_Add.Value
                     case 1
                         fprintf(FID,'%s\n','Nothing added');
                     case 2
@@ -7094,13 +7122,13 @@ if savedata > 1
                 end
                 %%% Arbitrary region
                 if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-                    fprintf(FID,'%s\n','Arbitrary region used:');
-                    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ',InfoAll(i).AR.Int_Min(2));
-                    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ',InfoAll(i).AR.Int_Max(2));
+                    fprintf(FID,'%s\n','Arbitrary region used:')
+                    fprintf(FID,'%s\t%f\n','Minimal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Min(1),'; ',InfoAll(i).AR.Int_Min(2));
+                    fprintf(FID,'%s\t%f\n','Maximal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Max(1),'; ',InfoAll(i).AR.Int_Max(2));
                     fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
-                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
-                    
+                    fprintf(FID,'%s\t%f\n','Minimal\Maximal intensity fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Int_Fold_Min(1),'; ',InfoAll(i).AR.Int_Fold_Max(1),'; ',InfoAll(i).AR.Int_Fold_Min(2),'; ',InfoAll(i).AR.Int_Fold_Max(2));
+                    fprintf(FID,'%s\t%f\n','Minimal\Maximal variance fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Var_Fold_Min(1),'; ',InfoAll(i).AR.Var_Fold_Max(1),'; ',InfoAll(i).AR.Var_Fold_Min(2),'; ',InfoAll(i).AR.Var_Fold_Max(2));
+
                 end
                 fclose(FID);
                 %% Saves correlation TIFFs
@@ -8618,180 +8646,245 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for exporting various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_Export(obj,~)
-global UserValues
-h = guidata(findobj('Tag','Mia'));
-
-if ~strcmp(h.Mia.SelectionType,'extend') && ~strcmp(h.Mia.SelectionType,'open')
-   return; 
-end
-[FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
-if any(FileName~=0)
-    UserValues.File.ExportPath=PathName;
-    LSUserValues(1)
-    Image=single(obj.CData);
-    if size(Image,3)==3       
-        Image=Image/max(Image(:))*255;
-    else
-        if h.Mia_Image.Settings.AutoScale.Value == 1
-            %just avoid negative values
-            mini = min(min(Image));
-            maxi = max(max(Image));
-        elseif h.Mia_Image.Settings.AutoScale.Value == 3
-            % if manual scale, first include all values within the range
-            mini = obj.Parent.CLim(1);
-            maxi = obj.Parent.CLim(2);
-            Image(Image<mini)=mini;
-            Image(Image>maxi)=maxi;
-        end
-        %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
-        Image=(Image-mini)/(maxi-mini)*63;
-       
-%         elseif h.Mia_Image.Settings.AutoScale.Value == 3
-%             % manual scaling values for the respective imaging channel
-%              mini = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),1).String);
-%              maxi = str2num(h.Mia_Image.Settings.Scale(str2num(obj.Parent.Tag(end)),2).String);
-% 
-%         end         
- 
-        % The cmap is only 6 bit 
-        cmap=colormap(obj.Parent); 
-        r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
-        %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
-        CData = round(Image)+1;
-        CData(CData>63)=63;
-        CData(CData<0)=0;
-        Image(:,:,1) = reshape(r(CData),size(CData));
-        Image(:,:,2) = reshape(g(CData),size(CData));
-        Image(:,:,3) = reshape(b(CData),size(CData));
+    function Mia_Export(obj,~,mode)
+        global UserValues MIAData
+        h = guidata(findobj('Tag','Mia'));
         
-        if numel(obj.AlphaData)>1 %%% When transparency is used to show unselected regions
-            Image(:,:,1) = Image(:,:,1).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(1);
-            Image(:,:,2) = Image(:,:,2).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(2);
-            Image(:,:,3) = Image(:,:,3).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(3);
+        switch mode
+            case 1
+                %% Right- or shift-click image
+                if ~strcmp(h.Mia.SelectionType,'extend') && ~strcmp(h.Mia.SelectionType,'open')
+                    return;
+                end
+                [FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
+                
+                if any(FileName~=0)
+                    UserValues.File.ExportPath=PathName;
+                    LSUserValues(1)
+                    Image=single(obj.CData);
+                    if size(Image,3)==3
+                        Image=Image/max(Image(:))*255;
+                    else
+                        if h.Mia_Image.Settings.AutoScale.Value == 1
+                            %just avoid negative values
+                            mini = min(min(Image));
+                            maxi = max(max(Image));
+                        elseif h.Mia_Image.Settings.AutoScale.Value == 3
+                            % if manual scale, first include all values within the range
+                            mini = obj.Parent.CLim(1);
+                            maxi = obj.Parent.CLim(2);
+                            Image(Image<mini)=mini;
+                            Image(Image>maxi)=maxi;
+                        end
+                        %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
+                        Image=(Image-mini)/(maxi-mini)*63;
+                        
+                        % The cmap is only 6 bit
+                        cmap=colormap(obj.Parent);
+                        r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
+                        %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+                        CData = round(Image)+1;
+                        CData(CData>63)=63;
+                        CData(CData<0)=0;
+                        Image(:,:,1) = reshape(r(CData),size(CData));
+                        Image(:,:,2) = reshape(g(CData),size(CData));
+                        Image(:,:,3) = reshape(b(CData),size(CData));
+                        
+                        if numel(obj.AlphaData)>1 %%% When transparency is used to show unselected regions
+                            Image(:,:,1) = Image(:,:,1).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(1);
+                            Image(:,:,2) = Image(:,:,2).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(2);
+                            Image(:,:,3) = Image(:,:,3).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(3);
+                        end
+                        
+                        barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
+                        if barx~=0 && ~isnan(barx)
+                            pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
+                            roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
+                            roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
+                            barwidth = floor(barx/pixsize); %in pixels
+                            y = floor(roiy/40);
+                            x = floor(roix/40);
+                            for i = 1:3
+                                Image(1+3*y:1+4*y,end-barwidth-4*x:end-4*x,i) = 255;
+                            end
+                        end
+                    end
+                end
+                
+            case 2
+                %% Dual color image from menu
+                if ~size(MIAData.Data,1)<2
+                    [FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
+                    if any(FileName~=0)
+                        UserValues.File.ExportPath=PathName;
+                        LSUserValues(1)
+                        for i = 1:2
+                            Im = h.Plots.Image(i,1).CData;
+                            if size(Im,3)==3
+                                Im=Im/max(Im(:))*255;
+                            else
+                                if h.Mia_Image.Settings.AutoScale.Value == 1
+                                    %just avoid negative values
+                                    mini = min(min(Im));
+                                    maxi = max(max(Im));
+                                elseif h.Mia_Image.Settings.AutoScale.Value == 3
+                                    % if manual scale, first include all values within the range
+                                    mini = h.Mia_Image.Axes(i,1).CLim(1);
+                                    maxi = h.Mia_Image.Axes(i,1).CLim(2);
+                                    Im(Im<mini)=mini;
+                                    Im(Im>maxi)=maxi;
+                                end
+                                %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
+                                Im=(Im-mini)/(maxi-mini)*63;
+                                
+                                % The cmap is only 6 bit
+                                cmap=colormap(h.Mia_Image.Axes(i,1));
+                                r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
+                                %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+                                CData = round(Im)+1;
+                                CData(CData>63)=63;
+                                CData(CData<0)=0;                               
+                                if i == 2
+                                    Image(:,:,1) = reshape(r(CData),size(CData));
+                                elseif i == 1
+                                    Image(:,:,2) = reshape(g(CData),size(CData));
+                                end
+                                Image(:,:,3) = zeros(size(CData));
+                                
+                                if numel(h.Plots.Image(i,1).AlphaData)>1 %%% When transparency is used to show unselected regions
+                                    if i == 2
+                                        Image(:,:,1) = Image(:,:,1).*h.Plots.Image(i,1).AlphaData + 255*(1-h.Plots.Image(i,1).AlphaData)*h.Mia_Image.Axes(i,1).Color(1);
+                                    elseif i == 1
+                                        Image(:,:,2) = Image(:,:,2).*h.Plots.Image(i,1).AlphaData + 255*(1-h.Plots.Image(i,1).AlphaData)*h.Mia_Image.Axes(i,1).Color(2);
+                                    end
+                                end
+                                
+                                barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
+                                if barx~=0 && ~isnan(barx)
+                                    pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
+                                    roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
+                                    roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
+                                    barwidth = floor(barx/pixsize); %in pixels
+                                    y = floor(roiy/40);
+                                    x = floor(roix/40);
+                                    for j = 1:3
+                                        Image(1+3*y:1+4*y,end-barwidth-4*x:end-4*x,j) = 255;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
         end
-        
-        barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
-        if barx~=0 && ~isnan(barx)
-            pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
-            roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
-            roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
-            barwidth = floor(barx/pixsize); %in pixels
-            y = floor(roiy/40);
-            x = floor(roix/40);
-            for i = 1:3
-                Image(1+3*y:1+4*y,end-barwidth-4*x:end-4*x,i) = 255;
-            end
-        end
-    end
+        % Save Image
     Image = flipud(Image);
     imwrite(uint8(Image),fullfile(PathName,FileName));
-end
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for exporting various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function MIA_CustomFileType(obj,~,mode)
-h = guidata(findobj('Tag','Mia'));
-global UserValues
-switch mode
-    case 1 %%% MIA is initialized or selection is changed
+    function MIA_CustomFileType(obj,~,mode)
+        h = guidata(findobj('Tag','Mia'));
+        global UserValues
+        switch mode
+            case 1 %%% MIA is initialized or selection is changed
+                
+                %%% Clears previous custom file info
+                for i=numel(obj.UserData{3}):-1:1
+                    %%% Deletes custom settings UIs
+                    if isvalid(obj.UserData{3}(i))
+                        delete(obj.UserData{3}(i));
+                    end
+                end
+                obj.UserData = {[],[],[]};
+                
+                %%% Updates UserValues
+                UserValues.File.MIA_Custom_Filetype = obj.String(obj.Value);
+                LSUserValues(1);
+                
+                %%% Stops execution, if no custom file type was selected
+                if obj.Value == 1
+                    return;
+                end
+                
+                %%% Retrieves the function handle of the custom filetype
+                Function = str2func(obj.String{obj.Value});
+                %%% Tells function to create settings UI
+                %%% Out: cell array containing:
+                %%% 1: File extension
+                %%% 2: File description
+                %%% 3: Settings object handles
+                %%% 4: Function handle
+                Out = Function(1);
+                Out{4} = Function;
+                %%% Stores custom filetype info
+                if isempty(h)
+                    obj.UserData = Out;
+                else
+                    obj.UserData = Out;
+                    h.Mia_Image.Settings.Custom = Out{3};
+                    guidata(h.Mia,h);
+                end
+                
+            case 2 %%% New data is loaded
+                %%% Stops execution for no selected custom filetype
+                if h.Mia_Image.Settings.FileType.Value == 1
+                    return;
+                end
+                %%% Gets function handle
+                Function = h.Mia_Image.Settings.FileType.UserData{4};
+                %%% Executed data loading
+                Function(2);
+                
+                
+                Progress(1);
+                
+                %%% Updates plots
+                Mia_ROI([],[],1)
+                
+                
+        end
         
-        %%% Clears previous custom file info
-        for i=numel(obj.UserData{3}):-1:1
-            %%% Deletes custom settings UIs
-            if isvalid(obj.UserData{3}(i))
-                delete(obj.UserData{3}(i));
+        function Do_FRET(~,~)
+            % Function for calculating intensity based FRET
+            global MIAData
+            h = guidata(findobj('Tag','Mia'));
+            
+            % what is plotted in the count rate tab solid lines,
+            % i.e. the AROI pixels
+            donor = h.Plots.Int(1,2).YData;
+            acceptor = h.Plots.Int(2,2).YData;
+            
+            %go to a post
+            DIm = medfilt2(mean(MIAData.Data{1,2}(:,:,10:50),3),[3,3]);
+            AIm = medfilt2(mean(MIAData.Data{2,2}(:,:,10:50),3),[3,3]);
+            DIm(DIm<0)=0;
+            AIm(AIm<0)=0;
+            ar  = MIAData.AR{1,2};
+            DIm(~ar)=0;
+            ar  = MIAData.AR{2,2};
+            AIm(~ar)=0;
+            % range over which the normalization is calculated
+            normrange = eval(h.Mia_Image.Calculations.FRET_norm.String);
+            
+            method = h.Mia_Image.Calculations.FRET_Type.Value;
+            if method == 1
+                normFactor = mean(acceptor(normrange)./donor(normrange));
+            elseif method == 2
+                normFactor = 1;
+            else
+                return
             end
-        end
-        obj.UserData = {[],[],[]};
-        
-        %%% Updates UserValues
-        UserValues.File.MIA_Custom_Filetype = obj.String(obj.Value);
-        LSUserValues(1);
-        
-        %%% Stops execution, if no custom file type was selected
-        if obj.Value == 1
-            return;
-        end
-        
-        %%% Retrieves the function handle of the custom filetype
-        Function = str2func(obj.String{obj.Value});
-        %%% Tells function to create settings UI
-        %%% Out: cell array containing:
-        %%% 1: File extension
-        %%% 2: File description
-        %%% 3: Settings object handles
-        %%% 4: Function handle
-        Out = Function(1);
-        Out{4} = Function;
-        %%% Stores custom filetype info
-        if isempty(h)
-            obj.UserData = Out;
-        else
-            obj.UserData = Out;
-            h.Mia_Image.Settings.Custom = Out{3};
-            guidata(h.Mia,h);
-        end
-       
-    case 2 %%% New data is loaded
-        %%% Stops execution for no selected custom filetype
-        if h.Mia_Image.Settings.FileType.Value == 1 
-           return; 
-        end
-        %%% Gets function handle
-        Function = h.Mia_Image.Settings.FileType.UserData{4};
-        %%% Executed data loading
-        Function(2);
-        
-        
-        Progress(1);
-        
-        %%% Updates plots
-        Mia_ROI([],[],1)
-
-
-end
-
-function Do_FRET(~,~)
-% Function for calculating intensity based FRET
-global MIAData
-h = guidata(findobj('Tag','Mia'));
-
-% what is plotted in the count rate tab solid lines,
-% i.e. the AROI pixels
-donor = h.Plots.Int(1,2).YData;
-acceptor = h.Plots.Int(2,2).YData;
-
-%go to a post
-DIm = medfilt2(mean(MIAData.Data{1,2}(:,:,10:50),3),[3,3]);
-AIm = medfilt2(mean(MIAData.Data{2,2}(:,:,10:50),3),[3,3]);
-DIm(DIm<0)=0;
-AIm(AIm<0)=0;
-ar  = MIAData.AR{1,2};
-DIm(~ar)=0;
-ar  = MIAData.AR{2,2};
-AIm(~ar)=0;
-% range over which the normalization is calculated
-normrange = eval(h.Mia_Image.Calculations.FRET_norm.String);
-
-method = h.Mia_Image.Calculations.FRET_Type.Value;
-if method == 1
-    normFactor = mean(acceptor(normrange)./donor(normrange));
-elseif method == 2
-    normFactor = 1;
-else 
-    return
-end
-
-frametime = str2double(h.Mia_NB.Image.Frame.String);
-AoverD = (acceptor./donor)./normFactor;
-time = (0:(numel(donor)-1))*frametime;
-figure
-hold on 
-plot(time, AoverD);
-xlabel('time [s]');
+            
+            frametime = str2double(h.Mia_NB.Image.Frame.String);
+            AoverD = (acceptor./donor)./normFactor;
+            time = (0:(numel(donor)-1))*frametime;
+            figure
+            hold on
+            plot(time, AoverD);
+            xlabel('time [s]');
 ylabel('normalized A/D');
 hold off
 
