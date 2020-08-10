@@ -2215,7 +2215,7 @@ switch mode
         Data(end-2,4:3:end-1)=deal(num2cell(GTauMeta.Model.Value)');
         Data(end-1,4:3:end-1)=deal(num2cell(GTauMeta.Model.LowerBoundaries)');
         Data(end,4:3:end-1)=deal(num2cell(GTauMeta.Model.UpperBoundaries)');
-        Data=cellfun(@num2str,Data,'UniformOutput',false);
+        %Data=cellfun(@num2str,Data,'UniformOutput',false);
         Data(1:end-2,5:3:end-1) = repmat(num2cell(GTauMeta.Model.State==1)',size(Data,1)-2,1);        
         Data(end-1:end,5:3:end-1)=deal({[]});
         Data(1:end-2,6:3:end-1) = repmat(num2cell(GTauMeta.Model.State==2)',size(Data,1)-2,1);
@@ -2697,6 +2697,16 @@ if isobject(obj) % check if matlab object
             end     
     end
 end
+
+Global = cell2mat(h.Fit_Table.Data(end-2,7:3:end-1));
+Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+
+%for i=find(Active)'
+    %IRFTab = cell2mat(h.Fit_Table.Data(i,end-3));
+    %h.IRFLength_Slider.Value = IRFTab;
+    %h.IRFShift_Edit.String = num2str(IRFTab);
+%end
+
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
 if isprop(obj,'Style')
     switch obj.Style
@@ -2709,8 +2719,9 @@ if isprop(obj,'Style')
             h.IRFrelShift_Edit.String = num2str(GTauData.IRFrelShift{GTauData.chan});
             h.ScatShift_Edit.String = num2str(GTauData.ScatShift{GTauData.chan});
             h.ScatrelShift_Edit.String = num2str(GTauData.ScatrelShift{GTauData.chan});
-            h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
+            %h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
             h.Ignore_Edit.String = num2str(GTauData.Ignore{GTauData.chan});
+            h.Fit_Table.Data(1:end-3,end-3) = num2cell(h.IRFShift_Slider.Value);
         case 'edit'
             h.StartPar_Slider.Value = GTauData.StartPar{GTauData.chan};
             h.Length_Slider.Value = GTauData.Length{GTauData.chan};
@@ -2720,8 +2731,9 @@ if isprop(obj,'Style')
             h.IRFrelShift_Slider.Value = GTauData.IRFrelShift{GTauData.chan};
             h.ScatShift_Slider.Value = GTauData.ScatShift{GTauData.chan};
             h.ScatrelShift_Slider.Value = GTauData.ScatrelShift{GTauData.chan};
-            h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
+            %h.Fit_Table.Data{end,1} = GTauData.IRFShift{GTauData.chan};
             h.Ignore_Slider.Value = GTauData.Ignore{GTauData.chan};
+            h.Fit_Table.Data(1:end-3,end-3) = num2cell(GTauData.IRFShift{GTauData.chan});
     end
     UserValues.GTauFit.StartPar{GTauData.chan} = GTauData.StartPar{GTauData.chan};
     UserValues.GTauFit.Length{GTauData.chan} = GTauData.Length{GTauData.chan};
@@ -2733,16 +2745,6 @@ if isprop(obj,'Style')
     UserValues.GTauFit.ScatrelShift{GTauData.chan} = GTauData.ScatrelShift{GTauData.chan};
     UserValues.GTauFit.Ignore{GTauData.chan} = GTauData.Ignore{GTauData.chan};
     LSUserValues(1);
-end
-
-Global = cell2mat(h.Fit_Table.Data(end-2,7:3:end-1));
-Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
-
-if sum(Global)==0
-    %% Individual fits, not global
-    for i=find(Active)'
-        h.Fit_Table.Data(i,end-3) = num2cell(h.IRFShift_Slider.Value);
-    end
 end
 
 
@@ -3297,14 +3299,15 @@ end
 %%% the parameter array and optimized as all other parameters by the fit
 %%% routine.
 %%% This should be cleaned up in the future.
-ShiftParams(1) = GTauData.StartPar{chan};
-ShiftParams(2) = GTauData.IRFShift{chan}; % not used anymore
-ShiftParams(3) = GTauData.Length{chan};
+ShiftParams(1) = GTauData.StartPar{GTauData.chan};
+ShiftParams(2) = GTauData.IRFShift{GTauData.chan}; % not used anymore
+ShiftParams(3) = GTauData.Length{GTauData.chan};
 if ~cleanup_IRF
-    ShiftParams(4) = GTauData.IRFLength{chan};
+    ShiftParams(4) = GTauData.IRFLength{GTauData.chan};
 else
-    ShiftParams(4) = GTauData.Length{chan};
+    ShiftParams(4) = GTauData.Length{GTauData.chan};
 end
+
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
@@ -3352,9 +3355,9 @@ if sum(Global)==0
             break;
         end
         %%% Reads in parameters
-        x0 = str2double(h.Fit_Table.Data(i,5:3:end-1));
-        lb = str2double(h.Fit_Table.Data(end-1,5:3:end-1));
-        ub = str2double(h.Fit_Table.Data(end,5:3:end-1));
+        x0 = cell2mat(h.Fit_Table.Data(i,5:3:end-1));
+        lb = cell2mat(h.Fit_Table.Data(end-1,5:3:end-1));
+        ub = cell2mat(h.Fit_Table.Data(end,5:3:end-1));
         fixed = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
         %%% Add I0 parameter (Initial fluorescence intensity)        
         I0 = 2*max(Decay);
@@ -3396,7 +3399,7 @@ if sum(Global)==0
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) Fit_Single(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
                             x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
-                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),...
+                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(Fit_Single(interlace(x0,x,fixed),xdata),...
                              Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                     end
                     x = interlace(x0,x,fixed);
@@ -3406,7 +3409,7 @@ if sum(Global)==0
                     x = {x0};
                 end
                 
-                FitFun = fitfun_1exp(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,Conv_Type});
+                FitFun = Fit_Single(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,Conv_Type});
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.GTauFit.use_weighted_residuals
@@ -3423,7 +3426,7 @@ if sum(Global)==0
                 Decay_ignore = Decay(1:ignore);
                 Decay = Decay(ignore:end);
                 %%% Update FitResult
-                FitResult = num2cell(x');
+                FitResult = num2cell(x);
                 FitResult{lifetimes} = FitResult{lifetimes}.*GTauData.TACChannelWidth;
                 GTauData.ConfInt(lifetimes,:) = GTauData.ConfInt(lifetimes,:).*GTauData.TACChannelWidth;
                 h.Fit_Table.Data(i,5:3:end-1) = FitResult(1:end-1);
@@ -3685,6 +3688,7 @@ LSUserValues(1)
 
 %%% Indicates end of fitting procedure
 h.Fit_Table.Enable='on';
+%Update_Table([],[],2);
 h.GTauFit.Name='GTau Fit';
 GTauMeta.FitInProgress = 0;
 
@@ -3698,17 +3702,10 @@ function [z] = Fit_Single(param,xdata)
 %%% Data{3}:    Indentifier of current file
 global GTauMeta UserValues
 
-%%% Aborts Fit
-%drawnow;
-if ~GTauMeta.FitInProgress
-    z = zeros(size(xdata{2}));
-    return;
-end
-
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
 Scatter = xdata{3};
-x(1) = xdata{4};
+P(1) = xdata{4}; %p
 y = xdata{5};
 c = param(end-1);%xdata{6}; %IRF shift
 ignore = xdata{7};
@@ -3727,20 +3724,20 @@ irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
 n = length(irf);
 %t = 1:n;
 
-P = (1:x(1))';
+x = (1:P(1))'; %tp
 
-x(3) = param(3); 
-sc = param(4);
-bg = param(5);
 if GTauMeta.NParams == 4
-    x(2) = param(1);
-elseif GTauMeta.NParams == 5
-    x(2) = param(1:2);
+    P(2) = param(1); %tau
+    sc = param(2);
+    bg = param(3);
 elseif GTauMeta.NParams == 6
-    x(2) = param(1:3);
-elseif GTauMeta.NParams == 7
-    x(2) = param(1:4);
+    P(2) = param(1);
+    P(3) = param(2);
+    P(4) = param(3);
+    sc = param(5);
+    bg = param(6);
 end
+
 %tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
 %%% Determines, which parameters are fixed
 %Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
@@ -3753,7 +3750,7 @@ end
 %%% Applies function on parameters
 %eval(GTauMeta.Model.Function);
 
-x = feval(GTauMeta.Model.Function,x,P);
+x = feval(GTauMeta.Model.Function,P,x);
 switch conv_type
     case 'linear'
         z = conv(irf, x); z = z(1:n);
@@ -3865,6 +3862,96 @@ for i=1:numel(GTauData.Data)
     GTauMeta.Plots{i,4}.YData = GTauMeta.Data{i,2};       
 end
 Update_Plots;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Updates UserValues on settings change  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function UpdateOptions(obj,~)
+h = guidata(obj);
+global UserValues GTauData
+
+
+UserValues.GTauFit.G{chan} = str2double(h.G_factor_edit.String);
+UserValues.GTauFit.l1 = str2double(h.l1_edit.String);
+UserValues.GTauFit.l2 = str2double(h.l2_edit.String);
+UserValues.GTauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
+UserValues.GTauFit.WeightedResidualsType = h.WeightedResidualsType_Menu.String{h.WeightedResidualsType_Menu.Value};
+
+if obj == h.G_factor_edit
+    %DetermineGFactor(obj)
+end
+
+UserValues.GTauFit.ConvolutionType = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
+UserValues.GTauFit.LineStyle = h.LineStyle_Menu.String{h.LineStyle_Menu.Value};
+
+
+if obj == h.LineStyle_Menu
+    ChangeLineStyle(h);
+end
+if h.ShowAniso_radiobutton.Value == 1
+    Update_Plots(h.ShowAniso_radiobutton,[]);
+elseif h.ShowDecaySum_radiobutton.Value == 1
+    Update_Plots(h.ShowDecaySum_radiobutton,[]);
+end
+switch obj
+    case h.Cleanup_IRF_Menu
+        UserValues.GTauFit.cleanup_IRF = obj.Value;
+    case h.UseWeightedResiduals_Menu
+        UserValues.GTauFit.use_weighted_residuals = obj.Value;
+end
+
+if obj == h.Rebin_Histogram_Edit
+    %%% round value
+    new_res = str2double(h.Rebin_Histogram_Edit.String);
+    if ~isfinite(new_res)
+        new_res = 1;
+    end
+    if new_res < 1
+        new_res = 1;
+    end
+    h.Rebin_Histogram_Edit.String = num2str(new_res);
+    if ~isfield(GTauData,'OriginalHistograms')
+        % first, copy original data so it is not lost
+        GTauData.OriginalHistograms.hMI_Par= GTauData.hMI_Par;
+        GTauData.OriginalHistograms.hMI_Per= GTauData.hMI_Per;
+        GTauData.OriginalHistograms.hIRF_Par = GTauData.hIRF_Par;
+        GTauData.OriginalHistograms.hIRF_Per = GTauData.hIRF_Per;
+        GTauData.OriginalHistograms.hScat_Par = GTauData.hScat_Par;
+        GTauData.OriginalHistograms.hScat_Per = GTauData.hScat_Per;
+        GTauData.OriginalHistograms.TACChannelWidth = GTauData.TACChannelWidth;
+    end
+    if new_res > 1
+        %%% Rebin histogram in TauFitData
+        for i = 1:numel(GTauData.OriginalHistograms.hMI_Par) % loop over all channels
+            GTauData.hMI_Par{i} = downsamplebin(GTauData.OriginalHistograms.hMI_Par{i},new_res);
+            GTauData.hMI_Per{i} = downsamplebin(GTauData.OriginalHistograms.hMI_Per{i},new_res);
+            GTauData.hIRF_Par{i} = downsamplebin(GTauData.OriginalHistograms.hIRF_Par{i},new_res)';
+            GTauData.hIRF_Per{i} = downsamplebin(GTauData.OriginalHistograms.hIRF_Per{i},new_res)';
+            GTauData.hScat_Par{i} = downsamplebin(GTauData.OriginalHistograms.hScat_Par{i},new_res)';
+            GTauData.hScat_Per{i} = downsamplebin(GTauData.OriginalHistograms.hScat_Per{i},new_res)';
+            GTauData.XData_Par{i} = 1:numel(GTauData.hMI_Par{i});
+            GTauData.XData_Per{i} = 1:numel(GTauData.hMI_Per{i});
+        end
+        GTauData.TACChannelWidth = new_res*GTauData.OriginalHistograms.TACChannelWidth;
+    elseif new_res == 1
+        % copy old data back
+        for i = 1:numel(GTauData.OriginalHistograms.hMI_Par) % loop over all channels
+            GTauData.hMI_Par{i} = GTauData.OriginalHistograms.hMI_Par{i};
+            GTauData.hMI_Per{i} = GTauData.OriginalHistograms.hMI_Per{i};
+            GTauData.hIRF_Par{i} = GTauData.OriginalHistograms.hIRF_Par{i};
+            GTauData.hIRF_Per{i} = GTauData.OriginalHistograms.hIRF_Per{i};
+            GTauData.hScat_Par{i} = GTauData.OriginalHistograms.hScat_Par{i};
+            GTauData.hScat_Per{i} = GTauData.OriginalHistograms.hScat_Per{i};
+            GTauData.XData_Par{i} = 1:numel(GTauData.hMI_Par{i});
+            GTauData.XData_Per{i} = 1:numel(GTauData.hMI_Per{i});
+        end
+        GTauData.TACChannelWidth = GTauData.OriginalHistograms.TACChannelWidth;
+    end
+    %%% Update Plots
+    Update_Plots(h.Rebin_Histogram_Edit,[]);
+end
+LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
