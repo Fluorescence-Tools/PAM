@@ -136,7 +136,7 @@ if isempty(h.GTauFit) % Creates new figure, if none exists
         'Tag','Fit',...
         'Label','...Fit',...
         'Callback',@Do_GTauFit);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1373,17 +1373,239 @@ h.Output_Text = uicontrol(...
         'Tag','Fit_Function_Tab',...
         'Title','File History');
     h.FileHistory = FileHistory(h.Fit_Function_Tab,'GTauFit',@(x) Load_Dec('FileHistory',[],1,x));
+    %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %% Upper tabgroup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    h.Tabgroup_Up = uitabgroup(...
+        'Parent',h.GTauFit,...
+        'Tag','MainPlotTab',...
+        'Units','normalized',...
+        'Position',[0.005 0.26 0.99 0.73]);
+
+%% All tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    h.AllTab.Tab = uitab(...
+        'Parent',h.Tabgroup_Up,...
+        'Tag','Tab_All',...
+        'Title','All');
+
 %% %% Main Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for fit plots
-    h.Fit_Plots_Panel = uibuttongroup(...
-        'Parent',h.GTauFit,...
+    h.Fit_Plots_Panel_Global = uibuttongroup(...
+        'Parent',h.AllTab.Tab,...
         'Tag','Fit_Plots_Panel',...
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
-        'Position',[0.005 0.26 0.99 0.73]);
+        'Position',[0 0 1 1]);
+    
+    %%% Right-click menu for plot changes
+h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
+h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','Y Logscale',...
+    'Checked', UserValues.GTauFit.YScaleLog,...
+    'Tag','Plot_YLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_MIPlot = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','X Logscale',...
+    'Checked', UserValues.GTauFit.XScaleLog,...
+    'Tag','Plot_XLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+
+h.Microtime_Plot_Export = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','Export Plot',...
+    'Tag','Microtime_Plot_Export',...
+    'Callback',@ExportGraph);
+
+h.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
+h.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
+    h.Microtime_Plot_Menu_ResultPlot,...
+    'Label','Y Logscale',...
+    'Tag','Plot_YLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_ResultPlot = uimenu(...
+    h.Microtime_Plot_Menu_ResultPlot,...
+    'Label','X Logscale',...
+    'Tag','Plot_XLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
+h.Export_Result = uimenu(...
+    h.Microtime_Plot_Menu_ResultPlot,...
+    'Label','Export Plot',...
+    'Tag','Export_Result',...
+    'Callback',@ExportGraph);
+
+%%% Main Microtime Plot
+h.Microtime_Plot = axes(...
+    'Parent',h.Fit_Plots_Panel_Global,...
+    'Units','normalized',...
+    'Position',[0.075 0.075 0.9 0.775],...
+    'Tag','Microtime_Plot',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'Box','on',...
+    'UIContextMenu',h.Microtime_Plot_Menu_MIPlot);
+
+%%% Create Graphs
+hold on;
+h.Plots.Scat_Sum = plot([0 1],[0 0],'.r','Color',[0.5 0.5 0.5],'MarkerSize',5,'DisplayName','Scatter (sum)');
+h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',1,'DisplayName','Scatter (par)');
+h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',1,'DisplayName','Scatter (perp)');
+h.Plots.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay (sum)');
+h.Plots.Decay_Par = plot([0 1],[0 0],'Color',[0.8510,0.3294,0.1020],'LineWidth',1,'DisplayName','Decay (par)');
+h.Plots.Decay_Per = plot([0 1],[0 0],'Color',[0,0.4510,0.7412],'LineWidth',1,'DisplayName','Decay (perp)');
+h.Plots.IRF_Sum = plot([0 1],[0 0],'.r','Color',[0,0.4510,0.7412],'MarkerSize',5,'DisplayName','IRF (sum)');
+h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5,'DisplayName','IRF (par)');
+h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5,'DisplayName','IRF (perp)');
+h.Ignore_Plot = plot([0 0],[1e-6 1],'Color','k','Visible','off','LineWidth',1,'DisplayName','Decay (ignore)');
+h.Plots.Aniso_Preview = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy');
+h.Microtime_Plot.XLim = [0 1];
+h.Microtime_Plot.YLim = [0 1];
+h.Microtime_Plot.XLabel.Color = Look.Fore;
+h.Microtime_Plot.XLabel.String = 'Time [ns]';
+h.Microtime_Plot.YLabel.Color = Look.Fore;
+h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
+h.Microtime_Plot.XGrid = 'on';
+h.Microtime_Plot.YGrid = 'on';
+
+%%% Residuals Plot
+h.Residuals_Plot = axes(...
+    'Parent',h.Fit_Plots_Panel_Global,...
+    'Units','normalized',...
+    'Position',[0.075 0.85 0.9 0.12],...
+    'Tag','Residuals_Plot',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'XTickLabel',[],...
+    'Box','on');
+hold on;
+h.Plots.Residuals = plot([0 1],[0 0],'-k','LineWidth',1);
+h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1);
+h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off','LineWidth',1);
+h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off','LineWidth',1);
+
+h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off','LineWidth',1);
+h.Residuals_Plot.YLabel.Color = Look.Fore;
+h.Residuals_Plot.YLabel.String = 'w_{res}';
+h.Residuals_Plot.XGrid = 'on';
+h.Residuals_Plot.YGrid = 'on';
+
+%%% Result Plot (Replaces Microtime Plot after fit is done)
+h.Result_Plot = axes(...
+    'Parent',h.Fit_Plots_Panel_Global,...
+    'Units','normalized',...
+    'Position',[0.075 0.075 0.9 0.775],...
+    'Tag','Microtime_Plot',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'Box','on',...
+    'Visible','on',...
+    'UIContextMenu',h.Microtime_Plot_Menu_ResultPlot);
+h.Result_Plot_Text = text(...
+    0,0,'',...
+    'Parent',h.Result_Plot,...
+    'FontSize',10,...
+    'FontWeight','bold',...
+    'BackgroundColor','none',...
+    'Units','normalized',...
+    'Color',Look.AxesFore,...
+    'BackgroundColor',Look.Axes,...
+    'VerticalAlignment','top','HorizontalAlignment','left');
+
+h.Result_Plot.XLim = [0 1];
+h.Result_Plot.YLim = [0 1];
+h.Result_Plot.XLabel.Color = Look.Fore;
+h.Result_Plot.XLabel.String = 'Time [ns]';
+h.Result_Plot.YLabel.Color = Look.Fore;
+h.Result_Plot.YLabel.String = 'Intensity [counts]';
+h.Result_Plot.XGrid = 'on';
+h.Result_Plot.YGrid = 'on';
+h.Result_Plot_Text.Position = [0.8 0.9];
+hold on;
+h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',1,'MarkerSize',8,'DisplayName','IRF');
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',1,'MarkerSize',5,'DisplayName','IRF (perp)');
+h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay','MarkerSize',8);
+h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore)','MarkerSize',8);
+h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',1,'DisplayName','Decay (perp)','MarkerSize',8);
+h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore perp)','MarkerSize',8);
+h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'DisplayName','Fit');
+h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off','LineWidth',2,'DisplayName','Fit (ignore)');
+h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',2,'Visible','off','DisplayName','Fit (perp)');
+h.Plots.FitResult_Perp_ignore = plot([0 1],[0 0],'--b','Visible','off','LineWidth',2,'DisplayName','Fit (ignore perp)');
+
+%%% Result Plot (Replaces Microtime Plot after fit is done)
+h.Result_Plot_Aniso = axes(...
+    'Parent',h.Fit_Plots_Panel_Global,...
+    'Units','normalized',...
+    'Position',[0.075 0.075 0.9 0.775],...
+    'Tag','Result_Plot_Aniso',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'Box','on',...
+    'Visible','on');
+
+h.Result_Plot_Aniso.XLim = [0 1];
+h.Result_Plot_Aniso.YLim = [0 1];
+h.Result_Plot_Aniso.XLabel.Color = Look.Fore;
+h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
+h.Result_Plot_Aniso.YLabel.Color = Look.Fore;
+h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+h.Result_Plot_Aniso.XGrid = 'on';
+h.Result_Plot_Aniso.YGrid = 'on';
+hold on;
+h.Plots.AnisoResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy','MarkerSize',10);
+h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'LineWidth',1,'DisplayName','Anisotropy (ignore)','MarkerSize',10);
+h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2,'DisplayName','Fit');
+h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2,'DisplayName','Fit (ignore)');
+
+linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
+
+%%% dummy panel to hide plots
+h.HidePanel = uibuttongroup(...
+    'Visible','off',...
+    'Parent',h.Fit_Plots_Panel_Global,...
+    'Tag','HidePanel');
+
+%%% Hide Result Plot and Result Aniso Plot
+h.Result_Plot.Parent = h.HidePanel;
+h.Result_Plot_Aniso.Parent = h.HidePanel;
+
+if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.YScale = 'log';
+    h.Result_Plot.YScale = 'log';
+    %h.Result_Plot_Aniso.YScale = 'log';
+end
+if strcmp(h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.XScale = 'log';
+    h.Result_Plot.XScale = 'log';
+    %h.Result_Plot_Aniso.YScale = 'log';
+end
+    
+    
+    
+%% Single tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% main plot
+    h.SingleTab.Tab = uitab(...
+        'Parent',h.Tabgroup_Up,...
+        'Tag','Tab_Single',...
+        'Title','Single');
+    
+    %% %% Main Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Panel for fit plots
+    h.Fit_Plots_Panel = uibuttongroup(...
+        'Parent',h.SingleTab.Tab,...
+        'Tag','Fit_Plots_Panel',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0 1 1]);
     
     %%% Right-click menu for plot changes
 h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
@@ -3197,7 +3419,7 @@ h.GTauFit.Name='GTauFit Fit';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_GTauFit(~,~)
+function Do_GTauFit(obj,~,~)
 global GTauMeta UserValues GTauData
 h = guidata(findobj('Tag','GTauFit'));
 %%% Indicates fit in progress
@@ -3430,6 +3652,7 @@ if sum(Global)==0
                 FitResult{lifetimes} = FitResult{lifetimes}.*GTauData.TACChannelWidth;
                 GTauData.ConfInt(lifetimes,:) = GTauData.ConfInt(lifetimes,:).*GTauData.TACChannelWidth;
                 h.Fit_Table.Data(i,5:3:end-1) = FitResult(1:end-1);
+                h.Fit_Table.Data(i,end) = num2cell(chi2);
                 GTauData.I0 = FitResult{end};
                 fix = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
                 
@@ -3548,17 +3771,7 @@ LSUserValues(1)
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.Fit_Plots_Panel;
         h.Plots.IRFResult.Visible = 'on';
-
         
-        h.Result_Plot_Text.Visible = 'on';
-        if UserValues.GTauFit.use_weighted_residuals
-            h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2)];
-        else
-            h.Result_Plot_Text.String = [sprintf('res^2 = %.2f', chi2)];
-        end
-        GTauData.Chi2 = chi2;
-        %h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
-        h.Result_Plot_Text.Position = [0.8 0.95];
         
         % nanoseconds per microtime bin
         TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
@@ -3677,13 +3890,8 @@ LSUserValues(1)
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
         end
-    
-    
-    
-
         
-        
-        
+       
 
 
 %%% Indicates end of fitting procedure
@@ -3705,7 +3913,7 @@ global GTauMeta UserValues
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
 Scatter = xdata{3};
-P(1) = xdata{4}; %p
+
 y = xdata{5};
 c = param(end-1);%xdata{6}; %IRF shift
 ignore = xdata{7};
@@ -3724,40 +3932,22 @@ irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
 n = length(irf);
 %t = 1:n;
 
-x = (1:P(1))'; %tp
-
-if GTauMeta.NParams == 4
-    P(2) = param(1); %tau
-    sc = param(2);
-    bg = param(3);
-elseif GTauMeta.NParams == 6
-    P(2) = param(1);
-    P(3) = param(2);
-    P(4) = param(3);
-    sc = param(5);
-    bg = param(6);
-end
-
-%tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
-%%% Determines, which parameters are fixed
-%Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
-
-%P=zeros(numel(fixed),1);
-%%% Assigns fitting parameters to unfixed parameters of fit
-%P(~fixed)=param;
-%%% Assigns parameters from table to fixed parameters
-%P(fixed)=GTauMeta.Params(Fixed,file);
-%%% Applies function on parameters
-%eval(GTauMeta.Model.Function);
+P = param;
+P(end+1) = xdata{4}; 
+x = (1:P(end))'; %tp
 
 x = feval(GTauMeta.Model.Function,P,x);
 switch conv_type
     case 'linear'
-        z = conv(irf, x); z = z(1:n);
+        z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+        for i = 1:size(x,2)
+            z(:,i) = conv(irf, x(:,i));
+        end
+        z = z(1:n,:);
     case 'circular'
         z = convol(irf,x(1:n));
 end
-z = param(end)*z(ignore:end)+sc*sum(y)*Scatter(ignore:end)+bg;
+z = param(end)*z(ignore:end)+param(end-2)*sum(y)*Scatter(ignore:end)+param(end-3);
 z = z';
 %%% Applies weights
 %Out=OUT./Weights;
