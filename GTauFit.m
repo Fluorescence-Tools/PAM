@@ -3947,7 +3947,7 @@ switch conv_type
     case 'circular'
         z = convol(irf,x(1:n));
 end
-z = param(end)*z(ignore:end)+param(end-2)*sum(y)*Scatter(ignore:end)+param(end-3);
+z = param(end)*z(ignore:end)+param(end-3)*sum(y)*Scatter(ignore:end)+param(end-2);
 z = z';
 %%% Applies weights
 %Out=OUT./Weights;
