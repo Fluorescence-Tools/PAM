@@ -213,7 +213,7 @@ h.ConvolutionType_Text = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0 0.9 0.1 0.07],...
+    'Position',[0 0.9 0.1 0.12],...
     'String','Convolution Type',...
     'FontSize',10,...
     'Tag','ConvolutionType_Text');
@@ -222,7 +222,7 @@ h.ConvolutionType_Menu = uicontrol(...
     'Style','popupmenu',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
-    'Position',[0.15 0.9 0.15 0.07],...
+    'Position',[0.12 0.9 0.12 0.12],...
     'String',{'linear','circular'},...
     'Value',find(strcmp({'linear','circular'},UserValues.GTauFit.ConvolutionType)),...
     'Tag','ConvolutionType_Menu');
@@ -233,7 +233,7 @@ h.LineStyle_Text = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.3 0.9 0.45 0.07],...
+    'Position',[0.3 0.9 0.10 0.12],...
     'String','Line Style (Result)',...
     'FontSize',10,...
     'Tag','LineStyle_Text');
@@ -241,7 +241,7 @@ h.LineStyle_Menu = uicontrol(...
     'Style','popupmenu',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
-    'Position',[0.60 0.9 0.15 0.07],...
+    'Position',[0.40 0.9 0.10 0.12],...
     'String',{'line','dots'},...
     'Value',find(strcmp({'line','dots'},UserValues.GTauFit.LineStyle)),...
     'Callback',@UpdateOptions,...
@@ -253,7 +253,7 @@ h.AutoFit_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.03 0.75 0.7 0.07],...
+    'Position',[0.02 0.7 0.08 0.12],...
     'String','Automatic fit',...
     'FontSize',10,...
     'Tag','AutoFit_Menu',...
@@ -264,7 +264,7 @@ h.NormalizeScatter_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.10 0.75 0.45 0.07],...
+    'Position',[0.10 0.7 0.45 0.12],...
     'String','Scatter offset = 0',...
     'FontSize',10,...
     'Tag','NormalizeScatter_Menu',...
@@ -276,7 +276,7 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.495 0.75 0.45 0.07],...
+    'Position',[0.25 0.70 0.45 0.12],...
     'String','Use weighted residuals',...
     'Value',UserValues.GTauFit.use_weighted_residuals,...
     'FontSize',10,...
@@ -286,7 +286,7 @@ h.WeightedResidualsType_Menu = uicontrol(...
     'Style','popupmenu',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
-    'Position',[0.60 0.75 0.15 0.07],...
+    'Position',[0.375 0.7 0.10 0.12],...
     'String',{'Gaussian','Poissonian'},...
     'Value',find(strcmp({'Gaussian','Poissonian'},UserValues.GTauFit.WeightedResidualsType)),...
     'Tag','WeightedResidualsType_Menu');
@@ -296,7 +296,7 @@ h.MCMC_Error_Estimation_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.03 0.55 0.45 0.07],...
+    'Position',[0.02 0.525 0.45 0.12],...0.02 0.7 0.08 0.12
     'String','Perform MCMC error estimation?',...
     'FontSize',10,...
     'TooltipString',sprintf('Performs Markov Chain Monte Carlo sampling using the Metropolis-Hasting algorithm\nto estimate the posterior distribution of the model parameters.'),...
@@ -308,7 +308,7 @@ h.Rebin_Histogram_Text = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.4 0.7 0.075],...
+    'Position',[0.3 0.525 0.30 0.12],...0.25 0.70 0.45 0.12
     'String','Increase Histogram Binwidth (Faktor):',...
     'FontSize',10,...
     'Tag','Rebin_Histogram_Text');
@@ -316,7 +316,7 @@ h.Rebin_Histogram_Edit = uicontrol(...
     'Parent',h.Settings_Panel,...
     'Style','edit',...
     'Units','normalized',...
-    'Position',[0.8 0.4 0.15 0.075],...
+    'Position',[0.55 0.525 0.15 0.12],...
     'String','1',...
     'FontSize',10,...
     'Tag','Rebin_Histogram_Edit',...
@@ -327,12 +327,47 @@ h.Cleanup_IRF_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.495 0.55 0.45 0.07],...
+    'Position',[0.55 0.7 0.45 0.12],...
     'String','Clean up IRF by fitting to Gamma distribution',...
     'Value',UserValues.GTauFit.cleanup_IRF,...
     'FontSize',10,...
     'Tag','Cleanup_IRF_Menu',...
     'Callback',@UpdateOptions);
+
+
+h.DataSet_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.55 0.9 0.1 0.12],...
+    'String','Data Set Selection',...
+    'FontSize',10,...
+    'Tag','DataSet_Text');
+
+
+h.DataSet_Menu = uicontrol(...
+    'Style','popupmenu',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'Position',[0.65 0.9 0.12 0.12],...
+    'String',{'Nothing selected'},...
+    'CallBack',{@Update_Plots,2},...
+    'Tag','DataSet_Menu');
+
+h.CommonShift_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.85 0.9 0.45 0.12],...
+    'String','Common Decay Shift',...
+    'FontSize',10,...
+    'Tag','CommonShift_Menu',...
+    'Callback',[]);
+
 
 h.Cleanup_IRF_axes = axes('Parent',h.IRF_Cleanup_Panel,...
     'Position',[0.125,0.2,0.83,0.77],'Units','normalized','FontSize',10,'XColor',Look.Fore,'YColor',Look.Fore);
@@ -1967,7 +2002,9 @@ LSUserValues(1);
     GTauData.External.MI_Hist = {};
     GTauData.External.IRF = {};
     GTauData.External.Scat = {};
-                    
+
+
+
 if obj == h.LoadDec
         for j=1:numel(FileName)              
                  %%% read other data
@@ -1987,7 +2024,7 @@ if obj == h.LoadDec
                        PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
                    end
                end
-              %%% sort data into TauFitData structure (MI,IRF,Scat)
+              %%% sort data into GTauData structure (MI,IRF,Scat)
               
                for i = 1:(size(decay_data,2)/3)
                    GTauData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
@@ -2013,37 +2050,37 @@ if obj == h.LoadDec
          %%% Creates new plots
             
             GTauMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
-        end
-end
+        
         
 
         
 %%% set the channel variable
     chan = 4; GTauData.chan = chan; 
-             
+    
+            
 %%% Microtime Histograms
-    GTauData.hMI_Par{chan} = GTauData.External.MI_Hist{PIEChannel_Par};
-    GTauData.hMI_Per{chan} = GTauData.External.MI_Hist{PIEChannel_Per};
+    GTauData.hMI_Par{j*chan} = GTauData.External.MI_Hist{PIEChannel_Par};
+    GTauData.hMI_Per{j*chan} = GTauData.External.MI_Hist{PIEChannel_Per};
 
 %%% Read out the Microtime Histograms of the IRF for the two channels
-    GTauData.hIRF_Par{chan} = GTauData.External.IRF{PIEChannel_Par}';
-    GTauData.hIRF_Per{chan} = GTauData.External.IRF{PIEChannel_Per}';
+    GTauData.hIRF_Par{j*chan} = GTauData.External.IRF{PIEChannel_Par}';
+    GTauData.hIRF_Per{j*chan} = GTauData.External.IRF{PIEChannel_Per}';
 %%% Normalize IRF for better Visibility
-    GTauData.hIRF_Par{chan} = (GTauData.hIRF_Par{chan}./max(GTauData.hIRF_Par{chan})).*max(GTauData.hMI_Par{chan});
-    GTauData.hIRF_Per{chan} = (GTauData.hIRF_Per{chan}./max(GTauData.hIRF_Per{chan})).*max(GTauData.hMI_Per{chan});
+    GTauData.hIRF_Par{j*chan} = (GTauData.hIRF_Par{j*chan}./max(GTauData.hIRF_Par{j*chan})).*max(GTauData.hMI_Par{j*chan});
+    GTauData.hIRF_Per{j*chan} = (GTauData.hIRF_Per{j*chan}./max(GTauData.hIRF_Per{j*chan})).*max(GTauData.hMI_Per{j*chan});
 %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    GTauData.hScat_Par{chan} = GTauData.External.Scat{PIEChannel_Par}';
-    GTauData.hScat_Per{chan} = GTauData.External.Scat{PIEChannel_Per}';
+    GTauData.hScat_Par{j*chan} = GTauData.External.Scat{PIEChannel_Par}';
+    GTauData.hScat_Per{j*chan} = GTauData.External.Scat{PIEChannel_Per}';
 %%% Normalize Scatter for better Visibility
-    if ~(sum(GTauData.hScat_Par{chan})==0)
-        GTauData.hScat_Par{chan} = (GTauData.hScat_Par{chan}./max(GTauData.hScat_Par{chan})).*max(GTauData.hMI_Par{chan});
+    if ~(sum(GTauData.hScat_Par{j*chan})==0)
+        GTauData.hScat_Par{j*chan} = (GTauData.hScat_Par{j*chan}./max(GTauData.hScat_Par{j*chan})).*max(GTauData.hMI_Par{j*chan});
     end
-    if ~(sum(GTauData.hScat_Per{chan})==0)
-        GTauData.hScat_Per{chan} = (GTauData.hScat_Per{chan}./max(GTauData.hScat_Per{chan})).*max(GTauData.hMI_Per{chan});
+    if ~(sum(GTauData.hScat_Per{j*chan})==0)
+        GTauData.hScat_Per{j*chan} = (GTauData.hScat_Per{j*chan}./max(GTauData.hScat_Per{j*chan})).*max(GTauData.hMI_Per{j*chan});
     end
 %%% Generate XData
-    GTauData.XData_Par{chan} = 1:numel(GTauData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
-    GTauData.XData_Per{chan} = 1:numel(GTauData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
+    GTauData.XData_Par{j*chan} = 1:numel(GTauData.hMI_Par{j*chan});%ToFromPar - ToFromPar(1);
+    GTauData.XData_Per{j*chan} = 1:numel(GTauData.hMI_Per{j*chan});%ToFromPer - ToFromPer(1);
     
 %%% Update PIEchannelSelection
     UserValues.GTauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
@@ -2128,7 +2165,7 @@ end
         detPar = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Par)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Par)));
         detPer = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Per)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Per)));
         %%% Microtime Histogram of Parallel Channel
-        TGTauData.hMI_Par{chan} = PamMeta.MI_Hist{detPar(1)}(...
+        GTauData.hMI_Par{chan} = PamMeta.MI_Hist{detPar(1)}(...
             UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
         %%% Microtime Histogram of Perpendicular Channel
         GTauData.hMI_Per{chan} = PamMeta.MI_Hist{detPer(1)}(...
@@ -2136,22 +2173,23 @@ end
 
         %%% Read out the Microtime Histograms of the IRF for the two channels
         GTauData.hIRF_Par{chan} = UserValues.PIE.IRF{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-        TauFitData.hIRF_Per{chan} = UserValues.PIE.IRF{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+        GTauData.hIRF_Per{chan} = UserValues.PIE.IRF{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
         %%% Normalize IRF for better Visibility
-        GTauData.hIRF_Par{chan} = (GTauData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
-        GTauData.hIRF_Per{chan} = (TGTauData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
+        GTauData.hIRF_Par{chan} = (GTauData.hIRF_Par{chan}./max(GTauData.hIRF_Par{chan})).*max(GTauData.hMI_Par{chan});
+        GTauData.hIRF_Per{chan} = (GTauData.hIRF_Per{chan}./max(GTauData.hIRF_Per{chan})).*max(GTauData.hMI_Per{chan});
         %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
         GTauData.hScat_Par{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-        TauFitData.hScat_Per{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+        GTauData.hScat_Per{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
         %%% Normalize Scatter for better Visibility
-        GTauData.hScat_Par{chan} = (GTauData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
-        GTauData.hScat_Per{chan} = (TGTauData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
+        GTauData.hScat_Par{chan} = (GTauData.hScat_Par{chan}./max(GTauData.hScat_Par{chan})).*max(GTauData.hMI_Par{chan});
+        GTauData.hScat_Per{chan} = (GTauData.hScat_Per{chan}./max(GTauData.hScat_Per{chan})).*max(GTauData.hMI_Per{chan});
         %%% Generate XData
         GTauData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
-        TGTauData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
+        GTauData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
     end 
 
-    
+    end
+end    
     
     
 %%% disable reconvolution fitting if no IRF is defined
@@ -2390,7 +2428,7 @@ switch mode
         end
         Columns{end}='<HTML><b>Chi2</b>';
         ColumnWidth=cell(1,numel(Columns));
-        %ColumnWidth(4:3:end-1)=cellfun('length',FCSMeta.Model.Params).*7;
+        %ColumnWidth(4:3:end-1)=cellfun('length',GTauMeta.Model.Params).*7;
         ColumnWidth(5:3:end-1) = {80};
         %ColumnWidth(ColumnWidth>0 & ColumnWidth<30)=45;
         ColumnWidth(6:3:end-1)={20};
@@ -2454,7 +2492,7 @@ switch mode
     case 1 %%% Updates tables when new data is loaded
         h.Fit_Table.CellEditCallback=[];
         %%% Sets row names to file names
-        Rows=cell(numel(GTauData)+3,1);
+        Rows=cell(numel(GTauData.FileName)+3,1);
         tmp = GTauData.FileName;
 
         Rows(1:numel(tmp))=deal(tmp);
@@ -2466,6 +2504,7 @@ switch mode
         Data=cell(numel(Rows),size(h.Fit_Table.Data,2)-1);
         %%% Set last 3 row to ALL, lb and ub
         Data(1:(size(h.Fit_Table.Data,1)-3),:)=h.Fit_Table.Data(1:end-3,2:end);
+        
         %%% Sets previous files
         Data(end-2:end,:)=h.Fit_Table.Data(end-2:end,2:end);
         %%% Adds new files
@@ -2482,6 +2521,8 @@ switch mode
                 %Data{i,2}=num2str(sum(GTauData.Data{i}.Counts));
             %end
         %end
+        
+        
         h.Fit_Table.Data=[Rows,Data];
         h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
@@ -2618,6 +2659,22 @@ switch mode
         h.Fit_Table.CellEditCallback={@Update_Table,3};
 end
 
+
+Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+
+if isempty(Active) %% Clears 2D plot, if all are inactive
+    %     h.Plots.Main.ZData = zeros(2);
+    %     h.Plots.Main.CData = zeros(2,2,3);
+    %     h.Plots.Fit.ZData = zeros(2);
+    %     h.Plots.Fit.CData = zeros(2,2,3);
+    h.DataSet_Menu.String = {'Nothing selected'};
+else %% Updates 2D plot selection string
+    h.DataSet_Menu.String = GTauData.FileName(Active);
+    if h.DataSet_Menu.Value>numel(h.DataSet_Menu.String)
+        h.DataSet_Menu.Value = 1;
+    end
+end
+
 %%% Updates plots to changes models
 %Update_Plots;
 
@@ -2642,9 +2699,9 @@ else
 end
 
 if obj == h.FitParams_Tab
-    dummy = 'table';
-    
+    dummy = 'table'; 
 end
+
 
 % nanoseconds per microtime bin
 TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
@@ -2652,6 +2709,10 @@ TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1
 if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
     %LoadData button or Burstwise lifetime button was pressed
     %%% Plot the Data
+    
+%%%%%MAKE CASE FOR SINGLE Tab%%%%%%%%%%%
+
+    
     h.Plots.Decay_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime; 
     h.Plots.Decay_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime; 
     h.Plots.IRF_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime;
@@ -3595,8 +3656,12 @@ if sum(Global)==0
         end
         alpha = 0.05; %95% confidence interval
         GTauData.ConfInt = NaN(numel(x0),2);
-                
+           
+        if GTauMeta.NParams == 4
             lifetimes = GTauMeta.NParams - 3;
+        elseif GTauMeta.NParams == 6
+            lifetimes = GTauMeta.NParams - 4;
+        end
             x0(lifetimes) = x0(lifetimes)/GTauData.TACChannelWidth;
             lb(lifetimes) = lb(lifetimes)/GTauData.TACChannelWidth;
             ub(lifetimes) = ub(lifetimes)/GTauData.TACChannelWidth;
@@ -3762,64 +3827,65 @@ else
 end
 
 LSUserValues(1)
-        %%% Update IRFShift in Slider and Edit Box
-        h.IRFShift_Slider.Value = UserValues.GTauFit.IRFShift{chan};
-        h.IRFShift_Edit.String = num2str(round(UserValues.GTauFit.IRFShift{chan},2));
-        GTauData.IRFShift{chan} = UserValues.GTauFit.IRFShift{chan};
+%%% Update IRFShift in Slider and Edit Box
+h.IRFShift_Slider.Value = UserValues.GTauFit.IRFShift{chan};
+h.IRFShift_Edit.String = num2str(round(UserValues.GTauFit.IRFShift{chan},2));
+GTauData.IRFShift{chan} = UserValues.GTauFit.IRFShift{chan};
         
-        %%% Update Plot
-        h.Microtime_Plot.Parent = h.HidePanel;
-        h.Result_Plot.Parent = h.Fit_Plots_Panel;
-        h.Plots.IRFResult.Visible = 'on';
+%%% Update Plot
+h.Microtime_Plot.Parent = h.HidePanel;
+h.Result_Plot.Parent = h.Fit_Plots_Panel;
+h.Plots.IRFResult.Visible = 'on';
         
         
-        % nanoseconds per microtime bin
-        TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
-        %%% Update plots
-        if ignore > 1
-            h.Plots.DecayResult_ignore.Visible = 'on';
-            h.Plots.Residuals_ignore.Visible = 'on';
-            h.Plots.FitResult_ignore.Visible = 'on';
-        else
-            h.Plots.DecayResult_ignore.Visible = 'off';
-            h.Plots.Residuals_ignore.Visible = 'off';
-            h.Plots.FitResult_ignore.Visible = 'off';
-        end
+% nanoseconds per microtime bin
+TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+        
+%%%%%%%%%%% Update plots%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ignore > 1
+   h.Plots.DecayResult_ignore.Visible = 'on';
+   h.Plots.Residuals_ignore.Visible = 'on';
+   h.Plots.FitResult_ignore.Visible = 'on';
+else
+   h.Plots.DecayResult_ignore.Visible = 'off';
+   h.Plots.Residuals_ignore.Visible = 'off';
+   h.Plots.FitResult_ignore.Visible = 'off';
+end
         
             
             
-            % hide plots
-            h.Plots.IRFResult_Perp.Visible = 'off';
-            h.Plots.FitResult_Perp.Visible = 'off';
-            h.Plots.FitResult_Perp_ignore.Visible = 'off';
-            h.Plots.DecayResult_Perp.Visible = 'off';
-            h.Plots.DecayResult_Perp_ignore.Visible = 'off';
-            h.Plots.Residuals_Perp.Visible = 'off';
-            h.Plots.Residuals_Perp_ignore.Visible = 'off';
+% hide plots
+h.Plots.IRFResult_Perp.Visible = 'off';
+h.Plots.FitResult_Perp.Visible = 'off';
+h.Plots.FitResult_Perp_ignore.Visible = 'off';
+h.Plots.DecayResult_Perp.Visible = 'off';
+h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+h.Plots.Residuals_Perp.Visible = 'off';
+h.Plots.Residuals_Perp_ignore.Visible = 'off';
             
-            % change colors
-            h.Plots.IRFResult.Color = [0.6 0.6 0.6];
-            h.Plots.DecayResult.Color = [0 0 0];
-            h.Plots.Residuals.Color = [0 0 0];
-            h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+% change colors
+h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+h.Plots.DecayResult.Color = [0 0 0];
+h.Plots.Residuals.Color = [0 0 0];
+h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
             
-            %%% hide aniso plots
-            h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
-            h.Result_Plot_Aniso.Parent = h.HidePanel;
+%%% hide aniso plots
+h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
+h.Result_Plot_Aniso.Parent = h.HidePanel;
             
-            %IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
-            IRFPat = shift_by_fraction(IRFPattern,UserValues.GTauFit.IRFShift{chan});
-            IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
-            IRFPat = IRFPat./max(IRFPat).*max(Decay);
-            h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
-            h.Plots.IRFResult.YData = IRFPat;
-            % store FitResult TauFitData also for use in export
-            if ignore > 1
-                GTauData.FitResult = [FitFun_ignore, FitFun];
-            else
-                GTauData.FitResult = FitFun;
-            end
+%IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+IRFPat = shift_by_fraction(IRFPattern,UserValues.GTauFit.IRFShift{chan});
+IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+IRFPat = IRFPat./max(IRFPat).*max(Decay);
+h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+h.Plots.IRFResult.YData = IRFPat;
+% store FitResult GTauData also for use in export
+if ignore > 1
+   GTauData.FitResult = [FitFun_ignore, FitFun];
+else
+   GTauData.FitResult = FitFun;
+end
             
             h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
             h.Plots.DecayResult.YData = Decay;
@@ -3891,7 +3957,8 @@ LSUserValues(1)
             disp(table(confint_mcmc));
         end
         
-       
+%%%%%%Update AllTab
+
 
 
 %%% Indicates end of fitting procedure
@@ -4052,6 +4119,214 @@ for i=1:numel(GTauData.Data)
     GTauMeta.Plots{i,4}.YData = GTauMeta.Data{i,2};       
 end
 Update_Plots;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Changes plotting style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_Style(obj,e,mode) 
+global GTauMeta GTauData UserValues
+h = guidata(findobj('Tag','GTauFit'));
+LSUserValues(0);
+switch mode
+    case 0 %%% Called at the figure initialization
+        %%% Generates the table column and cell names
+        Columns=cell(11,1);
+        Columns{1}='Color';
+        Columns{2}='Data LineStyle';
+        Columns{3}='Data LineWidth';
+        Columns{4}='Data Marker';
+        Columns{5}='Data MarkerSize';
+        Columns{6}='Fit LineStyle';
+        Columns{7}='Fit LineWidth';
+        Columns{8}='Fit Marker';
+        Columns{9}='Fit MarkerSize';   
+        Columns{10}='Remove';
+        Columns{11}='Rename';
+        h.Style_Table.ColumnName=Columns;
+        h.Style_Table.RowName={'ALL'};
+        
+        %%% Generates the initial cell inputs
+        h.Style_Table.ColumnEditable=true;
+        h.Style_Table.ColumnFormat={'char',{'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char',...
+                                           {'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char','logical','logical'};
+        h.Style_Table.Data=UserValues.GTauFit.PlotStyleAll(1:8);        
+    case 1 %%% Called, when new file is loaded
+        %%% Sets row names to file names 
+        Rows=cell(numel(GTauData.FileName)+1,1);
+        Rows(1:numel(GTauData.Data))=deal(GTauData.FileName);
+        Rows{end}='ALL';
+        h.Style_Table.RowName=Rows;
+        Data=cell(numel(Rows),size(h.Style_Table.Data,2));
+        %%% Sets ALL style to last row
+        Data(end,1:8)=UserValues.GTauFit.PlotStyleAll(1:8);
+        %%% Sets previous styles to first rows
+        for i=1:numel(GTauData.FileName)
+            if i<=size(UserValues.GTauFit.PlotStyles,1)
+                Data(i,1:8) = UserValues.GTauFit.PlotStyles(i,1:8);
+            else
+                Data(i,:) = UserValues.GTauFit.PlotStyles(end,1:8);
+            end
+        end
+        %%% Updates new plots to style
+        for i=1:numel(GTauData.FileName)
+           GTauMeta.Plots{i,1}.Color=str2num(Data{i,1}); %#ok<*ST2NM>
+           GTauMeta.Plots{i,4}.Color=str2num(Data{i,1});
+           GTauMeta.Plots{i,2}.Color=str2num(Data{i,1});
+           GTauMeta.Plots{i,3}.Color=str2num(Data{i,1});
+           GTauMeta.Plots{i,1}.LineStyle=Data{i,2};
+           GTauMeta.Plots{i,1}.LineWidth=str2double(Data{i,3});
+           GTauMeta.Plots{i,1}.Marker=Data{i,4};
+           GTauMeta.Plots{i,1}.MarkerSize=str2double(Data{i,5});
+           GTauMeta.Plots{i,4}.LineStyle=Data{i,2};
+           GTauMeta.Plots{i,4}.LineWidth=str2double(Data{i,3});
+           GTauMeta.Plots{i,4}.Marker=Data{i,4};
+           GTauMeta.Plots{i,4}.MarkerSize=str2double(Data{i,5});
+           GTauMeta.Plots{i,2}.LineStyle=Data{i,6};
+           GTauMeta.Plots{i,3}.LineStyle=Data{i,6};
+           GTauMeta.Plots{i,2}.LineWidth=str2double(Data{i,7});
+           GTauMeta.Plots{i,3}.LineWidth=str2double(Data{i,7});
+           GTauMeta.Plots{i,2}.Marker=Data{i,8};
+           GTauMeta.Plots{i,3}.Marker=Data{i,8};
+           GTauMeta.Plots{i,2}.MarkerSize=str2double(Data{i,7});
+           GTauMeta.Plots{i,3}.MarkerSize=str2double(Data{i,7});
+        end
+        h.Style_Table.Data=Data;
+    case 2 %%% Cell callback
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)) && e.Indices(2)~=1)
+                return;
+            end
+            NewData = h.Style_Table.Data{e.Indices(1),e.Indices(2)};
+        end
+        if isprop(e,'NewData')
+            NewData = e.NewData;
+        end
+        %%% Applies to all files if ALL row was used
+        if e.Indices(1)==size(h.Style_Table.Data,1)
+            File=1:(size(h.Style_Table.Data,1)-1);
+            if e.Indices(2)~=1
+                h.Style_Table.Data(:,e.Indices(2))=deal({NewData});
+            end
+        else
+            File=e.Indices(1);
+        end
+        switch e.Indices(2)
+            case 1 %%% Changes file color
+                if ~isdeployed
+                    NewColor = uisetcolor;
+                    if size(NewColor) == 1
+                        return;
+                    end
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    NewColor = color_setter(); % open dialog to input color
+                end
+                for i=File
+                    h.Style_Table.Data{i,1} = num2str(NewColor);
+                    GTauMeta.Plots{i,1}.Color=NewColor;
+                    GTauMeta.Plots{i,2}.Color=NewColor;
+                    GTauMeta.Plots{i,3}.Color=NewColor;
+                    GTauMeta.Plots{i,4}.Color=NewColor;
+                end
+                if numel(File)>1
+                    h.Style_Table.Data{end,1} = num2str(NewColor);
+                end
+                
+            case 2 %%% Changes data line style
+                for i=File
+                    GTauMeta.Plots{i,1}.LineStyle=NewData;
+                    GTauMeta.Plots{i,4}.LineStyle=NewData;
+                end
+            case 3 %%% Changes data line width
+                for i=File
+                    GTauMeta.Plots{i,1}.LineWidth=str2double(NewData);
+                    GTauMeta.Plots{i,4}.LineWidth=str2double(NewData);
+                end
+            case 4 %%% Changes data marker style
+                for i=File
+                    GTauMeta.Plots{i,1}.Marker=NewData;
+                    GTauMeta.Plots{i,4}.Marker=NewData;
+                end
+            case 5 %%% Changes data marker size
+                for i=File
+                    GTauMeta.Plots{i,1}.MarkerSize=str2double(NewData);
+                    GTauMeta.Plots{i,4}.MarkerSize=str2double(NewData);
+                end
+            case 6 %%% Changes fit line style
+                for i=File
+                    GTauMeta.Plots{i,2}.LineStyle=NewData;
+                    GTauMeta.Plots{i,3}.LineStyle=NewData;
+                end
+            case 7 %%% Changes fit line width
+                for i=File
+                    GTauMeta.Plots{i,2}.LineWidth=str2double(NewData);
+                    GTauMeta.Plots{i,3}.LineWidth=str2double(NewData);
+                end
+            case 8 %%% Changes fit marker style
+                for i=File
+                    GTauMeta.Plots{i,2}.Marker=NewData;
+                    GTauMeta.Plots{i,3}.Marker=NewData;
+                end
+            case 9 %%% Changes fit marker size
+                for i=File
+                    GTauMeta.Plots{i,2}.MarkerSize=str2double(NewData);
+                    GTauMeta.Plots{i,3}.MarkerSize=str2double(NewData);
+                end
+            case 10 %%% Removes files
+                File=flip(File,2);
+                for i=File
+                    GTauData.Data(i)=[];
+                    GTauData.FileName(i)=[];
+                    cellfun(@delete,GTauMeta.Plots(i,:));
+                    GTauMeta.Data(i,:)=[];
+                    GTauMeta.Params(:,i)=[];
+                    GTauMeta.Plots(i,:)=[];
+                    %h.Fit_Table.RowName(i)=[];
+                    h.Fit_Table.Data(i,:)=[];
+                    h.Style_Table.RowName(i)=[];
+                    h.Style_Table.Data(i,:)=[];
+                end
+            case 11 %%% Renames Files
+                if numel(File)>1
+                    return;
+                end
+                NewName = inputdlg('Enter new filename');
+                if ~isempty(NewName)
+                    h.Style_Table.RowName{File} = NewName{1};
+                    h.Fit_Table.Data{File,1} = NewName{1};
+                    GTauData.FileName{File} = NewName{1};
+                    Update_Plots;
+                end                  
+        end
+    case 3 %%% rainbow button
+        %%% make rainbow for all plots
+        if size(h.Style_Table.Data,1) == 1
+            return;
+        end
+        num_plots = size(h.Style_Table.Data,1) -1;
+        switch obj
+            case h.Style_Table_Rainbow
+                if num_plots < 7
+                    colors = flipud(prism(num_plots));
+                else
+                    colors = jet(num_plots);
+                end
+            case h.Style_Table_Autocolor
+                colors = lines(num_plots);
+        end
+        for i = 1:num_plots
+            h.Style_Table.Data{i,1} = num2str(colors(i,:));
+            GTauMeta.Plots{i,1}.Color=colors(i,:);
+            GTauMeta.Plots{i,2}.Color=colors(i,:);
+            GTauMeta.Plots{i,3}.Color=colors(i,:);
+            GTauMeta.Plots{i,4}.Color=colors(i,:);
+        end
+end
+%%% Save Updated UiTableData to UserValues.GTauFit.PlotStyles
+UserValues.GTauFit.PlotStyles(1:(size(h.Style_Table.Data,1)-1),1:8) = h.Style_Table.Data(1:(end-1),(1:8));
+UserValues.GTauFit.PlotStyleAll = h.Style_Table.Data(end,1:8);
+LSUserValues(1);
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
