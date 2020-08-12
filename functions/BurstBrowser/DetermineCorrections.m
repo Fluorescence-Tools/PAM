@@ -60,7 +60,12 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         Files = get_multiselection(h);
         Files = unique(Files);
         data_for_corrections = cell(numel(Files),1);
-        n_param = size(BurstData{Files(1)}.DataArray,2); % truncate all arrays to number of elements in first file
+         % truncate all arrays to minimum number of elements of all file
+         n_param = zeros(numel(Files,1));
+        for i = 1:numel(Files)
+            n_param(i) = size(BurstData{Files(i)}.DataArray,2);
+        end
+        n_param = min(n_param);
         for i = 1:numel(Files)
             data_for_corrections{i} = BurstData{Files(i)}.DataArray(:,1:n_param);
         end
