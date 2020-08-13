@@ -1640,7 +1640,7 @@ end
         'ForegroundColor', Look.Fore,...
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
-        'Position',[0 0 1 1]);
+        'Position',[0 0 1 1]);      
     
     %%% Right-click menu for plot changes
 h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
@@ -2025,7 +2025,9 @@ if obj == h.LoadDec
                    end
                end
               %%% sort data into GTauData structure (MI,IRF,Scat)
-              
+              GTauData.External.MI_Hist = {};
+              GTauData.External.IRF = {};
+              GTauData.External.Scat = {};
                for i = 1:(size(decay_data,2)/3)
                    GTauData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
                    GTauData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
@@ -2230,8 +2232,9 @@ end
 
 
 %%% Updates table and plot data and style to new size
-Update_Plots(obj)
+
 Update_Table([],[],1);
+Update_Plots(obj)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2661,8 +2664,12 @@ end
 
 
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+if isempty(Active)
+    Active = 0;
+end
 
-if isempty(Active) %% Clears 2D plot, if all are inactive
+if Active == 0
+    %% Clears 2D plot, if all are inactive
     %     h.Plots.Main.ZData = zeros(2);
     %     h.Plots.Main.CData = zeros(2,2,3);
     %     h.Plots.Fit.ZData = zeros(2);
@@ -2673,17 +2680,19 @@ else %% Updates 2D plot selection string
     if h.DataSet_Menu.Value>numel(h.DataSet_Menu.String)
         h.DataSet_Menu.Value = 1;
     end
-end
+end    
+
 
 %%% Updates plots to changes models
-%Update_Plots;
+
+Update_Plots(mode)
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_Plots(obj,~)
+function Update_Plots(obj,~,mode)
 global UserValues GTauData
 h = guidata(findobj('Tag','GTauFit'));
 
@@ -2703,33 +2712,36 @@ if obj == h.FitParams_Tab
 end
 
 
-% nanoseconds per microtime bin
-TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 
+Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+if Active == 1
 if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
     %LoadData button or Burstwise lifetime button was pressed
     %%% Plot the Data
+    % nanoseconds per microtime bin
     
-%%%%%MAKE CASE FOR SINGLE Tab%%%%%%%%%%%
-
     
-    h.Plots.Decay_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime; 
-    h.Plots.Decay_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime; 
-    h.Plots.IRF_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime;
-    h.Plots.IRF_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime;
-    h.Plots.Scat_Par.XData = GTauData.XData_Par{GTauData.chan}*TACtoTime;
-    h.Plots.Scat_Per.XData = GTauData.XData_Per{GTauData.chan}*TACtoTime;
-    h.Plots.Decay_Par.YData = GTauData.hMI_Par{GTauData.chan};
-    h.Plots.Decay_Per.YData = GTauData.hMI_Per{GTauData.chan};
-    h.Plots.IRF_Par.YData = GTauData.hIRF_Par{GTauData.chan};
-    h.Plots.IRF_Per.YData = GTauData.hIRF_Per{GTauData.chan};
-    h.Plots.Scat_Par.YData = GTauData.hScat_Par{GTauData.chan};
-    h.Plots.Scat_Per.YData = GTauData.hScat_Per{GTauData.chan};
+    
+    b = h.DataSet_Menu.Value;
+    TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+    
+    h.Plots.Decay_Par.XData = GTauData.XData_Par{b*GTauData.chan}*TACtoTime; 
+    h.Plots.Decay_Per.XData = GTauData.XData_Per{b*GTauData.chan}*TACtoTime; 
+    h.Plots.IRF_Par.XData = GTauData.XData_Par{b*GTauData.chan}*TACtoTime;
+    h.Plots.IRF_Per.XData = GTauData.XData_Per{b*GTauData.chan}*TACtoTime;
+    h.Plots.Scat_Par.XData = GTauData.XData_Par{b*GTauData.chan}*TACtoTime;
+    h.Plots.Scat_Per.XData = GTauData.XData_Per{b*GTauData.chan}*TACtoTime;
+    h.Plots.Decay_Par.YData = GTauData.hMI_Par{b*GTauData.chan};
+    h.Plots.Decay_Per.YData = GTauData.hMI_Per{b*GTauData.chan};
+    h.Plots.IRF_Par.YData = GTauData.hIRF_Par{b*GTauData.chan};
+    h.Plots.IRF_Per.YData = GTauData.hIRF_Per{b*GTauData.chan};
+    h.Plots.Scat_Par.YData = GTauData.hScat_Par{b*GTauData.chan};
+    h.Plots.Scat_Per.YData = GTauData.hScat_Per{b*GTauData.chan};
 
-    h.Microtime_Plot.XLim = [min([GTauData.XData_Par{GTauData.chan}*TACtoTime GTauData.XData_Per{GTauData.chan}*TACtoTime]) max([GTauData.XData_Par{GTauData.chan}*TACtoTime GTauData.XData_Per{GTauData.chan}*TACtoTime])];
+    h.Microtime_Plot.XLim = [min([GTauData.XData_Par{b*GTauData.chan}*TACtoTime GTauData.XData_Per{b*GTauData.chan}*TACtoTime]) max([GTauData.XData_Par{b*GTauData.chan}*TACtoTime GTauData.XData_Per{b*GTauData.chan}*TACtoTime])];
     
     try
-        h.Microtime_Plot.YLim = [min([GTauData.hMI_Par{GTauData.chan}; GTauData.hMI_Per{GTauData.chan}]) 10/9*max([GTauData.hMI_Par{GTauData.chan}; GTauData.hMI_Per{GTauData.chan}])];
+        h.Microtime_Plot.YLim = [min([GTauData.hMI_Par{b*GTauData.chan}; GTauData.hMI_Per{b*GTauData.chan}]) 10/9*max([GTauData.hMI_Par{b*GTauData.chan}; GTauData.hMI_Per{b*GTauData.chan}])];
     catch
         % if there is no data, disable channel and stop
         h.IncludeChannel_checkbox.Value = 0;
@@ -2737,23 +2749,23 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
         LSUserValues(1);
         return
     end
-    %%% Define the Slider properties
-    %%% Values to consider:
-    %%% The length of the shortest PIE channel
-    GTauData.MaxLength{GTauData.chan} = min([numel(GTauData.hMI_Par{GTauData.chan}) numel(GTauData.hMI_Per{GTauData.chan})]);
+%%% Define the Slider properties
+%%% Values to consider:
+%%% The length of the shortest PIE channel
+GTauData.MaxLength{b*GTauData.chan} = min([numel(GTauData.hMI_Par{b*GTauData.chan}) numel(GTauData.hMI_Per{b*GTauData.chan})]);
     
     %%% The Length Slider defaults to the length of the shortest PIE
     %%% channel and should not assume larger values
     h.Length_Slider.Min = 1;
-    h.Length_Slider.Max = GTauData.MaxLength{GTauData.chan};
+    h.Length_Slider.Max = GTauData.MaxLength{b*GTauData.chan};
     h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
-    if UserValues.GTauFit.Length{GTauData.chan} > 0 && UserValues.GTauFit.Length{GTauData.chan} < GTauData.MaxLength{GTauData.chan}+1
-        tmp = UserValues.GTauFit.Length{GTauData.chan};
+    if UserValues.GTauFit.Length{b*GTauData.chan} > 0 && UserValues.GTauFit.Length{b*GTauData.chan} < GTauData.MaxLength{b*GTauData.chan}+1
+        tmp = UserValues.GTauFit.Length{b*GTauData.chan};
     else
-        tmp = GTauData.MaxLength{GTauData.chan};
+        tmp = GTauData.MaxLength{b*GTauData.chan};
     end
     h.Length_Slider.Value = tmp;
-    GTauData.Length{GTauData.chan} = tmp;
+    GTauData.Length{b*GTauData.chan} = tmp;
     h.Length_Edit.String = num2str(tmp);
     
     %%% Start Parallel Slider can assume values from 0 (no shift) up to the
@@ -2884,7 +2896,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
   % h.FitPar_Table.Data = GetTableData(h.FitMethod_Popupmenu.Value, chan);
     % G factor is channel specific
     h.G_factor_edit.String = UserValues.GTauFit.G{GTauData.chan};
+else
+    TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 end
+
 
 %%% Update Slider Values
 if isobject(obj) % check if matlab object
@@ -3031,6 +3046,7 @@ if isprop(obj,'Style')
 end
 
 
+
 %%% Update Plot
 %%% Make the Microtime Adjustment Plot Visible, hide Result
 h.Microtime_Plot.Parent = h.Fit_Plots_Panel;
@@ -3171,6 +3187,9 @@ end
 % hide MEM button
 h.Fit_Button_MEM_tau.Visible = 'off';
 h.Fit_Button_MEM_dist.Visible = 'off';
+end
+
+
 
 drawnow;
 
