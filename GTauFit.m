@@ -2712,7 +2712,7 @@ if obj == h.FitParams_Tab
 end
 
 
-
+b = h.DataSet_Menu.Value;
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
 if Active == 1
 if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
@@ -2722,7 +2722,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     
     
     
-    b = h.DataSet_Menu.Value;
+    
     TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
     
     h.Plots.Decay_Par.XData = GTauData.XData_Par{b*GTauData.chan}*TACtoTime; 
@@ -2759,13 +2759,13 @@ GTauData.MaxLength{b*GTauData.chan} = min([numel(GTauData.hMI_Par{b*GTauData.cha
     h.Length_Slider.Min = 1;
     h.Length_Slider.Max = GTauData.MaxLength{b*GTauData.chan};
     h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
-    if UserValues.GTauFit.Length{b*GTauData.chan} > 0 && UserValues.GTauFit.Length{b*GTauData.chan} < GTauData.MaxLength{b*GTauData.chan}+1
-        tmp = UserValues.GTauFit.Length{b*GTauData.chan};
+    if UserValues.GTauFit.Length{GTauData.chan} > 0 && UserValues.GTauFit.Length{GTauData.chan} < GTauData.MaxLength{GTauData.chan}+1
+        tmp = UserValues.GTauFit.Length{GTauData.chan};
     else
         tmp = GTauData.MaxLength{b*GTauData.chan};
     end
     h.Length_Slider.Value = tmp;
-    GTauData.Length{b*GTauData.chan} = tmp;
+    GTauData.Length{GTauData.chan} = tmp;
     h.Length_Edit.String = num2str(tmp);
     
     %%% Start Parallel Slider can assume values from 0 (no shift) up to the
@@ -2996,8 +2996,6 @@ if isobject(obj) % check if matlab object
     end
 end
 
-Global = cell2mat(h.Fit_Table.Data(end-2,7:3:end-1));
-Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
 
 %for i=find(Active)'
     %IRFTab = cell2mat(h.Fit_Table.Data(i,end-3));
@@ -3057,26 +3055,26 @@ set([h.Plots.Residuals,h.Plots.Residuals_ignore,h.Plots.Residuals_Perp,h.Plots.R
 %%% Apply the shift to the parallel channel
 % if you change something here, change it too in Start_BurstWise Fit!
 h.Plots.Decay_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
-h.Plots.Decay_Par.YData = GTauData.hMI_Par{GTauData.chan}((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan})';
+h.Plots.Decay_Par.YData = GTauData.hMI_Par{b*GTauData.chan}((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan})';
 %%% Apply the shift to the perpendicular channel
 h.Plots.Decay_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
-tmp = shift_by_fraction(GTauData.hMI_Per{GTauData.chan}, GTauData.ShiftPer{GTauData.chan});
+tmp = shift_by_fraction(GTauData.hMI_Per{b*GTauData.chan}, GTauData.ShiftPer{GTauData.chan});
 h.Plots.Decay_Per.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
 %%% Apply the shift to the parallel IRF channel
 h.Plots.IRF_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.IRFLength{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
-tmp = shift_by_fraction(GTauData.hIRF_Par{GTauData.chan},GTauData.IRFShift{GTauData.chan});
+tmp = shift_by_fraction(GTauData.hIRF_Par{b*GTauData.chan},GTauData.IRFShift{GTauData.chan});
 h.Plots.IRF_Par.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.IRFLength{GTauData.chan});
 %%% Apply the shift to the perpendicular IRF channel
 h.Plots.IRF_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.IRFLength{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-tmp = shift_by_fraction(GTauData.hIRF_Per{GTauData.chan},GTauData.IRFShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.IRFrelShift{GTauData.chan});
+tmp = shift_by_fraction(GTauData.hIRF_Per{b*GTauData.chan},GTauData.IRFShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.IRFrelShift{GTauData.chan});
 h.Plots.IRF_Per.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.IRFLength{GTauData.chan});
 %%% Apply the shift to the parallel Scat channel
 h.Plots.Scat_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
-tmp = shift_by_fraction(GTauData.hScat_Par{GTauData.chan},GTauData.ScatShift{GTauData.chan});
+tmp = shift_by_fraction(GTauData.hScat_Par{b*GTauData.chan},GTauData.ScatShift{GTauData.chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
@@ -3090,7 +3088,7 @@ h.Plots.Scat_Par.YData = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Lengt
 %%% Apply the shift to the perpendicular Scat channel
 h.Plots.Scat_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
 %tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
-tmp = shift_by_fraction(GTauData.hScat_Per{GTauData.chan},GTauData.ScatShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.ScatrelShift{GTauData.chan});
+tmp = shift_by_fraction(GTauData.hScat_Per{b*GTauData.chan},GTauData.ScatShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.ScatrelShift{GTauData.chan});
 tmp = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
