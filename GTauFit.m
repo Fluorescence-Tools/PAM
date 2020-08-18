@@ -363,10 +363,13 @@ h.CommonShift_Menu = uicontrol(...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
     'Position',[0.85 0.9 0.45 0.12],...
-    'String','Common Decay Shift',...
+    'String','Common Shifts',...
     'FontSize',10,...
     'Tag','CommonShift_Menu',...
     'Callback',[]);
+
+
+
 
 
 h.Cleanup_IRF_axes = axes('Parent',h.IRF_Cleanup_Panel,...
@@ -2422,7 +2425,7 @@ switch mode
         Columns=cell(3*numel(GTauMeta.Model.Params)+5,1);
         Columns{1} = '<HTML><b>File</b>';
         Columns{2}='<HTML><b>Active</b>';
-        Columns{3}='<HTML><b>Counts [kHz]</b>';
+        Columns{3}='<HTML><b>All Tab</b>';
         Columns{4}='<HTML><b>Brightness [kHz]</b>';
         for i=1:numel(GTauMeta.Model.Params)
             Columns{3*i+2}=['<HTML><b>' GTauMeta.Model.Params{i} '</b>'];
@@ -2485,10 +2488,12 @@ switch mode
         Data(end-1:end,6:3:end-1)=deal({[]});
         Data(1:end-2,1)=deal({true});
         Data(end-1:end,1)=deal({[]});
+        Data(1:end-2,2)=deal({false});
+        Data(end-1:end,2)=deal({[]});
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
+        h.Fit_Table.ColumnEditable=[false,true,true,false,true(1,numel(Columns)-5),false];  
         h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -2668,18 +2673,12 @@ if isempty(Active)
     Active = 0;
 end
 
-if Active == 0
+if sum(Active) == 0
     %% Clears 2D plot, if all are inactive
-    %     h.Plots.Main.ZData = zeros(2);
-    %     h.Plots.Main.CData = zeros(2,2,3);
-    %     h.Plots.Fit.ZData = zeros(2);
-    %     h.Plots.Fit.CData = zeros(2,2,3);
     h.DataSet_Menu.String = {'Nothing selected'};
-else %% Updates 2D plot selection string
-    h.DataSet_Menu.String = GTauData.FileName(Active);
-    if h.DataSet_Menu.Value>numel(h.DataSet_Menu.String)
-        h.DataSet_Menu.Value = 1;
-    end
+else %% Updates 2D plot selection string    
+    h.DataSet_Menu.String = GTauData.FileName;
+    
 end    
 
 
@@ -2712,9 +2711,11 @@ if obj == h.FitParams_Tab
 end
 
 
+
+
 b = h.DataSet_Menu.Value;
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
-if Active == 1
+if sum(Active) ~= 0
 if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
     %LoadData button or Burstwise lifetime button was pressed
     %%% Plot the Data
@@ -3187,9 +3188,9 @@ h.Fit_Button_MEM_tau.Visible = 'off';
 h.Fit_Button_MEM_dist.Visible = 'off';
 end
 
-
-
 drawnow;
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3650,7 +3651,7 @@ end
 
 if sum(Global)==0
     %% Individual fits, not global
-    for i=find(Active)'
+    for i=h.DataSet_Menu.Value
         if ~GTauMeta.FitInProgress
             break;
         end
@@ -3678,10 +3679,12 @@ if sum(Global)==0
             lifetimes = GTauMeta.NParams - 3;
         elseif GTauMeta.NParams == 6
             lifetimes = GTauMeta.NParams - 4;
+        elseif GTauMeta.NParams == 6
+            lifetimes = GTauMeta.NParams - 5;
         end
-            x0(lifetimes) = x0(lifetimes)/GTauData.TACChannelWidth;
-            lb(lifetimes) = lb(lifetimes)/GTauData.TACChannelWidth;
-            ub(lifetimes) = ub(lifetimes)/GTauData.TACChannelWidth;
+            x0(1:lifetimes) = x0(1:lifetimes)/GTauData.TACChannelWidth;
+            lb(1:lifetimes) = lb(1:lifetimes)/GTauData.TACChannelWidth;
+            ub(1:lifetimes) = ub(1:lifetimes)/GTauData.TACChannelWidth;
         
             
             %%% define model function
@@ -3746,103 +3749,8 @@ if sum(Global)==0
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
     
-    end  
-else
-    %% Global fits
-    XData=[];
-    YData=[];
-    EData=[];
-    Points=[];
-    %%% Sets initial value and bounds for global parameters
-    Fit_Params=GTauMeta.Params(Global,1);
-    Lb=lb(Global);
-    Ub=ub(Global);
-    for  i=find(Active)'
-        %%% Reads in parameters of current file
-        xdata=GTauMeta.Data{i,1};
-        ydata=GTauMeta.Data{i,2};
-        edata=GTauMeta.Data{i,3};
-        %%% Disables weights
-        if ~Use_Weights
-            edata(:)=1;
-        end
-        
-        %%% Adjusts data to selected time region
-        Min=find(xdata>=str2double(h.Fit_Min.String),1,'first');
-        Max=find(xdata<=str2double(h.Fit_Max.String),1,'last');
-        if ~isempty(Min) && ~isempty(Max)
-            XData=[XData;xdata(Min:Max)];
-            YData=[YData;ydata(Min:Max)];
-            EData=[EData;edata(Min:Max)];
-            Points(end+1)=numel(xdata(Min:Max));
-        end
-        %%% Concatenates initial values and bounds for non fixed parameters
-        Fit_Params=[Fit_Params; GTauMeta.Params(~fixed(i,:)& ~Global,i)];
-        Lb=[Lb lb(~fixed(i,:) & ~Global)];
-        Ub=[Ub ub(~fixed(i,:) & ~Global)];
     end
-    %%% Puts current Data into global variable to be able to stop fitting
-    %%% Performs fit
-    [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points,fixed,Global,Active},YData./EData,Lb,Ub,opts);
-    %%% calculate confidence intervals
-    if h.Conf_Interval.Value
-        method = h.Conf_Interval_Method.Value;
-        alpha = 0.05; %95% confidence interval
-        if method == 1
-            ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
-        elseif method == 2
-            disp('Running MCMC... This could take a minute.');tic;
-            confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
-            proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
-            if any(isnan(proposal))
-                %%% nlparci may return NaN values. Set to 1% of the fit value
-                proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/100;
-            end
-            %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
-            loglikelihood = @(x) (-1/2)*sum((Fit_Global(x,{XData,EData,Points,fixed,Global,Active})-YData./EData).^2);
-            %%% Sample
-            nsamples = 1E4; spacing = 1E2;
-            [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            while acceptance < 0.01
-                    disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
-                    disp('Running again with more narrow proposal distribution.');
-                    proposal = proposal/10;
-                    [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            end
-            %%% New asymmetric confidence interval estimate
-            ConfInt = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
-            
-            %v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom is equal to the number of samples
-            % perc = 1.96;%tinv(1-alpha/2,v);
-            % ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
-            
-            disp(sprintf('Done. Performed %d steps in %.2f seconds.',nsamples,toc));
-            % print variables to workspace
-            assignin('base','GlobalSamples',samples(1:spacing:end,1:sum(Global)));
-            assignin('base','LocalSamples',samples(1:spacing:end,sum(Global)+1:end));        
-            assignin('base','acceptance',acceptance);
-            if acceptance < 0.01
-                disp(sprintf('Acceptance was too low! (%.4f)',acceptance));
-            end
-        end
-        GlobConfInt = ConfInt(1:sum(Global),:);
-        ConfInt(1:sum(Global),:) = [];        
-        for i = find(Active)'
-            GTauMeta.Confidence_Intervals{i} = zeros(size(GTauMeta.Params,1),2);
-            GTauMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
-            GTauMeta.Confidence_Intervals{i}(~fixed(i,:) & ~Global,:) = ConfInt(1:sum(~fixed(i,:) & ~Global),:);
-            ConfInt(1:sum(~fixed(i,:)& ~Global),:)=[]; 
-        end
-    end
-    %%% Updates parameters
-    GTauMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(GTauMeta.Params,2)]) ;
-    Fitted_Params(1:sum(Global))=[];
-    for i=find(Active)'
-        GTauMeta.Params(~fixed(i,:) & ~Global,i)=Fitted_Params(1:sum(~fixed(i,:) & ~Global)); 
-        Fitted_Params(1:sum(~fixed(i,:)& ~Global))=[]; 
-    end    
-end
-
+    
 LSUserValues(1)
 %%% Update IRFShift in Slider and Edit Box
 h.IRFShift_Slider.Value = UserValues.GTauFit.IRFShift{chan};
@@ -3973,8 +3881,238 @@ end
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
         end
+else
+    %% Global fits
+    for i = find(Active)'
+        if ~GTauMeta.FitInProgress
+            break;
+        end
+        %%% Reads in parameters
+        x0 = cell2mat(h.Fit_Table.Data(i,5:3:end-1));
+        lb = cell2mat(h.Fit_Table.Data(end-1,5:3:end-1));
+        ub = cell2mat(h.Fit_Table.Data(end,5:3:end-1));
+        fixed = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
+        %%% Add I0 parameter (Initial fluorescence intensity)        
+        I0 = 2*max(Decay);
+        x0(end+1) = I0;
+        lb(end+1) = 0;
+        ub(end+1) = Inf;
+        fixed(end+1) = false;
         
-%%%%%%Update AllTab
+        if all(fixed) %%% all parameters fixed, instead just plot the current values
+            fit = 0;
+        else
+            fit = 1;
+        end
+        alpha = 0.05; %95% confidence interval
+        GTauData.ConfInt = NaN(numel(x0),2);
+           
+        if GTauMeta.NParams == 4
+            lifetimes = GTauMeta.NParams - 3;
+        elseif GTauMeta.NParams == 6
+            lifetimes = GTauMeta.NParams - 4;
+        end
+            x0(lifetimes) = x0(lifetimes)/GTauData.TACChannelWidth;
+            lb(lifetimes) = lb(lifetimes)/GTauData.TACChannelWidth;
+            ub(lifetimes) = ub(lifetimes)/GTauData.TACChannelWidth;
+        
+            
+            %%% define model function
+            ModelFun = @(x,xdata) Fit_Single(interlace(x0,x,fixed),xdata);
+            %%% estimate error assuming Poissonian statistics
+            if UserValues.GTauFit.use_weighted_residuals
+                sigma_est_fit = sigma_est(ignore:end);
+            else
+                sigma_est_fit = ones(1,numel(Decay(ignore:end)));
+            end
+            %%% Sets initial values and bounds for non fixed parameters
+            IRFShi = str2double(h.Fit_Table.Data(i,end-3)); 
+            
+              
+                if fit
+                 %%% Update Progressbar
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) Fit_Single(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                    else
+                         [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(Fit_Single(interlace(x0,x,fixed),xdata),...
+                             Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
+                    end
+                    x = interlace(x0,x,fixed);
+                    chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
+                    GTauData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                end
+                
+                FitFun = Fit_Single(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.GTauFit.use_weighted_residuals
+                        wres = wres./sigma_est;
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                %%% Update FitResult
+                FitResult = num2cell(x);
+                FitResult{1:lifetimes} = FitResult{1:lifetimes}.*GTauData.TACChannelWidth;
+                GTauData.ConfInt(lifetimes,:) = GTauData.ConfInt(lifetimes,:).*GTauData.TACChannelWidth;
+                h.Fit_Table.Data(i,5:3:end-1) = FitResult(1:end-1);
+                h.Fit_Table.Data(i,end) = num2cell(chi2);
+                GTauData.I0 = FitResult{end};
+                fix = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
+                
+                UserValues.GTauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.GTauFit.FitParams{chan}(8) = FitResult{2};
+                UserValues.GTauFit.FitParams{chan}(10) = FitResult{3};
+                UserValues.GTauFit.IRFShift{chan} = FitResult{4};
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+    
+    end
+    
+LSUserValues(1)
+
+%%% Update Plot
+h.Microtime_Plot.Parent = h.HidePanel;
+h.Result_Plot.Parent = h.Fit_Plots_Panel_Global;
+h.Plots.IRFResult.Visible = 'on';
+        
+        
+        
+% nanoseconds per microtime bin
+TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+        
+%%%%%%%%%%% Update plots%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ignore > 1
+   h.Plots.DecayResult_ignore.Visible = 'on';
+   h.Plots.Residuals_ignore.Visible = 'on';
+   h.Plots.FitResult_ignore.Visible = 'on';
+else
+   h.Plots.DecayResult_ignore.Visible = 'off';
+   h.Plots.Residuals_ignore.Visible = 'off';
+   h.Plots.FitResult_ignore.Visible = 'off';
+end
+        
+            
+            
+% hide plots
+h.Plots.IRFResult_Perp.Visible = 'off';
+h.Plots.FitResult_Perp.Visible = 'off';
+h.Plots.FitResult_Perp_ignore.Visible = 'off';
+h.Plots.DecayResult_Perp.Visible = 'off';
+h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+h.Plots.Residuals_Perp.Visible = 'off';
+h.Plots.Residuals_Perp_ignore.Visible = 'off';
+            
+% change colors
+h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+h.Plots.DecayResult.Color = [0 0 0];
+h.Plots.Residuals.Color = [0 0 0];
+h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+            
+%%% hide aniso plots
+h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
+h.Result_Plot_Aniso.Parent = h.HidePanel;
+            
+%IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+IRFPat = shift_by_fraction(IRFPattern,UserValues.GTauFit.IRFShift{chan});
+IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+IRFPat = IRFPat./max(IRFPat).*max(Decay);
+h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+h.Plots.IRFResult.YData = IRFPat;
+% store FitResult GTauData also for use in export
+if ignore > 1
+   GTauData.FitResult = [FitFun_ignore, FitFun];
+else
+   GTauData.FitResult = FitFun;
+end
+            
+            h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
+            h.Plots.DecayResult.YData = Decay;
+            h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
+            h.Plots.FitResult.YData = FitFun;
+
+            h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.DecayResult_ignore.YData = Decay_ignore;
+            h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.FitResult_ignore.YData = FitFun_ignore;
+            axis(h.Result_Plot,'tight');
+            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
+            
+            h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
+            h.Plots.Residuals.YData = wres;
+            h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
+            h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
+            h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.Residuals_ignore.YData = wres_ignore;
+            h.Residuals_Plot.YLim = [min(wres) max(wres)];
+            legend(h.Result_Plot,'off');
+        
+
+        h.Result_Plot.XLim(1) = 0;
+        if strcmp(h.Result_Plot.YScale,'log')
+            ydat = h.Plots.DecayResult.YData;
+            ydat = ydat(ydat > 0);
+            h.Result_Plot.YLim(1) = min(ydat);
+        end
+        
+        h.Result_Plot.YLabel.String = 'Intensity [counts]';
+        h.Fit_Button_MEM_tau.Visible = 'on';
+        h.Fit_Button_MEM_dist.Visible = 'on';
+        
+        if h.MCMC_Error_Estimation_Menu.Value
+            alpha = 0.05; %95% confidence interval            
+            disp('Running MCMC... This could take a minute.');tic;
+            confint = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+            proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+            if any(isnan(proposal))
+                %%% nlparci may return NaN values. Set to 1% of the fit value
+                Fitted_Params = x(~fixed);
+                proposal(isnan(proposal)) = Fitted_Params(isnan(proposal))/10;
+            end
+            if ~exist('Decay_FitRange','var')
+                Decay_FitRange = Decay;
+            end
+            %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
+            loglikelihood = @(x) (-1/2)*sum((ModelFun(x,xdata)./sigma_est-Decay_FitRange./sigma_est).^2);
+            %%% Sample
+            nsamples = 1E4; spacing = 1E2;
+            [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,lb(~fixed),ub(~fixed),x(~fixed)',zeros(1,numel(x(~fixed))));
+            if acceptance < 0.01
+                disp(sprintf('Acceptance was too low at %.4f!',acceptance));
+                disp('Running again with more narrow proposal distribution.');
+                [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal/10,lb(~fixed),ub(~fixed),x(~fixed)',zeros(1,numel(x(~fixed))));
+            end
+            %%% convert lifetimes
+            lt = false(size(fixed)); lt(lifetimes) = true;
+            samples(:,lt(~fixed)) = samples(:,lt(~fixed)).*GTauData.TACChannelWidth;
+            confint_mcmc = prctile(samples(1:spacing:end,:),100*[alpha/2,1-alpha/2],1)';
+            disp(sprintf('Done. Performed %d steps in %.2f seconds.\nAcceptance was %.2f.\nSpacing used was %d.',nsamples,toc,acceptance,spacing));
+            % print variables to workspace
+            assignin('base',['Samples'],samples(1:spacing:end,:));
+            assignin('base',['acceptance'],acceptance);
+            assignin('base',['LogLikelihood'],prob(1:spacing:end));
+            assignin('base',['ConfInt_MCMC'],confint_mcmc);
+            disp(table(confint_mcmc));
+    
+    end
+end
+
+
+        
+
 
 
 
@@ -4021,6 +4159,7 @@ P(end+1) = xdata{4};
 x = (1:P(end))'; %tp
 
 x = feval(GTauMeta.Model.Function,P,x);
+
 switch conv_type
     case 'linear'
         z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
