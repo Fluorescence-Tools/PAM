@@ -2760,9 +2760,9 @@ h.Mia_TICS.SelectImage = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'G(1)-G(end)','Brightness','Counts','Half-Life'},...
+    'String',{'G(1)-G(end)','Brightness','Counts','Half-Life', 'Samples'},...
     'Callback',{@Update_Plots,5,[]},...
-    'Position',[0.01 0.53, 0.08 0.03]);
+    'Position',[0.01 0.53, 0.07 0.03]);
 if ismac
     h.Mia_TICS.SelectImage.ForegroundColor = [0 0 0];
     h.Mia_TICS.SelectImage.BackgroundColor = [1 1 1];
@@ -2780,7 +2780,7 @@ h.Mia_TICS.Median = uicontrol(...
     'Callback',{@Update_Plots,5,[]},...
     'Value', 0,...
     'Tag','Median',...
-    'Tooltipstring',['Median filter the G1, brightness, counts,' 10 'halflife images and the TICS mask.' 10 'Size is defined on the Correlate tab "Size:".']);
+    'Tooltipstring',['Median filter the G1, brightness, counts,' 10 'halflife and sample images and the TICS mask.' 10 'Size is defined on the Correlate tab "Size:".']);
 
 h.Mia_TICS.Normalize = uicontrol(...
     'Parent', h.Mia_TICS.Panel,...
@@ -2798,11 +2798,11 @@ h.Mia_TICS.Normalize = uicontrol(...
 
 %%% Editboxes for different thresholds for species selection
     h.Mia_TICS.ThresholdsContainer = uigridcontainer(...
-        'GridSize',[5,3],...
+        'GridSize',[6,3],...
         'HorizontalWeight',[0.3,0.2,0.2],... 
         'Parent',h.Mia_TICS.Panel,...
         'Units','norm',...
-        'Position',[.08,0.57,0.13,0.13],...
+        'Position',[.08,0.54,0.13,0.16],...
         'BackgroundColor',Look.Back);
     h.Mia_TICS.Threshold_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
@@ -2831,7 +2831,8 @@ h.Mia_TICS.Normalize = uicontrol(...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+        'Tooltipstring', 'G1-Gend is the decaying correlation amplitude');
     h.Mia_TICS.Threshold_G1_Min_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2840,7 +2841,8 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'G1-Gend is the decaying correlation amplitude');
     h.Mia_TICS.Threshold_G1_Max_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2849,14 +2851,16 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'G1-Gend is the decaying correlation amplitude');
     h.Mia_TICS.Threshold_brightness_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'String','Brightness',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'Brightness is Counts*(G1-Gend)');
     h.Mia_TICS.Threshold_brightness_Min_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2865,7 +2869,8 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Brightness is Counts*(G1-Gend)');
     h.Mia_TICS.Threshold_brightness_Max_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2874,14 +2879,16 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Brightness is Counts*(G1-Gend)');
     h.Mia_TICS.Threshold_counts_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'String','Counts',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'Counts is the avg. intensity of the kept pixels');
     h.Mia_TICS.Threshold_counts_Min_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2890,7 +2897,8 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Counts is the avg. intensity of the kept pixels');
     h.Mia_TICS.Threshold_counts_Max_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2899,14 +2907,16 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Counts is the avg. intensity of the kept pixels');
     h.Mia_TICS.Threshold_halflife_Text = uicontrol('style','text',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'String','Half-life',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'Half-life is the lag time at half-amplitude');
     h.Mia_TICS.Threshold_halflife_Min_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2915,7 +2925,8 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Half-life is the lag time at half-amplitude');
     h.Mia_TICS.Threshold_halflife_Max_Edit = uicontrol('style','edit',...
         'Parent',h.Mia_TICS.ThresholdsContainer,...
         'Tag', 'thresholds',...
@@ -2924,8 +2935,36 @@ h.Mia_TICS.Normalize = uicontrol(...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'Callback',{@Update_Plots,5,[]});
-
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Half-life is the lag time at half-amplitude');
+    h.Mia_TICS.Threshold_samples_Text = uicontrol('style','text',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'String','Samples',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'Samples is the number of samples per kept pixel');
+    h.Mia_TICS.Threshold_samples_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',50,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Samples is the number of samples per kept pixel');
+    h.Mia_TICS.Threshold_samples_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.Mia_TICS.ThresholdsContainer,...
+        'Tag', 'thresholds',...
+        'String',1000,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',{@Update_Plots,5,[]},...
+    'Tooltipstring', 'Samples is the number of samples per kept pixel');
     %%% Popup to select what to which image the thresholds apply
 h.Mia_TICS.SelectCor = uicontrol(...
     'Parent',h.Mia_TICS.Panel,...
@@ -5319,6 +5358,7 @@ if any(mode==5)
         brightnessa = cell(3,1);
         countsa = cell(3,1);
         halflifea = cell(3,1);
+        samplesa = cell(3,1);
     end
     for i=1:3
         % user has previously pressed the TICS calculate at all
@@ -5336,15 +5376,20 @@ if any(mode==5)
                     case 1 %ACF1
                         brightness = double(MIAData.TICS.Data{1}(:,:,1).*mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
                         counts = double(MIAData.TICS.Int{i,1});
+                        samples = MIAData.TICS.AR_NoIncludedFrames{i};
                     case 2 %ACF2
                         brightness = double(MIAData.TICS.Data{2}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)); %#ok<ST2NM>
                         counts = double(MIAData.TICS.Int{i,2});
+                        samples = MIAData.TICS.AR_NoIncludedFrames{i};
                     case 3 %CCF
                         brightness = double(MIAData.TICS.Data{3}(:,:,1).*...
                             (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... 
                             mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2); 
                         counts = double((MIAData.TICS.Int{i,1}+MIAData.TICS.Int{i,2}));
+                        samples = min(MIAData.TICS.AR_NoIncludedFrames{1},MIAData.TICS.AR_NoIncludedFrames{2});
                 end
+
+                %samples(samples < 50) = NaN;
                 
                 %%% Find G(0)/2
                 firstlag = repmat(MIAData.TICS.Data{i}(:,:,1),1,1,size(MIAData.TICS.Data{i},3));
@@ -5360,6 +5405,7 @@ if any(mode==5)
                     brightness = medfilt2(brightness, filtsize, 'symmetric');
                     counts = medfilt2(counts, filtsize, 'symmetric');
                     halflife = medfilt2(halflife, filtsize, 'symmetric');
+                    %samples = medfilt2(samples, filtsize, 'symmetric');
                 end
                 % reset the values
                 if ~isempty(obj)
@@ -5373,6 +5419,8 @@ if any(mode==5)
                         MIAData.TICS.Thresholds{i}(3,2) = max(max(counts));
                         MIAData.TICS.Thresholds{i}(4,1) = min(min(halflife));
                         MIAData.TICS.Thresholds{i}(4,2) = max(max(halflife));
+                        MIAData.TICS.Thresholds{i}(5,1) = min(min(samples(samples>0)));
+                        MIAData.TICS.Thresholds{i}(5,2) = max(max(samples));
                         MIAData.TICS.ThreshMask = true(size(MIAData.TICS.Int{i,1}));
                         % display the values of the popupmenu selected correlation
                         h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
@@ -5383,6 +5431,8 @@ if any(mode==5)
                         h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
                         h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
                         h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                        h.Mia_TICS.Threshold_samples_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,1));
+                        h.Mia_TICS.Threshold_samples_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,2));
                     elseif strcmp(obj.Tag, 'SelectCor')
                         % display the values of the popupmenu selected correlation
                         h.Mia_TICS.Threshold_G1_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1));
@@ -5393,6 +5443,8 @@ if any(mode==5)
                         h.Mia_TICS.Threshold_counts_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2));
                         h.Mia_TICS.Threshold_halflife_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1));
                         h.Mia_TICS.Threshold_halflife_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2));
+                        h.Mia_TICS.Threshold_samples_Min_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,1));
+                        h.Mia_TICS.Threshold_samples_Max_Edit.String = num2str(MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,2));
                     elseif strcmp(obj.Tag, 'thresholds')
                         % user changed threshold value
                         MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(1,1) = str2num(h.Mia_TICS.Threshold_G1_Min_Edit.String);
@@ -5403,6 +5455,8 @@ if any(mode==5)
                         MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(3,2) = str2num(h.Mia_TICS.Threshold_counts_Max_Edit.String);
                         MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,1) = str2num(h.Mia_TICS.Threshold_halflife_Min_Edit.String);
                         MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(4,2) = str2num(h.Mia_TICS.Threshold_halflife_Max_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,1) = str2num(h.Mia_TICS.Threshold_samples_Min_Edit.String);
+                        MIAData.TICS.Thresholds{h.Mia_TICS.SelectCor.Value}(5,2) = str2num(h.Mia_TICS.Threshold_samples_Max_Edit.String);
                     end
                 end
                 
@@ -5418,6 +5472,8 @@ if any(mode==5)
                     mask(counts > MIAData.TICS.Thresholds{i}(3,2)) = false;
                     mask(halflife < MIAData.TICS.Thresholds{i}(4,1)) = false;
                     mask(halflife > MIAData.TICS.Thresholds{i}(4,2)) = false;
+                    mask(samples < MIAData.TICS.Thresholds{i}(5,1)) = false;
+                    mask(samples > MIAData.TICS.Thresholds{i}(5,2)) = false;
                     % mask based on thresholds for one correlation function applies to all
                     %mask = mask & MIAData.TICS.ThreshMask;
                     MIAData.TICS.ThreshMask = mask;
@@ -5438,6 +5494,7 @@ if any(mode==5)
                 halflifea{i} = halflife;
                 countsa{i} = counts;
                 brightnessa{i} = brightness;
+                samplesa{i} = samples;
             end
         end
     end
@@ -5459,6 +5516,8 @@ if any(mode==5)
                         plotdata = countsa{i};
                     case 4 %%% Find G(0)/2
                         plotdata = halflifea{i};
+                    case 5 %%% samples
+                        plotdata = samplesa{i};
                 end
                 % Show the data on the image
                 h.Plots.TICSImage(i).CData = plotdata;
@@ -6689,7 +6748,7 @@ if Cross
             switch mode
                 case 1 %normal cc(R)ICS
                     MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(mean2(Image{1})*mean2(Image{2}));
-                case 2 %Van Steensel type colocalization, but then in 2D
+                case 2 %Pearson / Van Steensel type colocalization, but then in 2D
                     MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)/(std2(Image{1})*std2(Image{2}));
             end
         end
@@ -6810,24 +6869,7 @@ if savedata > 1
                     %%% Mean intensity of selected pixels [counts]
                     Image = double(MIAData.Data{i,2}(:,:,frames));
                     %InfoAll(i).Mean = mean(Image(Use{i}));
-                    %%% Arbitrary region information
-                    InfoAll(i).AR.Int_Max(1) = UserValues.MIA.AR_Int(3);
-                    InfoAll(i).AR.Int_Max(2) = UserValues.MIA.AR_Int(4);
-                    InfoAll(i).AR.Int_Min(1) = UserValues.MIA.AR_Int(1);
-                    InfoAll(i).AR.Int_Min(2) = UserValues.MIA.AR_Int(2);
-                    InfoAll(i).AR.Int_Fold_Max(1) = UserValues.MIA.AR_Int_Fold(3);
-                    InfoAll(i).AR.Int_Fold_Min(1) = UserValues.MIA.AR_Int_Fold(1);
-                    InfoAll(i).AR.Int_Fold_Max(2) = UserValues.MIA.AR_Int_Fold(4);
-                    InfoAll(i).AR.Int_Fold_Min(2) = UserValues.MIA.AR_Int_Fold(2);
-                    InfoAll(i).AR.Var_Fold_Max(1) = UserValues.MIA.AR_Var_Fold(3);
-                    InfoAll(i).AR.Var_Fold_Min(1) = UserValues.MIA.AR_Var_Fold(1);
-                    InfoAll(i).AR.Var_Fold_Max(2) = UserValues.MIA.AR_Var_Fold(4);
-                    InfoAll(i).AR.Var_Fold_Min(2) = UserValues.MIA.AR_Var_Fold(2);
-                    InfoAll(i).AR.Var_Sub=UserValues.MIA.AR_Region(2);
-                    InfoAll(i).AR.Var_SubSub=UserValues.MIA.AR_Region(1);
-                    InfoAll(i).AR.Same = UserValues.MIA.AR_Same;
-                    InfoAll(i).AR.Median = UserValues.MIA.AR_Median;
-                    InfoAll(i).AR.Framewise = UserValues.MIA.AR_Framewise;
+                    InfoAll(i).AR = Save_ARinfo;
             end
             %%% Mean intensity
             InfoAll(i).Counts = MeanInt(i); %Waldi
@@ -6878,23 +6920,7 @@ if savedata > 1
                     Image2 = double(MIAData.Data{2,2}(:,:,frames));
                     InfoAll(3).Mean = (mean(Image1(Use1 & Use2)) + mean(Image2(Use1 & Use2)))/2;
                     %%% Arbitrary region information
-                    InfoAll(3).AR.Int_Max(1) = UserValues.MIA.AR_Int(3);
-                    InfoAll(3).AR.Int_Max(2) = UserValues.MIA.AR_Int(4);
-                    InfoAll(3).AR.Int_Min(1) = UserValues.MIA.AR_Int(1);
-                    InfoAll(3).AR.Int_Min(2) = UserValues.MIA.AR_Int(2);
-                    InfoAll(3).AR.Int_Fold_Max(1) = UserValues.MIA.AR_Int_Fold(3);
-                    InfoAll(3).AR.Int_Fold_Min(1) = UserValues.MIA.AR_Int_Fold(1);
-                    InfoAll(3).AR.Int_Fold_Max(2) = UserValues.MIA.AR_Int_Fold(4);
-                    InfoAll(3).AR.Int_Fold_Min(2) = UserValues.MIA.AR_Int_Fold(2);
-                    InfoAll(3).AR.Var_Fold_Max(1) = UserValues.MIA.AR_Var_Fold(3);
-                    InfoAll(3).AR.Var_Fold_Min(1) = UserValues.MIA.AR_Var_Fold(1);
-                    InfoAll(3).AR.Var_Fold_Max(2) = UserValues.MIA.AR_Var_Fold(4);
-                    InfoAll(3).AR.Var_Fold_Min(2) = UserValues.MIA.AR_Var_Fold(2);
-                    InfoAll(3).AR.Var_Sub=UserValues.MIA.AR_Region(2);
-                    InfoAll(3).AR.Var_SubSub=UserValues.MIA.AR_Region(1);
-                    InfoAll(3).AR.Same = UserValues.MIA.AR_Same;
-                    InfoAll(3).AR.Median = UserValues.MIA.AR_Median;
-                    InfoAll(3).AR.Framewise = UserValues.MIA.AR_Framewise;
+                    InfoAll(3).AR = Save_ARinfo([],1);
             end
             %%% Mean intensity
             InfoAll(3).Counts = sum(MeanInt);
@@ -6956,7 +6982,7 @@ if savedata > 1
                 end
                 %%% Saves Auto correlations
                 for i=Auto
-                    Info = InfoAll(i); %#ok<NASGU>
+                    Info = InfoAll(i);
                     Data = DataAll(i,:); 
                     if i==1
                         save(Current_FileName1,'Info','Data');
@@ -6966,7 +6992,7 @@ if savedata > 1
                 end
                 %%% Saves Cross correlations
                 if Cross
-                    Info = InfoAll(3); %#ok<NASGU>
+                    Info = InfoAll(3); 
                     Data = DataAll(3,:); 
                     save(Current_FileName3,'Info','Data');
                 end
@@ -7017,13 +7043,7 @@ if savedata > 1
                 end
                 %%% Arbitrary region
                 if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-                    fprintf(FID,'%s\n','Arbitrary region used:');
-                    fprintf(FID,'%s\t%f\n','Minimal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Min(1),'; ',InfoAll(i).AR.Int_Min(2));
-                    fprintf(FID,'%s\t%f\n','Maximal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Max(1),'; ',InfoAll(i).AR.Int_Max(2));
-                    fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                    fprintf(FID,'%s\t%f\n','Minimal\Maximal intensity fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Int_Fold_Min(1),'; ',InfoAll(i).AR.Int_Fold_Max(1),'; ',InfoAll(i).AR.Int_Fold_Min(2),'; ',InfoAll(i).AR.Int_Fold_Max(2));
-                    fprintf(FID,'%s\t%f\n','Minimal\Maximal variance fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Var_Fold_Min(1),'; ',InfoAll(i).AR.Var_Fold_Max(1),'; ',InfoAll(i).AR.Var_Fold_Min(2),'; ',InfoAll(i).AR.Var_Fold_Max(2));
-                    
+                    Save_ARinfo(FID, 2);                    
                 end
                 fclose(FID);
                 
@@ -7122,13 +7142,7 @@ if savedata > 1
                 end
                 %%% Arbitrary region
                 if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-                    fprintf(FID,'%s\n','Arbitrary region used:')
-                    fprintf(FID,'%s\t%f\n','Minimal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Min(1),'; ',InfoAll(i).AR.Int_Min(2));
-                    fprintf(FID,'%s\t%f\n','Maximal average intensity [green kHz; red kHz]:',InfoAll(i).AR.Int_Max(1),'; ',InfoAll(i).AR.Int_Max(2));
-                    fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                    fprintf(FID,'%s\t%f\n','Minimal\Maximal intensity fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Int_Fold_Min(1),'; ',InfoAll(i).AR.Int_Fold_Max(1),'; ',InfoAll(i).AR.Int_Fold_Min(2),'; ',InfoAll(i).AR.Int_Fold_Max(2));
-                    fprintf(FID,'%s\t%f\n','Minimal\Maximal variance fold deviation [green min\max; red min\max]:',InfoAll(i).AR.Var_Fold_Min(1),'; ',InfoAll(i).AR.Var_Fold_Max(1),'; ',InfoAll(i).AR.Var_Fold_Min(2),'; ',InfoAll(i).AR.Var_Fold_Max(2));
-
+                    Save_ARinfo(FID, 2);  
                 end
                 fclose(FID);
                 %% Saves correlation TIFFs
@@ -7234,13 +7248,14 @@ function Do_1D_XCor(obj,~)
 global MIAData
 h = guidata(findobj('Tag','Mia'));
 
-if h.Mia_Image.Settings.ROI_FramesUse.Value ~= 1
-    h.Mia_Image.Settings.ROI_FramesUse.Value = 1;
-    m = msgbox('Normal ROI selection will be applied');
-    pause(2)
-    close(m)
-    MIA_Various([],[],3);
-end
+% % Force normal ROI selection, not AR
+% if h.Mia_Image.Settings.ROI_FramesUse.Value ~= 1
+%     h.Mia_Image.Settings.ROI_FramesUse.Value = 1;
+%     m = msgbox('Normal ROI selection will be applied');
+%     pause(2)
+%     close(m)
+%     MIA_Various([],[],3);
+% end
 
 
 %%% Stops, if no data was loaded
@@ -7255,6 +7270,7 @@ drawnow;
 MIAData.TICS.Data = [];
 MIAData.TICS.FreehandMask = [];
 MIAData.TICS.ThreshMask = [];
+MIAData.TICS.AR_NoIncludedFrames = [];
 
 %%% Adjust for number of selected files
 if size(MIAData.Data,1)<2
@@ -7311,6 +7327,12 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
         Frames = intersect(Frames,Active);
         for i=Auto
             Use{i} = logical(MIAData.AR{i,1}(:,:,1:Frames(end)) & repmat(MIAData.MS{i},1,1,Frames(end)));
+            % 2D array with the number of included samples per pixel
+            tmp = sum(Use{i},3);
+            % if a pixel contains < 50 samples, the TICS correlation will look bad anyway
+            tmp (tmp < 50) = 0;
+            MIAData.TICS.AR_NoIncludedFrames{i} = tmp;
+            clear tmp
         end   
 end
 MIAData.TICS.Frames = Frames;
@@ -7753,16 +7775,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
                 Image2 = double(MIAData.Data{2,2}(:,:,Frames));
                 InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
                 %%% Arbitrary region information
-                InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-                InfoAll(3).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-                InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-                InfoAll(3).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-                InfoAll(3).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-                InfoAll(3).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-                InfoAll(3).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-                InfoAll(3).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-                InfoAll(3).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-                InfoAll(3).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+                InfoAll(3).AR = Save_ARinfo([],1);
         end
         %%% Mean intensity
         InfoAll(3).Counts = sum(MeanInt);
@@ -7796,8 +7809,8 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
     end
     %%% Saves Auto correlations
     for i=Auto
-        Info = InfoAll(i); %#ok<NASGU>
-        Data = DataAll(i,:); %#ok<NASGU>
+        Info = InfoAll(i); 
+        Data = DataAll(i,:); 
         if i==1
             save(Current_FileName1,'Info','Data');
         else
@@ -7806,8 +7819,8 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
     end
     %%% Saves Cross correlations
     if Cross
-        Info = InfoAll(3); %#ok<NASGU>
-        Data = DataAll(3,:); %#ok<NASGU>
+        Info = InfoAll(3); 
+        Data = DataAll(3,:);
         save(Current_FileName3,'Info','Data');
     end
 end
@@ -8088,17 +8101,7 @@ switch h.Mia_Image.Settings.ROI_FramesUse.Value
                 Info.Mean(i) = mean(Image(MIAData.TICS.Use{i}));
             end
         end
-        %%% Arbitrary region information
-        Info.AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-        Info.AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-        Info.AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-        Info.AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-        Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-        Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-        Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-        Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-        Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-        Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+        Info.AR = Save_ARinfo([],1);
 end
 %% Saves info file
 %FileName = MIAData.FileName{1}{1}(1:end-4);
@@ -8153,12 +8156,7 @@ switch h.Mia_Image.Settings.Correction_Subtract.Value
 end
 %%% Arbitrary region
 if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-    fprintf(FID,'%s\n','Arbitrary region used:');
-    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min(1), '; ',Info.AR.Int_Min(2));
-    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max(1), '; ',Info.AR.Int_Max(2));
-    fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
-    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
-    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
+    Save_ARinfo(FID, 2);    
 end
 fclose(FID);
 
@@ -9021,9 +9019,42 @@ if size(MIAData.Data,1) > 1
             h.Mia_Image.Calculations.Coloc_Type.Value = 1;
     end
     
-
+    
     
 else
     msgbox('load 2-color data!')
 end
 
+    function out = Save_ARinfo(FID, mode)
+        switch mode
+            case {1,2}
+                global UserValues
+                %%% Arbitrary region information
+                out.Int_Max(1) = UserValues.MIA.AR_Int(3);
+                out.Int_Max(2) = UserValues.MIA.AR_Int(4);
+                out.Int_Min(1) = UserValues.MIA.AR_Int(1);
+                out.Int_Min(2) = UserValues.MIA.AR_Int(2);
+                out.Int_Fold_Max(1) = UserValues.MIA.AR_Int_Fold(3);
+                out.Int_Fold_Min(1) = UserValues.MIA.AR_Int_Fold(1);
+                out.Int_Fold_Max(2) = UserValues.MIA.AR_Int_Fold(4);
+                out.Int_Fold_Min(2) = UserValues.MIA.AR_Int_Fold(2);
+                out.Var_Fold_Max(1) = UserValues.MIA.AR_Var_Fold(3);
+                out.Var_Fold_Min(1) = UserValues.MIA.AR_Var_Fold(1);
+                out.Var_Fold_Max(2) = UserValues.MIA.AR_Var_Fold(4);
+                out.Var_Fold_Min(2) = UserValues.MIA.AR_Var_Fold(2);
+                out.Var_Sub=UserValues.MIA.AR_Region(2);
+                out.Var_SubSub=UserValues.MIA.AR_Region(1);
+                out.Same = UserValues.MIA.AR_Same;
+                out.Median = UserValues.MIA.AR_Median;
+                out.Framewise = UserValues.MIA.AR_Framewise;
+            case 2
+                fprintf(FID,'%s\n','Arbitrary region used:');
+                fprintf(FID,'%s\t%f\n','Minimal average intensity [green kHz; red kHz]:',out.Int_Min(1),'; ',out.Int_Min(2));
+                fprintf(FID,'%s\t%f\n','Maximal average intensity [green kHz; red kHz]:',out.Int_Max(1),'; ',out.Int_Max(2));
+                fprintf(FID,'%s\t%u,%u\n','Subregions size:',out.Var_SubSub,out.Var_Sub);
+                fprintf(FID,'%s\t%f\n','Minimal\Maximal intensity fold deviation [green min\max; red min\max]:',out.Int_Fold_Min(1),'; ',out.Int_Fold_Max(1),'; ',out.Int_Fold_Min(2),'; ',out.Int_Fold_Max(2));
+                fprintf(FID,'%s\t%f\n','Minimal\Maximal variance fold deviation [green min\max; red min\max]:',out.Var_Fold_Min(1),'; ',out.Var_Fold_Max(1),'; ',out.Var_Fold_Min(2),'; ',out.Var_Fold_Max(2));
+                fprintf(FID,'%s\t%u,%u\n','Which Masks:',out.Same);
+                fprintf(FID,'%s\t%u,%u\n','Median filtering:',out.Median);
+                fprintf(FID,'%s\t%u,%u\n','Framewise:',out.Framewise);
+        end           
