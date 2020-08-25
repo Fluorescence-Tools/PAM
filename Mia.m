@@ -5522,7 +5522,13 @@ if any(mode==5)
                 % Show the data on the image
                 h.Plots.TICSImage(i).CData = plotdata;
                 % Set the image scaling on the axes
-                h.Mia_TICS.Image(i).CLim = [min(min(plotdata(mask))) max(max(plotdata(mask)))];
+                mini = min(min(plotdata(mask)));
+                maxi = max(max(plotdata(mask)));
+                % if AROI is not used, each pixel is sampled equally
+                if maxi == mini
+                    maxi = mini+1;
+                end
+                h.Mia_TICS.Image(i).CLim = [mini maxi];
             else %%% Hides plots, if no TICS data exists for current channel
                 h.Plots.TICS(i,1).Visible = 'off';
                 h.Plots.TICS(i,2).Visible = 'off';
@@ -7307,6 +7313,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
     case 1 %%% Use All Frames
         for i=Auto
             Use{i} = true(size(MIAData.Data{1,2},1), size(MIAData.Data{1,2},2), Frames(end));
+            MIAData.TICS.AR_NoIncludedFrames{i}(1:size(MIAData.Data{1,2},1), 1:size(MIAData.Data{1,2},2)) = Frames(end);
         end
     case 2 %%% Use selected Frames
         if Cross
@@ -7317,6 +7324,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
         Frames = intersect(Frames,Active);
         for i=Auto
             Use{i} = true(size(MIAData.Data{1,2},1), size(MIAData.Data{1,2},2), Frames(end));
+            MIAData.TICS.AR_NoIncludedFrames{i}(1:size(MIAData.Data{1,2},1), 1:size(MIAData.Data{1,2},2)) = size(Frames,2);
         end        
     case 3 %%% Does arbitrary region ICS
         if Cross
