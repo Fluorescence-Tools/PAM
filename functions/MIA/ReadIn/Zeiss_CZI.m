@@ -181,7 +181,7 @@ switch mode
             h.Mia_ICS.Fit_Table.Data(15,:) = {'3'};
             h.Mia_Image.Settings.Image_Pixel.String = '10';
             h.Mia_ICS.Fit_Table.Data(13,:) = {'10'};
-            h.Mia_Image.Settings.Image_Size.String = '50';
+            h.Mia_Image.Settings.Pixel_Size.String = '50';
             h.Mia_ICS.Fit_Table.Data(11,:) = {'50'};
             
             MIAData.FileName{1}{i}=FileName{i};
@@ -217,7 +217,7 @@ switch mode
             Start = strfind(Scaling,'<Value>');
             Stop = strfind(Scaling,'</Value>');
             
-            h.Mia_Image.Settings.Image_Size.String = num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
+            h.Mia_Image.Settings.Pixel_Size.String = num2str(round(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9));
             h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);};
             
             Data = bfopen(fullfile(Path,FileName{i}),h.Mia_Progress_Axes,h.Mia_Progress_Text,i,numel(FileName));
