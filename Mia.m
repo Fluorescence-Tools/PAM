@@ -6875,7 +6875,7 @@ if savedata > 1
                     %%% Mean intensity of selected pixels [counts]
                     Image = double(MIAData.Data{i,2}(:,:,frames));
                     %InfoAll(i).Mean = mean(Image(Use{i}));
-                    InfoAll(i).AR = Save_ARinfo;
+                    InfoAll(i).AR = Save_ARinfo([],1);
             end
             %%% Mean intensity
             InfoAll(i).Counts = MeanInt(i); %Waldi
