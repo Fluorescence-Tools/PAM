@@ -8154,6 +8154,9 @@ BurstData.BAMethod = BAMethod;
 if BurstData.BAMethod == 6
     %%% Set DCBS-noMFD to APBS-noMFD
     BurstData.BAMethod = 5;
+    % also overwrite the PIE channel selections to read out the right data further on
+    UserValues.BurstSearch.PIEChannelSelection{5} = UserValues.BurstSearch.PIEChannelSelection{6};
+    LSUserValues(1);
 end
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;

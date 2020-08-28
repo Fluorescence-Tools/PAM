@@ -60,12 +60,16 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         Files = get_multiselection(h);
         Files = unique(Files);
         data_for_corrections = cell(numel(Files),1);
+         % truncate all arrays to minimum number of elements of all file
+         n_param = zeros(numel(Files,1));
         for i = 1:numel(Files)
-            data_for_corrections{i} = BurstData{Files(i)}.DataArray;
+            n_param(i) = size(BurstData{Files(i)}.DataArray,2);
+        end
+        n_param = min(n_param);
+        for i = 1:numel(Files)
+            data_for_corrections{i} = BurstData{Files(i)}.DataArray(:,1:n_param);
         end
         data_for_corrections = vertcat(data_for_corrections{:});
-        %%% (Note for the future: We are assuming here that all files have the
-        %%% same order of parameters in NameArray...)
     end
     %% plot raw FRET Efficiency for S>0.9
     Emin = UserValues.BurstBrowser.Settings.E_Donly_Min;

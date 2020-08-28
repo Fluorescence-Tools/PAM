@@ -2887,28 +2887,46 @@ if Mode==0 %%% Loads user values
 
     if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=4 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int" missing');
-        S.MIA.AR_Int = [0 0 0 0];
+        S.MIA.AR_Int = [0 0 inf inf];
     end
     P.MIA.AR_Int = S.MIA.AR_Int;
 
     if ~isfield(S.MIA, 'AR_Region') || numel(S.MIA.AR_Region)~=2 || ~isnumeric(S.MIA.AR_Region) || any(isnan(S.MIA.AR_Region))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Region" missing');
-        S.MIA.AR_Region = [10 30];
+        S.MIA.AR_Region = [5 10];
     end
     P.MIA.AR_Region = S.MIA.AR_Region;
 
-    if ~isfield(S.MIA, 'AR_Int_Fold') || numel(S.MIA.AR_Int_Fold)~=2 || ~isnumeric(S.MIA.AR_Int_Fold) || any(isnan(S.MIA.AR_Int_Fold))
+    if ~isfield(S.MIA, 'AR_Int_Fold') || numel(S.MIA.AR_Int_Fold)~=4 || ~isnumeric(S.MIA.AR_Int_Fold) || any(isnan(S.MIA.AR_Int_Fold))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int_Fold" missing');
-        S.MIA.AR_Int_Fold = [0.6 1.5];
+        S.MIA.AR_Int_Fold = [0.001 0.001 1000 1000];
     end
     P.MIA.AR_Int_Fold = S.MIA.AR_Int_Fold;
 
-    if ~isfield(S.MIA, 'AR_Var_Fold') || numel(S.MIA.AR_Var_Fold)~=2 || ~isnumeric(S.MIA.AR_Var_Fold) || any(isnan(S.MIA.AR_Var_Fold))
+    if ~isfield(S.MIA, 'AR_Var_Fold') || numel(S.MIA.AR_Var_Fold)~=4 || ~isnumeric(S.MIA.AR_Var_Fold) || any(isnan(S.MIA.AR_Var_Fold))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Var_Fold" missing');
-        S.MIA.AR_Var_Fold = [0.7 1.2];
+        S.MIA.AR_Var_Fold = [0.001 0.001 1000 1000];
     end
     P.MIA.AR_Var_Fold = S.MIA.AR_Var_Fold;
-
+    
+    if ~isfield(S.MIA, 'AR_Framewise')
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Framewise" missing');
+        S.MIA.AR_Framewise = 0;
+    end
+    P.MIA.AR_Framewise = S.MIA.AR_Framewise;
+    
+    if ~isfield(S.MIA, 'AR_Median')
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Median" missing');
+        S.MIA.AR_Median = 0;
+    end
+    P.MIA.AR_Median = S.MIA.AR_Median;
+    
+    if ~isfield(S.MIA, 'AR_Same')
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Same" missing');
+        S.MIA.AR_Same = 1;
+    end
+    P.MIA.AR_Same = S.MIA.AR_Same;
+    
     if ~isfield(S.MIA, 'DoPCH')
         disp('WARNING: UserValues structure incomplete, field "MIA.DoPCH" missing');
         S.MIA.DoPCH = 0;

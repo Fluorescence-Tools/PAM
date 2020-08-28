@@ -1191,7 +1191,7 @@ global UserValues FCSData FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
 
 %%% Merge only the active files
-active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
+active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
 %%% check for length difference
 len = zeros(1,numel(active));
 k = 1;
