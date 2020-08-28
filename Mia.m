@@ -142,17 +142,28 @@ h.Mia_Open_Spectral = uimenu(...
     'Callback',@Spectral,...
     'Tag','Mia_Open_Spectral');
 
-%%% Menu to load mia data
-h.Mia_Save = uimenu(...
+%%% Menu to Export images
+h.Mia_Export = uimenu(...
     'Parent',h.Mia,...
-    'Label','Save...',...
+    'Label','Export...',...
     'Tag','Save_Mia');
 %%% Load TIFF
-h.Mia_Save_TwoColorImage = uimenu(...
-    'Parent',h.Mia_Save,...
+h.Mia_Export_TwoColorImage = uimenu(...
+    'Parent',h.Mia_Export,...
     'Label','...Dual color image',...
+    'Tag','Export_TwoColorImage');
+%%% Load TIFF
+h.Mia_Export_TwoColorImage = uimenu(...
+    'Parent',h.Mia_Export_TwoColorImage,...
+    'Label','...uncorrected',...
     'Callback',{@Mia_Export,2},...
-    'Tag','Save_TwoColorImage');
+    'Tag','Export_TwoColorImage_unc');
+%%% Load TIFF
+h.Mia_Export_TwoColorImage = uimenu(...
+    'Parent',h.Mia_Export_TwoColorImage,...
+    'Label','...corrected',...
+    'Callback',{@Mia_Export,3},...
+    'Tag','Export_TwoColorImage_cor');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8717,7 +8728,7 @@ end
                     end
                 end
                 
-            case 2
+            case {2,3}
                 %% Dual color image from menu
                 if ~size(MIAData.Data,1)<2
                     [FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
@@ -8725,7 +8736,13 @@ end
                         UserValues.File.ExportPath=PathName;
                         LSUserValues(1)
                         for i = 1:2
-                            Im = h.Plots.Image(i,1).CData;
+                            switch mode
+                                case 2 % normal image
+                                    k = 1;
+                                case 3 % corrected image
+                                    k = 2;
+                            end
+                            Im = h.Plots.Image(i,k).CData;
                             if size(Im,3)==3
                                 Im=Im/max(Im(:))*255;
                             else
@@ -8744,7 +8761,7 @@ end
                                 Im=(Im-mini)/(maxi-mini)*63;
                                 
                                 % The cmap is only 6 bit
-                                cmap=colormap(h.Mia_Image.Axes(i,1));
+                                cmap=colormap(h.Mia_Image.Axes(i,k));
                                 r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
                                 %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
                                 CData = round(Im)+1;
@@ -8759,9 +8776,9 @@ end
                                 
                                 if numel(h.Plots.Image(i,1).AlphaData)>1 %%% When transparency is used to show unselected regions
                                     if i == 2
-                                        Image(:,:,1) = Image(:,:,1).*h.Plots.Image(i,1).AlphaData + 255*(1-h.Plots.Image(i,1).AlphaData)*h.Mia_Image.Axes(i,1).Color(1);
+                                        Image(:,:,1) = Image(:,:,1).*h.Plots.Image(i,k).AlphaData + 255*(1-h.Plots.Image(i,k).AlphaData)*h.Mia_Image.Axes(i,k).Color(1);
                                     elseif i == 1
-                                        Image(:,:,2) = Image(:,:,2).*h.Plots.Image(i,1).AlphaData + 255*(1-h.Plots.Image(i,1).AlphaData)*h.Mia_Image.Axes(i,1).Color(2);
+                                        Image(:,:,2) = Image(:,:,2).*h.Plots.Image(i,k).AlphaData + 255*(1-h.Plots.Image(i,k).AlphaData)*h.Mia_Image.Axes(i,k).Color(2);
                                     end
                                 end
                                 
