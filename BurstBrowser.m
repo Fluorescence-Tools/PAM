@@ -3551,7 +3551,7 @@ if isempty(hfig)
     
     Colormaps_String = {'jet','parula','spectral','hot','gray','redblue',... % standard maps for BurstBrowser
         'inferno','magma','plasma','viridis',... % Matplotlib type colormaps
-        'seidel',... % Seidel type colormap
+        'seidel','grayfromgray',... % Seidel type colormap
         'greys','blues','reds','greens','oranges','purples',... % BrewerMap colormaps (pure colors)
         'bluegreen','bluepurple','greenblue','orangered','purpleblue','purpleorange','purplered','redgray','redpurple','yellowgreen',... % BrewerMap colormaps (binary mixed colors)
         'brownbluegreen','pinkyellowgreen','purplebluegreen','purpleredgreen','redyellowblue','redyellowgreen','yellowgreenblue','yelloworangebrown','yelloworangered',... % BrewerMap colormaps (ternary mixed colors)
