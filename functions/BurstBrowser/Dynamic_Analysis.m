@@ -183,7 +183,12 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         switch UserValues.BurstBrowser.Display.PlotType
             case 'Contour'
             % contourplot of per-burst STD
-                contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
+                [~,hc] = contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels));
+                if UserValues.BurstBrowser.Display.PlotContourLines
+                    hc.LineStyle = '-';
+                else
+                    hc.LineStyle = 'none';
+                end
                 axis('xy')
                 caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ContourOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Image'       
