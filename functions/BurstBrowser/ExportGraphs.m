@@ -260,8 +260,8 @@ switch obj
                     set(panel_copy.Children(i),'YTickLabelRotation',0);
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    panel_copy.Children(i).YTickLabel = [];
-                    panel_copy.Children(i).YLabel.String = '';
+                    %panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -288,8 +288,8 @@ switch obj
                     end
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    panel_copy.Children(i).YTickLabel = [];
-                    panel_copy.Children(i).YLabel.String = '';
+                    %panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -666,8 +666,8 @@ switch obj
                              color_bar = false;
                         end
                     end
-                    panel_copy.Children(i).YTickLabel = [];
-                    panel_copy.Children(i).YLabel.String = '';
+                    %panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -696,8 +696,8 @@ switch obj
                             panel_copy.Children(i).YLim = [0, maxY*1.05];
                         end
                     end
-                    panel_copy.Children(i).YTickLabel = [];
-                    panel_copy.Children(i).YLabel.String = '';
+                    %panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
