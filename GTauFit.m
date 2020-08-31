@@ -136,6 +136,11 @@ if isempty(h.GTauFit) % Creates new figure, if none exists
         'Tag','Fit',...
         'Label','...Fit',...
         'Callback',@Do_GTauFit);
+    h.DoGlobalFit = uimenu(...
+        'Parent',h.StartFit,...
+        'Tag','GlobalFit',...
+        'Label','...Global Fit',...
+        'Callback',@Do_GTauFit);
 
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1483,32 +1488,13 @@ h.Microtime_Plot_Global = axes(...
     'Units','normalized',...
     'Position',[0.075 0.075 0.9 0.775],...
     'Tag','Microtime_Plot',...
+    'nextplot','add',...
     'XColor',Look.Fore,...
     'YColor',Look.Fore,...
     'Box','on',...
     'UIContextMenu',h.Microtime_Plot_Global_Menu_MIPlot);
 
-%%% Create Graphs
-hold on;
-h.Plots_Global.Scat_Sum = plot([0 1],[0 0],'.r','Color',[0.5 0.5 0.5],'MarkerSize',5,'DisplayName','Scatter (sum)');
-h.Plots_Global.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',1,'DisplayName','Scatter (par)');
-h.Plots_Global.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',1,'DisplayName','Scatter (perp)');
-h.Plots_Global.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay (sum)');
-h.Plots_Global.Decay_Par = plot([0 1],[0 0],'Color',[0.8510,0.3294,0.1020],'LineWidth',1,'DisplayName','Decay (par)');
-h.Plots_Global.Decay_Per = plot([0 1],[0 0],'Color',[0,0.4510,0.7412],'LineWidth',1,'DisplayName','Decay (perp)');
-h.Plots_Global.IRF_Sum = plot([0 1],[0 0],'.r','Color',[0,0.4510,0.7412],'MarkerSize',5,'DisplayName','IRF (sum)');
-h.Plots_Global.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5,'DisplayName','IRF (par)');
-h.Plots_Global.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5,'DisplayName','IRF (perp)');
-h.Ignore_Plot_Global = plot([0 0],[1e-6 1],'Color','k','Visible','off','LineWidth',1,'DisplayName','Decay (ignore)');
-h.Plots_Global.Aniso_Preview = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy');
-h.Microtime_Plot_Global.XLim = [0 1];
-h.Microtime_Plot_Global.YLim = [0 1];
-h.Microtime_Plot_Global.XLabel.Color = Look.Fore;
-h.Microtime_Plot_Global.XLabel.String = 'Time [ns]';
-h.Microtime_Plot_Global.YLabel.Color = Look.Fore;
-h.Microtime_Plot_Global.YLabel.String = 'Intensity [counts]';
-h.Microtime_Plot_Global.XGrid = 'on';
-h.Microtime_Plot_Global.YGrid = 'on';
+
 
 %%% Residuals Plot
 h.Residuals_Plot_Global = axes(...
@@ -2745,7 +2731,7 @@ Update_Plots(mode)
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~,mode)
-global UserValues GTauData
+global UserValues GTauData GTauMeta
 h = guidata(findobj('Tag','GTauFit'));
 
 h.subresolution = 10;
@@ -2762,7 +2748,6 @@ end
 if obj == h.FitParams_Tab
     dummy = 'table'; 
 end
-
 
 
 
@@ -2952,7 +2937,7 @@ GTauData.MaxLength{b*GTauData.chan} = min([numel(GTauData.hMI_Par{b*GTauData.cha
     h.G_factor_edit.String = UserValues.GTauFit.G{GTauData.chan};
 else
     TACtoTime = GTauData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
-end
+
 
 
 %%% Update Slider Values
@@ -3095,7 +3080,7 @@ if isprop(obj,'Style')
     UserValues.GTauFit.ScatrelShift{GTauData.chan} = GTauData.ScatrelShift{GTauData.chan};
     UserValues.GTauFit.Ignore{GTauData.chan} = GTauData.Ignore{GTauData.chan};
     LSUserValues(1);
-end
+
 
 
 
@@ -3234,23 +3219,24 @@ elseif GTauData.Ignore{GTauData.chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
 end
- 
+ end
 
 
 % hide MEM button
 h.Fit_Button_MEM_tau.Visible = 'off';
 h.Fit_Button_MEM_dist.Visible = 'off';
 end
-
+end
 
 %%%%%%%%Update AllTab%%%%%
-h.Result_Plot_Global.Parent = h.Fit_Plots_Panel_Global;
 AllTab = cell2mat(h.Fit_Table.Data(1:end-3,3));
 [r,~] = find(cell2mat(h.Fit_Table.Data(1:end-3,3))==1);
 GTauData.Decay = [];
+cla(h.Microtime_Plot_Global)
+cla(h.Residuals_Plot_Global)
 if sum(AllTab) ~= 0
     for i = r(1) : r(end)
-        set(h.Plots_Global.DecayResult,'Visible','on')
+        set(h.Microtime_Plot_Global,'Visible','on')
         Decay_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})'*TACtoTime;
         Decay_Par.YData = GTauData.hMI_Par{i*GTauData.chan}((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
         YD = shift_by_fraction(GTauData.hMI_Per{i*GTauData.chan}, GTauData.ShiftPer{GTauData.chan});
@@ -3262,20 +3248,13 @@ if sum(AllTab) ~= 0
             GTauData.Decay{i} = Decay_Per.YData;
             sigma_est{i} = sqrt(Decay); sigma_est(sigma_est==0) = 1;
         end
-    end
-    
-    for j = 1:length(GTauData.Decay)
-        h.Plots_Global.DecayResult.XData = Decay_Par.XData;
-        h.Plots_Global.DecayResult.YData = GTauData.Decay{j};
-        axis(h.Result_Plot_Global,'tight');
-        hold on;
-    end
-
-    
-LSUserValues(1);
-elseif sum(AllTab) == 0
-    set(h.Plots_Global.DecayResult,'Visible','off')
+            
+    plot(h.Microtime_Plot_Global,Decay_Par.XData,GTauData.Decay{i});
+    axis(h.Microtime_Plot_Global,'tight');
+    hold on;
+    end 
 end
+
 
 drawnow;
 
@@ -3596,6 +3575,7 @@ drawnow;
 fixed = cell2mat(h.Fit_Table.Data(1:end-3,6:3:end-1));
 Global = cell2mat(h.Fit_Table.Data(end-2,7:3:end-1));
 Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+AllTab = cell2mat(h.Fit_Table.Data(1:end-3,3));
 %lb = h.Fit_Table.Data(end-1,5:3:end-1);
 %lb = cellfun(@str2double,lb);
 %ub = h.Fit_Table.Data(end,5:3:end-1);
@@ -3735,7 +3715,8 @@ catch
     opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
 end
 
-if sum(Global)==0
+switch obj
+    case h.DoFit
     %% Individual fits, not global
     for i=h.DataSet_Menu.Value
         if ~GTauMeta.FitInProgress
@@ -3967,9 +3948,9 @@ end
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
         end
-else
+    case h.DoGlobalFit
     %% Global fits
-    for i = find(Active)'
+    for i = find(AllTab)'
         if ~GTauMeta.FitInProgress
             break;
         end
@@ -4065,45 +4046,16 @@ else
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
     
-    end
+    
     
 LSUserValues(1)
-
-%%% Update Plot
-h.Microtime_Plot.Parent = h.HidePanel;
-h.Result_Plot.Parent = h.Fit_Plots_Panel_Global;
-h.Plots.IRFResult.Visible = 'on';
-        
         
         
 % nanoseconds per microtime bin
 TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
-%%%%%%%%%%% Update plots%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ignore > 1
-   h.Plots.DecayResult_ignore.Visible = 'on';
-   h.Plots.Residuals_ignore.Visible = 'on';
-   h.Plots.FitResult_ignore.Visible = 'on';
-else
-   h.Plots.DecayResult_ignore.Visible = 'off';
-   h.Plots.Residuals_ignore.Visible = 'off';
-   h.Plots.FitResult_ignore.Visible = 'off';
-end
-        
-            
-            
-% hide plots
-h.Plots.IRFResult_Perp.Visible = 'off';
-h.Plots.FitResult_Perp.Visible = 'off';
-h.Plots.FitResult_Perp_ignore.Visible = 'off';
-h.Plots.DecayResult_Perp.Visible = 'off';
-h.Plots.DecayResult_Perp_ignore.Visible = 'off';
-h.Plots.Residuals_Perp.Visible = 'off';
-h.Plots.Residuals_Perp_ignore.Visible = 'off';
-            
 % change colors
-h.Plots.IRFResult.Color = [0.6 0.6 0.6];
-h.Plots.DecayResult.Color = [0 0 0];
+h.Microtime_Plot_Global = [0 0 0];
 h.Plots.Residuals.Color = [0 0 0];
 h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
             
@@ -4124,8 +4076,6 @@ else
    GTauData.FitResult = FitFun;
 end
             
-            h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
-            h.Plots.DecayResult.YData = Decay;
             h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
             h.Plots.FitResult.YData = FitFun;
 
@@ -4192,7 +4142,7 @@ end
             assignin('base',['LogLikelihood'],prob(1:spacing:end));
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
-    
+    end
     end
 end
 
@@ -4263,54 +4213,53 @@ z = z';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for global fits %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [Out] = Fit_Global(Fit_Params,Data)
-%%% Fit_Params: [Global parameters, Non fixed parameters of all files]
-%%% Data{1}:    X values of all files
-%%% Data{2}:    Weights of all files
-%%% Data{3}:    Length indentifier for X and Weights data of each file
-global GTauMeta
-%h = guidata(findobj('Tag','GTauFit'));
+function [z] = Fit_Global(param,xdata)
+%%% Fit_Params: Non fixed parameters of current file
+%%% Data{1}:    X values of current file
+%%% Data{2}:    Weights of current file
+%%% Data{3}:    Indentifier of current file
+global GTauMeta UserValues
 
-%%% Aborts Fit
-%drawnow;
-if ~GTauMeta.FitInProgress
-    Out = zeros(size(Data{2}));
-    return;
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+Scatter = xdata{3};
+
+y = xdata{5};
+c = param(end-1);%xdata{6}; %IRF shift
+ignore = xdata{7};
+conv_type = xdata{end}; %%% linear or circular convolution
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+%irf = circshift(IRFPattern,[c, 0]);
+irf = shift_by_fraction(IRFPattern,c);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+%irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+%Scatter = circshift(ScatterPattern,[ShiftParams(5), 0]);
+%A shift in the scatter is not needed in the model
+%Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+
+P = param;
+P(end+1) = xdata{4}; 
+x = (1:P(end))'; %tp
+
+x = feval(GTauMeta.Model.Function,P,x);
+
+switch conv_type
+    case 'linear'
+        z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+        for i = 1:size(x,2)
+            z(:,i) = conv(irf, x(:,i));
+        end
+        z = z(1:n,:);
+    case 'circular'
+        z = convol(irf,x(1:n));
 end
-
-X=Data{1};
-Weights=Data{2};
-Points=Data{3};
-Fixed = Data{4};
-Global = Data{5};
-Active = Data{6};
-%%% Determines, which parameters are fixed, global and which files to use
-%Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));
-%Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end));
-%Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
-P=zeros(numel(Global),1);
-
-%%% Assigns global parameters
-P(Global)=Fit_Params(1:sum(Global));
-Fit_Params(1:sum(Global))=[];
-
-Out=[];k=1;
-for i=find(Active)'
-  %%% Sets non-fixed parameters
-  P(~Fixed(i,:) & ~Global)=Fit_Params(1:sum(~Fixed(i,:) & ~Global)); 
-  Fit_Params(1:sum(~Fixed(i,:)& ~Global))=[];  
-  %%% Sets fixed parameters
-  P(Fixed(i,:) & ~Global)= GTauMeta.Params((Fixed(i,:)& ~Global),i);
-  %%% Defines XData for the file
-  x=X(1:Points(k));
-  X(1:Points(k))=[]; 
-  k=k+1;
-  %%% Calculates function for current file
-  %eval(GTauMeta.Model.Function);
-  OUT = feval(GTauMeta.Model.Function,P,x);
-  Out=[Out;OUT]; 
-end
-Out=Out./Weights;
+z = param(end)*z(ignore:end)+param(end-3)*sum(y)*Scatter(ignore:end)+param(end-2);
+z = z';
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
