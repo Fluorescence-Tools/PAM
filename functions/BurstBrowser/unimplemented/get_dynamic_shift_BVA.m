@@ -91,7 +91,7 @@ fs = 14;
 if ispc
     fs = 10;
 end
-title(sprintf('dynamic shift (radial) = %.3f\ndynamic shift (minimum) = %.3f\nSEM of population = %.4f\ndynamic shift (bin) = %.3f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',fs);
+title(sprintf('dynamic shift (radial) = %.4f\ndynamic shift (minimum) = %.4f\nSEM of population = %.4f\ndynamic shift (bin) = %.4f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',fs);
 
 Mat2clip([ds,ds_min,SEM,ds_bin,ds_confint]);
 
