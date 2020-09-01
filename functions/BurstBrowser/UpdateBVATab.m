@@ -12,6 +12,11 @@ end
 file = BurstMeta.SelectedFile;
 if isempty(obj)
     if isempty(BurstData)
+        h.ConfidenceInterval_edit.String = num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+        h.BinNumber_edit.String = num2str(UserValues.BurstBrowser.Settings.NumberOfBins_BVA);
+        h.BurstsPerBin_edit.String = num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA);
+        h.DynamicAnalysisMethod_Popupmenu.Value = UserValues.BurstBrowser.Settings.DynamicAnalysisMethod;
+        
         h.state1st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
         h.state2st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
         h.state3st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
@@ -597,6 +602,8 @@ else
             UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = str2double(h.PhotonsPerWindow_edit.String);
         case h.Xaxis_Popupmenu
             UserValues.BurstBrowser.Settings.BVA_X_axis = h.Xaxis_Popupmenu.Value;
+        case h.SignificanceLevelAlpha_edit
+            UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = str2double(h.SignificanceLevelAlpha_edit.String);
         case h.FRETpair_Popupmenu
             UserValues.BurstBrowser.Settings.FRETpair = h.FRETpair_Popupmenu.Value;
         case h.ModelComparison_checkbox
