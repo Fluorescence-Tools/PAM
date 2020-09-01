@@ -149,16 +149,29 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             end
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
-        % Plots
-        hfig = figure('color',[1 1 1],'Position',[100 100 650 600]);
-        a=gca;
-        if ismac
-            a.FontSize=24;
-        else
-            a.FontSize=18;
+        
+        % Figure properties
+        fcenterPlotPos = [0.12 0.11 0.707 0.6];
+        hfig = figure('color',[1 1 1],'Position',[100 100 700 700]);
+        subplot('Position',fcenterPlotPos)
+        axmain=gca;
+        ffontsize=24;
+        if ispc
+            ffontsize = ffontsize*0.72;
         end
-        a.LineWidth=2;a.Color =[1 1 1];a.Box='on';a.Layer = 'top';
-        hold on;
+        axmain.NextPlot = 'add';
+        axmain.XLim = [0 1];
+        axmain.YLim = [0 0.5];
+        axmain.Layer = 'bottom';
+        grid(axmain,'on');
+        axmain.FontSize = ffontsize;
+        axmain.Box = on;
+        axmain.FontName = 'Arial';
+        axmain.LineWidth = 2;
+        axmain.Color = [1 1 1];
+        axmain.YColor = [0 0 0];
+        axmain.XColor = [0 0 0];
+        
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         switch UserValues.BurstBrowser.Settings.BVA_X_axis
@@ -225,29 +238,70 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             p2.LineStyle = 'none';
         end
         
-        loc = 'northoutside';
+  
+        loc = [0.752 0.715 0.235 0.23535];
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
-                    legend('Burst SD','Binned SD','Expected SD','CI','Location',loc)
+                    lgd = legend('Burst SD','Binned SD','Expected SD','CI','Position',loc);
                 else
-                    legend('Burst SD','Binned SD','Expected SD','Location',loc)
+                    lgd = legend('Burst SD','Binned SD','Expected SD','Position',loc);
                 end
                 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-                    BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
+                    BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
-                    legend('Binned SD','Expected SD','CI','Location',loc)
+                    lgd = legend('Binned SD','Expected SD','CI','Position',loc);
                 else
-                    legend('Binned SD','Expected SD','Location',loc)
+                    lgd = legend('Binned SD','Expected SD','Position',loc);
                 end
-                BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts')
+                BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
         end
+        lgd.FontSize = ffontsize*0.95;
         
         
         %%% Update ColorMap
         colormap(hfig,colormap(h.BurstBrowser));
+        
+        %%% Add marginal 1D histogram
+        face_alpha = 1;
+        subplot('Position',[0.12 0.715 0.62 0.235])
+        axtop = gca;
+        histogram(axtop,E,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
+        	'EdgeColor','none','FaceColor',UserValues.BurstBrowser.Display.ColorLine1,'FaceAlpha',face_alpha,'LineWidth',1);
+        axtop.NextPlot = 'add';
+        axtop.XLim = axmain.XLim;
+        axtop.YTick = linspace(axtop.YLim(1),axtop.YLim(2),9);
+        axtop.YTick(:,[1:2,4:6,8:9]) = [];
+        axtop.YTickLabel = [];
+        if length(axtop.XTick) > 10
+            axtop.XTick(:,[2,4,6,8,10]) = [];
+        end
+        axtop.XTickLabel = [];
+        axtop.LineWidth = 2;
+        axtop.Box = 'on';
+        % axtop.Layer = 'top';
+        axtop.Color = [1 1 1];
+        grid(axtop,'on')
+
+        axformat = axes('Position',axtop.Position,'Color','none');
+        axformat.YLim = axmain.YLim;
+        axformat.XAxisLocation = 'top';
+        axformat.XLim = axmain.XLim;
+        axformat.XTick = axmain.XTick;
+        axformat.XTickLabel = axmain.XTickLabel;
+        axformat.YTick = [];
+        grid(axformat,'off');
+        axformat.YLabel.String = 'counts';
+        axformat.FontSize = ffontsize;
+        axformat.FontName = 'Arial';
+        axformat.LineWidth = 2;
+        axformat.YColor = [0 0 0];
+        axformat.XColor = [0 0 0];
+        axformat.Layer = 'top';
+        
+        
         
         %%% Combine the Original FileName and the parameter names
         if isfield(BurstData{file},'FileNameSPC')
