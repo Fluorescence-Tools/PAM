@@ -164,6 +164,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         axmain.YLim = [0 0.5];
         axmain.Layer = 'bottom';
         grid(axmain,'on');
+        axmain.GridAlpha = 0.25;
         axmain.FontSize = ffontsize;
         axmain.Box = on;
         axmain.FontName = 'Arial';
