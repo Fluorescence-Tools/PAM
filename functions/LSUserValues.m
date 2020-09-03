@@ -2966,6 +2966,13 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.Options.kHz = S.MIA.Options.kHz;
     
+    %%% confocalscanning checkbox
+    if ~isfield(S.MIA.Options, 'scanning')
+        disp('WARNING: UserValues structure incomplete, field "Options.scanning" missing');
+        S.MIA.Options.scanning = 1;
+    end
+    P.MIA.Options.scanning = S.MIA.Options.scanning;
+    
     %%% S factor
     if ~isfield(S.MIA.Options, 'S')
         disp('WARNING: UserValues structure incomplete, field "Options.S" missing');
