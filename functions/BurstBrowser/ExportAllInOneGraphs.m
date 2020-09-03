@@ -121,6 +121,8 @@ for k = 1:1%numel(file) %loop through all selected species
             panel_copy{f}(a).YColor = [0,0,0];
             panel_copy{f}(a).XLabel.Color = [0,0,0];
             panel_copy{f}(a).YLabel.Color = [0,0,0];
+            panel_copy{f}(a).Children(1).Visible = 'off';
+            
         end
         for a = 3
             panel_copy{f}(a).YColor = [0 0 0];
@@ -242,6 +244,7 @@ for k = 1:1%numel(file) %loop through all selected species
     end
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
+    hfigallinone.Children(1).XLim = [-0.1 1.1];
     
     hfigallinone.Children(2).Units = 'pixel';
     hfigallinone.Children(2).Position = Pos.X.tauD_E;   
@@ -265,6 +268,7 @@ for k = 1:1%numel(file) %loop through all selected species
     hfigallinone.Children(3).YGrid = 'on';
     hfigallinone.Children(3).YTickLabel = [];
     hfigallinone.Children(3).YLabel.String = '';
+    hfigallinone.Children(3).YLim = [-0.1 1.1];
     
     b = 1;
     labels = hfigallinone.Children(b).XTickLabel;
@@ -478,7 +482,8 @@ for k = 1:1%numel(file) %loop through all selected species
     hfigallinone.Children(3).XAxisLocation = 'top';
     hfigallinone.Children(3).XLabel.Position = [0.50 1.0 0];
     hfigallinone.Children(3).XGrid = 'on';
-    hfigallinone.Children(3).YGrid = 'on';    
+    hfigallinone.Children(3).YGrid = 'on';
+    hfigallinone.Children(3).YLim = [-0.1 1.1];
 %     b = 2;
 %     labels = hfigallinone.Children(b).XTickLabel;
 %     if hfigallinone.Children(b).XTick(1) == hfigallinone.Children(b).XLim(1)
@@ -641,7 +646,7 @@ for k = 1:1%numel(file) %loop through all selected species
             text_box = [text_box sprintf('$G_{A}$: & %.2f\\\\ ',corr.GfactorRed)];
             text_box = [text_box ' & \\ '];
             text_box = [text_box '\bf{Dye parameters} & \\ '];
-            text_box = [text_box sprintf('Foerster distance: & %d $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
+            text_box = [text_box sprintf('Foerster distance: & %.1f $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
             text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
             text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
             text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
@@ -660,14 +665,14 @@ for k = 1:1%numel(file) %loop through all selected species
             Beta_GR = sprintf('%.2f/', corr.Beta_GR); Beta_GR = Beta_GR(1:end-1);
             GfactorGreen = sprintf('%.2f/', corr.GfactorGreen); GfactorGreen = GfactorGreen(1:end-1);
             GfactorRed = sprintf('%.2f/', corr.GfactorRed); GfactorRed = GfactorRed(1:end-1);
-            FoersterRadius = sprintf('%d/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
+            FoersterRadius = sprintf('%.1f/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
             LinkerLength = sprintf('%d/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
             DonorLifetime = sprintf('%.2f/', corr.DonorLifetime); DonorLifetime = DonorLifetime(1:end-1);
             AcceptorLifetime = sprintf('%.2f/', corr.AcceptorLifetime); AcceptorLifetime = AcceptorLifetime(1:end-1);
             r0_green = sprintf('%.2f/', corr.r0_green); r0_green = r0_green(1:end-1);
             r0_red = sprintf('%.2f/', corr.r0_red); r0_red = r0_red(1:end-1);
             if arrangement == 1
-                fontsize = 12; if ispc; fontsize = fontsize./1.2;end
+                fontsize = 13; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
                 table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
@@ -697,7 +702,7 @@ for k = 1:1%numel(file) %loop through all selected species
     end
     %%% Set all units to pixels for easy editing without resizing
     hfigallinone.Units = 'pixels';
-    offset_y = 70; %%% shift everything down
+    offset_y = 80; %%% shift everything down
     offset_x = 30; %%% shift everything left
     for i = 1:numel(hfigallinone.Children)
         if isprop(hfigallinone.Children(i),'Units');
