@@ -3234,25 +3234,28 @@ AllTab = cell2mat(h.Fit_Table.Data(1:end-3,3));
 GTauData.Decay = [];
 cla(h.Microtime_Plot_Global)
 cla(h.Residuals_Plot_Global)
+r=r';
 if sum(AllTab) ~= 0
-    for i = r(1) : r(end)
+    for i = r(:,1:end)
         set(h.Microtime_Plot_Global,'Visible','on')
-        Decay_Par.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})'*TACtoTime;
+        GTauData.Decay_Par_XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})'*TACtoTime;
         Decay_Par.YData = GTauData.hMI_Par{i*GTauData.chan}((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
         YD = shift_by_fraction(GTauData.hMI_Per{i*GTauData.chan}, GTauData.ShiftPer{GTauData.chan});
         Decay_Per.YData = YD((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
         if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
             GTauData.Decay{i} = G*(1-3*l2)*Decay_Par.YData+(2-3*l1)*Decay_Per.YData;
-            sigma_est{i} = get_error_combined_decay(Decay_Par.YData,Decay_Per.YData,G,l1,l2);
+            GTauData.sigma_est{i} = get_error_combined_decay(Decay_Par.YData,Decay_Per.YData,G,l1,l2);
+            GTauData.Decay{i} = GTauData.Decay{i}';
         else
             GTauData.Decay{i} = Decay_Per.YData;
-            sigma_est{i} = sqrt(Decay); sigma_est(sigma_est==0) = 1;
+            GTauData.sigma_est{i} = sqrt(Decay); GTauData.sigma_est(GTauData.sigma_est==0) = 1;
         end
             
-    plot(h.Microtime_Plot_Global,Decay_Par.XData,GTauData.Decay{i});
+    plot(h.Microtime_Plot_Global,GTauData.Decay_Par_XData,GTauData.Decay{i});
     axis(h.Microtime_Plot_Global,'tight');
-    hold on;
     end 
+    legend(h.Microtime_Plot_Global,h.Fit_Table.Data(r,1));
+    legend boxoff
 end
 
 
@@ -3633,6 +3636,7 @@ Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 % ScatterPer = TauFitData.hScat_Per{chan}(1:TauFitData.Length{chan});
 % ScatterPer = circshift(ScatterPer,[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}]);
 % ScatterPattern = ScatterPar + 2*ScatterPer;
+
 ScatterPattern = h.Plots.Scat_Par.YData + 2*h.Plots.Scat_Per.YData;
 if ~(sum(ScatterPattern) == 0)
     ScatterPattern = ScatterPattern'./sum(ScatterPattern);
@@ -3677,7 +3681,12 @@ end
 
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
-%%% initialize inputs for fit
+
+
+switch obj
+    case h.DoFit
+        tic
+        %%% initialize inputs for fit
 if ~any(strcmp(GTauData.Who,{'BurstBrowser','Burstwise'}))
     if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
         Decay = G*(1-3*l2)*GTauData.FitData.Decay_Par+(2-3*l1)*GTauData.FitData.Decay_Per;
@@ -3714,9 +3723,6 @@ catch
     opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
     opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
 end
-
-switch obj
-    case h.DoFit
     %% Individual fits, not global
     for i=h.DataSet_Menu.Value
         if ~GTauMeta.FitInProgress
@@ -3948,9 +3954,94 @@ end
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
         end
+        
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
     case h.DoGlobalFit
+        tic
     %% Global fits
-    for i = find(AllTab)'
+    [r,~] = find(cell2mat(h.Fit_Table.Data(1:end-3,3))==1);
+    r = r';
+    TACtoTime = GTauData.TACChannelWidth;
+    cla(h.Microtime_Plot_Global)
+    cla(h.Residuals_Plot_Global)
+    for i = r(:,1:end)
+        %tmp = shift_by_fraction(GTauData.hScat_Par{i*GTauData.chan},GTauData.ScatShift{GTauData.chan});
+        %Scat_Par = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
+        %%% Apply the shift to the perpendicular Scat channel
+        %Scat_Per = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
+        %ScatterPattern = Scat_Par + 2*Scat_Per;
+        %if ~(sum(ScatterPattern) == 0)
+         %   ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+        %else
+         %   ScatterPattern = ScatterPattern';
+        %end
+        
+        %%%%%%%%%%%%%%
+tmp = shift_by_fraction(GTauData.hScat_Par{i*GTauData.chan},GTauData.ScatShift{GTauData.chan});
+if h.NormalizeScatter_Menu.Value
+    % since the scatter pattern should not contain background, we subtract the constant offset
+    maxscat = max(tmp);
+    %subtract the constant offset and renormalize the amplitude to what it was
+    tmp = (tmp-mean(tmp(end-floor(GTauData.MI_Bins/50):end)));
+    tmp = tmp/max(tmp)*maxscat;
+    %tmp(tmp < 0) = 0;
+    tmp(isnan(tmp)) = 0;
+end
+Scat_Par = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
+%%% Apply the shift to the perpendicular Scat channel
+%h.Plots.Scat_Per.XData = ((GTauData.StartPar{GTauData.chan}:(GTauData.Length{GTauData.chan}-1)) - GTauData.StartPar{GTauData.chan})*TACtoTime;
+%tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
+tmp = shift_by_fraction(GTauData.hScat_Per{i*GTauData.chan},GTauData.ScatShift{GTauData.chan}+GTauData.ShiftPer{GTauData.chan}+GTauData.ScatrelShift{GTauData.chan});
+tmp = tmp((GTauData.StartPar{GTauData.chan}+1):GTauData.Length{GTauData.chan});
+if h.NormalizeScatter_Menu.Value
+    % since the scatter pattern should not contain background, we subtract the constant offset
+    maxscat = max(tmp);
+    tmp = tmp-mean(tmp(end-floor(GTauData.MI_Bins/50):end));
+    tmp = tmp/max(tmp)*maxscat;
+    tmp(isnan(tmp)) = 0;
+    %tmp(tmp < 0) = 0;
+end
+Scat_Per = tmp;
+ScatterPattern = Scat_Par + 2*Scat_Per;
+        if ~(sum(ScatterPattern) == 0)
+            ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+        else
+            ScatterPattern = ScatterPattern';
+        end
+        %%%%%%%%%%%%%%
+%%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
+%%% total Scatter Pattern to avoid Edge Effects when using circshift!
+%IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
+IRFPer = shift_by_fraction(GTauData.hIRF_Per{i*chan},GTauData.ShiftPer{chan}+GTauData.IRFrelShift{chan});
+IRFPattern = GTauData.hIRF_Par{i*chan}(1:GTauData.Length{chan}) + 2*IRFPer(1:GTauData.Length{chan});
+IRFPattern = IRFPattern'./sum(IRFPattern);
+
+%%% additional processing of the IRF to remove constant background
+IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+
+cleanup_IRF = UserValues.GTauFit.cleanup_IRF;
+if cleanup_IRF
+    IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
+end
+        
+Length = numel(GTauData.Decay{i});
+ignore = GTauData.Ignore{chan};
+
+
+
+%% Start Fit
+%%% Update Progressbar
+MI_Bins = GTauData.MI_Bins;
+poissonian_chi2 = UserValues.GTauFit.use_weighted_residuals && (h.WeightedResidualsType_Menu.Value == 2); % 1 for Gaussian error, 2 for Poissonian statistics
+try
+    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
+    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
+catch
+    %%% naming of options changed in newer MATLAB releases
+    %%% This is the naming of older releases.
+    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
+    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
+end
         if ~GTauMeta.FitInProgress
             break;
         end
@@ -3960,7 +4051,7 @@ end
         ub = cell2mat(h.Fit_Table.Data(end,5:3:end-1));
         fixed = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
         %%% Add I0 parameter (Initial fluorescence intensity)        
-        I0 = 2*max(Decay);
+        I0 = 2*max(GTauData.Decay{i});
         x0(end+1) = I0;
         lb(end+1) = 0;
         ub(end+1) = Inf;
@@ -3988,20 +4079,21 @@ end
             ModelFun = @(x,xdata) Fit_Single(interlace(x0,x,fixed),xdata);
             %%% estimate error assuming Poissonian statistics
             if UserValues.GTauFit.use_weighted_residuals
-                sigma_est_fit = sigma_est(ignore:end);
+                sigma_est_fit = GTauData.sigma_est{i}(ignore:end);
             else
-                sigma_est_fit = ones(1,numel(Decay(ignore:end)));
+                sigma_est_fit = ones(1,numel(GTauData.Decay{1}(ignore:end)));
             end
             %%% Sets initial values and bounds for non fixed parameters
             IRFShi = str2double(h.Fit_Table.Data(i,end-3)); 
-            
+            Decay = GTauData.Decay{i};
+            sigma_est_fit = sigma_est_fit';
               
                 if fit
                  %%% Update Progressbar
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
                     if ~poissonian_chi2
                         [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) Fit_Single(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                            x0(~fixed),xdata, Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
                     else
                          [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(Fit_Single(interlace(x0,x,fixed),xdata),...
                              Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
@@ -4017,7 +4109,7 @@ end
                 if ~poissonian_chi2
                     wres = (Decay-FitFun);
                     if UserValues.GTauFit.use_weighted_residuals
-                        wres = wres./sigma_est;
+                        wres = wres./GTauData.sigma_est{i};
                     end
                 else
                     wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
@@ -4034,7 +4126,7 @@ end
                 FitResult{1:lifetimes} = FitResult{1:lifetimes}.*GTauData.TACChannelWidth;
                 GTauData.ConfInt(lifetimes,:) = GTauData.ConfInt(lifetimes,:).*GTauData.TACChannelWidth;
                 h.Fit_Table.Data(i,5:3:end-1) = FitResult(1:end-1);
-                h.Fit_Table.Data(i,end) = num2cell(chi2);
+               % h.Fit_Table.Data(i,end) = num2cell(chi2);
                 GTauData.I0 = FitResult{end};
                 fix = cell2mat(h.Fit_Table.Data(i,6:3:end-1));
                 
@@ -4054,10 +4146,6 @@ LSUserValues(1)
 % nanoseconds per microtime bin
 TACtoTime = GTauData.TACChannelWidth; %1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
-% change colors
-h.Microtime_Plot_Global = [0 0 0];
-h.Plots.Residuals.Color = [0 0 0];
-h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
             
 %%% hide aniso plots
 h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
@@ -4075,27 +4163,19 @@ if ignore > 1
 else
    GTauData.FitResult = FitFun;
 end
-            
-            h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
-            h.Plots.FitResult.YData = FitFun;
+%dataX = (Decay_ignore : (ignore:Length));
+c = rand(3,1);
+GTauData.Decay_Par_XData = GTauData.Decay_Par_XData';            
+plot(h.Microtime_Plot_Global,(1:Length)*TACtoTime,Decay,...
+    'Color',c,...
+    'DisplayName',char(h.Fit_Table.Data(i,1)));
+%axis(h.Microtime_Plot_Global,'tight');
+hold on;
+plot(h.Microtime_Plot_Global,(ignore:Length)*TACtoTime,FitFun,'--',...
+    'Color',c,...
+    'DisplayName',['Fit' char(h.Fit_Table.Data(i,1))]);
 
-            h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
-            h.Plots.DecayResult_ignore.YData = Decay_ignore;
-            h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
-            h.Plots.FitResult_ignore.YData = FitFun_ignore;
-            axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
-            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
-            
-            h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
-            h.Plots.Residuals.YData = wres;
-            h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
-            h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
-            h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
-            h.Plots.Residuals_ignore.YData = wres_ignore;
-            h.Residuals_Plot.YLim = [min(wres) max(wres)];
-            legend(h.Result_Plot,'off');
-        
+
 
         h.Result_Plot.XLim(1) = 0;
         if strcmp(h.Result_Plot.YScale,'log')
@@ -4142,13 +4222,11 @@ end
             assignin('base',['LogLikelihood'],prob(1:spacing:end));
             assignin('base',['ConfInt_MCMC'],confint_mcmc);
             disp(table(confint_mcmc));
+        end
     end
-    end
-end
+    
 
-
-        
-
+end   
 
 
 
@@ -4157,6 +4235,7 @@ h.Fit_Table.Enable='on';
 %Update_Table([],[],2);
 h.GTauFit.Name='GTau Fit';
 GTauMeta.FitInProgress = 0;
+toc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for individual fits %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4210,57 +4289,6 @@ z = param(end)*z(ignore:end)+param(end-3)*sum(y)*Scatter(ignore:end)+param(end-2
 z = z';
 %%% Applies weights
 %Out=OUT./Weights;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Actual fitting function for global fits %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [z] = Fit_Global(param,xdata)
-%%% Fit_Params: Non fixed parameters of current file
-%%% Data{1}:    X values of current file
-%%% Data{2}:    Weights of current file
-%%% Data{3}:    Indentifier of current file
-global GTauMeta UserValues
-
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-Scatter = xdata{3};
-
-y = xdata{5};
-c = param(end-1);%xdata{6}; %IRF shift
-ignore = xdata{7};
-conv_type = xdata{end}; %%% linear or circular convolution
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-%irf = circshift(IRFPattern,[c, 0]);
-irf = shift_by_fraction(IRFPattern,c);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-%irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-%Scatter = circshift(ScatterPattern,[ShiftParams(5), 0]);
-%A shift in the scatter is not needed in the model
-%Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-
-P = param;
-P(end+1) = xdata{4}; 
-x = (1:P(end))'; %tp
-
-x = feval(GTauMeta.Model.Function,P,x);
-
-switch conv_type
-    case 'linear'
-        z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
-        for i = 1:size(x,2)
-            z(:,i) = conv(irf, x(:,i));
-        end
-        z = z(1:n,:);
-    case 'circular'
-        z = convol(irf,x(1:n));
-end
-z = param(end)*z(ignore:end)+param(end-3)*sum(y)*Scatter(ignore:end)+param(end-2);
-z = z';
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to recalculate binning for FRET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4614,6 +4642,7 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function a = interlace( a, x, fix )
 a(~fix) = x;
+x;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions to load and save the session %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
