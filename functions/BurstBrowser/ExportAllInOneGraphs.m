@@ -121,8 +121,7 @@ for k = 1:1%numel(file) %loop through all selected species
             panel_copy{f}(a).YColor = [0,0,0];
             panel_copy{f}(a).XLabel.Color = [0,0,0];
             panel_copy{f}(a).YLabel.Color = [0,0,0];
-            panel_copy{f}(a).Children(1).Visible = 'off';
-            
+%             panel_copy{f}(a).Children(1).Visible = 'off';
         end
         for a = 3
             panel_copy{f}(a).YColor = [0 0 0];
