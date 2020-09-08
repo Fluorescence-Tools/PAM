@@ -885,6 +885,15 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Reference = S.Phasor.Reference;
     
+        %%% Checks, if Phasor.ReferenceRebinned subfield exists
+    if ~isfield(S.Phasor,'ReferenceRebinned')
+          S.Phasor.ReferenceRebinned=zeros(numel(S.Detector.Det),4096);
+        disp('UserValues.Phasor.ReferenceRebinned was incomplete');
+    elseif size(S.Phasor.ReferenceRebinned,1)<numel(P.Detector.Det)
+        S.Phasor.ReferenceRebinned(numel(P.Detector.Det),end) = 0;
+    end
+    P.Phasor.ReferenceRebinned = S.Phasor.ReferenceRebinned;
+    
     %%% Checks, if Phasor.Reference_Time subfield exists
     if ~isfield(S.Phasor,'Reference_Time')
         S.Phasor.Reference_Time=zeros(numel(S.Detector.Det),1);
