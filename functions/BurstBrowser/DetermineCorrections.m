@@ -318,7 +318,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 %%% Fit using E S relation (x is E)
 
                 %fitGamma = fit(E_raw,1./S_raw,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
-                fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
+                fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','Bisquare');
                 ydata = fitGamma(xdata);
                 
                 coeff = coeffvalues(fitGamma);
