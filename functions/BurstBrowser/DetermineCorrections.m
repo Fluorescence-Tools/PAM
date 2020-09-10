@@ -124,15 +124,6 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
     end
 
-    if ~h.MultiselectOnCheckbox.UserData
-        BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-    else %%% Update for all files contributing
-        Files = get_multiselection(h);
-        for i = 1:numel(Files)
-            BurstData{Files(i)}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-        end
-    end
-
     %% plot raw data for S < 0.25 for direct excitation
     Smin = UserValues.BurstBrowser.Settings.S_Aonly_Min;
     Smax = UserValues.BurstBrowser.Settings.S_Aonly_Max;
@@ -187,13 +178,20 @@ if any(obj == [h.DetermineCorrectionsButton, h.DetermineCorrectionsFromPhotonCou
     if ~isnan(de) && (de > 0)
         UserValues.BurstBrowser.Corrections.DirectExcitation_GR = de;
     end
+        
     if ~h.MultiselectOnCheckbox.UserData
+        BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
         BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
     else %%% Update for all files contributing
+        sel_file = BurstMeta.SelectedFile;
         Files = get_multiselection(h);
         for i = 1:numel(Files)
+            BurstMeta.SelectedFile = Files(i);
+            BurstData{Files(i)}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
             BurstData{Files(i)}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+            ApplyCorrections([],[],h,0);
         end
+        BurstMeta.SelectedFile = sel_file;
     end
 end
 if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromStoichiometryDistribution, h.FitGammaFromPhotonCounts, h.FitGammaFromPhotonCountsBetaFixed])
