@@ -155,7 +155,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         AspectRatio = 1;
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
-        fcenterPlotPos = [0.13 0.135 0.65 0.65];
+        fcenterPlotPos = [0.15 0.135 0.65 0.65];
         subplot('Position',fcenterPlotPos)
         axmain=gca;
         set(axmain,'Units','pixel');
@@ -246,7 +246,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         
   
-        loc = [0.7946 0.8183 0.1931 0.0933];
+        loc = [0.807 0.8183 0.1931 0.0933];
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
@@ -271,7 +271,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
             cbar = colorbar(axmain,...
                 'Location','east','Color',[0 0 0],'FontSize',ffontsize,'LineWidth',linewidth);
-            cbar.Position = [0.81 0.135 0.025 0.65];
+            cbar.Position = [0.83 0.135 0.025 0.65];
             cbar.Label.String = 'Occurrence';
             cbar.TickLabelsMode = 'auto';            
             cbar.Units = 'pixels';drawnow;
@@ -282,7 +282,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         %%% Add marginal 1D histogram
         face_alpha = 1;
-        subplot('Position',[0.13 0.785 0.65 0.15])
+        subplot('Position',[0.15 0.785 0.65 0.15])
         axtop = gca;
         set(axtop,'Units','pixel');
         hPR = histogram(axtop,E,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
