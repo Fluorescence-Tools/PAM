@@ -167,7 +167,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         axmain.NextPlot = 'add';
         axmain.XLim = [0 1];
-        %axmain.YLim = [0 0.5];
+        axmain.YLim = [0 max([0.4,max(sSelected)])];
         axmain.Layer = 'bottom';
         grid(axmain,'on');
         axmain.GridAlpha = 0.25;
