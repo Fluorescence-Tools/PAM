@@ -151,17 +151,21 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
         
         % Figure properties
-        fcenterPlotPos = [0.12 0.11 0.707 0.6];
-        hfig = figure('color',[1 1 1],'Position',[100 100 700 700]);
+        size_pixels = 500;
+        AspectRatio = 1;
+        pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1]);
+        fcenterPlotPos = [0.13 0.135 0.65 0.65];
         subplot('Position',fcenterPlotPos)
         axmain=gca;
+        set(axmain,'Units','pixel');
         ffontsize=24;
         if ispc
             ffontsize = ffontsize*0.72;
         end
         axmain.NextPlot = 'add';
         axmain.XLim = [0 1];
-        axmain.YLim = [0 0.5];
+        %axmain.YLim = [0 0.5];
         axmain.Layer = 'bottom';
         grid(axmain,'on');
         axmain.GridAlpha = 0.25;
@@ -215,7 +219,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             case 'Hex'
                 hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
-        patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+        %patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
         
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
@@ -223,7 +227,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
             
         % plot of expected STD
-        plot(X_expectedSD,sigm,'k','LineWidth',2);
+        plot(X_expectedSD,sigm,'k','LineWidth',3);
         
         if sampling ~=0
             % Plot confidence intervals
@@ -240,7 +244,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         end
         
   
-        loc = [0.752 0.715 0.235 0.23535];
+        loc = [0.7946 0.8183 0.1931 0.0933];
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
@@ -249,7 +253,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                     lgd = legend('Burst SD','Binned SD','Expected SD','Position',loc);
                 end
                 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-                    BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
+                    %BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
@@ -257,33 +261,47 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                 else
                     lgd = legend('Binned SD','Expected SD','Position',loc);
                 end
-                BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
+                %BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
         end
-        lgd.FontSize = ffontsize*0.95;
+        lgd.FontSize = ffontsize*0.6;
+        lgd.EdgeColor = 'none';
         
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+            cbar = colorbar(axmain,...
+                'Location','east','Color',[0 0 0],'FontSize',ffontsize,'LineWidth',2);
+            cbar.Position = [0.81 0.135 0.025 0.65];
+            cbar.Label.String = 'Occurrence';
+            cbar.TickLabelsMode = 'auto';            
+            cbar.Units = 'pixels';drawnow;
+        end
         
         %%% Update ColorMap
         colormap(hfig,colormap(h.BurstBrowser));
         
         %%% Add marginal 1D histogram
         face_alpha = 1;
-        subplot('Position',[0.12 0.715 0.62 0.235])
+        subplot('Position',[0.13 0.785 0.65 0.15])
         axtop = gca;
-        histogram(axtop,E,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
-        	'EdgeColor','none','FaceColor',UserValues.BurstBrowser.Display.ColorLine1,'FaceAlpha',face_alpha,'LineWidth',1);
+        set(axtop,'Units','pixel');
+        hPR = histogram(axtop,E,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
+        	'EdgeColor','none','FaceColor',[0.6 0.6 0.6],'FaceAlpha',face_alpha,'LineWidth',1);
         axtop.NextPlot = 'add';
+        xbins = hPR.BinEdges(1:end-1); hPR = hPR.BinCounts;
+        stairs([xbins,xbins(end)+min(diff(xbins))],...
+                [hPR, hPR(end)],...
+                'Color','k','LineWidth',2);
         axtop.XLim = axmain.XLim;
-        axtop.YTick = linspace(axtop.YLim(1),axtop.YLim(2),9);
-        axtop.YTick(:,[1:2,4:6,8:9]) = [];
-        axtop.YTickLabel = [];
-        if length(axtop.XTick) > 10
-            axtop.XTick(:,[2,4,6,8,10]) = [];
-        end
+        axtop.YLim(2) = max(hPR)*1.05;
         axtop.XTickLabel = [];
         axtop.LineWidth = 2;
         axtop.Box = 'on';
         % axtop.Layer = 'top';
         axtop.Color = [1 1 1];
+        axtop.FontSize = ffontsize;
+        ylabel('counts');
+        axtop.YTickMode = 'auto';
+        yticks = get(axtop,'YTick');
+        set(axtop,'YTick',yticks(2:end))
         grid(axtop,'on')
 
         axformat = axes('Position',axtop.Position,'Color','none');

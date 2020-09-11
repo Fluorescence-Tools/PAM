@@ -8,10 +8,11 @@ if nargin < 3
     ask_file = 1;
 end
 h = guidata(obj);
-fontsize = 20;
+fontsize = 24;
 if ispc
-    fontsize = fontsize/1.3;
+    fontsize = fontsize*0.72;
 end
+linewidth = 2;
 
 % just export data, no plot
 if any(obj==[h.Export1DX_Data_Menu,h.Export1DY_Data_Menu,h.Export2D_Data_Menu])
@@ -236,6 +237,8 @@ switch obj
             end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
+            %%% Adapt LineWidth
+            panel_copy.Children(i).LineWidth = linewidth;
             %%% change X/YColor Color Color
             panel_copy.Children(i).XColor = [0,0,0];
             panel_copy.Children(i).YColor = [0,0,0];
@@ -265,12 +268,18 @@ switch obj
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
-                    %yticks = get(panel_copy.Children(i),'YTick');
-                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
+                    % increase the linewidth of stair plots
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'stair')
+                            panel_copy.Children(i).Children(j).LineWidth = linewidth;
+                        end
                     end
                 case 'Axes_1D_X'
                     drawnow;
@@ -293,13 +302,19 @@ switch obj
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
-                    %yticks = get(panel_copy.Children(i),'YTick');
-                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
                     panel_copy.Children(i).XTickLabelMode = 'auto';
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
+                    % increase the linewidth of stair plots
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'stair')
+                            panel_copy.Children(i).Children(j).LineWidth = linewidth;
+                        end
                     end
                     ax1dx = i;
                 case 'Axes_General'
@@ -327,6 +342,7 @@ switch obj
             cbar.Label.Units = 'normalized';
             cbar.Label.Position = [0.5,2.85,0];
             cbar.Label.String = param;
+            cbar.LineWidth = linewidth;
             cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
             zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),2} h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),3}];
             cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
@@ -349,6 +365,7 @@ switch obj
             cbar.Limits(1) = 0;
             cbar.TicksMode = 'auto';
             cbar.TickLabelsMode = 'auto';
+            cbar.LineWidth = linewidth;
         end
         for n = 1:numel(panel_copy.Children)
             if strcmp(panel_copy.Children(n).Tag,'Axes_1D_X')
@@ -407,7 +424,9 @@ switch obj
             ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
-                'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
+                'LineWidth',linewidth,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
+            %%% reduce the linewidth of the axis below
+            set(ax2d,'LineWidth',1);
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -449,6 +468,8 @@ switch obj
                 panel_copy.Children(i).YLabel.Color = [0,0,0];
                 %%% Increase FontSize
                 panel_copy.Children(i).FontSize = fontsize;
+                %%% Adapt linewidth
+                panel_copy.Children(i).LineWidth = linewidth;
                 %%% Make Bold
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
@@ -644,7 +665,8 @@ switch obj
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
             %panel_copy.Children(i).Layer = 'bottom';
-            
+            %%% Adapt linewidth
+            panel_copy.Children(i).LineWidth = linewidth;
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
@@ -671,11 +693,18 @@ switch obj
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
+                    
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
                             %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        elseif strcmp(panel_copy.Children(i).Children(k).Type,'stair')
+                            panel_copy.Children(i).Children(k).LineWidth = linewidth;
                         end
                     end
                 case 'axes_lifetime_ind_1d_x'
@@ -701,11 +730,18 @@ switch obj
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
+                    
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end))
+                    
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
                             %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        elseif strcmp(panel_copy.Children(i).Children(k).Type,'stair')
+                            panel_copy.Children(i).Children(k).LineWidth = linewidth;
                         end
                     end
                 case 'axes_lifetime_ind_2d'
@@ -734,7 +770,7 @@ switch obj
         end
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
-                'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
+                'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',linewidth); 
             cbar.Position = [0.8,0.85,0.18,0.025];
             cbar.Label.String = 'Occurrence';
             cbar.TickLabelsMode = 'auto';
