@@ -9,10 +9,12 @@ if nargin < 3
 end
 h = guidata(obj);
 fontsize = 24;
+linewidth = 2;
 if ispc
     fontsize = fontsize*0.72;
+    linewidth = linewidth*0.72;
 end
-linewidth = 2;
+
 
 % just export data, no plot
 if any(obj==[h.Export1DX_Data_Menu,h.Export1DY_Data_Menu,h.Export2D_Data_Menu])

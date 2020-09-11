@@ -160,8 +160,10 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         axmain=gca;
         set(axmain,'Units','pixel');
         ffontsize=24;
+        linewidth = 2;
         if ispc
             ffontsize = ffontsize*0.72;
+            linewidth = linewidth*0.72;
         end
         axmain.NextPlot = 'add';
         axmain.XLim = [0 1];
@@ -172,7 +174,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         axmain.FontSize = ffontsize;
         axmain.Box = on;
         axmain.FontName = 'Arial';
-        axmain.LineWidth = 2;
+        axmain.LineWidth = linewidth;
         axmain.Color = [1 1 1];
         axmain.YColor = [0 0 0];
         axmain.XColor = [0 0 0];
@@ -224,7 +226,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
         plot(BinCenters,sPerBin,'d','MarkerSize',12,'MarkerEdgeColor','none',...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',linewidth,'Color',UserValues.BurstBrowser.Display.ColorLine1);
             
         % plot of expected STD
         plot(X_expectedSD,sigm,'k','LineWidth',3);
@@ -268,7 +270,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
             cbar = colorbar(axmain,...
-                'Location','east','Color',[0 0 0],'FontSize',ffontsize,'LineWidth',2);
+                'Location','east','Color',[0 0 0],'FontSize',ffontsize,'LineWidth',linewidth);
             cbar.Position = [0.81 0.135 0.025 0.65];
             cbar.Label.String = 'Occurrence';
             cbar.TickLabelsMode = 'auto';            
@@ -289,11 +291,11 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         xbins = hPR.BinEdges(1:end-1); hPR = hPR.BinCounts;
         stairs([xbins,xbins(end)+min(diff(xbins))],...
                 [hPR, hPR(end)],...
-                'Color','k','LineWidth',2);
+                'Color','k','LineWidth',linewidth);
         axtop.XLim = axmain.XLim;
         axtop.YLim(2) = max(hPR)*1.05;
         axtop.XTickLabel = [];
-        axtop.LineWidth = 2;
+        axtop.LineWidth = linewidth;
         axtop.Box = 'on';
         % axtop.Layer = 'top';
         axtop.Color = [1 1 1];
@@ -315,7 +317,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         axformat.YLabel.String = 'counts';
         axformat.FontSize = ffontsize;
         axformat.FontName = 'Arial';
-        axformat.LineWidth = 2;
+        axformat.LineWidth = linewidth;
         axformat.YColor = [0 0 0];
         axformat.XColor = [0 0 0];
         axformat.Layer = 'top';
