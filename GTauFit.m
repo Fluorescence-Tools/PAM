@@ -3035,13 +3035,6 @@ if isobject(obj) % check if matlab object
     end
 end
 
-
-%for i=find(Active)'
-    %IRFTab = cell2mat(h.Fit_Table.Data(i,end-3));
-    %h.IRFLength_Slider.Value = IRFTab;
-    %h.IRFShift_Edit.String = num2str(IRFTab);
-%end
-
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
 if isprop(obj,'Style')
     switch obj.Style
@@ -3685,7 +3678,6 @@ end
 
 switch obj
     case h.DoFit
-        tic
         %%% initialize inputs for fit
 if ~any(strcmp(GTauData.Who,{'BurstBrowser','Burstwise'}))
     if h.PIEChannelPar_Popupmenu.Value ~= h.PIEChannelPer_Popupmenu.Value
@@ -3957,7 +3949,6 @@ end
         
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
     case h.DoGlobalFit
-        tic
     %% Global fits
     [r,~] = find(cell2mat(h.Fit_Table.Data(1:end-3,3))==1);
     r = r';
@@ -4166,7 +4157,7 @@ end
 %dataX = (Decay_ignore : (ignore:Length));
 c = rand(3,1);
 GTauData.Decay_Par_XData = GTauData.Decay_Par_XData';            
-plot(h.Microtime_Plot_Global,(1:Length)*TACtoTime,Decay,...
+plot(h.Microtime_Plot_Global,(ignore:Length)*TACtoTime,Decay,...
     'Color',c,...
     'DisplayName',char(h.Fit_Table.Data(i,1)));
 %axis(h.Microtime_Plot_Global,'tight');
@@ -4235,7 +4226,6 @@ h.Fit_Table.Enable='on';
 %Update_Table([],[],2);
 h.GTauFit.Name='GTau Fit';
 GTauMeta.FitInProgress = 0;
-toc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for individual fits %%%%%%%%%%%%%%%%%%%%%%%%%%%
