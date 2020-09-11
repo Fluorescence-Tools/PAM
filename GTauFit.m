@@ -358,6 +358,7 @@ h.DataSet_Menu = uicontrol(...
     'Units','normalized',...
     'Position',[0.65 0.9 0.12 0.12],...
     'String',{'Nothing selected'},...
+    'Value',1,...
     'CallBack',{@Update_Plots,2},...
     'Tag','DataSet_Menu');
 
@@ -2707,17 +2708,17 @@ switch mode
 end
 
 
-Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
-if isempty(Active)
-    Active = 0;
-end
+Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)))';
+
 
 if sum(Active) == 0
     %% Clears 2D plot, if all are inactive
     h.DataSet_Menu.String = {'Nothing selected'};
 else %% Updates 2D plot selection string
-    h.DataSet_Menu.String = GTauData.FileName;
-    
+    h.DataSet_Menu.String = GTauData.FileName(Active);
+     if h.DataSet_Menu.Value>numel(h.DataSet_Menu.String)
+        h.DataSet_Menu.Value = 1;
+    end
 end    
 
 
@@ -2751,8 +2752,9 @@ end
 
 
 
-b = h.DataSet_Menu.Value;
-Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+
+Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)))';
+b = Active(h.DataSet_Menu.Value);
 if sum(Active) ~= 0
 if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || isempty(dummy) || obj == h.Rebin_Histogram_Edit
     %LoadData button or Burstwise lifetime button was pressed
@@ -3212,7 +3214,11 @@ elseif GTauData.Ignore{GTauData.chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
 end
- end
+end
+
+switch obj
+    case h.CommonShift_Menu == 1
+end
 
 
 % hide MEM button
