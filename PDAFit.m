@@ -5447,7 +5447,7 @@ for i=find(PDAMeta.Active)'
     %%% Calculates function for current file
     chi2{end+1} = PDAMonteCarloFit_Single(P,h);
 end
-chi2 = vertcat(chi2{:});
+chi2 = horzcat(chi2{:});
 if PDAMeta.FitInProgress == 2 % chi2 is actually array of w_res
     global_chi2 = sum(chi2.^2);
 else
@@ -5480,6 +5480,17 @@ PDAMeta.global_chi2 = global_chi2;
 Progress(0, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
 Progress(0, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
+
+if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
+    global_chi2 = [];
+    for i = Active
+        global_chi2 = [global_chi2, PDAMeta.w_res{i}];
+    end
+    %mean_chi2 = horzcat(PDAMeta.w_res{:});
+elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
+    global_chi2 = sum(PDAMeta.chi2);
+end
+
 if h.SettingsTab.LiveUpdate.Value
     for i = find(PDAMeta.Active)'
         PDAMeta.file = i;
