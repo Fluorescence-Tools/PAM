@@ -5038,6 +5038,8 @@ PDAMeta.Last_logL = sum_logL;
 % Model for Monte Carlo based fitting (not global)
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
+file = PDAMeta.file;
+
 %%% iterate the counter
 PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
@@ -5045,33 +5047,34 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    if ~strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
-        chi2 = 0;
-        return;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        chi2 = PDAMeta.w_res{file};%zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+    else
+        chi2 = PDAMeta.chi2{file};
     end
-    %%% else continue
+    return;
 end
 
-file = PDAMeta.file;
-if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+if (PDAMeta.FitInProgress == 2) && ((sum(PDAMeta.Global) == 0) || (sum(PDAMeta.Active) == 1))%%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(file,:);
     fixed_dummy = PDAMeta.Fixed(file,:);
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         %%% add sigma fraction to end
-        fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
-        fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+        % fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        % fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
     if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
         %%% three-state system
         % Read the rates from the table
-        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(2,3),rates(3,1),rates(3,2)];
-        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        fitpar_dummy = [fitpar_dummy, rates];
-        fixed_dummy = [fixed_dummy, fixed_rates];
+        % rates = cell2mat(h.KineticRates_table.Data(1:end-3,1:3:end));
+        % rates = [rates(2,3),rates(3,1),rates(3,2)];
+        % fixed_rates = cell2mat(h.KineticRates_table.Data(1:end-3,2:3:end));
+        % fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        % fitpar_dummy = [fitpar_dummy, rates];
+        % fixed_dummy = [fixed_dummy, fixed_rates];
     end
     % overwrite free fit parameters
     fitpar_dummy(~fixed_dummy) = fitpar;
@@ -5253,11 +5256,12 @@ else %%% dynamic model
             end
     end
     %%% Add static models
-    if numel(PDAMeta.Comp{file}) > n_states
-        fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+    static_states = PDAMeta.Comp{file}(PDAMeta.Comp{file} > n_states);
+    if ~isempty(static_states)
+        %fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
         A = fitpar(:,1);
         PRH_stat = cell(sampling,5);
-        for j = PDAMeta.Comp{file}(n_states+1:end)
+        for j = static_states
             for k = 1:sampling
                 r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
                 E = 1./(1+(r./R0).^6);
@@ -5283,18 +5287,12 @@ else %%% dynamic model
             end
         end
         PRH_dyn = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-        if n_states == 2
-            PRH_combined = [PRH_dyn; PRH_dyn; zeros(3,numel(PDAMeta.hProx{file}))];
-        elseif n_states == 3
-            PRH_combined = [PRH_dyn; PRH_dyn; PRH_dyn; zeros(2,numel(PDAMeta.hProx{file}))];
+        hFit = PRH_dyn;
+        for j = static_states
+            hFit = hFit + A(j).*histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
         end
-        for j = PDAMeta.Comp{file}(n_states+1:end)
-            PRH_combined(j,:) = histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-        end
-        hFit = zeros(1,numel(PDAMeta.hProx{file}));
-        for j = PDAMeta.Comp{file}
-            hFit = hFit + A(j).*PRH_combined(j,:);
-        end
+        norm = sum(A(n_states+1:end))+1;
+        hFit = hFit./norm;
     else
         hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     end
@@ -5330,14 +5328,6 @@ else
     w_res(1) = 0;
     w_res(end) = 0;
 end
-hFit_Ind = cell(6,1);
-for j = PDAMeta.Comp{file}
-    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-        hFit_Ind{j} = sum(PDAMeta.hProx{file}).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1))';
-    else
-        hFit_Ind{j} = hFit';
-    end
-end
 
 PDAMeta.w_res{file} = w_res;
 PDAMeta.hFit{file} = hFit;
@@ -5352,6 +5342,14 @@ if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
     % for three-state model, some rates may be fixed to zero,
     % but the states should still be plotted
     comp = [1,2,3,comp(comp > 3)];
+end
+hFit_Ind = cell(6,1);
+for j = comp
+    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+        hFit_Ind{j} = sum(PDAMeta.hProx{file}).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1))';
+    else
+        hFit_Ind{j} = hFit';
+    end
 end
 for c = comp
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
@@ -5406,7 +5404,13 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    global_chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        global_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
+    else
+        global_chi2 = 0;
+    end
+    PDAMeta.global_chi2 = 0;
     return;
 end
 
@@ -5443,7 +5447,7 @@ for i=find(PDAMeta.Active)'
     %%% Calculates function for current file
     chi2{end+1} = PDAMonteCarloFit_Single(P,h);
 end
-chi2 = vertcat(chi2{:});
+chi2 = horzcat(chi2{:});
 if PDAMeta.FitInProgress == 2 % chi2 is actually array of w_res
     global_chi2 = sum(chi2.^2);
 else
@@ -5473,9 +5477,20 @@ end
 global_chi2 = global_chi2./(usedBins-DOF-1);
 PDAMeta.global_chi2 = global_chi2;
 
-Progress(1/global_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-Progress(1/global_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+Progress(0, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(0, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
+
+if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
+    global_chi2 = [];
+    for i = Active
+        global_chi2 = [global_chi2, PDAMeta.w_res{i}];
+    end
+    %mean_chi2 = horzcat(PDAMeta.w_res{:});
+elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
+    global_chi2 = sum(PDAMeta.chi2);
+end
+
 if h.SettingsTab.LiveUpdate.Value
     for i = find(PDAMeta.Active)'
         PDAMeta.file = i;
