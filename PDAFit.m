@@ -3341,6 +3341,23 @@ else
                 case {'Histogram Library','MLE'}
                     PDAHistogramFit_Global(fitpar,h);
             end
+            %%% remove from fitpar array
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                for i=find(PDAMeta.Active)'
+                    % [k12,k13,k21,k23,k31,k32]
+                    rates = [PDAMeta.FitParams(i,1),PDAMeta.FitParams(i,end-1),PDAMeta.FitParams(i,4),...
+                        PDAMeta.FitParams(i,end),PDAMeta.FitParams(i,7),PDAMeta.FitParams(i,end-2)];
+                    DynRates = [0,rates(3),rates(5);rates(1),0,rates(6);rates(2),rates(4),0];
+                    for j = 1:3
+                        DynRates(j,j) = -sum(DynRates(:,j));
+                    end
+                    %%% also print the relaxation rates
+                    ev = eig(DynRates);
+                    ev = sort(ev);
+                    tauR = -1./ev(1:2);
+                    fprintf('File %i: tauR1 = %.3f ms   tauR2 = %.3f ms\n',i,tauR(1),tauR(2));
+                end
+            end
         case h.Menu.StartFit
             %% Do Fit
             switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
@@ -3433,6 +3450,11 @@ else
                     PDAMeta.FitParams(i,1) = p_eq(1);
                     PDAMeta.FitParams(i,4) = p_eq(2);
                     PDAMeta.FitParams(i,7) = p_eq(3);
+                    %%% also print the relaxation rates
+                    ev = eig(DynRates(1:end-1,:));
+                    ev = sort(ev);
+                    tauR = -1./ev(1:2);
+                    fprintf('File %i: tauR1 = %.3f ms   tauR2 = %.3f ms\n',i,tauR(1),tauR(2));
                 end
                 PDAMeta.FitParams(:,end-2:end) = [];
                 PDAMeta.Global(:,end-2:end) = [];
