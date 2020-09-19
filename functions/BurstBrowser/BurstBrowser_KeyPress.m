@@ -27,6 +27,10 @@ if ~isempty(eventdata.Modifier)
                 case 'c'
                     %%% Copy currently selected x-parameter to clipboard
                     Param_to_clip([],[]);
+                case 'p'
+                    %%% Print currently selected axes to clipboard using
+                    %%% ExportGraphs function
+                    copy_figure_to_clipboard();
             end
     end
 else
