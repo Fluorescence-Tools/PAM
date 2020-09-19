@@ -4025,9 +4025,20 @@ else %%% dynamic model
             end
     end
     %%% generate P(eps) distribution for both components
+    approximate = false;
     PE = cell(n_states,1);
     for c = 1:n_states
-        PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        if ~approximate
+            PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        else %%% use only two single ratios at +- 1 sigma to approximate PE
+            r = [fitpar(3*c-1)-fitpar(3*c),fitpar(3*c-1)+fitpar(3*c)];
+            eff = (1+(r./PDAMeta.R0(i)).^6).^(-1);
+            eps = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((eff+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-eff))).^(-1);
+            PE{c} = zeros(size(PDAMeta.eps_grid{i}));
+            [~,ix(1)] = min(abs(PDAMeta.eps_grid{i}-eps(1)));
+            [~,ix(2)] = min(abs(PDAMeta.eps_grid{i}-eps(2)));
+            PE{c}(ix) = 0.5;
+        end
     end
     %%% read out brightnesses of species
     Q = ones(n_states,1);
