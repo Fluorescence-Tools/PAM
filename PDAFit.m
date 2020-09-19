@@ -4038,6 +4038,8 @@ else %%% dynamic model
             [~,ix(1)] = min(abs(PDAMeta.eps_grid{i}-eps(1)));
             [~,ix(2)] = min(abs(PDAMeta.eps_grid{i}-eps(2)));
             PE{c}(ix) = 0.5;
+            % also calculate the correct PE
+            PE_acc{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
         end
     end
     %%% read out brightnesses of species
@@ -4055,6 +4057,11 @@ else %%% dynamic model
             Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
         end
         Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
+        
+        if approximate
+            PE = PE_acc;
+        end
+        %%% correct pure state contributions
         %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
         Peps(:,end) = PE{1};
         Peps(:,1) = PE{2};
@@ -4089,6 +4096,17 @@ else %%% dynamic model
         %%% normalize Peps
         Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
         Peps(isnan(Peps)) = 0;
+        
+        if approximate
+            PE = PE_acc;
+        end
+        
+        %%% correct pure state contributions
+        %%% Peps becomes "ripply" at the extremes
+        Peps(:,1,1) = PE{3};
+        Peps(:,end,1) = PE{2};
+        Peps(:,1,end) = PE{1};
+        
         %%% combine mixtures, weighted with PofT (probability to see a certain
         %%% combination)
         %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
