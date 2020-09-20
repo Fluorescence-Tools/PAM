@@ -4794,8 +4794,17 @@ switch obj
             h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
             
             if contains(TauFitData.FitType,'Anisotropy')
-                r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
-                r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
+                %%% calculate anisotropy decays for data and model
+                % perform background correction (constant background and
+                % scatter)
+                sc_par = ScatterPattern{1}'*UserValues.TauFit.FitParams{chan}(8)*sum(Decay_par);
+                sc_per = ScatterPattern{2}'*UserValues.TauFit.FitParams{chan}(9)*sum(Decay_per);
+                dpar = Decay_par - UserValues.TauFit.FitParams{chan}(10) - sc_par;
+                dper = Decay_per - UserValues.TauFit.FitParams{chan}(11) - sc_per;
+                fpar = Fit_par - UserValues.TauFit.FitParams{chan}(10) - sc_par;
+                fper = Fit_per - UserValues.TauFit.FitParams{chan}(11) - sc_per;
+                r_meas = (G*dpar-dper)./(G*dpar+2*dper);
+                r_fit = (G*fpar-fper)./(G*fpar+2*fper);
                 x_r = (1:numel(Decay)/2).*TACtoTime;
                 
                 % update plots
@@ -4808,9 +4817,11 @@ switch obj
                 h.Plots.FitAnisoResult_ignore.XData = x_r(1:ignore);
                 h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
                 axis(h.Result_Plot_Aniso,'tight');
-                h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
-                h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
-                h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
+                h.Result_Plot_Aniso.YLim(1) = max([-0.2,h.Result_Plot_Aniso.YLim(1)]);
+                h.Result_Plot_Aniso.YLim(2) = min([0.6,h.Result_Plot_Aniso.YLim(2)]);
+                %h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
+                %h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
+                %h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
                 h.Result_Plot_Aniso.XTick = h.Result_Plot.XTick;
                 h.Result_Plot_Aniso.XTickLabelMode = 'auto';
                 % change axis labels
