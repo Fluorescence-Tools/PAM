@@ -262,7 +262,7 @@ switch obj
                             lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                         end
                     end
-                    set(panel_copy.Children(i),'YTickLabelRotation',0);
+                    %set(panel_copy.Children(i),'YTickLabelRotation',0);
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
                     %panel_copy.Children(i).YTickLabel = [];
