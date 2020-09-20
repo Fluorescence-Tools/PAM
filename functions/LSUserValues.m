@@ -2528,6 +2528,34 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Settings.DynFRETLineTau2 = S.BurstBrowser.Settings.DynFRETLineTau2;
     
+    %%% Check, if BurstBrowser.Settings.DynFRETLineR1 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineR1')
+        S.BurstBrowser.Settings.DynFRETLineR1=40;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineR1 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineR1 = S.BurstBrowser.Settings.DynFRETLineR1;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLineR2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineR2')
+        S.BurstBrowser.Settings.DynFRETLineR2=60;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineR2 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineR2 = S.BurstBrowser.Settings.DynFRETLineR2;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLineS1 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineS1')
+        S.BurstBrowser.Settings.DynFRETLineS1=6;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineS1 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineS1 = S.BurstBrowser.Settings.DynFRETLineS1;
+    
+    %%% Check, if BurstBrowser.Settings.DynFRETLineS2 subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'DynFRETLineS2')
+        S.BurstBrowser.Settings.DynFRETLineS2=6;
+        disp('UserValues.BurstBrowser.Settings.DynFRETLineR2 was incomplete');
+    end
+    P.BurstBrowser.Settings.DynFRETLineS2 = S.BurstBrowser.Settings.DynFRETLineS2;
+    
     %%% Check, if BurstBrowser.Settings.LifetimeMode subfield exists
     if ~isfield(S.BurstBrowser.Settings,'LifetimeMode')
         S.BurstBrowser.Settings.LifetimeMode=1;

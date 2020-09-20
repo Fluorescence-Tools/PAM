@@ -87,7 +87,18 @@ for i = 1:numel(fields)
         end
     end
 end
-
+%%% separately update the dynamic FRET line colors, as they use color #n+1
+colors = [UserValues.BurstBrowser.Display.ColorLine2;
+          UserValues.BurstBrowser.Display.ColorLine3;
+          UserValues.BurstBrowser.Display.ColorLine4];
+for i = 1:3
+    if strcmp(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Type,'line')
+        BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Color = colors(i,:);
+    end
+    if strcmp(BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(i).Type,'line')
+        BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(i).Color = colors(i,:);
+    end
+end
 BurstMeta.Plots.Mixture.Main_Plot(1).LineColor = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.Main_Plot(2).LineColor = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.Main_Plot(3).LineColor = UserValues.BurstBrowser.Display.ColorLine3;
