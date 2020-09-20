@@ -2962,13 +2962,13 @@ h.Progress_Text.String = 'Fitting...';drawnow;
 MI_Bins = TauFitData.MI_Bins;
 poissonian_chi2 = UserValues.TauFit.use_weighted_residuals && (h.WeightedResidualsType_Menu.Value == 2); % 1 for Gaussian error, 2 for Poissonian statistics
 try
-    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
-    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','iter');
+    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','final');
+    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4,'Display','final');
 catch
     %%% naming of options changed in newer MATLAB releases
     %%% This is the naming of older releases.
-    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
-    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','iter');
+    opts.lsqcurvefit = optimoptions(@lsqcurvefit,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','final');
+    opts.lsqnonlin = optimoptions(@lsqnonlin,'MaxFunEvals',1E4,'MaxIter',1E4,'Display','final');
 end
 switch obj
     case {h.Fit_Button}
