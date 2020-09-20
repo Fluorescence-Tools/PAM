@@ -48,7 +48,7 @@ switch BurstData{file}.BAMethod
         c{2} = [5,6]; %% RR
         c{3} = [3,4];
         % check if donor only exists
-        [MI_total_donor_only, CH_total_donor_only] = donor_only_cuts();
+        [MI_total_donor_only, CH_total_donor_only, valid_donly] = donor_only_cuts();
         if ~isempty(MI_total_donor_only)
             c{4} = [1,2];
         end
@@ -62,7 +62,6 @@ switch BurstData{file}.BAMethod
         c{2} = [3,3];
 end
 for chan = 1:size(c,2)
-    
     switch BurstData{file}.BAMethod
         case {1,2}
             if chan == 4
@@ -111,10 +110,53 @@ if isfield(BurstData,'DonorOnlyReference')
 else
     TauFitData.DonorOnlyReference = cell(size(BurstData{file}.IRF));
 end
+
+%%% calcualte the cumulative duration of all selected bursts
+dur = BurstData{file}.DataArray(valid,strcmp('Duration [ms]',BurstData{file}.NameArray));
+dur = sum(dur).*1E-3; % duration in seconds
+dur_donly = BurstData{file}.DataArray(valid_donly,strcmp('Duration [ms]',BurstData{file}.NameArray));
+dur_donly = sum(dur_donly).*1E-3; % duration in seconds
+fprintf('\nDuration of exported bursts: %.2f s\n',dur);
+fprintf('Duration of exported bursts (donly): %.2f s\n',dur_donly);
+%%% estimate scatter fractionss
+fprintf('\nEstimated scatter fractions:\n');
+switch BurstData{file}.BAMethod
+    case {1,2}
+        %%% DD
+        I_decay_par = sum(TauFitData.hMI_Par{1});
+        I_decay_per = sum(TauFitData.hMI_Per{1});
+        f_sc_par = dur.*1000.*BurstData{file}.Background.Background_GGpar./I_decay_par;
+        f_sc_per = dur.*1000.*BurstData{file}.Background.Background_GGperp./I_decay_per;
+        f_sc_combined = dur.*1000.*(BurstData{file}.Corrections.GfactorGreen.*BurstData{file}.Background.Background_GGpar+2*BurstData{file}.Background.Background_GGperp)./...
+            (BurstData{file}.Corrections.GfactorGreen*I_decay_par+2*I_decay_per);
+        fprintf('DD par: %.4f\t\tDD per: %.4f\t\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+        
+        %%% AA
+        I_decay_par = sum(TauFitData.hMI_Par{2});
+        I_decay_per = sum(TauFitData.hMI_Per{2});
+        f_sc_par = dur.*1000.*BurstData{file}.Background.Background_RRpar./I_decay_par;
+        f_sc_per = dur.*1000.*BurstData{file}.Background.Background_RRperp./I_decay_per;
+        f_sc_combined = dur.*1000.*(BurstData{file}.Corrections.GfactorRed.*BurstData{file}.Background.Background_RRpar+2*BurstData{file}.Background.Background_RRperp)./...
+            (BurstData{file}.Corrections.GfactorRed*I_decay_par+2*I_decay_per);
+        fprintf('AA par: %.4f\t\tAA per: %.4f\t\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+        
+        %%% Donly
+        %%% DD
+        I_decay_par = sum(TauFitData.hMI_Par{4});
+        I_decay_per = sum(TauFitData.hMI_Per{4});
+        f_sc_par = dur_donly.*1000.*BurstData{file}.Background.Background_GGpar./I_decay_par;
+        f_sc_per = dur_donly.*1000.*BurstData{file}.Background.Background_GGperp./I_decay_per;
+        f_sc_combined = dur_donly.*1000.*(BurstData{file}.Corrections.GfactorGreen.*BurstData{file}.Background.Background_GGpar+2*BurstData{file}.Background.Background_GGperp)./...
+            (BurstData{file}.Corrections.GfactorGreen*I_decay_par+2*I_decay_per);
+        fprintf('Donly par: %.4f\tDonly per: %.4f\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+    case {3,4}
+    case {5}
+end
+
 TauFit(obj,[]);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
-function [MI_total, CH_total] = donor_only_cuts()
+function [MI_total, CH_total, valid] = donor_only_cuts()
 %%%% perform donor-only species selection and return cut photons
 global BurstData BurstTCSPCData BurstMeta UserValues
 file = BurstMeta.SelectedFile;
