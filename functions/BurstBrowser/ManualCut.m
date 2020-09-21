@@ -2,9 +2,8 @@
 %%%%%%% Manual Cut by selecting an area in the current selection  %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ManualCut(obj,~)
-
+global BurstData BurstMeta UserValues
 h = guidata(obj);
-global BurstData BurstMeta
 %%% switch to main tab
 h.Main_Tab.SelectedTab = h.Main_Tab_General;
 
@@ -114,33 +113,34 @@ switch obj
         %%% delete roi
         delete(roi);
         
-        if new
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%% Simply store the indices of the selected bursts %%%
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%% read out limits
-            LimX = h.axes_general.XLim;
-            LimY = h.axes_general.YLim;
-            %%% read out parameters used for arbitrary cut
-            parX = BurstData{file}.DataArray(:,param_x);
-            parY = BurstData{file}.DataArray(:,param_y);
-            %%% filter out-of-bounds data
-            valid_bounds = (parX >= LimX(1)) & (parX <= LimX(2)) &...
-                (parY >= LimY(1)) & (parY <= LimY(2));
-            %%% histogram data to apply mask
-            [~,~,~,~,~, bin] = calc2dhist(parX(valid_bounds),parY(valid_bounds),[nbinsX,nbinsY],LimX,LimY);
-            
-            valid_mask = mask(sub2ind(size(mask),bin(:,1),bin(:,2)));
-            valid_bounds(valid_bounds) = valid_mask;
-            sel = find(valid_bounds);
-            %%% we need to store the current plot state to recall the arbitrary cut later
-            % add it in any way to the selected species
-            % additional field contains a structure with parameter names, plot boundaries and mask
-            name = ['AR: ' BurstData{file}.NameArray{get(h.ParameterListX,'Value')} '/' BurstData{file}.NameArray{get(h.ParameterListY,'Value')}];
-            BurstData{file}.Cut{species(1),species(2)}{end+1} = {name, NaN, NaN, true,false};
-            BurstData{file}.ArbitraryCut{species(1),species(2)}{numel(BurstData{file}.Cut{species(1),species(2)})} = struct('ParamX',BurstData{file}.NameArray{get(h.ParameterListX,'Value')},'ParamY',BurstData{file}.NameArray{get(h.ParameterListY,'Value')},...
-                'Mask',mask);
-        else
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% Simply store the indices of the selected bursts %%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% read out limits
+        LimX = h.axes_general.XLim;
+        LimY = h.axes_general.YLim;
+        %%% read out parameters used for arbitrary cut
+        parX = BurstData{file}.DataArray(:,param_x);
+        parY = BurstData{file}.DataArray(:,param_y);
+        %%% filter out-of-bounds data
+        valid_bounds = (parX >= LimX(1)) & (parX <= LimX(2)) &...
+            (parY >= LimY(1)) & (parY <= LimY(2));
+        %%% histogram data to apply mask
+        nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
+        nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
+        [~,~,~,~,~, bin] = calc2dhist(parX(valid_bounds),parY(valid_bounds),[nbinsX,nbinsY],LimX,LimY);
+
+        valid_mask = mask(sub2ind(size(mask),bin(:,1),bin(:,2)));
+        valid_bounds(valid_bounds) = valid_mask;
+        sel = find(valid_bounds);
+        %%% we need to store the current plot state to recall the arbitrary cut later
+        % add it in any way to the selected species
+        % additional field contains a structure with parameter names, plot boundaries and mask
+        name = ['AR: ' BurstData{file}.NameArray{get(h.ParameterListX,'Value')} '/' BurstData{file}.NameArray{get(h.ParameterListY,'Value')}];
+        BurstData{file}.Cut{species(1),species(2)}{end+1} = {name, NaN, NaN, true,false};
+        BurstData{file}.ArbitraryCut{species(1),species(2)}{numel(BurstData{file}.Cut{species(1),species(2)})} = struct('ParamX',BurstData{file}.NameArray{get(h.ParameterListX,'Value')},'ParamY',BurstData{file}.NameArray{get(h.ParameterListY,'Value')},...
+            'Mask',sel);
+        if 0
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%% The OLD way of doing it, storing the mask   %%%
             %%% Disadvantage: Changes of correction factors %%%
