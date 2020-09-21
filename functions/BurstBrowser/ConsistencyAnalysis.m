@@ -914,6 +914,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end
 end
 
 function plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)

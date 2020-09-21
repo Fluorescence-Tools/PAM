@@ -1,4 +1,5 @@
 function BurstBrowser_KeyPress(obj,eventdata)
+global BurstMeta
 if ~isempty(obj)
     h = guidata(obj);
 else
@@ -28,9 +29,14 @@ if ~isempty(eventdata.Modifier)
                     %%% Copy currently selected x-parameter to clipboard
                     Param_to_clip([],[]);
                 case 'p'
-                    %%% Print currently selected axes to clipboard using
-                    %%% ExportGraphs function
-                    copy_figure_to_clipboard();
+                    %%% Print currently selected axes to report
+                    if isempty(BurstMeta.ReportFile)
+                        %%% open report
+                        report_generator([],[],1,h);
+                    else
+                        %%% add current view to report
+                        report_generator([],[],2,h);
+                    end
             end
     end
 else

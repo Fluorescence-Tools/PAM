@@ -423,4 +423,8 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
 end
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end
 Progress(100,h.Progress_Axes,h.Progress_Text,'Done');
