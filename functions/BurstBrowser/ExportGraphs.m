@@ -12,7 +12,7 @@ fontsize = 24;
 linewidth = 2;
 if ispc
     fontsize = fontsize*0.72;
-    linewidth = linewidth*0.72;
+    %linewidth = linewidth*0.72;
 end
 
 
