@@ -63,7 +63,7 @@ if obj == h.ApplyCorrectionsAll_Menu
     PlotLifetimeInd([],[],h);
     return;
 end
-if (obj == h.ApplyCorrectionsButton) && h.MultiselectOnCheckbox.UserData
+if (obj == h.ApplyCorrectionsButton) & h.MultiselectOnCheckbox.UserData
     %%% disable callback and disable checkbox
     h.MultiselectOnCheckbox.Callback = [];
     h.MultiselectOnCheckbox.UserData = 0;
