@@ -7595,7 +7595,7 @@ h = guidata(gcbo);
 if nargin < 6
     resolution = 200;
 end
-
+I_decay = sum(decay); % store full decay counts for scatter
 % remove ignore region from decay
 decay = decay(static_fit_params{7}:end);
 error = error(static_fit_params{7}:end);
@@ -7616,7 +7616,7 @@ switch mode
         params(end-1:end) = [];
         linear_R = true; % linear R spacing or not
         if linear_R
-            R = linspace(10,200,resolution);
+            R = linspace(10,150,resolution);
         else
             %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
@@ -7667,7 +7667,7 @@ else
     end
 end
 
-decay_offset = sc*sum(decay)*Scatter + bg;
+decay_offset = sc*I_decay*Scatter + bg;
 %%% add donor only if parameter of model
 if include_donor_only
     if contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only')
