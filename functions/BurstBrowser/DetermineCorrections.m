@@ -326,6 +326,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                         
                         ydata = funS(beta,gamma,xdata);
                 end
+                fprintf('Method: Linear regression of photon counts\n');
             else
                 %%% Fit using E S relation (x is E)
 
@@ -335,6 +336,8 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
                 
                 coeff = coeffvalues(fitGamma);
                 beta = coeff(1); gamma = coeff(2);
+                
+                fprintf('Method: Fit of E-S distribution\n');
             end
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
@@ -345,6 +348,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
         case h.DetermineGammaManuallyButton
+            fprintf('Method: Manual gamma determination\n');
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             %%% Update Axis Labels
             xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
@@ -369,6 +373,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
             gamma = (b - 1)/(b + m - 1);
             beta = b+m-1;
         case h.FitGammaFromStoichiometryDistribution
+            fprintf('Method: Stoichiometry Distribution\n');
             % read data from the selected species
             file_n = get_multiselection(h);
             if numel(file_n) < 2
@@ -459,6 +464,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
     check_gamma_beta_consistency(h);
 end
 if obj == h.DetermineGammaLifetimeTwoColorButton
+    fprintf('Method: E-tau\n');
     % use the user selected species
     if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
