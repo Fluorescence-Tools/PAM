@@ -17,7 +17,7 @@ if nargin < 4 %%% no weights are specified
     else
         %%% perform a fit
         if size(E,1) < size(E,2); E = E';end
-        if size(S,1) < size(S,2); S = S';end 
+        if size(S,1) < size(S,2); S = S';end
         fitres = fit(E,1./S,'poly1');
         c = coeffvalues(fitres);
         m = c(1); b = c(2);
@@ -31,7 +31,7 @@ else %%% do a fit with weights
     end
     %%% make everything row vectors
     if size(E,2) < size(E,1); E = E';end
-    if size(S,2) < size(S,1); S = S';end 
+    if size(S,2) < size(S,1); S = S';end
     if size(sE,2) < size(sE,1); sE = sE';end
     if size(sS,2) < size(sS,1); sS = sS';end
     %%% use error propagation to determine the error in 1/S
@@ -51,15 +51,55 @@ end
 
 %%% plot the result
 x = linspace(0,1); y = b + m.*x;
-f = figure();
-ax = axes(f,'NextPlot','add','FontSize',14);
-xlabel(ax,'E'); ylabel(ax,'1/S');
+f = figure('Color',[1,1,1]);
+ax = axes(f,'NextPlot','add','FontSize',18,'Color',[1,1,1],'LineWidth',1,'Box','on');
+xlabel(ax,'E_{app}'); ylabel(ax,'1/S_{app}');
 if nargin < 4 %%% plot without errorbars
-    plot(E,1./S,'+');
+    plot(E,1./S,'+','MarkerSize',25);
     plot(x,y,'-k');
-    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.3f\n\\beta = %.3f',gamma,beta),'FontSize',14);
+    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.3f\n\\beta = %.3f',gamma,beta),'FontSize',18);
 else
     errorbar(E,S_rec,sS_rec,sS_rec,sE,sE,'.');
     plot(x,y,'-k');
-    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.3f \\pm %.2f\n\\beta = %.3f \\pm %.3f',gamma,sgamma,beta,sbeta),'FontSize',14);
+    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.3f \\pm %.2f\n\\beta = %.3f \\pm %.3f',gamma,sgamma,beta,sbeta),'FontSize',18);
 end
+%%% add button to use values in BurstBrowser
+bt = uicontrol('Style','pushbutton','Units','normalized','Parent',f,...
+    'Position',[0.75,0.01,0.24,0.06],'String','Apply Values','FontSize',18,...
+    'Callback',{@ApplyGammaBeta,gamma,beta});
+
+
+function ApplyGammaBeta(~,~,gamma,beta)
+global UserValues BurstMeta BurstData
+h = guidata(findobj('Tag','BurstBrowser'));
+file = BurstMeta.SelectedFile;
+%%% Update UserValues
+UserValues.BurstBrowser.Corrections.Gamma_GR = gamma;
+UserValues.BurstBrowser.Corrections.Beta_GR = beta;
+
+if ~h.MultiselectOnCheckbox.UserData
+    BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+    BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+else %%% Update for all files contributing
+    sel_file = BurstMeta.SelectedFile;
+    Files = get_multiselection(h);
+    for i = 1:numel(Files)
+        BurstMeta.SelectedFile = Files(i);
+        BurstData{Files(i)}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+        BurstData{Files(i)}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+        ApplyCorrections([],[],h,0);
+    end
+    BurstMeta.SelectedFile = sel_file;
+end
+
+%%% Quantify the consistency of the corrected data
+%%% Agreement with E-tau plot
+%%% Deviation from S=0.5 line
+check_gamma_beta_consistency(h);
+%%% Save and Update GUI
+% Save UserValues
+LSUserValues(1);
+% Update Correction Table Data
+UpdateCorrections([],[],h);
+% Apply Corrections
+ApplyCorrections(h.FitGammaButton,[]);

@@ -441,6 +441,10 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton, h.FitGammaFromS
         end
         BurstMeta.SelectedFile = sel_file;
     end
+    %%% Quantify the consistency of the corrected data
+    %%% Agreement with E-tau plot
+    %%% Deviation from S=0.5 line
+    check_gamma_beta_consistency(h);
 end
 if obj == h.DetermineGammaLifetimeTwoColorButton
     % use the user selected species
@@ -511,11 +515,18 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
     else %%% Update for all files contributing
+        sel_file = BurstMeta.SelectedFile;
         Files = get_multiselection(h);
         for i = 1:numel(Files)
             BurstData{Files(i)}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+            ApplyCorrections([],[],h,0);
         end
+        BurstMeta.SelectedFile = sel_file;
     end
+    %%% Quantify the consistency of the corrected data
+    %%% Agreement with E-tau plot
+    %%% Deviation from S=0.5 line
+    check_gamma_beta_consistency(h,2);
 end
 if any(BurstData{file}.BAMethod == [3,4])
     %% 3cMFD corrections
