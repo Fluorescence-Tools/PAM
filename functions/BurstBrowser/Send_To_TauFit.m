@@ -130,6 +130,11 @@ switch BurstData{file}.BAMethod
         f_sc_combined = dur.*1000.*(BurstData{file}.Corrections.GfactorGreen.*BurstData{file}.Background.Background_GGpar+2*BurstData{file}.Background.Background_GGperp)./...
             (BurstData{file}.Corrections.GfactorGreen*I_decay_par+2*I_decay_per);
         fprintf('DD par: %.4f\t\tDD per: %.4f\t\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+        %%% Update UserValues
+        % scatter for parallel is set to the combined scatter, as this value is most commonly used
+        UserValues.TauFit.FitParams{1}(8) = f_sc_combined;
+        % scatter for perpendicular is set to the combined scatter of donor
+        % only, as used in the global fit models (below)
         
         %%% AA
         I_decay_par = sum(TauFitData.hMI_Par{2});
@@ -139,6 +144,10 @@ switch BurstData{file}.BAMethod
         f_sc_combined = dur.*1000.*(BurstData{file}.Corrections.GfactorRed.*BurstData{file}.Background.Background_RRpar+2*BurstData{file}.Background.Background_RRperp)./...
             (BurstData{file}.Corrections.GfactorRed*I_decay_par+2*I_decay_per);
         fprintf('AA par: %.4f\t\tAA per: %.4f\t\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+        %%% Update UserValues
+        % scatter for parallel is set to the combined scatter, as this value is most commonly used
+        UserValues.TauFit.FitParams{2}(8) = f_sc_combined;
+        UserValues.TauFit.FitParams{2}(9) = f_sc_per;
         
         %%% Donly
         %%% DD
@@ -149,6 +158,12 @@ switch BurstData{file}.BAMethod
         f_sc_combined = dur_donly.*1000.*(BurstData{file}.Corrections.GfactorGreen.*BurstData{file}.Background.Background_GGpar+2*BurstData{file}.Background.Background_GGperp)./...
             (BurstData{file}.Corrections.GfactorGreen*I_decay_par+2*I_decay_per);
         fprintf('Donly par: %.4f\tDonly per: %.4f\tCombined: %.4f\n',f_sc_par,f_sc_per,f_sc_combined);
+        %%% Update UserValues
+        % scatter for parallel is set to the combined scatter, as this value is most commonly used
+        UserValues.TauFit.FitParams{4}(8) = f_sc_combined;
+        UserValues.TauFit.FitParams{4}(9) = f_sc_per;
+        UserValues.TauFit.FitParams{1}(9) = f_sc_combined;
+        LSUserValues(1);
     case {3,4}
     case {5}
 end
