@@ -7251,24 +7251,31 @@ switch obj
         if strcmp(TauFitData.Who,'BurstBrowser')
             switch TauFitData.BAMethod
                 case {1,2,3,4}
-                    
                     switch TauFitData.BAMethod
                         case {1,2}
                             from = TauFitData.PIE.From([1,2,5,6,3,4]);
                             to = TauFitData.PIE.To([1,2,5,6,3,4]);
+                            if numel(TauFitData.hMI_Par) == 4
+                                % donor only is defined, add also
+                                from = [from TauFitData.PIE.From([1,2])];
+                                to = [to TauFitData.PIE.To([1,2])];
+                                chan_names(end+1:end+2) = {'DOnly1','DOnly2'};
+                            end
                         case {3,4}
                             from = TauFitData.PIE.From([1,2,7,8,11,12]);
                             to = TauFitData.PIE.To([1,2,7,8,11,12]);
                     end
+                    c = 1;
                     for i = 1:2:5
                         range = from(i):to(i);
-                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{1};
-                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{1};
-                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par{1};
+                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{c};
+                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{c};
+                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par{c};
                         range = from(i+1):to(i+1);
-                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per{1};
-                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per{1};
-                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per{1};
+                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per{c};
+                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per{c};
+                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per{c};
+                        c = c+1;
                     end
                 case 5
             end
@@ -7858,7 +7865,7 @@ switch MEM_mode
             tau_dist = ps(ix_corner,:);
         end
         
-        if strcmp(mode,'dist')
+        if strcmp(mode,'dist') && ~verLessThan('matlab','9.7') %%% function uses tiledlayout introduced in R2019b
             compare_L_curve([-1,0,ix_corner],{'Input','Fit','MEM'},chis,-Ss,nus,R,ps,model_all,decay,error,false);
         end
     case 'brute-force'
