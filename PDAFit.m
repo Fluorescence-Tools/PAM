@@ -5776,13 +5776,13 @@ else
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</b>',''),tmp.fittable(1,:),'UniformOutput',false);
-    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>','_'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sub>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'&',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,';',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<html>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</html>',''),tmp.fittable(1,:),'UniformOutput',false);
-    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>','^'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sup>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'Aring','A'),tmp.fittable(1,:),'UniformOutput',false);
     fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
@@ -5790,7 +5790,7 @@ else
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
     fprintf(fID,[repmat('%s\t',1,size(fitResult,2)-1),'%s\n'],fitResult{1,:});
     for i = 2:size(fitResult,1)
-        fprintf(fID,['%s' repmat('\t%.3f',1,size(fitResult,2)-1) '\n\n'],fitResult{i,:});
+        fprintf(fID,['%s' repmat('\t%.3f',1,size(fitResult,2)-1) '\n'],fitResult{i,:});
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
@@ -7000,6 +7000,9 @@ switch mode
             end
         end
         ParamNames = regexprep(ParamNames, '<.*?>', '' ); % remove html tags
+        ParamNames = cellfun(@(x) strrep(x,'&',''),ParamNames,'UniformOutput',false);
+        ParamNames = cellfun(@(x) strrep(x,';',''),ParamNames,'UniformOutput',false);
+        ParamNames = cellfun(@(x) strrep(x,'Aring','A'),ParamNames,'UniformOutput',false);
         PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:})');
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab
