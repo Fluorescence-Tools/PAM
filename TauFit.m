@@ -7287,7 +7287,7 @@ switch obj
                 microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat{i};
             end
         end
-        fileName = [filename '.dec'];
+        %fileName = [filename '.dec'];
         fid = fopen(fullfile(pathname,fileName),'w');
         %%% write header
         %%% general info
