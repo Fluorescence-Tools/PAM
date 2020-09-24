@@ -1301,6 +1301,12 @@ h.FitResultToClip = uimenu(...
     'Label','Copy Fit Result to Clipboard',...
     'Callback',@Export);
 h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
+%%% use single or biexponential fitted lifetime as donor only
+h.SetDonorOnlyLifetime_Menu = uimenu(...
+    'Parent',h.FitResultToClip_Menu,...
+    'Label','Use fitted lifetime for donor only',...
+    'Callback',@SetDonorOnlyLifetime,...
+    'Separator','on');
 %%% Get tau values and plot dynamic FRET line in Burst Browser
 h.PlotDynamicFRETLine = uimenu(...
     'Parent',h.FitPar_Table.UIContextMenu,...
@@ -2871,6 +2877,7 @@ h.Output_Text.String = '';
 h.Plots.Residuals.Visible = 'on';
 h.PlotDynamicFRETLine.Visible = 'off';
 h.PlotDynamicFRETLine_Sigma.Visible = 'off';
+h.SetDonorOnlyLifetime_Menu.Visible = 'off';
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -3064,6 +3071,8 @@ switch obj
                 
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+                
+                h.SetDonorOnlyLifetime_Menu.Visible = 'on';
             case 'Biexponential'
                 %%% Parameter:
                 %%% taus    - Lifetimes
@@ -3158,6 +3167,7 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{6};
                 h.PlotDynamicFRETLine.Visible = 'on';
                 h.PlotDynamicFRETLine_Sigma.Visible = 'off';
+                h.SetDonorOnlyLifetime_Menu.Visible = 'on';
             case 'Three Exponentials'
                 %%% Parameter:
                 %%% taus    - Lifetimes
@@ -3667,13 +3677,16 @@ switch obj
                 %%% Scatter
                 %%% Background
                 %%% R0
-                %%% Donor only lifetime
+                %%% Donor lifetime used for R0 determination
+                %%% Donor only lifetime 1
+                %%% Donor only lifetime 2
+                %%% Fraction of Donor only lifetime 1
                 
                 %%% define model function
                 ModelFun = @(x,xdata) fitfun_2dist_donly(interlace(x0,x,fixed),xdata);
                 
                 %%% Convert Lifetimes
-                lifetimes = [10];
+                lifetimes = [10,11,12];
                 x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
                 lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
                 ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
@@ -3739,8 +3752,11 @@ switch obj
                     UserValues.TauFit.FitFix{chan}(8) = fix(7);
                     UserValues.TauFit.FitFix{chan}(10) = fix(8);
                     UserValues.TauFit.FitFix{chan}(13) = fix(9);
-                    UserValues.TauFit.FitFix{chan}(14) = fix(10);
-                    UserValues.TauFit.FitFix{chan}(12) = fix(11);
+                    UserValues.TauFit.FitFix{chan}(28) = fix(10); % TauD(R0)
+                    UserValues.TauFit.FitFix{chan}(14) = fix(11);
+                    UserValues.TauFit.FitFix{chan}(2) = fix(12);  % TauD02   -> Tau2
+                    UserValues.TauFit.FitFix{chan}(6) = fix(13);  % F_TauD01 -> F2
+                    UserValues.TauFit.FitFix{chan}(12) = fix(14);
                 end
                 UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
@@ -3751,8 +3767,11 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
                 UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{10};
-                UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(28) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(2) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{13};
+                UserValues.TauFit.IRFShift{chan} = FitResult{14};
                 
                 h.PlotDynamicFRETLine.Visible = 'on';
                 h.PlotDynamicFRETLine_Sigma.Visible = 'on';
@@ -6663,7 +6682,7 @@ Parameters{4} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Tau4 [ns]','Fraction 1','F
 Parameters{5} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
 Parameters{6} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{7} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fraction 1','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{8} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fraction 1','Fraction Donly','Scatter','Background','R0 [A]','TauD(R0) [ns]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','IRF Shift'};
 Parameters{9} = {'Center R1 [A]','Sigma R1 [A]','Center R2 [A]','Sigma R2 [A]','Fraction 1','Fraction Donly','Scatter','Background','R0 [A]','TauD(R0) [ns]','TauD01 [ns]','TauD02 [ns]','Fraction TauD01','Scatter Donly','Background Donly','IRF Shift'};
 Parameters{10} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
@@ -6756,7 +6775,7 @@ StartPar{4} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;tau4,0,Inf,tau
 StartPar{5} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;IRF,-Inf,Inf,IRFf};
 StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
 StartPar{7} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
-StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,-Inf,Inf,IRFf};
+StartPar{8} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD_R0,0,Inf,tauD_R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;IRF,-Inf,Inf,IRFf};
 StartPar{9} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;R2,0,Inf,R2f;sigR2,0,Inf,sigR2f;F1,0,1,F1f;FD0,0,1,FD0f;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;R0,0,Inf,R0f;tauD_R0,0,Inf,tauD_R0f;tauD0,0,Inf,tauD0f;tau2,0,Inf,tau2f;F2,0,1,F2f;ScatPer,0,Inf,ScatPerf;BackPer,0,Inf,BackPerf;IRF,-Inf,Inf,IRFf};
 StartPar{10} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
     ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
@@ -7610,6 +7629,7 @@ x = 1:1:numel(decay);
 Scatter = static_fit_params{3}(static_fit_params{7}:end)';
 
 include_donor_only = false;
+biexp_donor_only = false;
 switch mode
     case 'tau' % fit lifetime distribution
         %%% vector of lifetimes to consider (up to 10 ns)
@@ -7617,6 +7637,7 @@ switch mode
     case 'dist' % fit distance distribution
         fraction_donly =  UserValues.TauFit.FitParams{TauFitData.chan}(23);
         include_donor_only = strcmp(mode,'dist') && fraction_donly > 0 && (contains(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'plus Donor only') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'));
+        biexp_donor_only = strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model') || strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Two Distributions plus Donor only');
         %%% get F?rster distance and donor-only lifetime
         R0 = params(end-1);
         tauD = params(end)/TauFitData.TACChannelWidth;
@@ -7629,17 +7650,17 @@ switch mode
             R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
             R = R(1:end-1);
         end
-        if ~strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model')
+        if ~biexp_donor_only
             %%% calculate respective lifetime vector
             tau = tauD.*(1+(R0./R).^6).^(-1);
         else
             %%% fitting with two donor lifetimes
             % get donor lifetime that belongs to R0
             tau0 = UserValues.TauFit.FitParams{TauFitData.chan}(28)/TauFitData.TACChannelWidth;
-            % get second donor-only lifetime
-            tauD2 = h.FitPar_Table.Data{12,1}/TauFitData.TACChannelWidth;
-            % get fraction
-            fraction_tauD1 = h.FitPar_Table.Data{13,1};
+            % get second donor-only lifetime and fraction of first lifetime
+            tauD2 = UserValues.TauFit.FitParams{TauFitData.chan}(2)/TauFitData.TACChannelWidth; %h.FitPar_Table.Data{12,1}/TauFitData.TACChannelWidth;
+            fraction_tauD1 = UserValues.TauFit.FitParams{TauFitData.chan}(6); %h.FitPar_Table.Data{13,1};
+
             % determine FRET rate
             k_RET = (1./tau0).*(R0./R).^6;
             % determine lifetimes
@@ -7663,7 +7684,7 @@ sc = params(1); params(1) = 0;
 %%% These should not be area normalized to maintain the correct species
 %%% fractions in the MEM analysis!
 decay_ind = zeros(numel(tau),numel(x));
-if ~(strcmp(mode,'dist') && strcmp(h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value},'Distribution Fit - Global Model'))
+if ~(strcmp(mode,'dist') && biexp_donor_only)
     for i = 1:numel(tau)
         decay_ind(i,:) = fitfun_1exp([tau(i),params,TauFitData.I0],static_fit_params);
     end
@@ -8324,3 +8345,34 @@ w_res_MLE = 2*(model - data) - 2*log_summand; %squared residuals
 % avoid complex numbers
 w_res_MLE(w_res_MLE < 0) = 0;
 w_res_MLE = sqrt(w_res_MLE);
+
+
+function SetDonorOnlyLifetime(obj,~)
+global UserValues TauFitData
+h = guidata(obj);
+if ~strcmp(TauFitData.Who,'BurstBrowser')
+    chan_D = TauFitData.chan;
+    chan_Donly = TauFitData.chan;
+else %%% we fit the donor only channel (=4), but need to set the values for the donor channel
+    chan_D = 1; %%% donor channel is always 1
+    chan_Donly = TauFitData.chan;
+end
+%%% set fitted lifetimes for use as donor-only species in distance
+%%% distribution fit
+switch h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value}
+    case 'Single Exponential'
+        %%% only take the lifetime, set as donor only
+        UserValues.TauFit.FitParams{chan_D}(14) = UserValues.TauFit.FitParams{chan_Donly}(1);
+        %%% set fraction to zero
+        UserValues.TauFit.FitParams{chan_D}(6) = 1;
+    case 'Biexponential'
+        %%% set lifetimes 1 and fraction
+        UserValues.TauFit.FitParams{chan_D}(14) = UserValues.TauFit.FitParams{chan_Donly}(1);
+        % we use fraction 2 as fraction 1 is used for the two distance distributions
+        UserValues.TauFit.FitParams{chan_D}(6) = UserValues.TauFit.FitParams{chan_Donly}(5);
+end
+%%% fix all donor only parameters
+UserValues.TauFit.FitFix{chan_D}(14) = true;
+UserValues.TauFit.FitFix{chan_D}(2) = true;
+UserValues.TauFit.FitFix{chan_D}(6) = true;
+LSUserValues(1);
