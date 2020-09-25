@@ -206,7 +206,7 @@ for k = 1:1%numel(file) %loop through all selected species
         Pos.X.S_E =     [0.82 0.88 0.35 0.06].*norm_to_pix;
         Pos.XY.S_E =    [0.82 0.53 0.35 0.35].*norm_to_pix;
         Pos.cbar =      [0.98,0.49,0.19,0.02].*norm_to_pix;
-        Pos.table =     [0.6000 0.180 0.2750 0.2750];
+        Pos.table =     [0.6000 0.155 0.2750 0.3];
     else
         %[1, 3, 2;
         %[4,  , 5];
@@ -250,7 +250,7 @@ for k = 1:1%numel(file) %loop through all selected species
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
-    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;    
     try
         hfigallinone.Children(2).YAxis.FontSize = fontsize;
     end
@@ -671,7 +671,7 @@ for k = 1:1%numel(file) %loop through all selected species
             r0_green = sprintf('%.2f/', corr.r0_green); r0_green = r0_green(1:end-1);
             r0_red = sprintf('%.2f/', corr.r0_red); r0_red = r0_red(1:end-1);
             if arrangement == 1
-                fontsize = 13; if ispc; fontsize = fontsize./1.2;end
+                fontsize = 12; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
                 table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
