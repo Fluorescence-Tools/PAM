@@ -67,7 +67,7 @@ chans = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method
 for i=1:numel(chans)%numel(UserValues.PIE.Name)
     c = find(strcmp(UserValues.PIE.Name,chans{i}));
     if isempty(UserValues.PIE.Combined{c})
-        UserValues.PIE.Background(c) = bg(c);
+        UserValues.PIE.Background(c) = bg(i);
     end
 end
 
