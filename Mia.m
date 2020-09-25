@@ -145,26 +145,42 @@ h.Mia_Open_Spectral = uimenu(...
 %%% Menu to Export images
 h.Mia_Export = uimenu(...
     'Parent',h.Mia,...
-    'Label','Export...',...
+    'Label','Export',...
     'Tag','Save_Mia');
 %%% Load TIFF
 h.Mia_Export_TwoColorImage = uimenu(...
     'Parent',h.Mia_Export,...
-    'Label','...Dual color image',...
+    'Label','Dual color image',...
     'Tag','Export_TwoColorImage');
 %%% Load TIFF
-h.Mia_Export_TwoColorImage = uimenu(...
+h.Mia_Export_TwoColorImage_unc = uimenu(...
     'Parent',h.Mia_Export_TwoColorImage,...
-    'Label','...uncorrected',...
+    'Label','uncorrected',...
     'Callback',{@Mia_Export,2},...
     'Tag','Export_TwoColorImage_unc');
 %%% Load TIFF
-h.Mia_Export_TwoColorImage = uimenu(...
+h.Mia_Export_TwoColorImage_cor = uimenu(...
     'Parent',h.Mia_Export_TwoColorImage,...
-    'Label','...corrected',...
+    'Label','corrected',...
     'Callback',{@Mia_Export,3},...
     'Tag','Export_TwoColorImage_cor');
-
+%%% Load TIFF
+h.Mia_Export_Video = uimenu(...
+    'Parent',h.Mia_Export,...
+    'Label','MP4 video',...
+    'Tag','Export_Video');
+%%% Load TIFF
+h.Mia_Export_Video1 = uimenu(...
+    'Parent',h.Mia_Export_Video,...
+    'Label','channel 1 corrected',...
+    'Callback',{@Mia_Export,4},...
+    'Tag','Export_Video1');
+%%% Load TIFF
+h.Mia_Export_Video2 = uimenu(...
+    'Parent',h.Mia_Export_Video,...
+    'Label','channel 2 corrected',...
+    'Callback',{@Mia_Export,5},...
+    'Tag','Export_Video2');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -8785,7 +8801,10 @@ end
                         end
                     end
                 end
-                
+                % Save Image
+    Image = flipud(Image);
+    imwrite(uint8(Image),fullfile(PathName,FileName));
+
             case {2,3}
                 %% Dual color image from menu
                 if ~size(MIAData.Data,1)<2
@@ -8856,10 +8875,93 @@ end
                         end
                     end
                 end
-        end
-        % Save Image
+                % Save Image
     Image = flipud(Image);
     imwrite(uint8(Image),fullfile(PathName,FileName));
+
+            case {4,5}
+                [FileName,PathName] = uiputfile({'*.mp4'}, 'Save MP4 as', UserValues.File.ExportPath);
+                switch mode
+                    case 4
+                        i = 1;
+                    case 5
+                        i = 2;
+                end
+                if any(FileName~=0)
+                    UserValues.File.ExportPath=PathName;
+                    LSUserValues(1)
+                    % generate a x-by-y-by-RGB-by-frame array
+                    for j = 1:size(MIAData.Data{1,1},3)
+                        disp(j)
+                        % change edit box and slider for image frame
+                        h.Mia_Image.Settings.Channel_Frame(i).String = num2str(j);
+                        h.Mia_Image.Settings.Channel_Frame_Slider(i).Value = j;
+                        if ~size(MIAData.Data,1)<2
+                            Im = h.Plots.Image(i,2).CData;
+                            if size(Im,3)==3
+                                Im=Im/max(Im(:))*255;
+                            else
+                                if h.Mia_Image.Settings.AutoScale.Value == 1
+                                    %just avoid negative values
+                                    mini = min(min(Im));
+                                    maxi = max(max(Im));
+                                elseif h.Mia_Image.Settings.AutoScale.Value == 3
+                                    % if manual scale, first include all values within the range
+                                    mini = h.Mia_Image.Axes(i,1).CLim(1);
+                                    maxi = h.Mia_Image.Axes(i,1).CLim(2);
+                                    Im(Im<mini)=mini;
+                                    Im(Im>maxi)=maxi;
+                                end
+                                %the manual colormap will be only 6bit so rescale the image between 64 positive gray values
+                                Im=(Im-mini)/(maxi-mini)*63;
+                                
+                                % The cmap is only 6 bit
+                                cmap=colormap(h.Mia_Image.Axes(i,2));
+                                r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
+                                %CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
+                                CData = round(Im)+1;
+                                CData(CData>63)=63;
+                                CData(CData<0)=0;
+                                Image(:,:,1,j) = reshape(r(CData),size(CData));
+                                Image(:,:,2,j) = reshape(g(CData),size(CData));
+                                Image(:,:,3,j) = reshape(b(CData),size(CData));
+                                
+                                if numel(h.Plots.Image(i,2).AlphaData)>1 %%% When transparency is used to show unselected regions
+                                    Image(:,:,1,j) = Image(:,:,1,j).*h.Plots.Image(i,2).AlphaData + 255*(1-h.Plots.Image(i,2).AlphaData)*h.Mia_Image.Axes(i,2).Color(1);
+                                    Image(:,:,2,j) = Image(:,:,2,j).*h.Plots.Image(i,2).AlphaData + 255*(1-h.Plots.Image(i,2).AlphaData)*h.Mia_Image.Axes(i,2).Color(2);
+                                    Image(:,:,3,j) = Image(:,:,3,j).*h.Plots.Image(i,2).AlphaData + 255*(1-h.Plots.Image(i,2).AlphaData)*h.Mia_Image.Axes(i,2).Color(3);
+                                end
+                                
+                                barx = str2double(h.Mia_Image.Settings.ScaleBar.String);
+                                if barx~=0 && ~isnan(barx)
+                                    pixsize = str2double(h.Mia_Image.Settings.Pixel_Size.String)/1000; %in um
+                                    roix = str2double(h.Mia_Image.Settings.ROI_SizeX.String); %ROI size is always smaller than imsize so ok.
+                                    roiy = str2double(h.Mia_Image.Settings.ROI_SizeY.String);
+                                    barwidth = floor(barx/pixsize); %in pixels
+                                    y = floor(roiy/40);
+                                    x = floor(roix/40);
+                                    for k = 1:3
+                                        Image(1+3*y:1+4*y,end-barwidth-4*x:end-4*x,k,j) = 255;
+                                    end
+                                end
+                            end
+                        end
+                        Image(:,:,:,j) = flipud(Image(:,:,:,j));
+                    end
+                    %video =
+                end
+                profile = 'MPEG-4';
+                %framerate = 5;
+                v = VideoWriter(fullfile(PathName, FileName), profile);
+                
+                open(v)
+                %Write the matrix of data A to the video file.
+                
+                writeVideo(v,uint8(Image))
+                %Close the file.
+                
+                close(v)
+        end
 
 
 

@@ -262,11 +262,11 @@ switch obj
                             lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                         end
                     end
-                    set(panel_copy.Children(i),'YTickLabelRotation',0);
+                    %set(panel_copy.Children(i),'YTickLabelRotation',0);
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
                     %panel_copy.Children(i).YTickLabel = [];
-                    %panel_copy.Children(i).YLabel.String = '';
+                    panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -300,7 +300,7 @@ switch obj
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
                     %panel_copy.Children(i).YTickLabel = [];
-                    %panel_copy.Children(i).YLabel.String = '';
+                    panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -691,7 +691,7 @@ switch obj
                         end
                     end
                     %panel_copy.Children(i).YTickLabel = [];
-                    %panel_copy.Children(i).YLabel.String = '';
+                    panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -728,7 +728,7 @@ switch obj
                         end
                     end
                     %panel_copy.Children(i).YTickLabel = [];
-                    %panel_copy.Children(i).YLabel.String = '';
+                    panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
@@ -1045,3 +1045,8 @@ FigureName = [FileName SpeciesName '_' FigureName];
 %%% remove spaces
 FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
+
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end

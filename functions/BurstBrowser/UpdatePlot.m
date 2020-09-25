@@ -536,7 +536,22 @@ set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts 
                                 num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
                             
 if sum(strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)) == 1
-    h.text_nobursts.TooltipString = sprintf('%.1f events per second',size(BurstData{file}.DataArray,1)./BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)));
+    % estimate bursts per second
+    bps = size(BurstData{file}.DataArray,1)./BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray));
+    s =  sprintf('%.1f events per second',bps);
+    if sum(strcmp('Duration [ms]',BurstData{file}.NameArray)) == 1
+        %%% add also estimate of multi-molecule probability
+        dur = BurstData{file}.DataArray(:,strcmp('Duration [ms]',BurstData{file}.NameArray));
+        % estimate mean duration based on log-normal distribution
+        mean_dur = 10^mean(log10(dur))*1E-3;
+        % average number of molecules during dwell time in confocal volume
+        Nav = mean_dur*bps;
+        % calculate multi-molecule fraction
+        f_mm = 1-Nav./(exp(Nav)-1);
+        s = [s sprintf(' (%.2f',f_mm*100) '% multi-molecule events)'];
+    end
+    h.text_nobursts.TooltipString = s;
+    %h.text_nobursts.String = sprintf('%s %s',h.text_nobursts.String,s);
 end
 
 if h.DisplayAverage.Value == 1

@@ -646,7 +646,7 @@ for k = 1:1%numel(file) %loop through all selected species
             text_box = [text_box ' & \\ '];
             text_box = [text_box '\bf{Dye parameters} & \\ '];
             text_box = [text_box sprintf('Foerster distance: & %.1f $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
-            text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
+            text_box = [text_box sprintf('Linker length: & %.1f $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
             text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
             text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
             text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
@@ -665,7 +665,7 @@ for k = 1:1%numel(file) %loop through all selected species
             GfactorGreen = sprintf('%.2f/', corr.GfactorGreen); GfactorGreen = GfactorGreen(1:end-1);
             GfactorRed = sprintf('%.2f/', corr.GfactorRed); GfactorRed = GfactorRed(1:end-1);
             FoersterRadius = sprintf('%.1f/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
-            LinkerLength = sprintf('%d/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
+            LinkerLength = sprintf('%.1f/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
             DonorLifetime = sprintf('%.2f/', corr.DonorLifetime); DonorLifetime = DonorLifetime(1:end-1);
             AcceptorLifetime = sprintf('%.2f/', corr.AcceptorLifetime); AcceptorLifetime = AcceptorLifetime(1:end-1);
             r0_green = sprintf('%.2f/', corr.r0_green); r0_green = r0_green(1:end-1);
@@ -682,7 +682,7 @@ for k = 1:1%numel(file) %loop through all selected species
                 table = [table '<tr><td>G<sub>A</sub>:</td><td>' GfactorRed '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' r0_red '</td></tr>'];
                 table = [table '</table></html>'];
             else
-                fontsize = 8.5; if ispc; fontsize = fontsize./1.2;end
+                fontsize = 10; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
                 table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
@@ -747,5 +747,9 @@ end
 h.ParameterListX.Value = old_paramX;
 h.ParameterListY.Value = old_paramY;
 %BurstMeta.SelectedFile = file_old;
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end
 UpdatePlot([],[],h);
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');

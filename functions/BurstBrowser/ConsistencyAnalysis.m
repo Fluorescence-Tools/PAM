@@ -408,6 +408,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                     plot_marignal_1D_hist(ax,E,sSelected,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize,0)
                     plot_marignal_1D_hist(ax,E_sim,sSelected_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize,1)
                     %plot_BVA(E,sSelected,BinCenters,sPerBin)
+                    % plot of expected STD
+                    X_expectedSD = linspace(0,1,1000);
+                    sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
+                    plot(ax,X_expectedSD,sigm,'k','LineWidth',3);
                     if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                         E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
                         E2 = 1./(1+(R_states(1,2)/BurstData{file}.Corrections.FoersterRadius)^6);
@@ -910,6 +914,10 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end
 end
 
 function plot_main(hfig,x_data,y_data,H_data,E_data,sSelected_data,color)

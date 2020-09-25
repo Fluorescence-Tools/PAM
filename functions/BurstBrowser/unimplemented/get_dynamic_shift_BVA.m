@@ -34,9 +34,10 @@ SEM = sigma./sqrt(Nbursts);
 f = figure('Color',[1,1,1]);
 copyobj(h.axes_general,f);
 colormap(colormap(h.BurstBrowser));
-set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.65,0.63],'FontSize',14);%,'DataAspectRatioMode','manual','DataAspectRatio',[1,1,1]);
+set(gca,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'Position',[0.15,0.15,0.7,0.68],'FontSize',14);%,'DataAspectRatioMode','manual','DataAspectRatio',[1,1,1]);
 xlim([0,1]);
 ax = gca; ax.YLim(1) = 0;
+hold on;
 
 point = [muPR,muBVA];
 % calculate the shot-noise line
@@ -45,29 +46,29 @@ y_line = sqrt(x_line.*(1-x_line)./N);
 
 % find radial distance = dynamic shift
 % construct the radial line
-x = linspace(0.5,point(1),10000);
-y = linspace(0,point(2),10000);
-
-[X1,X2] = meshgrid(x_line,x);
-[Y1,Y2] = meshgrid(y_line,y);
-d = sqrt((X1-X2).^2+(Y1-Y2).^2);
-[mind,ix_ds] = min(d(:));
-[ix_ds_x,ix_ds_y] = ind2sub([numel(x),numel(x_line)],ix_ds);
-point2 = [X1(ix_ds), Y1(ix_ds)];
-ds = sqrt(sum((point-point2).^2));
+% x = linspace(0.5,point(1),10000);
+% y = linspace(0,point(2),10000);
+% 
+% [X1,X2] = meshgrid(x_line,x);
+% [Y1,Y2] = meshgrid(y_line,y);
+% d = sqrt((X1-X2).^2+(Y1-Y2).^2);
+% [mind,ix_ds] = min(d(:));
+% [ix_ds_x,ix_ds_y] = ind2sub([numel(x),numel(x_line)],ix_ds);
+% point2 = [X1(ix_ds), Y1(ix_ds)];
+% ds = sqrt(sum((point-point2).^2));
 
 % simpler dynamic shift, not strictly radial
-d = sqrt((x_line-point(1)).^2+(y_line-point(2)).^2);
-[ds_min,ix_ds] = min(d);
+%d = sqrt((x_line-point(1)).^2+(y_line-point(2)).^2);
+%[ds_min,ix_ds] = min(d);
 %fprintf('Dynamic shift: %.3f\n',ds);
 hold on;
-plot(x,y);
-scatter(point2(1),point2(2),200,'x','MarkerEdgeColor','k','LineWidth',2);
-scatter(x_line(ix_ds),y_line(ix_ds),200,'diamond','MarkerEdgeColor','k','LineWidth',2);
+%plot(x,y);
+%scatter(point2(1),point2(2),200,'x','MarkerEdgeColor','k','LineWidth',2);
+%scatter(x_line(ix_ds),y_line(ix_ds),200,'diamond','MarkerEdgeColor','k','LineWidth',2);
 plot(x_line,y_line,'k-','LineWidth',2);
-scatter(point(1),point(2),200,'x','MarkerEdgeColor','k','LineWidth',2);
-plot([point(1),point2(1)],[point(2),point2(2)],'k--','LineWidth',2);
-plot([point(1),x_line(ix_ds)],[point(2),y_line(ix_ds)],'k--','LineWidth',2);
+%scatter(point(1),point(2),200,'x','MarkerEdgeColor','k','LineWidth',2);
+%plot([point(1),point2(1)],[point(2),point2(2)],'k--','LineWidth',2);
+%plot([point(1),x_line(ix_ds)],[point(2),y_line(ix_ds)],'k--','LineWidth',2);
 %%% add population
 if nGauss == 1
     ix = 0;
@@ -91,9 +92,9 @@ fs = 14;
 if ispc
     fs = 10;
 end
-title(sprintf('dynamic shift (radial) = %.4f\ndynamic shift (minimum) = %.4f\nSEM of population = %.4f\ndynamic shift (bin) = %.4f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',fs);
-
-Mat2clip([ds,ds_min,SEM,ds_bin,ds_confint]);
+%title(sprintf('dynamic shift (radial) = %.4f\ndynamic shift (minimum) = %.4f\nSEM of population = %.4f\ndynamic shift (bin) = %.4f\nds(static) upper bound = %.4f',ds,ds_min,SEM,ds_bin,ds_confint),'FontSize',fs);
+title(sprintf('dynamic shift (bin) = %.4f\nSEM of population = %.4f\nds(static) upper bound = %.4f',ds_bin,SEM,ds_confint),'FontSize',fs);
+Mat2clip([ds_bin,SEM,ds_confint]);
 
 function [BVA_est,confint] = get_BVA_binwise(mE,dE)
 global UserValues BurstData BurstTCSPCData BurstMeta

@@ -3341,6 +3341,23 @@ else
                 case {'Histogram Library','MLE'}
                     PDAHistogramFit_Global(fitpar,h);
             end
+            %%% remove from fitpar array
+            if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
+                for i=find(PDAMeta.Active)'
+                    % [k12,k13,k21,k23,k31,k32]
+                    rates = [PDAMeta.FitParams(i,1),PDAMeta.FitParams(i,end-1),PDAMeta.FitParams(i,4),...
+                        PDAMeta.FitParams(i,end),PDAMeta.FitParams(i,7),PDAMeta.FitParams(i,end-2)];
+                    DynRates = [0,rates(3),rates(5);rates(1),0,rates(6);rates(2),rates(4),0];
+                    for j = 1:3
+                        DynRates(j,j) = -sum(DynRates(:,j));
+                    end
+                    %%% also print the relaxation rates
+                    ev = eig(DynRates);
+                    ev = sort(ev);
+                    tauR = -1./ev(1:2);
+                    fprintf('File %i: tauR1 = %.3f ms   tauR2 = %.3f ms\n',i,tauR(1),tauR(2));
+                end
+            end
         case h.Menu.StartFit
             %% Do Fit
             switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
@@ -3433,6 +3450,11 @@ else
                     PDAMeta.FitParams(i,1) = p_eq(1);
                     PDAMeta.FitParams(i,4) = p_eq(2);
                     PDAMeta.FitParams(i,7) = p_eq(3);
+                    %%% also print the relaxation rates
+                    ev = eig(DynRates(1:end-1,:));
+                    ev = sort(ev);
+                    tauR = -1./ev(1:2);
+                    fprintf('File %i: tauR1 = %.3f ms   tauR2 = %.3f ms\n',i,tauR(1),tauR(2));
                 end
                 PDAMeta.FitParams(:,end-2:end) = [];
                 PDAMeta.Global(:,end-2:end) = [];
@@ -4003,9 +4025,22 @@ else %%% dynamic model
             end
     end
     %%% generate P(eps) distribution for both components
+    approximate = false;
     PE = cell(n_states,1);
     for c = 1:n_states
-        PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        if ~approximate
+            PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        else %%% use only two single ratios at +- 1 sigma to approximate PE
+            r = [fitpar(3*c-1)-fitpar(3*c),fitpar(3*c-1)+fitpar(3*c)];
+            eff = (1+(r./PDAMeta.R0(i)).^6).^(-1);
+            eps = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((eff+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-eff))).^(-1);
+            PE{c} = zeros(size(PDAMeta.eps_grid{i}));
+            [~,ix(1)] = min(abs(PDAMeta.eps_grid{i}-eps(1)));
+            [~,ix(2)] = min(abs(PDAMeta.eps_grid{i}-eps(2)));
+            PE{c}(ix) = 0.5;
+            % also calculate the correct PE
+            PE_acc{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        end
     end
     %%% read out brightnesses of species
     Q = ones(n_states,1);
@@ -4022,6 +4057,11 @@ else %%% dynamic model
             Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
         end
         Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
+        
+        if approximate
+            PE = PE_acc;
+        end
+        %%% correct pure state contributions
         %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
         Peps(:,end) = PE{1};
         Peps(:,1) = PE{2};
@@ -4056,6 +4096,17 @@ else %%% dynamic model
         %%% normalize Peps
         Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
         Peps(isnan(Peps)) = 0;
+        
+        if approximate
+            PE = PE_acc;
+        end
+        
+        %%% correct pure state contributions
+        %%% Peps becomes "ripply" at the extremes
+        Peps(:,1,1) = PE{3};
+        Peps(:,end,1) = PE{2};
+        Peps(:,1,end) = PE{1};
+        
         %%% combine mixtures, weighted with PofT (probability to see a certain
         %%% combination)
         %hFit_Ind_dyn = cell(size(PofT,1),size(PofT,1));
@@ -5038,6 +5089,8 @@ PDAMeta.Last_logL = sum_logL;
 % Model for Monte Carlo based fitting (not global)
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
+file = PDAMeta.file;
+
 %%% iterate the counter
 PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
@@ -5045,33 +5098,34 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    if ~strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
-        chi2 = 0;
-        return;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        chi2 = PDAMeta.w_res{file};%zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+    else
+        chi2 = PDAMeta.chi2{file};
     end
-    %%% else continue
+    return;
 end
 
-file = PDAMeta.file;
-if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+if (PDAMeta.FitInProgress == 2) && ((sum(PDAMeta.Global) == 0) || (sum(PDAMeta.Active) == 1))%%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(file,:);
     fixed_dummy = PDAMeta.Fixed(file,:);
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
         %%% add sigma fraction to end
-        fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
-        fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+        % fitpar_dummy = [fitpar_dummy, str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        % fixed_dummy = [fixed_dummy, h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     end
     if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
         %%% three-state system
         % Read the rates from the table
-        rates = cell2mat(h.KineticRates_table.Data(:,1:2:end));
-        rates = [rates(2,3),rates(3,1),rates(3,2)];
-        fixed_rates = cell2mat(h.KineticRates_table.Data(:,2:2:end));
-        fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
-        fitpar_dummy = [fitpar_dummy, rates];
-        fixed_dummy = [fixed_dummy, fixed_rates];
+        % rates = cell2mat(h.KineticRates_table.Data(1:end-3,1:3:end));
+        % rates = [rates(2,3),rates(3,1),rates(3,2)];
+        % fixed_rates = cell2mat(h.KineticRates_table.Data(1:end-3,2:3:end));
+        % fixed_rates = [fixed_rates(2,3),fixed_rates(3,1),fixed_rates(3,2)];
+        % fitpar_dummy = [fitpar_dummy, rates];
+        % fixed_dummy = [fixed_dummy, fixed_rates];
     end
     % overwrite free fit parameters
     fitpar_dummy(~fixed_dummy) = fitpar;
@@ -5253,11 +5307,12 @@ else %%% dynamic model
             end
     end
     %%% Add static models
-    if numel(PDAMeta.Comp{file}) > n_states
-        fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+    static_states = PDAMeta.Comp{file}(PDAMeta.Comp{file} > n_states);
+    if ~isempty(static_states)
+        %fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
         A = fitpar(:,1);
         PRH_stat = cell(sampling,5);
-        for j = PDAMeta.Comp{file}(n_states+1:end)
+        for j = static_states
             for k = 1:sampling
                 r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
                 E = 1./(1+(r./R0).^6);
@@ -5283,18 +5338,12 @@ else %%% dynamic model
             end
         end
         PRH_dyn = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-        if n_states == 2
-            PRH_combined = [PRH_dyn; PRH_dyn; zeros(3,numel(PDAMeta.hProx{file}))];
-        elseif n_states == 3
-            PRH_combined = [PRH_dyn; PRH_dyn; PRH_dyn; zeros(2,numel(PDAMeta.hProx{file}))];
+        hFit = PRH_dyn;
+        for j = static_states
+            hFit = hFit + A(j).*histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
         end
-        for j = PDAMeta.Comp{file}(n_states+1:end)
-            PRH_combined(j,:) = histcounts(vertcat(PRH_stat{:,j}),linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
-        end
-        hFit = zeros(1,numel(PDAMeta.hProx{file}));
-        for j = PDAMeta.Comp{file}
-            hFit = hFit + A(j).*PRH_combined(j,:);
-        end
+        norm = sum(A(n_states+1:end))+1;
+        hFit = hFit./norm;
     else
         hFit = histcounts(PRH,linspace(PDAMeta.xAxisLimLow,PDAMeta.xAxisLimHigh,Nobins+1))./sampling;
     end
@@ -5330,14 +5379,6 @@ else
     w_res(1) = 0;
     w_res(end) = 0;
 end
-hFit_Ind = cell(6,1);
-for j = PDAMeta.Comp{file}
-    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-        hFit_Ind{j} = sum(PDAMeta.hProx{file}).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1))';
-    else
-        hFit_Ind{j} = hFit';
-    end
-end
 
 PDAMeta.w_res{file} = w_res;
 PDAMeta.hFit{file} = hFit;
@@ -5352,6 +5393,14 @@ if h.SettingsTab.DynamicModel.Value && h.SettingsTab.DynamicSystem.Value == 2
     % for three-state model, some rates may be fixed to zero,
     % but the states should still be plotted
     comp = [1,2,3,comp(comp > 3)];
+end
+hFit_Ind = cell(6,1);
+for j = comp
+    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+        hFit_Ind{j} = sum(PDAMeta.hProx{file}).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1))';
+    else
+        hFit_Ind{j} = hFit';
+    end
 end
 for c = comp
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
@@ -5406,7 +5455,13 @@ if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
     drawnow;
 end
 if ~PDAMeta.FitInProgress
-    global_chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        global_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
+    else
+        global_chi2 = 0;
+    end
+    PDAMeta.global_chi2 = 0;
     return;
 end
 
@@ -5443,7 +5498,7 @@ for i=find(PDAMeta.Active)'
     %%% Calculates function for current file
     chi2{end+1} = PDAMonteCarloFit_Single(P,h);
 end
-chi2 = vertcat(chi2{:});
+chi2 = horzcat(chi2{:});
 if PDAMeta.FitInProgress == 2 % chi2 is actually array of w_res
     global_chi2 = sum(chi2.^2);
 else
@@ -5473,9 +5528,20 @@ end
 global_chi2 = global_chi2./(usedBins-DOF-1);
 PDAMeta.global_chi2 = global_chi2;
 
-Progress(1/global_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-Progress(1/global_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+Progress(0, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(0, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['global \chi^2_{red.} = ' sprintf('%1.2f',global_chi2)]);
+
+if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
+    global_chi2 = [];
+    for i = Active
+        global_chi2 = [global_chi2, PDAMeta.w_res{i}];
+    end
+    %mean_chi2 = horzcat(PDAMeta.w_res{:});
+elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
+    global_chi2 = sum(PDAMeta.chi2);
+end
+
 if h.SettingsTab.LiveUpdate.Value
     for i = find(PDAMeta.Active)'
         PDAMeta.file = i;
@@ -5710,13 +5776,13 @@ else
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</b>',''),tmp.fittable(1,:),'UniformOutput',false);
-    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>','_'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sub>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'&',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,';',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<html>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</html>',''),tmp.fittable(1,:),'UniformOutput',false);
-    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>','^'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sup>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'Aring','A'),tmp.fittable(1,:),'UniformOutput',false);
     fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
@@ -5724,7 +5790,7 @@ else
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
     fprintf(fID,[repmat('%s\t',1,size(fitResult,2)-1),'%s\n'],fitResult{1,:});
     for i = 2:size(fitResult,1)
-        fprintf(fID,['%s' repmat('\t%.3f',1,size(fitResult,2)-1) '\n\n'],fitResult{i,:});
+        fprintf(fID,['%s' repmat('\t%.3f',1,size(fitResult,2)-1) '\n'],fitResult{i,:});
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
@@ -6934,6 +7000,9 @@ switch mode
             end
         end
         ParamNames = regexprep(ParamNames, '<.*?>', '' ); % remove html tags
+        ParamNames = cellfun(@(x) strrep(x,'&',''),ParamNames,'UniformOutput',false);
+        ParamNames = cellfun(@(x) strrep(x,';',''),ParamNames,'UniformOutput',false);
+        ParamNames = cellfun(@(x) strrep(x,'Aring','A'),ParamNames,'UniformOutput',false);
         PDAFitResult = vertcat(ParamNames',horzcat(PDAFitResult{:})');
         Mat2clip(PDAFitResult);
     case 2 %%% Exports Fit Result to BVA Tab

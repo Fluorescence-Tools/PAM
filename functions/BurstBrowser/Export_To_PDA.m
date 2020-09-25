@@ -121,6 +121,10 @@ for i = 1:numel(files)
                     PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
                     PDA.PIE = BurstData{file}.PIE;
                 end
+                %%% add cut information of current species
+                CutState = cell2table(vertcat(BurstData{file}.Cut{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}{:}),'VariableNames',{'Paramater','Min','Max','Active','Delete'});
+                PDA.CutState = CutState(:,1:end-1);
+                
                 save(newfilename, 'PDA', 'timebin')
             case 5 %noMFD
                 PDA.NG = zeros(total,1);
@@ -149,6 +153,10 @@ for i = 1:numel(files)
                     PDA.TACbin = BurstData{file}.FileInfo.TACRange*1E9/BurstData{file}.FileInfo.MI_Bins;
                     PDA.PIE = BurstData{file}.PIE;
                 end
+                %%% add cut information of current species
+                CutState = cell2table(vertcat(BurstData{file}.Cut{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}{:}),'VariableNames',{'Paramater','Min','Max','Active','Delete'});
+                PDA.CutState = CutState(:,1:end-1);
+                
                 save(newfilename, 'PDA', 'timebin')
             case {3,4}
                 %%% ask user for either 3CPDA or two color subpopulation
@@ -201,6 +209,11 @@ for i = 1:numel(files)
                         end
                         filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
                         newfilename = [filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
+                        
+                        %%% add cut information of current species
+                        CutState = cell2table(vertcat(BurstData{file}.Cut{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}{:}),'VariableNames',{'Paramater','Min','Max','Active','Delete'});
+                        tcPDAstruct.CutState = CutState(:,1:end-1);
+                
                         save(newfilename, 'tcPDAstruct', 'timebin')
                     case {2,3,4}
                         PDA.NGP = zeros(total,1);
@@ -280,6 +293,10 @@ for i = 1:numel(files)
                             NGS = cellfun(@(x) sum((x==8)),DOnly_PDA);
                             PDA.BrightnessReference.N = NGP + NGS;
                         end
+                        %%% add cut information of current species
+                        CutState = cell2table(vertcat(BurstData{file}.Cut{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}{:}),'VariableNames',{'Paramater','Min','Max','Active','Delete'});
+                        PDA.CutState = CutState(:,1:end-1);
+                
                         save(newfilename, 'PDA', 'timebin')
                 end
         end
