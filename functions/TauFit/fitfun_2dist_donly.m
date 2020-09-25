@@ -19,8 +19,6 @@ irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
 %Scatter = Scatter((ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
-%t = 1:n;
-%tp = (1:p)';
 
 meanR1 = param(1); %%% Center distance
 sigmaR1 = param(2); %%% Sigma R
@@ -31,32 +29,87 @@ fraction_donly = param(6);
 sc = param(7);
 bg = param(8);
 R0 = param(9);
-tauD0 = param(10);
-tauD0(tauD0==0) = 1; %%% set minimum lifetime to TACbin width
+tau0 = param(10); % this is the lifetime of the "unquenced" donor used to determine the specified R0
+tau0(tau0==0) = 1; %%% set minimum lifetime to TACbin width
+tauD01 = param(11);
+tauD01(tauD01==0) = 1; %%% set minimum lifetime to TACbin width
+tauD02 = param(12);
+tauD02(tauD02==0) = 1; %%% set minimum lifetime to TACbin width
+f1_donly = param(13);
 
 %%% Determine distribution of lifetimes
-dR = 0.25;
+R_res = 100; %%% sampling points between -4sigma and +4sigma
 xdist = zeros(2,n);
-for j = 1:2
-    switch j
-        case 1
-            meanR = meanR1;
-            sigmaR = sigmaR1;
-        case 2
-            meanR = meanR2;
-            sigmaR = sigmaR2;
+
+%%% Homogenous model or not?
+homogenous = true;
+if homogenous
+    %%% Assume that the fluorescence properties are identical in the different
+    %%% conformational states, i.e. each states has contributions from both
+    %%% quenched and unquenched donor-only lifetimes.
+    for j = 1:2
+        switch j
+            case 1
+                meanR = meanR1;
+                sigmaR = sigmaR1;            
+            case 2
+                meanR = meanR2;
+                sigmaR = sigmaR2;
+        end
+        xR = linspace(meanR-4*sigmaR,meanR+4*sigmaR,R_res);%(meanR-4*sigmaR):dR:(meanR+4*sigmaR);
+        xR = xR(xR > 0)';
+        pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
+        
+        t = repmat((0:n-1),[numel(pR),1]); % time axis
+        
+        k_RET = (1./tau0).*((R0./xR).^6); % k_RET as a function of R
+        kD1 = (1./tauD01) + repmat(k_RET,[1,size(t,2)]);
+        kD2 = (1./tauD02) + repmat(k_RET,[1,size(t,2)]);
+
+        xdist(j,:) = sum(repmat(pR,[1,size(t,2)]).*...
+                         (f1_donly*exp(-t.*kD1) + ...
+                         (1-f1_donly)*exp(-t.*kD2)),1);
+        xdist(j,:) = xdist(j,:)./sum(pR);
     end
-    xR = (meanR-4*sigmaR):dR:(meanR+4*sigmaR);
-    xR = xR(xR > 0);
-    pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
-    c_gauss = zeros(numel(xR),n);
-    for i = 1:numel(xR)
-        c_gauss(i,:) =  pR(i).*exp(-((0:n-1)./tauD0).*(1+(R0./xR(i)).^6));
-    end   
-    xdist(j,:) = sum(c_gauss,1);xdist(j,:) = xdist(j,:)./sum(pR);
+    xdist = (fraction1*xdist(1,:)+(1-fraction1)*xdist(2,:));
+else
+    %%% Assume that the quenched species belongs to one of the
+    %%% conformational states!
+    %%% In this case, the distribution over the two species (quenched and
+    %%% unqueched) is determined by the fraction of the two conformational
+    %%% states.
+    %%% Fluorescence properties and quenching are coupled.
+    for j = 1:2
+        switch j
+            case 1
+                meanR = meanR1;
+                sigmaR = sigmaR1;
+                tauD0 = tauD01;
+            case 2
+                meanR = meanR2;
+                sigmaR = sigmaR2;
+                tauD0 = tauD02;
+        end
+        xR = linspace(meanR-4*sigmaR,meanR+4*sigmaR,R_res);%(meanR-4*sigmaR):dR:(meanR+4*sigmaR);
+        xR = xR(xR > 0)';
+        pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
+        
+        t = repmat((0:n-1),[numel(pR),1]); % time axis
+        
+        k_RET = (1./tau0).*((R0./xR).^6); % k_RET as a function of R, evaluated based on the respective tau0
+        kD = (1./tauD0) + repmat(k_RET,[1,size(t,2)]);
+
+        xdist(j,:) = sum(repmat(pR,[1,size(t,2)]).*...
+                         exp(-t.*kD),1);
+        xdist(j,:) = xdist(j,:)./sum(pR);
+    end
+    xdist = (fraction1*xdist(1,:)+(1-fraction1)*xdist(2,:));
 end
-xDonly = exp(-(0:n-1)./tauD0);    
-x = fraction_donly.*xDonly + (1-fraction_donly).*(fraction1*xdist(1,:)+(1-fraction1)*xdist(2,:));
+
+%%% Add donor only contribution
+xDonly = f1_donly*exp(-(0:n-1)./tauD01)+(1-f1_donly)*exp(-(0:n-1)./tauD02);    
+x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
+
 switch conv_type
     case 'linear'
         z = conv(irf, x); z = z(1:n)';
