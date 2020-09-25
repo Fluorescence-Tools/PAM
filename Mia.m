@@ -8880,6 +8880,7 @@ end
     imwrite(uint8(Image),fullfile(PathName,FileName));
 
             case {4,5}
+                %video
                 [FileName,PathName] = uiputfile({'*.mp4'}, 'Save MP4 as', UserValues.File.ExportPath);
                 switch mode
                     case 4
@@ -8951,9 +8952,8 @@ end
                     %video =
                 end
                 profile = 'MPEG-4';
-                %framerate = 5;
                 v = VideoWriter(fullfile(PathName, FileName), profile);
-                
+                v.FrameRate = 5;
                 open(v)
                 %Write the matrix of data A to the video file.
                 
