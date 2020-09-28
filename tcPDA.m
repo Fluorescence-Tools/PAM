@@ -3297,10 +3297,16 @@ for f = 1:numel(tcPDAstruct.Data)
     PrGR = cell(sampling,N_gauss);
     PrBG = cell(sampling,N_gauss);
     PrBR = cell(sampling,N_gauss);
-
-    for i = 1:sampling % make parfor again
-        [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamic(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
-                    total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+    if ismac
+        for i = 1:sampling % make parfor again
+             [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamicCPP(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
+                 total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+        end
+    else
+        for i = 1:sampling % make parfor again
+            [PrBG{i,1}, PrBR{i,1}, PrGR{i,1}] = sim_hist_mc_dist_3d_cor_optim_dynamicCPP(mu1,covar1,mu2,covar2,k12,k21,Qr_g,Qr_b,...
+                total_rolls,R0_bg,R0_br,R0_gr,cr_bg,cr_br,cr_gr,pe_b,de_bg,de_br,de_gr,mBG_bb,mBG_bg,mBG_br,mBG_gg,mBG_gr,gamma_bg,gamma_br,gamma_gr,BSD_BX,BSD_GX,dur);
+        end
     end
     if N_gauss > 2 % add static populations
         for j=3:N_gauss
