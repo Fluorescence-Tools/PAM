@@ -71,6 +71,13 @@ end
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
+%%% Read out the plot offset
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Contour'
+        offset = UserValues.BurstBrowser.Display.ContourOffset/100;
+    case {'Image','Scatter','Hex'}
+        offset = UserValues.BurstBrowser.Display.ImageOffset/100;
+end
 %% Plot E vs. tauGG in first plot
 switch UserValues.BurstBrowser.Settings.LifetimeMode
     case 1
@@ -195,7 +202,7 @@ else
 end
 
 h.axes_EvsTauGG.CLimMode = 'auto';
-h.axes_EvsTauGG.CLim(1) = 0;
+h.axes_EvsTauGG.CLim(1) = max(H(:))*offset;
 try;h.axes_EvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
@@ -301,7 +308,7 @@ else
     ylim(h.axes_EvsTauRR,'auto');
 end
 h.axes_EvsTauRR.CLimMode = 'auto';
-h.axes_EvsTauRR.CLim(1) = 0;
+h.axes_EvsTauRR.CLim(1) = max(H(:))*offset;
 try;h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     switch BurstData{file}.BAMethod
@@ -405,7 +412,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
-    h.axes_rGGvsTauGG.CLimMode = 'auto';h.axes_rGGvsTauGG.CLim(1) = 0;
+    h.axes_rGGvsTauGG.CLimMode = 'auto';h.axes_rGGvsTauGG.CLim(1) = max(H(:))*offset;
     try;h.axes_rGGvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.UserData
@@ -502,7 +509,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     try h.axes_rRRvsTauRR.XLim=[0,maxX]; end
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
-    h.axes_rRRvsTauRR.CLimMode = 'auto';h.axes_rRRvsTauRR.CLim(1) = 0;
+    h.axes_rRRvsTauRR.CLimMode = 'auto';h.axes_rRRvsTauRR.CLim(1) = max(H(:))*offset;
     try;h.axes_rRRvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 end
 %% 3cMFD
@@ -605,7 +612,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     else
         ylim(h.axes_E_BtoGRvsTauBB,'auto');
     end
-    h.axes_E_BtoGRvsTauBB.CLimMode = 'auto';h.axes_E_BtoGRvsTauBB.CLim(1) = 0;
+    h.axes_E_BtoGRvsTauBB.CLimMode = 'auto';h.axes_E_BtoGRvsTauBB.CLim(1) = max(H(:))*offset;
     try;h.axes_E_BtoGRvsTauBB.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
     %% Plot rBB vs tauBB
     idx_tauBB = strcmp('Lifetime BB [ns]',NameArray);
@@ -668,6 +675,6 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     try h.axes_rBBvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
-    h.axes_rBBvsTauBB.CLimMode = 'auto';h.axes_rBBvsTauBB.CLim(1) = 0;
+    h.axes_rBBvsTauBB.CLimMode = 'auto';h.axes_rBBvsTauBB.CLim(1) = max(H(:))*offset;
     try;h.axes_rBBvsTauBB.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 end

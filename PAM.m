@@ -939,7 +939,7 @@ h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Callback',@Export_total_to_PDA,...
     'Separator','on');
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
-    'Label','Estimate background count rates from burst experiment',...
+    'Label','Estimate background count rates from burst experiment or bursty buffer',...
     'Callback',@Estimate_Background_From_Burst,...
     'Separator','on');
 h.Burst.Button.UIContextMenu = h.Burst.Button_Menu;
@@ -1782,11 +1782,36 @@ h.Text{end+1} = uicontrol(...
     'Style','text',...
     'Units','normalized',...
     'FontSize',12,...
-    'String','Reference Background [Hz]:',...
+    'String','MI rebinning factor:',...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.885 0.30 0.025]);
+    'Position',[0.01 0.84 0.17 0.025]);
+%%% Editbox for rescaling TAC
+h.MI.Phasor_Rebin = uicontrol(...
+    'Parent',h.MI.Phasor_Panel,...
+    'Tag','MI_Phasor_Rebin',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','1',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.19 0.84 0.08 0.025],...
+    'Tooltipstring', 'e.g. a value of 16 rescales 4096 to 256 TAC bins',...
+    'Callback',@Rebinmsg);
+
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MI.Phasor_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','Ref. Background [Hz]:',...
+    'Horizontalalignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.75 0.885 0.20 0.025]);
 %%% Editbox for reference background correction
 h.MI.Phasor_BG_Ref = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -1809,7 +1834,7 @@ h.Text{end+1} = uicontrol(...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.855 0.20 0.025]);
+    'Position',[0.75 0.855 0.20 0.025]);
 %%% Editbox for background correction
 h.MI.Phasor_BG = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -1832,7 +1857,7 @@ h.Text{end+1} = uicontrol(...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.825 0.20 0.025]);
+    'Position',[0.75 0.825 0.20 0.025]);
 %%% Editbox for afterpulsing correction
 h.MI.Phasor_AP = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -3868,8 +3893,18 @@ elseif obj == h.Trace.Log
         UserValues.Settings.Pam.PlotIRF = 'on';
     end
     Update_Display([],[],8);
-elseif obj == h.MI.ScatterPattern
+elseif obj == h.MI.IRF
     %%% Switches IRF Check Display
+    if strcmp(h.MI.IRF.Checked,'on')
+        h.MI.IRF.Checked = 'off';
+        UserValues.Settings.Pam.PlotIRF = 'off';
+    else
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+    end
+    Update_Display([],[],8);
+elseif obj == h.MI.ScatterPattern
+    %%% Switches Scatter Pattern Check Display
     if strcmp(h.MI.ScatterPattern.Checked,'on')
         h.MI.ScatterPattern.Checked = 'off';
         UserValues.Settings.Pam.PlotScat = 'off';
@@ -4248,7 +4283,7 @@ if any(mode == 10)
         end
     end
     if UserValues.Settings.Pam.Use_PCH
-        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
             for t = h.PIE.List.Value
                 %%% create plot
                 h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
@@ -4372,10 +4407,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
-%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
-%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
-%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
+    h.Image.Axes.XLim(1)= 0.5;
+    h.Image.Axes.XLim(2)= size(PamMeta.Image{Sel},2)+0.5;
+    h.Image.Axes.YLim(1)= 0.5;
+    h.Image.Axes.YLim(2)= size(PamMeta.Image{Sel},1)+0.5;
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7028,9 +7063,15 @@ Det=h.MI.Phasor_Det.Value;
 UserValues.Phasor.Reference(Det,:)=0;
 % UserValues.Phasor.Reference = zeros(numel(UserValues.Detector.Det),4096);
 %%% Assigns current MI histogram as reference
+%%% rebin TCSPC data prior to phasor analysis (1 for no rebinning)
+rebin = [1:str2double(h.MI.Phasor_Rebin.String):FileInfo.MI_Bins];
+for i = 1:(numel(rebin)-1)
+    UserValues.Phasor.ReferenceRebinned(Det,i) = sum(PamMeta.MI_Hist{Det}(rebin(i):rebin(i+1)-1));
+end
+UserValues.Phasor.ReferenceRebinned(Det,numel(rebin)) = sum(PamMeta.MI_Hist{Det}(rebin(end):size(PamMeta.MI_Hist{Det},1))); %bins all remaining values in the last bin
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
-UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+UserValues.Phasor.Reference_MI_Bins = round(FileInfo.MI_Bins/str2double(h.MI.Phasor_Rebin.String));
 UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
 LSUserValues(1);
 
@@ -7065,16 +7106,16 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         %%% Saves pathname
         UserValues.File.PhasorPath=PathName;
         LSUserValues(1);
-
+        
         %% Calculates reference
-        Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        Shift=round(h.MI.Phasor_Slider.Value/str2double(h.MI.Phasor_Rebin.String)); % Shift between reference and file in MI bins, rescaled 
         Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
-        MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
         Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
+        MI_Bins = round(FileInfo.MI_Bins/str2double(h.MI.Phasor_Rebin.String)); % Total number of MI bins of file
         TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
-        From=str2double(h.MI.Phasor_From.String); % First MI bin to used
-        To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
+        From=str2double(h.MI.Phasor_From.String); % First MI bin to used, rescaled
+        To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used, rescaled
         if h.MI.Phasor_FramePopup.Value == 2
             Frames = size(FileInfo.LineTimes,1);
         else
@@ -7094,14 +7135,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
         
         %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
+        Ref=circshift(UserValues.Phasor.ReferenceRebinned(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
         Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
-        if From>1
-            Ref(1:(From-1))=0;
+        if round(From/str2double(h.MI.Phasor_Rebin.String))>1
+            Ref(1:(round(From/str2double(h.MI.Phasor_Rebin.String))-1))=0;
         end
-        if To<Ref_MI_Bins
-            Ref(To+1:end)=0;
+        if round(To/str2double(h.MI.Phasor_Rebin.String))<Ref_MI_Bins
+            Ref(round(To/str2double(h.MI.Phasor_Rebin.String))+1:end)=0;
         end
         Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
@@ -7131,6 +7172,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
         %%% Extracts microtimes
         PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+        %%% rebin TCSPC data prior to phasor analysis (1 for no rebinning)
+        PIE_MI = round(PIE_MI/str2double(h.MI.Phasor_Rebin.String));
         %%% Removes invalid photons (usually laser retraction)
         PIE_MI=PIE_MI(Bin~=0);
         Bin=Bin(Bin~=0);
@@ -7139,16 +7182,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
         Intensity=flip(permute(Intensity,[2 1 3]),1);
         
-        
+        % capital G and S are the phasor coordinates of the TCSPC channels
         G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
         %% Actual Calculation
 
         %%% Actual calculation in C++
-        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
+        % lowercase g and s are the mean phasor coordinates of each pixel
+        % Mean_LT is the mean arrival time per pixel in TCSPC bins
+        [Mean_LT, g,s] = DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
         
         %%% Reshapes data to images
+        % g, s and Mean_LT are pixels x lines x frames
         g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
         s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
         Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
@@ -7156,7 +7202,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                    
         %%% Background and Afterpulsing correction
         Use = zeros(1,MI_Bins);
-        Use(From:To) = 1/MI_Bins;
+        Use(round(From/str2double(h.MI.Phasor_Rebin.String)):round(To/str2double(h.MI.Phasor_Rebin.String))) = 1/MI_Bins;
         G = sum(G.*Use);
         S = sum(S.*Use);
         g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
@@ -8141,6 +8187,9 @@ BurstData.BAMethod = BAMethod;
 if BurstData.BAMethod == 6
     %%% Set DCBS-noMFD to APBS-noMFD
     BurstData.BAMethod = 5;
+    % also overwrite the PIE channel selections to read out the right data further on
+    UserValues.BurstSearch.PIEChannelSelection{5} = UserValues.BurstSearch.PIEChannelSelection{6};
+    LSUserValues(1);
 end
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
@@ -12563,41 +12612,7 @@ else
     figure(notepad);
 end
 
-%%% Estimates background count rates from burst experiment using
-%%% exponential tail fit to interphoton time distribution
-%%% see Ingargiola, A. et al. PLoS ONE (2016) for more details
-function Estimate_Background_From_Burst(~,~)
-global UserValues TCSPCData FileInfo
-
-BAMethod = UserValues.BurstSearch.Method;
-%%% get channels to estimate background for
-chans = UserValues.BurstSearch.PIEChannelSelection{BAMethod}'; chans = chans(:);
-%%% MLE for Poissonian errors
-logL = @(x,xdata,ydata) sum(ydata.*log(ydata./(x(1).*exp(-xdata.*x(2)))) - ydata + x(1).*exp(-xdata.*x(2)) );
-for i = 1:numel(chans)
-    %%% read out photons
-    MT = Get_Photons_from_PIEChannel(chans{i},'Macrotime');
-    MT = diff(MT).*FileInfo.ClockPeriod*1000; % convert to interphoton time and milliseconds
-    %calculate histogram
-    [hMT, dt] = hist(MT,0:.1:max(MT));
-    valid = (dt>max(dt/5)) & (hMT > 1);
-    x0 = [hMT(1),3/max(dt)];
-    x = fmincon(@(x) logL(x,dt(valid),hMT(valid)),x0,[],[],[],[],[0,0],[Inf,Inf]);
-    figure; plot(dt,hMT);hold on; plot(dt,x(1).*exp(-dt.*x(2)));set(gca,'YScale','log');
-    bg(i) = x(2);
-    disp(sprintf('Fitted channel %d of %d',i,numel(chans)));
-end
-disp('The estimated background count rates are:')
-result = [chans,num2cell(bg')]';
-disp(sprintf('%s: %f kHz\n',result{:}));
-%%% sort background into channels and update display
-%%% Store Background Counts in PIE subfield of UserValues structure (PIE.Background) in kHz
-for i=1:numel(chans)%numel(UserValues.PIE.Name)
-    c = find(strcmp(UserValues.PIE.Name,chans{i}));
-    if isempty(UserValues.PIE.Combined{c})
-        UserValues.PIE.Background(c) = bg(c);
-    end
-end
-LSUserValues(1);
-Update_Display([],[],[1,8])
-disp('Done estimating background count rates from burst experiment.');
+function Rebinmsg(~,~)
+b = msgbox('save reference again');
+pause(2);
+close(b);

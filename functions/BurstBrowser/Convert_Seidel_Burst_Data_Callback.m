@@ -9,7 +9,9 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Converting data...');
 
 % check if conversion was already done
 folder  = strsplit(PathName,filesep); folder = folder{end};
-if exist([PathName filesep folder '.bur'],'file') == 2
+[~,fn] = fileparts(fileparts(PathName));
+burfilename = [fileparts(PathName) filesep fn '_' folder '.bur'];
+if exist(burfilename,'file') == 2
     disp('File was already converted.')
     Progress(1,h.Progress_Axes,h.Progress_Text);
     return;
@@ -203,12 +205,13 @@ if sum(strcmp(ParameterNames,'Tau (yellow)')) == 0 % no lifetime PIE information
 end
 
 % rename acceptor parameters
-ParameterNames{strcmp(ParameterNames,'Number of Photons (yellow)')} = 'Number of Photons (AA)';
-ParameterNames{strcmp(ParameterNames,'Ny-p-all')} = 'Number of Photons (AA par)';
-ParameterNames{strcmp(ParameterNames,'Ny-s-all')} = 'Number of Photons (AA perp)';
-ParameterNames{strcmp(ParameterNames,'Tau (yellow)')} = 'Lifetime A [ns]';
-ParameterNames{strcmp(ParameterNames,'r Experimental (yellow)')} = 'Anisotropy A';
-
+try
+    ParameterNames{strcmp(ParameterNames,'Number of Photons (yellow)')} = 'Number of Photons (AA)';
+    ParameterNames{strcmp(ParameterNames,'Ny-p-all')} = 'Number of Photons (AA par)';
+    ParameterNames{strcmp(ParameterNames,'Ny-s-all')} = 'Number of Photons (AA perp)';
+    ParameterNames{strcmp(ParameterNames,'Tau (yellow)')} = 'Lifetime A [ns]';
+    ParameterNames{strcmp(ParameterNames,'r Experimental (yellow)')} = 'Anisotropy A';
+end
 % add raw Stoichiometry
 if sum(strcmp(ParameterNames,'Stoichiometry (raw)')) == 0
     ParameterNames{end+1} = 'Stoichiometry (raw)';
@@ -263,7 +266,7 @@ burst_data.FileInfo.ParisInfo = info;
 
 %%% save as *.bur file
 BurstData = burst_data;
-save([PathName filesep burst_data.FileName '.bur'],'BurstData','-v7.3');
-UserValues.File.BurstBrowserPath=PathName;
+save(burfilename,'BurstData','-v7.3');
+UserValues.File.BurstBrowserPath=fileparts(PathName);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 LSUserValues(1);

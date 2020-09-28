@@ -799,15 +799,15 @@ switch Type
                 Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
                 Text = Text{1};
                 Data.Header = Text{1};
-                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); 
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); 
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); 
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
                 k=1;
                 for j = Start+1:numel(Text)
-                    Values(k,:) = str2num(Text{j});  %#ok<ST2NM>
+                    Values(k,:) = str2num(Text{j}); 
                     k = k+1;
                 end
                 Data.Cor_Times = Values(:,1);
@@ -1191,7 +1191,7 @@ global UserValues FCSData FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
 
 %%% Merge only the active files
-active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
+active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
 %%% check for length difference
 len = zeros(1,numel(active));
 k = 1;
@@ -1940,7 +1940,10 @@ for i=1:size(FCSMeta.Plots,1)
                 B=FCSMeta.Data{i,2}(T);
                 if  Normalization_Method == 9
                     P = FCSMeta.Params(:,i);
-                    B = B - P(end);
+                    offset_idx = find(strcmp(FCSMeta.Model.Params,'y0'));
+                    if ~isempty(offset_idx)
+                        B = B - P(offset_idx);
+                    end
                 end
             case 8
                 
@@ -2279,10 +2282,10 @@ switch mode
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
         end
-        %% Sets axes parameters   
-        set(H.FCS.Children,'LineWidth',1.5);        
+        %% Sets axes parameters
+        %set(H.FCS.Children,'LineWidth',1.5);
         if h.Export_Residuals.Value
-            set(H.Residuals.Children,'LineWidth',1.5);
+            %set(H.Residuals.Children,'LineWidth',1.5);
             linkaxes([H.FCS,H.Residuals],'x');
         end
         H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
@@ -2382,7 +2385,12 @@ switch mode
             if isfield(FCSMeta,'Confidence_Intervals')
                 for i = 1:numel(FCSData.FileName)
                     if active(i)
-                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                        Nlow = FCSMeta.Confidence_Intervals{i}(1,1);
+                        Nhigh = FCSMeta.Confidence_Intervals{i}(1,2);
+                        N = FitResult{i}{4};
+                        Blow = FitResult{i}{3}*Nlow/N;
+                        Bhigh = FitResult{i}{3}*Nhigh/N;
+                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'','';num2str(Blow),num2str(Bhigh)},num2cell([FCSMeta.Confidence_Intervals{i}])));
                     end
                 end
             end
@@ -2451,6 +2459,8 @@ if sum(Global)==0
             if ~Use_Weights
                 EData(:)=1;
             end
+            %%% Fix zeros in error estimate
+            EData(EData==0) = 1;
             %%% Sets initial values and bounds for non fixed parameters
             Fit_Params=FCSMeta.Params(~Fixed(i,:),i);
             Lb=lb(~Fixed(i,:));
@@ -2555,6 +2565,8 @@ else
         Lb=[Lb lb(~Fixed(i,:) & ~Global)];
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
+    %%% Fix zeros in error estimate
+    EData(EData==0) = 1;
     %%% Puts current Data into global variable to be able to stop fitting
     %%% Performs fit
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points,Fixed,Global,Active},YData./EData,Lb,Ub,opts);

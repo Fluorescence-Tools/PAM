@@ -4,6 +4,8 @@ if isempty(UserValues) || isempty(BurstData)
     delete(hfig);
     return;
 end
+%%% sanitize filename
+FigureName = strrep(FigureName,':','');
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 file = BurstMeta.SelectedFile;
 if directly_save

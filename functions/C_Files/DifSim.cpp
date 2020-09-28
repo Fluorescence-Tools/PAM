@@ -41,7 +41,7 @@ void Simulate_Diffusion(
     
     /// Random number generator
 	mt19937 mt; // initialize mersenne twister engine
-    mt.seed((unsigned long)time(NULL) + Time); // engine seeding
+    mt.seed(Time); // engine seeding
     //normal distribtion for diffusion
 	normal_distribution<double> normal(0.0, D); //mu = 0.0, sigma = 1.0
     /// Generates uniform distributed random number between 0 and 1

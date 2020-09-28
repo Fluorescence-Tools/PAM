@@ -47,15 +47,31 @@ for i=1:numel(MergeData)
         MergedParameters.TACRange{i} = MergeData{i}.BurstData.TACrange;
     end
     MergedParameters.BAMethod{i} = MergeData{i}.BurstData.BAMethod;
-    MergedParameters.Filetype{i} = MergeData{i}.BurstData.Filetype;
+    try
+        MergedParameters.Filetype{i} = MergeData{i}.BurstData.Filetype;
+    catch
+        MergedParameters.Filetype{i} = MergeData{i}.BurstData.FileType;
+    end
     MergedParameters.SyncPeriod{i} = MergeData{i}.BurstData.SyncPeriod;
     MergedParameters.ClockPeriod{i} = MergeData{i}.BurstData.ClockPeriod;
     MergedParameters.FileInfo{i} = MergeData{i}.BurstData.FileInfo;
     MergedParameters.PIE{i} = MergeData{i}.BurstData.PIE;
-    MergedParameters.IRF{i} = MergeData{i}.BurstData.IRF;
-    MergedParameters.ScatterPattern{i} = MergeData{i}.BurstData.ScatterPattern;
+    try
+        MergedParameters.IRF{i} = MergeData{i}.BurstData.IRF;
+    catch
+        MergedParameters.IRF{i} = [];
+    end
+    try
+        MergedParameters.ScatterPattern{i} = MergeData{i}.BurstData.ScatterPattern;
+    catch
+        MergedParameters.ScatterPattern{i} = [];
+    end
     MergedParameters.Background{i} = MergeData{i}.BurstData.Background;
-    MergedParameters.FileNameSPC{i} = MergeData{i}.BurstData.FileNameSPC;
+    try
+        MergedParameters.FileNameSPC{i} = MergeData{i}.BurstData.FileNameSPC;
+    catch
+        MergedParameters.FileNameSPC{i} = '';
+    end
     %%% use update path information
     MergedParameters.PathName{i} = fileparts(Files{i,1});
     MergedParameters.FileName{i} = Files{i,1};
@@ -118,7 +134,7 @@ end
 Progress(0.6,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
 
 %%% Save merged data
-[FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fileparts(Files{1,1}));
+[FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fullfile(Files{1,2},'..',Files{1,1}));
 if FileName == 0
     m = msgbox('No valid filepath specified... Canceling');
     pause(1);
@@ -131,6 +147,6 @@ BurstData.FileName = FileName;
 filename = fullfile(BurstData.PathName,BurstData.FileName);
 save(filename,'BurstData');
 Progress(0.8,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
-save([filename(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
+save([filename(1:end-3) 'bps'],'Macrotime','Microtime','Channel','-v7.3');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);

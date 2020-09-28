@@ -8,10 +8,13 @@ if nargin < 3
     ask_file = 1;
 end
 h = guidata(obj);
-fontsize = 20;
+fontsize = 24;
+linewidth = 2;
 if ispc
-    fontsize = fontsize/1.3;
+    fontsize = fontsize*0.72;
+    linewidth = linewidth*0.72;
 end
+
 
 % just export data, no plot
 if any(obj==[h.Export1DX_Data_Menu,h.Export1DY_Data_Menu,h.Export2D_Data_Menu])
@@ -195,11 +198,13 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
-        panel_copy.ShadowColor = [1 1 1];
-        %%% set Background Color to white
-        panel_copy.BackgroundColor = [1 1 1];
-        panel_copy.HighlightColor = [1 1 1];
+        copyobj([h.axes_1d_y,h.axes_1d_x,h.axes_general,h.axes_1d_x.Legend],hfig);
+        panel_copy = hfig;
+        %panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
+        %panel_copy.ShadowColor = [1 1 1];
+        %%%% set Background Color to white
+        %panel_copy.BackgroundColor = [1 1 1];
+        %panel_copy.HighlightColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
@@ -234,6 +239,8 @@ switch obj
             end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
+            %%% Adapt LineWidth
+            panel_copy.Children(i).LineWidth = linewidth;
             %%% change X/YColor Color Color
             panel_copy.Children(i).XColor = [0,0,0];
             panel_copy.Children(i).YColor = [0,0,0];
@@ -255,20 +262,26 @@ switch obj
                             lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                         end
                     end
-                    set(panel_copy.Children(i),'YTickLabelRotation',0);
+                    %set(panel_copy.Children(i),'YTickLabelRotation',0);
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
-                    %yticks = get(panel_copy.Children(i),'YTick');
-                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
+                    % increase the linewidth of stair plots
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'stair')
+                            panel_copy.Children(i).Children(j).LineWidth = linewidth;
+                        end
                     end
                 case 'Axes_1D_X'
                     drawnow;
@@ -286,18 +299,24 @@ switch obj
                     end
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
-                    %yticks = get(panel_copy.Children(i),'YTick');
-                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
                     panel_copy.Children(i).XTickLabelMode = 'auto';
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
+                    % increase the linewidth of stair plots
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'stair')
+                            panel_copy.Children(i).Children(j).LineWidth = linewidth;
+                        end
                     end
                     ax1dx = i;
                 case 'Axes_General'
@@ -325,6 +344,7 @@ switch obj
             cbar.Label.Units = 'normalized';
             cbar.Label.Position = [0.5,2.85,0];
             cbar.Label.String = param;
+            cbar.LineWidth = linewidth;
             cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
             zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),2} h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),3}];
             cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
@@ -347,6 +367,7 @@ switch obj
             cbar.Limits(1) = 0;
             cbar.TicksMode = 'auto';
             cbar.TickLabelsMode = 'auto';
+            cbar.LineWidth = linewidth;
         end
         for n = 1:numel(panel_copy.Children)
             if strcmp(panel_copy.Children(n).Tag,'Axes_1D_X')
@@ -357,6 +378,7 @@ switch obj
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
+            del = [];
             for i = 1:numel(hfig.Children(end).Children)
                 if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
                     del = i;
@@ -404,7 +426,9 @@ switch obj
             ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
-                'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
+                'LineWidth',linewidth,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
+            %%% reduce the linewidth of the axis below
+            set(ax2d,'LineWidth',1);
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -446,6 +470,8 @@ switch obj
                 panel_copy.Children(i).YLabel.Color = [0,0,0];
                 %%% Increase FontSize
                 panel_copy.Children(i).FontSize = fontsize;
+                %%% Adapt linewidth
+                panel_copy.Children(i).LineWidth = linewidth;
                 %%% Make Bold
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
@@ -592,14 +618,15 @@ switch obj
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
-        panel_copy = copyobj(h.LifetimePanelInd,hfig);
-        panel_copy.ShadowColor = [1 1 1];
+        copyobj([h.axes_lifetime_ind_1d_y,h.axes_lifetime_ind_1d_x,h.axes_lifetime_ind_2d,h.axes_lifetime_ind_1d_x.Legend],hfig);
+        panel_copy = hfig;
+        %panel_copy = copyobj(h.LifetimePanelInd,hfig);
+        %panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
-        panel_copy.BackgroundColor = [1 1 1];
-        panel_copy.HighlightColor = [1 1 1];
+        %panel_copy.BackgroundColor = [1 1 1];
+        %panel_copy.HighlightColor = [1 1 1];
         
-        color_bar = true;
-        
+        color_bar = true;        
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
@@ -640,7 +667,8 @@ switch obj
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
             %panel_copy.Children(i).Layer = 'bottom';
-            
+            %%% Adapt linewidth
+            panel_copy.Children(i).LineWidth = linewidth;
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
@@ -662,16 +690,23 @@ switch obj
                              color_bar = false;
                         end
                     end
-                    panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
+                    
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
                             %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        elseif strcmp(panel_copy.Children(i).Children(k).Type,'stair')
+                            panel_copy.Children(i).Children(k).LineWidth = linewidth;
                         end
                     end
                 case 'axes_lifetime_ind_1d_x'
@@ -692,16 +727,23 @@ switch obj
                             panel_copy.Children(i).YLim = [0, maxY*1.05];
                         end
                     end
-                    panel_copy.Children(i).YTickLabel = [];
+                    %panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     panel_copy.Children(i).YGrid = 'off';
                     panel_copy.Children(i).XGrid = 'off';
                     panel_copy.Children(i).Layer = 'top';
+                    
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end))
+                    
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
                             %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        elseif strcmp(panel_copy.Children(i).Children(k).Type,'stair')
+                            panel_copy.Children(i).Children(k).LineWidth = linewidth;
                         end
                     end
                 case 'axes_lifetime_ind_2d'
@@ -730,7 +772,7 @@ switch obj
         end
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
-                'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
+                'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',linewidth); 
             cbar.Position = [0.8,0.85,0.18,0.025];
             cbar.Label.String = 'Occurrence';
             cbar.TickLabelsMode = 'auto';
@@ -764,16 +806,19 @@ switch obj
                 end
             end
             %%% refind legend item
+            leg = [];
             for i = 1:numel(panel_copy.Children)
                 if strcmp(panel_copy.Children(i).Type,'legend')
                     leg = i;
                 end
             end
-            if strcmp(panel_copy.Children(leg).Visible,'on')
-                hfig.Position(4) = 660;
-                panel_copy.Position(4) = 660;
-                panel_copy.Children(leg).Position(1) = 10;
-                panel_copy.Children(leg).Position(2) = 590;
+            if ~isempty(leg)
+                if strcmp(panel_copy.Children(leg).Visible,'on')
+                    hfig.Position(4) = 660;
+                    panel_copy.Position(4) = 660;
+                    panel_copy.Children(leg).Position(1) = 10;
+                    panel_copy.Children(leg).Position(2) = 590;
+                end
             end
         end
         if UserValues.BurstBrowser.Display.ColorMapInvert
@@ -1000,3 +1045,8 @@ FigureName = [FileName SpeciesName '_' FigureName];
 %%% remove spaces
 FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
+
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end

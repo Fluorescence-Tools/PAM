@@ -241,6 +241,8 @@ for i=1:NumChans
                     %%% Save the correlation file
                     %%% Generates filename
                     filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+                    species = strrep(species,':','');
+                    species = strrep(species,'/','-');
                     if obj == h.CorrelateWindow_Button
                         Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
                     else

@@ -13,7 +13,7 @@ if isempty(BurstTCSPCData{file})
 end
 switch BurstData{file}.BAMethod
     case {1,2,5}
-    E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+        E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
     case 3
         switch UserValues.BurstBrowser.Settings.FRETpair_BVA
             case 1
@@ -100,7 +100,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         % STD per Bin
         BinEdges = linspace(0,1,UserValues.BurstBrowser.Settings.NumberOfBins_BVA+1);
         [N,~,bin] = histcounts(E,BinEdges);
-        BinCenters = BinEdges(1:end-1)+0.025;
+        BinCenters = BinEdges(1:end-1)+min(diff(BinEdges))/2;
         sPerBin = zeros(numel(BinEdges)-1,1);
         sampling = UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;
         PsdPerBin = zeros(numel(BinEdges)-1,sampling);
@@ -138,7 +138,7 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
                     idx = [0 cumsum(cellfun('size',M,2))];
                     window_id = zeros(size(EPerBin));
                     for l = 1:numel(M)
-                         window_id(idx(l)+1:idx(l+1)) = ones(1,size(M{l},2))*burst_id(l);
+                        window_id(idx(l)+1:idx(l+1)) = ones(1,size(M{l},2))*burst_id(l);
                     end
                     for m = 1:sampling
                         EperBin_simu = binornd(n,E(window_id))/n;
@@ -149,24 +149,51 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
             end
         end
         Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
-        % Plots
-        hfig = figure('color',[1 1 1],'Position',[100 100 600 550]);
-        a=gca;a.FontSize=24;a.LineWidth=2;a.Color =[1 1 1];a.Box='on';
-        hold on;
+        
+        % Figure properties
+        size_pixels = 500;
+        AspectRatio = 1;
+        pos = [100,100, round(1.08*size_pixels),round(1*size_pixels*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1]);
+        fcenterPlotPos = [0.15 0.135 0.65 0.65];
+        subplot('Position',fcenterPlotPos)
+        axmain=gca;
+        set(axmain,'Units','pixel');
+        ffontsize=21;
+        linewidth = 2;
+        if ispc
+            ffontsize = ffontsize*0.72;
+            linewidth = linewidth*0.72;
+        end
+        axmain.NextPlot = 'add';
+        axmain.XLim = [0 1];
+        axmain.YLim = [0 max([0.4,max(sSelected)])];
+        axmain.Layer = 'bottom';
+        grid(axmain,'on');
+        axmain.GridAlpha = 0.25;
+        axmain.FontSize = ffontsize;
+        axmain.Box = on;
+        axmain.FontName = 'Arial';
+        axmain.LineWidth = linewidth;
+        axmain.Color = [1 1 1];
+        axmain.YColor = [0 0 0];
+        axmain.XColor = [0 0 0];
+        
         X_expectedSD = linspace(0,1,1000);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         switch UserValues.BurstBrowser.Settings.BVA_X_axis
             case 1
-                xlabel('Proximity Ratio, E*'); 
-                ylabel('SD of E*, s');
+                xlabel('Proximity Ratio, E*');
+                ylabel('Standard Deviation, \sigma_{E*}');
+                %ylabel('SD of E*, s');
                 BinCenters = BinCenters';
                 [H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX);
             case 2
-                xlabel('FRET Efficiency'); 
-                ylabel('SD of FRET, s');
+                xlabel('FRET Efficiency, E');
+                ylabel('Standard Deviation, \sigma_{E}');%ylabel('SD of FRET, s');
                 %%% conversion betweeen PR and E
-                PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
-                   (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
+                PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR*BurstData{file}.Corrections.Gamma_GR*BurstData{file}.Corrections.Beta_GR).*(1-PR))./ ...
+                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
                 BinCenters = PRtoFRET(BinCenters);
                 X_expectedSD = PRtoFRET(X_expectedSD);
                 E = PRtoFRET(E);
@@ -175,71 +202,177 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         
         switch UserValues.BurstBrowser.Display.PlotType
             case 'Contour'
-            % contourplot of per-burst STD
-                contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
+                % contourplot of per-burst STD
+                [~,hc] = contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels));
+                if UserValues.BurstBrowser.Display.PlotContourLines
+                    hc.LineStyle = '-';
+                else
+                    hc.LineStyle = 'none';
+                end
                 axis('xy')
-                caxis([0 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
-            case 'Image'       
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ContourOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
+            case 'Image'
                 Alpha = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
-                imagesc(x(1:end-1),y(1:end-1),H','AlphaData',Alpha');axis('xy');     
+                imagesc(x(1:end-1),y(1:end-1),H','AlphaData',Alpha');axis('xy');
                 %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
-                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+                caxis(max(H(:)).*[UserValues.BurstBrowser.Display.ImageOffset/100 UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Scatter'
                 scatter(E,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
                 hexscatter(E,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
-        end        
-        patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
+        end
+        %patch([min(E) max(E) max(E) min(E)],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
         
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
-        plot(BinCenters,sPerBin,'-d','MarkerSize',12,'MarkerEdgeColor','none',...
-                'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
-            
+        plot(BinCenters,sPerBin,'d','MarkerSize',12,'MarkerEdgeColor','none',...
+            'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',linewidth,'Color',UserValues.BurstBrowser.Display.ColorLine1);
+        
         % plot of expected STD
-        plot(X_expectedSD,sigm,'k','LineWidth',2);
+        plot(X_expectedSD,sigm,'k','LineWidth',3);
         
         if sampling ~=0
             % Plot confidence intervals
-            alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
-            confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
-            % confint2 = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+            % Bonferroni correction for multiple hyptothesis testing
+            % according to Torella et al,2011
+            alpha_corr = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters);
+            confint = mean(PsdPerBin,2) + std(PsdPerBin,1,2)*norminv(1-alpha_corr);
+            % only plot for bins which contained enough bursts
+            confint(isnan(sPerBin)) = NaN;
             p2 = area(BinCenters,confint);
             p2.FaceColor = [0.25 0.25 0.25];
             p2.FaceAlpha = 0.25;
             p2.LineStyle = 'none';
         end
-       
+        
+        
+        loc = [0.807 0.8183 0.1931 0.0933];
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
                 if sampling ~= 0
-                    legend('Burst SD','Binned SD','Expected SD','CI','Location','northeast')
+                    lgd = legend('Burst SD','Binned SD','Expected SD','CI','Position',loc);
                 else
-                    legend('Burst SD','Binned SD','Expected SD','Location','northeast')
+                    lgd = legend('Burst SD','Binned SD','Expected SD','Position',loc);
+                end
+                if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+                    %BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
                 end
             case {'Image','Hex'}
                 if sampling ~= 0
-                    legend('Binned SD','Expected SD','CI','Location','northeast')
+                    lgd = legend('Binned SD','Expected SD','CI','Position',loc);
                 else
-                    legend('Binned SD','Expected SD','Location','northeast')
+                    lgd = legend('Binned SD','Expected SD','Position',loc);
                 end
-                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+                %BVA_cbar = colorbar('LineWidth',2); ylabel(BVA_cbar,'Number of Bursts');
+        end
+        lgd.FontSize = ffontsize*0.6;
+        lgd.EdgeColor = 'none';
+        
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+            cbar = colorbar(axmain,...
+                'Location','east','Color',[0 0 0],'FontSize',ffontsize,'LineWidth',linewidth);
+            cbar.Position = [0.83 0.135 0.025 0.65];
+            cbar.Label.String = 'Occurrence';
+            cbar.TickLabelsMode = 'auto';
+            cbar.Units = 'pixels';drawnow;
         end
         
-        
         %%% Update ColorMap
-        if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
-            else
-                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
-                else %%% jet is a special case, use jetvar colormap
-                    colormap(hfig,jetvar);
-                end
+        colormap(hfig,colormap(h.BurstBrowser));
+        
+        %%% Add marginal 1D histogram
+        face_alpha = 1;
+        subplot('Position',[0.15 0.785 0.65 0.15])
+        axtop = gca;
+        set(axtop,'Units','pixel');
+        hPR = histogram(axtop,E,linspace(0,1,UserValues.BurstBrowser.Display.NumberOfBinsX+1),...
+            'EdgeColor','none','FaceColor',[0.6 0.6 0.6],'FaceAlpha',face_alpha,'LineWidth',1);
+        axtop.NextPlot = 'add';
+        xbins = hPR.BinEdges(1:end-1); hPR = hPR.BinCounts;
+        stairs([xbins,xbins(end)+min(diff(xbins))],...
+            [hPR, hPR(end)],...
+            'Color','k','LineWidth',linewidth);
+        axtop.XLim = axmain.XLim;
+        axtop.YLim(2) = max(hPR)*1.05;
+        axtop.XTickLabel = [];
+        axtop.LineWidth = linewidth;
+        axtop.Box = 'on';
+        % axtop.Layer = 'top';
+        axtop.Color = [1 1 1];
+        axtop.FontSize = ffontsize;
+        ylabel('counts');
+        axtop.YTickMode = 'auto';
+        yticks = get(axtop,'YTick');
+        set(axtop,'YTick',yticks(2:end))
+        grid(axtop,'on')
+        
+        axformat = axes('Position',axtop.Position,'Color','none');
+        axformat.YLim = axmain.YLim;
+        axformat.XAxisLocation = 'top';
+        axformat.XLim = axmain.XLim;
+        axformat.XTick = axmain.XTick;
+        axformat.XTickLabel = axmain.XTickLabel;
+        axformat.YTick = [];
+        grid(axformat,'off');
+        axformat.YLabel.String = 'counts';
+        axformat.FontSize = ffontsize;
+        axformat.FontName = 'Arial';
+        axformat.LineWidth = linewidth;
+        axformat.YColor = [0 0 0];
+        axformat.XColor = [0 0 0];
+        axformat.Layer = 'top';
+        
+        add_Etau = false;
+        if add_Etau
+            tauD = BurstData{file}.DataArray(BurstData{file}.Selected,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));%./BurstData{file}.Corrections.DonorLifetime;
+            E = BurstData{file}.DataArray(BurstData{file}.Selected,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+            if UserValues.BurstBrowser.Settings.BVA_X_axis == 1 % convert back to proximity ratio
+                FRETtoPR = @(E) 1-(1-E)./(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR*BurstData{file}.Corrections.Gamma_GR*BurstData{file}.Corrections.Beta_GR-...
+                    (1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*E);
+                E = FRETtoPR(E);                
             end
-        else
-            colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+            [H,x,y] = histcounts2(tauD,E,UserValues.BurstBrowser.Display.NumberOfBinsX);%,'XBinLimits',[-0.1,1.1],'YBinLimits',[0,1.2]);
+            
+            % enlarge figure
+            hfig.Position(4) = 1.65*hfig.Position(4);
+            axtop.Position(2) = axmain.Position(2)+2*axmain.Position(4);
+            axmain.Units = 'normalized';
+            subplot('Position',[axmain.Position(1), axmain.Position(2)+axmain.Position(4), axmain.Position(3) axmain.Position(4)])
+            ax_Etau = gca;
+            axmain.Units = 'pixel';
+            ax_Etau.Units = 'pixel';
+            ax_Etau.NextPlot = 'add';
+            axis(ax_Etau);
+            
+            contourf(y(1:end-1),x(1:end-1),H,'LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none','HandleVisibility','off');
+            ax_Etau.CLimMode = 'auto';
+            ax_Etau.CLim(1) = 0;
+            ax_Etau.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
+
+            %%% add static and dynamic FRET line
+            xstat = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData;%./BurstData{file}.Corrections.DonorLifetime;
+            ystat = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData;
+            xdyn = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).XData;%./BurstData{file}.Corrections.DonorLifetime;
+            ydyn = BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1).YData;
+            if UserValues.BurstBrowser.Settings.BVA_X_axis == 1 % convert back to proximity ratio
+                ystat = FRETtoPR(ystat);
+                ydyn = FRETtoPR(ydyn);
+            end
+            plot(ystat,xstat,'-','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
+            plot(ydyn,xdyn,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine1,'HandleVisibility','off');
+            
+            set(ax_Etau,'Color',[1,1,1]);
+            
+            ax_Etau.XLim = [0,1];
+            ax_Etau.YLim = [0,1.1*BurstData{file}.Corrections.DonorLifetime];
+            
+            ylabel('\langle\tau_{D(A)}\rangle_F [ns]');
+            set(ax_Etau,'FontSize',ffontsize,'LineWidth',2,'Box','on','XColor',[0,0,0],'YColor',[0,0,0],'Layer','top','XGrid','on','YGrid','on');
+            ax_Etau.XTickLabel = [];
+            ax_Etau.YTick = ax_Etau.YTick(2:end);
+            ax_Etau.XTick = axmain.XTick;
+            % move legend
+            lgd.Position(2) = 0.46;
         end
         
         %%% Combine the Original FileName and the parameter names
@@ -289,5 +422,9 @@ switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
         E_tau_confidence_intervals(UserValues.BurstBrowser.Settings.NumberOfBins_BVA,...
             UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA,...
             UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+end
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
 end
 Progress(100,h.Progress_Axes,h.Progress_Text,'Done');

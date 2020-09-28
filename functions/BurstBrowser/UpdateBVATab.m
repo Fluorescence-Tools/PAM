@@ -12,6 +12,14 @@ end
 file = BurstMeta.SelectedFile;
 if isempty(obj)
     if isempty(BurstData)
+        h.ConfidenceInterval_edit.String = num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+        h.BinNumber_edit.String = num2str(UserValues.BurstBrowser.Settings.NumberOfBins_BVA);
+        h.BurstsPerBin_edit.String = num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA);
+        h.DynamicAnalysisMethod_Popupmenu.Value = UserValues.BurstBrowser.Settings.DynamicAnalysisMethod;
+        
+        h.state1st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        h.state2st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        h.state3st_amplitude_edit.String = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
         h.Rstate1_edit.String = UserValues.BurstBrowser.Settings.BVA_R1;
         h.Rstate2_edit.String = UserValues.BurstBrowser.Settings.BVA_R2;
         h.Rstate3_edit.String = UserValues.BurstBrowser.Settings.BVA_R3;
@@ -26,6 +34,24 @@ if isempty(obj)
         h.Rsigma3st_edit.String = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static;
         h.KineticRates_table2.Data = mat2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2);
         h.KineticRates_table3.Data = mat2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3);
+        
+        h.state1st_amplitude_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2;
+        h.state2st_amplitude_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2;
+        h.state3st_amplitude_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2;
+        h.Rstate1_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R1_Model2;
+        h.Rstate2_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R2_Model2;
+        h.Rstate3_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R3_Model2;
+        h.Rsigma1_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma1_Model2;
+        h.Rsigma2_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma2_Model2;
+        h.Rsigma3_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma3_Model2;
+        h.Rstate1st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R1_static_Model2;
+        h.Rstate2st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R2_static_Model2;
+        h.Rstate3st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_R3_static_Model2;
+        h.Rsigma1st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2;
+        h.Rsigma2st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2;
+        h.Rsigma3st_edit_Model2.String = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2;
+        h.KineticRates_table2_Model2.Data = mat2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2_Model2);
+        h.KineticRates_table3_Model2.Data = mat2cell(UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3_Model2);
     else
         %%% add rates, sigma and R as additional parameter
         if ~isfield(BurstData{file},'AdditionalParameters')
@@ -67,14 +93,97 @@ if isempty(obj)
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma3_static')
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static;
         end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude1_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude2_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude3_static')
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
+        end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable2')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2;
         end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable3')
             BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3;
         end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_DynamicStates')
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates = UserValues.BurstBrowser.Settings.BVA_DynamicStates;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_StaticStates')
+            BurstData{file}.AdditionalParameters.BVA_StaticStates = UserValues.BurstBrowser.Settings.BVA_StaticStates;
+        end
+        
+        
+        
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R1_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R1_Model2 = UserValues.BurstBrowser.Settings.BVA_R1_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R2_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R2_Model2 = UserValues.BurstBrowser.Settings.BVA_R2_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R3_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R3_Model2 = UserValues.BurstBrowser.Settings.BVA_R3_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma1_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma2_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma2_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma3_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma3_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R1_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R1_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R2_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R2_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_R3_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_R3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R3_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma1_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma2_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_Rsigma3_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude1_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude2_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_amplitude3_static_Model2')
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable2_Model2')
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2_Model2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_KineticRatesTable3_Model2')
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_DynamicStates_Model2')
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2 = UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2;
+        end
+        if ~isfield(BurstData{file}.AdditionalParameters,'BVA_StaticStates_Model2')
+            BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2 = UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2;
+        end
+        
+        
         
         %%% Update GUI with values stored in BurstData Structure
+        h.DynamicStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates-1;
+        h.StaticStates_Popupmenu.Value = BurstData{file}.AdditionalParameters.BVA_StaticStates-1;
+        BurstData{file}.AdditionalParameters.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1;
+        h.state1st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static);
+        h.state2st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude2_static);
+        h.state3st_amplitude_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude3_static);
         h.Rstate1_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R1);
         h.Rstate2_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R2);
         h.Rstate3_edit.String = num2str(BurstData{file}.AdditionalParameters.BVA_R3);
@@ -92,9 +201,188 @@ if isempty(obj)
         h.KineticRates_table3.Data(1,1) = {NaN};h.KineticRates_table2.Data(1,1) = {NaN};
         h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
         h.KineticRates_table3.Data(3,3) = {NaN};
+        
+        h.DynamicStates_Popupmenu_Model2.Value = BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2-1;
+        h.StaticStates_Popupmenu_Model2.Value = BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2-1;
+        h.state1st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2);
+        h.state2st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2);
+        h.state3st_amplitude_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2);
+        h.Rstate1_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R1_Model2);
+        h.Rstate2_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R2_Model2);
+        h.Rstate3_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R3_Model2);
+        h.Rsigma1_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma1_Model2);
+        h.Rsigma2_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma2_Model2);
+        h.Rsigma3_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma3_Model2);
+        h.Rstate1st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R1_static_Model2);
+        h.Rstate2st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R2_static_Model2);
+        h.Rstate3st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_R3_static_Model2);
+        h.Rsigma1st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma1_static_Model2);
+        h.Rsigma2st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma2_static_Model2);
+        h.Rsigma3st_edit_Model2.String = num2str(BurstData{file}.AdditionalParameters.BVA_Rsigma3_static_Model2);
+        h.KineticRates_table2_Model2.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2_Model2);
+        h.KineticRates_table3_Model2.Data = num2cell(BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2(1:3,1:3));
+        h.KineticRates_table3_Model2.Data(1,1) = {NaN};h.KineticRates_table2_Model2.Data(1,1) = {NaN};
+        h.KineticRates_table3_Model2.Data(2,2) = {NaN};h.KineticRates_table2_Model2.Data(2,2) = {NaN};
+        h.KineticRates_table3_Model2.Data(3,3) = {NaN};
     end
 else
     switch obj
+        case h.ModelID_Popupmenu
+            switch h.ModelID_Popupmenu.Value
+                case 1
+                    h.state1st_amplitude_edit_Model2.Visible = 'off';
+                    h.state2st_amplitude_edit_Model2.Visible = 'off';
+                    h.Rstate1_edit_Model2.Visible = 'off';
+                    h.Rstate2_edit_Model2.Visible = 'off';
+                    h.Rsigma1_edit_Model2.Visible = 'off';
+                    h.Rsigma2_edit_Model2.Visible = 'off';
+                    h.Rstate1st_edit_Model2.Visible = 'off'; 
+                    h.Rstate2st_edit_Model2.Visible = 'off';
+                    h.Rsigma1st_edit_Model2.Visible = 'off'; 
+                    h.Rsigma2st_edit_Model2.Visible = 'off';
+                    h.KineticRates_table2_Model2.Visible = 'off';
+                    h.DynamicStates_Popupmenu_Model2.Visible = 'off';
+                    h.StaticStates_Popupmenu_Model2.Visible = 'off';
+                    
+                    h.state3st_amplitude_edit_Model2.Visible = 'off';
+                    h.Rstate3_edit_Model2.Visible = 'off';
+                    h.Rsigma3_edit_Model2.Visible = 'off';
+                    h.Rstate3st_edit_Model2.Visible = 'off';
+                    h.Rsigma3st_edit_Model2.Visible = 'off';
+                    h.KineticRates_table3_Model2.Visible = 'off';
+                    
+                    h.state1st_amplitude_edit.Visible = 'on';
+                    h.state2st_amplitude_edit.Visible = 'on';
+                    h.Rstate1_edit.Visible = 'on';
+                    h.Rstate2_edit.Visible = 'on';
+                    h.Rsigma1_edit.Visible = 'on';
+                    h.Rsigma2_edit.Visible = 'on';
+                    h.Rsigma3_edit.Visible = 'on';
+                    h.Rstate1st_edit.Visible = 'on'; 
+                    h.Rstate2st_edit.Visible = 'on';
+                    h.Rsigma1st_edit.Visible = 'on'; 
+                    h.Rsigma2st_edit.Visible = 'on';
+                    h.KineticRates_table2.Visible = 'on';
+                    h.DynamicStates_Popupmenu.Visible = 'on';
+                    h.StaticStates_Popupmenu.Visible = 'on';
+                    
+                    switch UserValues.BurstBrowser.Settings.BVA_DynamicStates
+                        case 2
+                            h.KineticRates_table3.Visible = 'off';
+                            h.KineticRates_table2.Visible = 'on';
+                            h.state3_text.Visible = 'off';
+                            h.Rstate3_text.Visible = 'off';
+                            h.Rstate3_edit.Visible = 'off';
+                            h.Rsigma3_text.Visible = 'off';
+                            h.Rsigma3_edit.Visible = 'off';
+                        case 3
+                            h.KineticRates_table2.Visible = 'off';
+                            h.KineticRates_table3.Visible = 'on';
+                            h.state3_text.Visible = 'on';
+                            h.Rstate3_text.Visible = 'on';
+                            h.Rstate3_edit.Visible = 'on';
+                            h.Rsigma3_text.Visible = 'on';
+                            h.Rsigma3_edit.Visible = 'on';
+                    end
+                    switch UserValues.BurstBrowser.Settings.BVA_StaticStates
+                        case 2
+                            h.state3st_text.Visible = 'off';
+                            h.Rstate3st_text.Visible = 'off';
+                            h.Rstate3st_edit.Visible = 'off';
+                            h.Rsigma3st_text.Visible = 'off';
+                            h.Rsigma3st_edit.Visible = 'off';
+                            h.state3st_amplitude_edit.Visible = 'off';
+                            h.state3st_amplitude_text.Visible = 'off';
+                        case 3
+                            h.state3st_text.Visible = 'on';
+                            h.Rstate3st_text.Visible = 'on';
+                            h.Rstate3st_edit.Visible = 'on';
+                            h.Rsigma3st_text.Visible = 'on';
+                            h.Rsigma3st_edit.Visible = 'on';
+                            h.state3st_amplitude_edit.Visible = 'on';
+                            h.state3st_amplitude_text.Visible = 'on';
+                    end
+                
+                case 2
+                    h.state1st_amplitude_edit.Visible = 'off';
+                    h.state2st_amplitude_edit.Visible = 'off';
+                    h.state3st_amplitude_edit.Visible = 'off';
+                    h.Rstate1_edit.Visible = 'off';
+                    h.Rstate2_edit.Visible = 'off';
+                    h.Rstate3_edit.Visible = 'off';
+                    h.Rsigma1_edit.Visible = 'off';
+                    h.Rsigma2_edit.Visible = 'off';
+                    h.Rsigma3_edit.Visible = 'off';
+                    h.Rstate1st_edit.Visible = 'off'; 
+                    h.Rstate2st_edit.Visible = 'off'; 
+                    h.Rstate3st_edit.Visible = 'off'; 
+                    h.Rsigma1st_edit.Visible = 'off'; 
+                    h.Rsigma2st_edit.Visible = 'off'; 
+                    h.Rsigma3st_edit.Visible = 'off';
+                    h.KineticRates_table2.Visible = 'off'; 
+                    h.KineticRates_table3.Visible = 'off';
+                    h.DynamicStates_Popupmenu.Visible = 'off';
+                    h.StaticStates_Popupmenu.Visible = 'off';
+                    
+                    h.state1st_amplitude_edit_Model2.Visible = 'on';
+                    h.state2st_amplitude_edit_Model2.Visible = 'on';
+                    h.state3st_amplitude_edit_Model2.Visible = 'on';
+                    h.Rstate1_edit_Model2.Visible = 'on';
+                    h.Rstate2_edit_Model2.Visible = 'on';
+                    h.Rstate3_edit_Model2.Visible = 'on';
+                    h.Rsigma1_edit_Model2.Visible = 'on';
+                    h.Rsigma2_edit_Model2.Visible = 'on';
+                    h.Rsigma3_edit_Model2.Visible = 'on';
+                    h.Rstate1st_edit_Model2.Visible = 'on'; 
+                    h.Rstate2st_edit_Model2.Visible = 'on'; 
+                    h.Rstate3st_edit_Model2.Visible = 'on'; 
+                    h.Rsigma1st_edit_Model2.Visible = 'on'; 
+                    h.Rsigma2st_edit_Model2.Visible = 'on'; 
+                    h.Rsigma3st_edit_Model2.Visible = 'on';
+                    h.KineticRates_table2_Model2.Visible = 'on'; 
+                    h.KineticRates_table3_Model2.Visible = 'on';
+                    h.DynamicStates_Popupmenu_Model2.Visible = 'on';
+                    h.StaticStates_Popupmenu_Model2.Visible = 'on';
+                     
+                    switch UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2
+                        case 2
+                            h.KineticRates_table3_Model2.Visible = 'off';
+                            h.KineticRates_table2_Model2.Visible = 'on';
+                            h.state3_text.Visible = 'off';
+                            h.Rstate3_text.Visible = 'off';
+                            h.Rstate3_edit_Model2.Visible = 'off';
+                            h.Rsigma3_text.Visible = 'off';
+                            h.Rsigma3_edit_Model2.Visible = 'off';
+                        case 3
+                            h.KineticRates_table2_Model2.Visible = 'off';
+                            h.KineticRates_table3_Model2.Visible = 'on';
+                            h.state3_text.Visible = 'on';
+                            h.Rstate3_text.Visible = 'on';
+                            h.Rstate3_edit_Model2.Visible = 'on';
+                            h.Rsigma3_text.Visible = 'on';
+                            h.Rsigma3_edit_Model2.Visible = 'on';
+                    end
+
+                    switch UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2
+                        case 2
+                            h.state3st_text.Visible = 'off';
+                            h.Rstate3st_text.Visible = 'off';
+                            h.Rstate3st_edit_Model2.Visible = 'off';
+                            h.Rsigma3st_text.Visible = 'off';
+                            h.Rsigma3st_edit_Model2.Visible = 'off';
+                            h.state3st_amplitude_edit_Model2.Visible = 'off';
+                            h.state3st_amplitude_text.Visible = 'off';
+                        case 3
+                            h.state3st_text.Visible = 'on';
+                            h.Rstate3st_text.Visible = 'on';
+                            h.Rstate3st_edit_Model2.Visible = 'on';
+                            h.Rsigma3st_text.Visible = 'on';
+                            h.Rsigma3st_edit_Model2.Visible = 'on';
+                            h.state3st_amplitude_edit_Model2.Visible = 'on';
+                            h.state3st_amplitude_text.Visible = 'on';
+                    end
+            end
+                    
         case {h.KineticRates_table2,h.KineticRates_table3}
             h.KineticRates_table3.Data(1,1) = {NaN};h.KineticRates_table2.Data(1,1) = {NaN};
             h.KineticRates_table3.Data(2,2) = {NaN};h.KineticRates_table2.Data(2,2) = {NaN};
@@ -139,6 +427,72 @@ else
         case h.Rsigma3st_edit
             UserValues.BurstBrowser.Settings.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static;
+        case h.state1st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude1_static = str2double(h.state1st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = UserValues.BurstBrowser.Settings.BVA_amplitude1_static;
+        case h.state2st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude2_static = str2double(h.state2st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = UserValues.BurstBrowser.Settings.BVA_amplitude2_static;
+        case h.state3st_amplitude_edit
+            UserValues.BurstBrowser.Settings.BVA_amplitude3_static = str2double(h.state3st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = UserValues.BurstBrowser.Settings.BVA_amplitude3_static;
+            
+   
+        case {h.KineticRates_table2_Model2,h.KineticRates_table3_Model2}
+            h.KineticRates_table3.Data_Model2(1,1) = {NaN};h.KineticRates_table2.Data_Model2(1,1) = {NaN};
+            h.KineticRates_table3.Data_Model2(2,2) = {NaN};h.KineticRates_table2.Data_Model2(2,2) = {NaN};
+            h.KineticRates_table3.Data_Model2(3,3) = {NaN};
+            UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2_Model2 = cell2mat(h.KineticRates_table2_Model2.Data);
+            UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3_Model2 = cell2mat(h.KineticRates_table3_Model2.Data);
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2_Model2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable2_Model2;
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2 = UserValues.BurstBrowser.Settings.BVA_KineticRatesTable3_Model2;
+        case h.Rstate1_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R1_Model2 = str2double(h.Rstate1_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R1_Model2 = UserValues.BurstBrowser.Settings.BVA_R1_Model2;
+        case h.Rstate2_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R2_Model2 = str2double(h.Rstate2_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R2_Model2 = UserValues.BurstBrowser.Settings.BVA_R2_Model2;
+        case h.Rstate3_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R3_Model2 = str2double(h.Rstate3_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R3_Model2 = UserValues.BurstBrowser.Settings.BVA_R3_Model2;
+        case h.Rsigma1_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma1_Model2 = str2double(h.Rsigma1_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_Model2;
+        case h.Rsigma2_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma2_Model2 = str2double(h.Rsigma2_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma2_Model2;
+        case h.Rsigma3_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma3_Model2 = str2double(h.Rsigma3_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma3_Model2;
+        case h.Rstate1st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R1_static_Model2 = str2double(h.Rstate1st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R1_static_Model2;
+        case h.Rstate2st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R2_static_Model2 = str2double(h.Rstate2st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R2_static_Model2;
+        case h.Rstate3st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_R3_static_Model2 = str2double(h.Rstate3st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_R3_static_Model2;
+        case h.Rsigma1st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2 = str2double(h.Rsigma1st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma1_static_Model2;
+        case h.Rsigma2st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2 = str2double(h.Rsigma2st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma2_static_Model2;
+        case h.Rsigma3st_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2 = str2double(h.Rsigma3st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_Rsigma3_static_Model2;
+        case h.state1st_amplitude_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2 = str2double(h.state1st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude1_static_Model2;
+        case h.state2st_amplitude_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2 = str2double(h.state2st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude2_static_Model2;
+        case h.state3st_amplitude_edit_Model2
+            UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2 = str2double(h.state3st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2 = UserValues.BurstBrowser.Settings.BVA_amplitude3_static_Model2;
+
+                 
         case h.DynamicStates_Popupmenu
             UserValues.BurstBrowser.Settings.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1; 
             switch UserValues.BurstBrowser.Settings.BVA_DynamicStates
@@ -168,13 +522,60 @@ else
                     h.Rstate3st_edit.Visible = 'off';
                     h.Rsigma3st_text.Visible = 'off';
                     h.Rsigma3st_edit.Visible = 'off';
+                    h.state3st_amplitude_edit.Visible = 'off';
+                    h.state3st_amplitude_text.Visible = 'off';
                 case 3
                     h.state3st_text.Visible = 'on';
                     h.Rstate3st_text.Visible = 'on';
                     h.Rstate3st_edit.Visible = 'on';
                     h.Rsigma3st_text.Visible = 'on';
                     h.Rsigma3st_edit.Visible = 'on';
+                    h.state3st_amplitude_edit.Visible = 'on';
+                    h.state3st_amplitude_text.Visible = 'on';
             end
+            
+        case h.DynamicStates_Popupmenu_Model2
+            UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2 = h.DynamicStates_Popupmenu_Model2.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2
+                case 2
+                    h.KineticRates_table3_Model2.Visible = 'off';
+                    h.KineticRates_table2_Model2.Visible = 'on';
+                    h.state3_text.Visible = 'off';
+                    h.Rstate3_text.Visible = 'off';
+                    h.Rstate3_edit_Model2.Visible = 'off';
+                    h.Rsigma3_text.Visible = 'off';
+                    h.Rsigma3_edit_Model2.Visible = 'off';
+                case 3
+                    h.KineticRates_table2_Model2.Visible = 'off';
+                    h.KineticRates_table3_Model2.Visible = 'on';
+                    h.state3_text.Visible = 'on';
+                    h.Rstate3_text.Visible = 'on';
+                    h.Rstate3_edit_Model2.Visible = 'on';
+                    h.Rsigma3_text.Visible = 'on';
+                    h.Rsigma3_edit_Model2.Visible = 'on';
+            end
+            
+        case h.StaticStates_Popupmenu_Model2
+            UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2 = h.StaticStates_Popupmenu_Model2.Value+1; 
+            switch UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2
+                case 2
+                    h.state3st_text.Visible = 'off';
+                    h.Rstate3st_text.Visible = 'off';
+                    h.Rstate3st_edit_Model2.Visible = 'off';
+                    h.Rsigma3st_text.Visible = 'off';
+                    h.Rsigma3st_edit_Model2.Visible = 'off';
+                    h.state3st_amplitude_edit_Model2.Visible = 'off';
+                    h.state3st_amplitude_text.Visible = 'off';
+                case 3
+                    h.state3st_text.Visible = 'on';
+                    h.Rstate3st_text.Visible = 'on';
+                    h.Rstate3st_edit_Model2.Visible = 'on';
+                    h.Rsigma3st_text.Visible = 'on';
+                    h.Rsigma3st_edit_Model2.Visible = 'on';
+                    h.state3st_amplitude_edit_Model2.Visible = 'on';
+                    h.state3st_amplitude_text.Visible = 'on';
+            end
+            
         case h.DynamicAnalysisMethod_Popupmenu
                 UserValues.BurstBrowser.Settings.DynamicAnalysisMethod = h.DynamicAnalysisMethod_Popupmenu.Value;
                 switch UserValues.BurstBrowser.Settings.DynamicAnalysisMethod
@@ -201,6 +602,8 @@ else
             UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = str2double(h.PhotonsPerWindow_edit.String);
         case h.Xaxis_Popupmenu
             UserValues.BurstBrowser.Settings.BVA_X_axis = h.Xaxis_Popupmenu.Value;
+        case h.SignificanceLevelAlpha_edit
+            UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = str2double(h.SignificanceLevelAlpha_edit.String);
         case h.FRETpair_Popupmenu
             UserValues.BurstBrowser.Settings.FRETpair = h.FRETpair_Popupmenu.Value;
         case h.ModelComparison_checkbox
@@ -226,6 +629,31 @@ else
             BurstData{file}.AdditionalParameters.BVA_Rsigma1_static = str2double(h.Rsigma1st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma2_static = str2double(h.Rsigma2st_edit.String);
             BurstData{file}.AdditionalParameters.BVA_Rsigma3_static = str2double(h.Rsigma3st_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static = str2double(h.state1st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static = str2double(h.state2st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static = str2double(h.state3st_amplitude_edit.String);
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates = h.DynamicStates_Popupmenu.Value+1;
+            BurstData{file}.AdditionalParameters.BVA_StaticStates = h.StaticStates_Popupmenu.Value+1;
+            
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable2_Model2 = cell2mat(h.KineticRates_table2_Model2.Data);
+            BurstData{file}.AdditionalParameters.BVA_KineticRatesTable3_Model2 = cell2mat(h.KineticRates_table3_Model2.Data);
+            BurstData{file}.AdditionalParameters.BVA_R1_Model2 = str2double(h.Rstate1_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R2_Model2 = str2double(h.Rstate2_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R3_Model2 = str2double(h.Rstate3_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_Model2 = str2double(h.Rsigma1_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_Model2 = str2double(h.Rsigma2_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_Model2 = str2double(h.Rsigma3_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R1_static_Model2 = str2double(h.Rstate1st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R2_static_Model2 = str2double(h.Rstate2st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_R3_static_Model2 = str2double(h.Rstate3st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma1_static_Model2 = str2double(h.Rsigma1st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma2_static_Model2 = str2double(h.Rsigma2st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_Rsigma3_static_Model2 = str2double(h.Rsigma3st_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude1_static_Model2 = str2double(h.state1st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude2_static_Model2 = str2double(h.state2st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_amplitude3_static_Model2 = str2double(h.state3st_amplitude_edit_Model2.String);
+            BurstData{file}.AdditionalParameters.BVA_DynamicStates_Model2 = h.DynamicStates_Popupmenu_Model2.Value+1;
+            BurstData{file}.AdditionalParameters.BVA_StaticStates_Model2 = h.StaticStates_Popupmenu_Model2.Value+1;
     end
 end
 LSUserValues(1);

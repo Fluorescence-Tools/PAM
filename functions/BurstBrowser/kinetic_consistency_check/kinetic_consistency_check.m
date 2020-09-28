@@ -1,4 +1,4 @@
-function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states)
+function [E,sSelected,sPerBin,mi] = kinetic_consistency_check(type,n_states,rate_matrix,R_states,sigmaR_states,dynamic)
 global BurstData BurstTCSPCData UserValues BurstMeta
 %h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -33,13 +33,16 @@ switch type
         %%% for BVA, we need to consider the actual photons, so simulate a
         %%% full trajectory
         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
+        if ~any(freq)
+            return
+        end
         states = cell(numel(mt),1);
         % convert macrotime to seconds and subtract first time point
         mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);
         dur = cell2mat(cellfun(@(x) x(end),mt_sec,'UniformOutput',false)); %duration
         for i = 1:numel(mt) %%% loop over bursts
             %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
         end
         % convert macrotime to units of freq
         mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
@@ -142,18 +145,47 @@ switch type
         %%% new code without state trajectory starts here
         %%% for lifetime, we only need to know the fraction of time spent
         %%% in each state
-        freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
+%         freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
         %%% get duration
-        dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray)))/1000; % duration in seconds
-        FracT = zeros(numel(dur),n_states);
-        states = cell(numel(dur),1);
-        for i = 1:numel(dur) %%% loop over bursts
-            %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
-            %%% convert states to fraction of time spent in each state
-            for s = 1:n_states
-                FracT(i,s) = sum(states{i} == s)./numel(states{i});
+        dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray))); % duration in seconds
+%         FracT = zeros(numel(dur),n_states);
+%         states = cell(numel(dur),1);
+%         for i = 1:numel(dur) %%% loop over bursts
+%             %%% evaluate kinetic scheme
+%             states{i} = simulate_state_trajectory(rate_matrix,dur(i)/1000,freq,dynamic);
+%             %%% convert states to fraction of time spent in each state
+%             for s = 1:n_states
+%                 FracT(i,s) = sum(states{i} == s)./numel(states{i});
+%             end
+%         end
+        if dynamic
+            if n_states == 3
+                change_prob = cumsum(rate_matrix);
+                change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
             end
+            dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
+        else
+            rate_matrix = 1./rate_matrix;
+            rate_matrix = rate_matrix*1E-3;
+%             rate_matrix(find(rate_matrix==0)) = 1E6;
+            rate_matrix(isinf(rate_matrix)) = 1E6;
+            for state = 1:n_states
+                dwell_mean(state) = max(dur)*1E6;
+            end
+            change_prob = zeros(n_states);
+        end
+        rate_matrix(isnan(rate_matrix)) = 0;
+
+        for i = 1:n_states
+                rate_matrix(i,i) = -sum(rate_matrix(:,i));
+        end
+        rate_matrix(end+1,:) = ones(1,n_states);
+        b = zeros(n_states,1); b(end+1) = 1;
+        p_eq = rate_matrix\b;
+        if n_states == 3
+            FracT = Gillespie_inf_states(dur,n_states,dwell_mean,numel(dur),p_eq,change_prob)./dur;
+        else
+            FracT = Gillespie_2states(dur,dwell_mean,numel(dur),p_eq)./dur;
         end
         %%% correct fractions for brightness differences of the different states
         for i = 1:n_states
@@ -336,7 +368,7 @@ switch type
             %%% generate randomized average distance of each state for every
             %%% burst to account for conformational heterogeneity
             for b = 1:numel(mt_freq)
-                R_burst{b} = normrnd(R_states,sigmaR_states);
+                R_burst{b} = normrnd(R_states,sigmaR);
             end
             %%% for the microtime of the donor, roll linker width at every evaluation
             lw = BurstData{file}.Corrections.LinkerLength; % 5 angstrom linker width
@@ -402,9 +434,10 @@ switch type
         dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray)))/1000; % duration in seconds
         FracT = zeros(numel(dur),n_states);
         states = cell(numel(dur),1);
+        rate_matrix(isnan(rate_matrix)) = 0;
         for i = 1:numel(dur) %%% loop over bursts
             %%% evaluate kinetic scheme
-            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq);
+            states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
             %%% convert states to fraction of time spent in each state
             for s = 1:n_states
                 FracT(i,s) = sum(states{i} == s)./numel(states{i});

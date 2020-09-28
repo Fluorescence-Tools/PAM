@@ -97,7 +97,7 @@ switch measurement_type
         datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch1 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch1');
         datastruct.photon_data.measurement_specs.detectors_specs.spectral_ch2 = h5read(file,'/photon_data/measurement_specs/detectors_specs/spectral_ch2');
         %%% /photon_data/timestamps_specs
-        datastruct.photon_data.timestamps_specs.timestamps_unit = h5read(file,'/photon_data/timestamps_specs/timestamps_unit');
+        datastruct.photon_data.timestamps_specs.timestamps_unit = double(h5read(file,'/photon_data/timestamps_specs/timestamps_unit'));
         %%% photon data is read and transformed into PAM MT/MI scheme, discarding
         %%% the channel variable
         timestamps = h5read(file,'/photon_data/timestamps');
