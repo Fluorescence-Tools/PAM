@@ -4,6 +4,11 @@ global BurstData BurstMeta UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
+fontsize = 14;
+if ispc
+    fontsize= fontsize*0.72;
+end
+
 % use the user selected species
 if ~h.MultiselectOnCheckbox.UserData
     Valid = UpdateCuts();
@@ -60,7 +65,7 @@ plot([-0.2,2.2],[0.5,0.5],'LineWidth',1.5);
 %scatter(mE,mS,'filled');
 errorbar(mE,mS,sS,'o','MarkerFaceColor',colors(2,:),'LineWidth',1.5);
 
-set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',14,'Layer','top');
+set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top');
 ax1.Position(1) = 0.08;
 ax2.Position(1) = 0.08;
 ax1.Position(3) = 0.4;
@@ -94,6 +99,7 @@ tau = deltaEtau;
 E = sigmaEtau;
 
 tau_bins = linspace(-1,1,50);
+Ebins = linspace(0.5,1,50);
 [hTau, ~, binTau] = histcounts(tau,tau_bins);
 %%% determine mean FRET efficiency/stoichiometry and standard deviation for every bin
 mE = nan(size(hTau));
@@ -141,7 +147,7 @@ sl_r = 2^(-1/2)*(t+sl);
 plot(t_r,sl_r,'LineWidth',1.5);
 %scatter(mTau,mE,'filled');
 errorbar(mTau,mE,sE,'o','MarkerFaceColor',colors(2,:),'LineWidth',1.5);
-set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',14,'Layer','top');
+set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top');
 ax1.Position(1) = 0.58;
 ax2.Position(1) = 0.58;
 ax1.Position(3) = 0.4;
@@ -151,7 +157,7 @@ ax1.Position(4) = 0.15;
 ax1.Position(2) = ax2.Position(2)+ax2.Position(4)+0.03;
 linkaxes([ax1,ax2],'x');
 axis(ax2,'tight');
-xlim([-1,1]); ylim([0,1.5]);
+xlim([-1,1]); ylim([0.5,1]);
 ax1.XTickLabel = [];
 ylabel(ax1,'w_{res}');
 ylabel(ax2,'(\langle\tau_{D(A)}\rangle_F/\tau_{D(0)} + E)/\surd 2','interpreter','tex');
