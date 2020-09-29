@@ -78,7 +78,7 @@ xlim([-0.2,1.2]); ylim([0,1]);
 set(ax2,'XTick',-0.2:0.2:1.2);
 %ax2.YTick = ax2.YTick(1:end-1);
 ax1.XTickLabel = [];
-ylabel(ax1,'w_{res}');
+ylabel(ax1,'w. res.');
 xlabel(ax2,'FRET efficiency');
 ylabel(ax2,'Stoichiometry');
 
@@ -159,6 +159,6 @@ linkaxes([ax1,ax2],'x');
 axis(ax2,'tight');
 xlim([-1,1]); ylim([0.5,1]);
 ax1.XTickLabel = [];
-ylabel(ax1,'w_{res}');
+ylabel(ax1,'w. res.');
 ylabel(ax2,'(\langle\tau_{D(A)}\rangle_F/\tau_{D(0)} + E)/\surd 2','interpreter','tex');
 xlabel(ax2,'(\langle\tau_{D(A)}\rangle_F/\tau_{D(0)} - E)/\surd 2','interpreter','tex');
