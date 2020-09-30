@@ -7469,7 +7469,7 @@ save(FileName, 'PDA', 'timebin')
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_BurstAnalysis(obj,~)
-global FileInfo UserValues PamMeta
+global FileInfo UserValues PamMeta TcspcData
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
@@ -7528,6 +7528,14 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Macrotime_all = cell(Number_of_Chunks,1);
     Microtime_all = cell(Number_of_Chunks,1);
     Channel_all = cell(Number_of_Chunks,1);
+end
+
+save_BID = true; % save burst IDs
+if save_BID
+    %%% to determine the global photon number, we need the array of all
+    %%% photons in the measurement
+    GlobalMacrotime = sort(vertcat(TcspcData.MT{:}));
+    BID_dummy = cell(Number_of_Chunks,1);
 end
 
 for i = find(PamMeta.Selected_MT_Patches)'
@@ -7695,6 +7703,11 @@ for i = find(PamMeta.Selected_MT_Patches)'
         % Microtime_all{i} = uint16(AllPhotons_Microtime);
         % Channel_all{i} = uint8(Channel);
     end
+    if save_BID
+        % find the index of all starts and stops
+        [~,BID_dummy{i}(:,1)] = ismember(AllPhotons(start),GlobalMacrotime);
+        [~,BID_dummy{i}(:,2)] = ismember(AllPhotons(stop),GlobalMacrotime);
+    end
 end
 
 %%% Concatenate data from chunks
@@ -7717,6 +7730,10 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Microtime_all = vertcat(Microtime_all{:});
     Channel_all = vertcat(Channel_all{:});
 end
+if save_BID
+    BID = vertcat(BID_dummy{:});
+end
+clear Macrotime_dummy Microtime_dummy Channel_dummy Macrotime_all Microtime_all Channel_all BID_dummy
 %% Parameter Calculation
 Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 
@@ -8234,6 +8251,10 @@ end
 % get the IRF, scatter decay and background from UserValues
 BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1,2]);
 
+% save the BIDs
+if save_BID
+    BurstData.BID = BID;
+end
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 
