@@ -18,13 +18,23 @@ end
 %%% read out the burst IDs of the selected files
 bid = BurstData{file}.BID(BurstData{file}.Selected,:);
 
-%%% save as *.bst file
+%%% save as *.bst file in subfolder named by species
 SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
-SelectedSpeciesName = strrep(strrep(SelectedSpeciesName,'/','-'),':','');
-[~,FileName,~] = fileparts(BurstData{file}.FileName);
-filename = fullfile(BurstData{file}.PathName,FileName);
-filename = GenerateName([filename(1:end-4) '_' SelectedSpeciesName '.bst'], 1);
+SelectedSpeciesName = strrep(strrep(strrep(SelectedSpeciesName,'/','-'),':',''),' ','_');
+SelectedSpeciesName = ['BID_' SelectedSpeciesName];
+FileName = BurstData{file}.FileInfo.FileName{1};
+% add "_0" to filename before file extension
+[~,FileName,ext] = fileparts(FileName);
+FileName = [FileName '_0' ext];
+PathName = fullfile(BurstData{file}.PathName,SelectedSpeciesName);
+if ~(exist(PathName,'file') == 7)
+    mkdir(PathName);
+end
+filename = fullfile(PathName,FileName);
+filename = [filename  '.bst'];
 dlmwrite(filename,bid,'delimiter','\t','precision','%i');
+
+%%% TODO: Add the cut information and correction factors
 
 
 
