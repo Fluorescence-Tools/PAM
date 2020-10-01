@@ -65,7 +65,7 @@ plot([-0.2,2.2],[0.5,0.5],'LineWidth',1.5);
 %scatter(mE,mS,'filled');
 errorbar(mE,mS,sS,'o','MarkerFaceColor',colors(2,:),'LineWidth',1.5);
 
-set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top');
+set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top','Color',[1,1,1]);
 ax1.Position(1) = 0.08;
 ax2.Position(1) = 0.08;
 ax1.Position(3) = 0.4;
@@ -147,7 +147,7 @@ sl_r = 2^(-1/2)*(t+sl);
 plot(t_r,sl_r,'LineWidth',1.5);
 %scatter(mTau,mE,'filled');
 errorbar(mTau,mE,sE,'o','MarkerFaceColor',colors(2,:),'LineWidth',1.5);
-set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top');
+set([ax1,ax2],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top','Color',[1,1,1]);
 ax1.Position(1) = 0.58;
 ax2.Position(1) = 0.58;
 ax1.Position(3) = 0.4;
