@@ -7546,8 +7546,10 @@ end
 %%% photons from a burst ID *.bst file obtained from the Seidel software
 if obj == h.Burst.Button_Menu_fromBurstIDs
     from_BurstIDs = true;
-    [FileName,PathName] = uigetfile({'*.bst'}, 'Choose a BurstID file (*.bst)', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+    [FileName,PathName] = uigetfile({'*.bst'}, 'Choose a BurstID file (*.bst)', UserValues.File.Path, 'MultiSelect', 'off');
     BurstIDs = dlmread(fullfile(PathName,FileName),'\t');
+    BID_path = PathName;
+    BID_file = FileName;
 else
     from_BurstIDs = false;
 end
@@ -7704,7 +7706,9 @@ for i = find(PamMeta.Selected_MT_Patches)'
     if from_BurstIDs
         %%% map the global photon numbers ("burstIDs") to the AllPhotons array
         [~,start] = ismember(GlobalMacrotime(BurstIDs(:,1)),AllPhotons);
-        [~,stop] = ismember(GlobalMacrotime(BurstIDs(:,1)),AllPhotons);
+        [~,stop] = ismember(GlobalMacrotime(BurstIDs(:,2)),AllPhotons);
+        valid = start > 0 & stop > 0;
+        start = start(valid); stop = stop(valid);
         Number_of_Photons = stop-start+1;
     end
     
@@ -8289,36 +8293,44 @@ BurstData.PathName = FileInfo.Path;
 
 %%% the burst search parameters
 BurstSearchParameters = struct;
-BurstSearchParameters.BurstMinimumLength = L;
-%%% the used burst search and smoothing method
-BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
-BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
 BurstSearchParameters.PIEchannelselection = h.Burst.BurstPIE_Table.Data;
-switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
-    case 1 %%% Sliding time window
-        BurstSearchParameters.TimeWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.PhotonsPerTimewindow = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
-        end
-    case 2 %%% Interphoton time with Lee filter
-        BurstSearchParameters.SmoothingWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.InterphotonTimeThreshold = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
-        end
+if ~from_BurstIDs
+    BurstSearchParameters.BurstMinimumLength = L;
+    %%% the used burst search and smoothing method
+    BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
+    BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
+    switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
+        case 1 %%% Sliding time window
+            BurstSearchParameters.TimeWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.PhotonsPerTimewindow = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
+            end
+        case 2 %%% Interphoton time with Lee filter
+            BurstSearchParameters.SmoothingWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.InterphotonTimeThreshold = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
+            end
+    end
+else %%% generated from BurstIDs
+    BurstSearchParameters.BurstSearch = 'from BurstIDs';
+    BurstSearchParameters.BurstMinimumLength = 0;
+    BurstSearchParameters.BurstSearchSmoothingMethod = 'N/A';
+    BurstSearchParameters.BurstIDFile = BID_file;
+    BurstSearchParameters.BurstIDPath = BID_path;
 end
 BurstData.BurstSearchParameters = BurstSearchParameters;
 
@@ -8327,23 +8339,32 @@ if ~exist([pathstr filesep FileName],'dir')
 end
 pathstr = [pathstr filesep FileName];
 
-%%% Add Burst Search Type
-%%% The Naming follows the Abbreviation for the BurstSearch Method.
-switch BAMethod
-    case 1
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
-    case 2
-        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
-    case 3
-        FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
-    case 4
-        FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
-    case 5
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
-    case 6
-        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CnoMFD']);
+if ~from_BurstIDs
+    %%% Add Burst Search Type
+    %%% The Naming follows the Abbreviation for the BurstSearch Method.
+    switch BAMethod
+        case 1
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
+        case 2
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
+        case 3
+            FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
+        case 4
+            FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
+        case 5
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
+        case 6
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CnoMFD']);
+    end
+else
+    BID_folder = strsplit(BID_path,filesep);
+    if ~isempty(BID_folder{end})
+        BID_folder = BID_folder{end};
+    else
+        BID_folder = BID_folder{end-1};
+    end
+    FullFileName = fullfile(pathstr, [FileName '_BID_' BID_folder]);
 end
-
 %%% add the used parameters also to the filename
 % switch BAMethod
 %     case {1,3,5} %APBS L,M,T
