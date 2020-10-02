@@ -934,6 +934,10 @@ h.Burst.Button_Menu = uicontextmenu;
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Load performed BurstSearch',...
     'Callback',@Load_Performed_BurstSearch);
+h.Burst.Button_Menu_fromBurstIDs = uimenu(h.Burst.Button_Menu,...
+    'Label','Generate Burst File from BurstIDs',...
+    'Callback',@Do_BurstAnalysis,...
+    'Separator','on');
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Export total measurement to PDA',...
     'Callback',@Export_total_to_PDA,...
@@ -7525,7 +7529,7 @@ save(FileName, 'PDA', 'timebin')
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_BurstAnalysis(obj,~)
-global FileInfo UserValues PamMeta
+global FileInfo UserValues PamMeta TcspcData
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
@@ -7586,6 +7590,26 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Channel_all = cell(Number_of_Chunks,1);
 end
 
+save_BID = true; % save burst IDs
+if save_BID
+    %%% to determine the global photon number, we need the array of all
+    %%% photons in the measurement
+    GlobalMacrotime = sort(vertcat(TcspcData.MT{:}));
+    BID_dummy = cell(Number_of_Chunks,1);
+end
+
+%%% do not do a burst search, but simply take the indices of the start/stop
+%%% photons from a burst ID *.bst file obtained from the Seidel software
+if obj == h.Burst.Button_Menu_fromBurstIDs
+    from_BurstIDs = true;
+    [FileName,PathName] = uigetfile({'*.bst'}, 'Choose a BurstID file (*.bst)', UserValues.File.Path, 'MultiSelect', 'off');
+    BurstIDs = dlmread(fullfile(PathName,FileName),'\t');
+    BID_path = PathName;
+    BID_file = FileName;
+else
+    from_BurstIDs = false;
+end
+
 for i = find(PamMeta.Selected_MT_Patches)'
     Progress((i-1)/Number_of_Chunks,h.Progress.Axes, h.Progress.Text,'Performing Burst Search...');
     if any(BAMethod == [1 2]) %ACBS 2 Color
@@ -7621,17 +7645,19 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        if BAMethod == 1
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
-        elseif BAMethod == 2
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 1
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 2
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+            end
         end
     elseif any(BAMethod == [3,4])
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
@@ -7677,20 +7703,21 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        if BAMethod == 3 %ACBS 3 Color
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
-        elseif BAMethod == 4 %TCBS
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 3 %ACBS 3 Color
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 4 %TCBS
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+            end
         end
-        
     elseif any(BAMethod == [5,6]) %2 color no MFD
         %prepare photons
         %read out macrotimes for all channels
@@ -7716,20 +7743,31 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        %do search
-        if BAMethod == 5 %ACBS 2 Color-noMFD
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
-        elseif BAMethod == 6 %DCBS 2 Color-noMFD
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 5 %ACBS 2 Color-noMFD
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 6 %DCBS 2 Color-noMFD
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+            end
         end
     end
+    
+    if from_BurstIDs
+        %%% map the global photon numbers ("burstIDs") to the AllPhotons array
+        [~,start] = ismember(GlobalMacrotime(BurstIDs(:,1)),AllPhotons);
+        [~,stop] = ismember(GlobalMacrotime(BurstIDs(:,2)),AllPhotons);
+        valid = start > 0 & stop > 0;
+        start = start(valid); stop = stop(valid);
+        Number_of_Photons = stop-start+1;
+    end
+    
     %%% Process Data for this Chunk
     %%% Extract Macrotime, Microtime and Channel Information burstwise
     Macrotime_dummy{i} = cell(numel(Number_of_Photons),1);
@@ -7750,6 +7788,11 @@ for i = find(PamMeta.Selected_MT_Patches)'
         % Macrotime_all{i} = uint64(AllPhotons);
         % Microtime_all{i} = uint16(AllPhotons_Microtime);
         % Channel_all{i} = uint8(Channel);
+    end
+    if save_BID
+        % find the index of all starts and stops
+        [~,BID_dummy{i}(:,1)] = ismember(AllPhotons(start),GlobalMacrotime);
+        [~,BID_dummy{i}(:,2)] = ismember(AllPhotons(stop),GlobalMacrotime);
     end
 end
 
@@ -7773,6 +7816,10 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Microtime_all = vertcat(Microtime_all{:});
     Channel_all = vertcat(Channel_all{:});
 end
+if save_BID
+    BID = vertcat(BID_dummy{:});
+end
+clear Macrotime_dummy Microtime_dummy Channel_dummy Macrotime_all Microtime_all Channel_all BID_dummy
 %% Parameter Calculation
 Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 
@@ -8290,6 +8337,10 @@ end
 % get the IRF, scatter decay and background from UserValues
 BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1,2]);
 
+% save the BIDs
+if save_BID
+    BurstData.BID = BID;
+end
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 
@@ -8298,36 +8349,44 @@ BurstData.PathName = FileInfo.Path;
 
 %%% the burst search parameters
 BurstSearchParameters = struct;
-BurstSearchParameters.BurstMinimumLength = L;
-%%% the used burst search and smoothing method
-BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
-BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
 BurstSearchParameters.PIEchannelselection = h.Burst.BurstPIE_Table.Data;
-switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
-    case 1 %%% Sliding time window
-        BurstSearchParameters.TimeWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.PhotonsPerTimewindow = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
-        end
-    case 2 %%% Interphoton time with Lee filter
-        BurstSearchParameters.SmoothingWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.InterphotonTimeThreshold = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
-        end
+if ~from_BurstIDs
+    BurstSearchParameters.BurstMinimumLength = L;
+    %%% the used burst search and smoothing method
+    BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
+    BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
+    switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
+        case 1 %%% Sliding time window
+            BurstSearchParameters.TimeWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.PhotonsPerTimewindow = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
+            end
+        case 2 %%% Interphoton time with Lee filter
+            BurstSearchParameters.SmoothingWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.InterphotonTimeThreshold = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
+            end
+    end
+else %%% generated from BurstIDs
+    BurstSearchParameters.BurstSearch = 'from BurstIDs';
+    BurstSearchParameters.BurstMinimumLength = 0;
+    BurstSearchParameters.BurstSearchSmoothingMethod = 'N/A';
+    BurstSearchParameters.BurstIDFile = BID_file;
+    BurstSearchParameters.BurstIDPath = BID_path;
 end
 BurstData.BurstSearchParameters = BurstSearchParameters;
 
@@ -8336,23 +8395,32 @@ if ~exist([pathstr filesep FileName],'dir')
 end
 pathstr = [pathstr filesep FileName];
 
-%%% Add Burst Search Type
-%%% The Naming follows the Abbreviation for the BurstSearch Method.
-switch BAMethod
-    case 1
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
-    case 2
-        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
-    case 3
-        FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
-    case 4
-        FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
-    case 5
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
-    case 6
-        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CnoMFD']);
+if ~from_BurstIDs
+    %%% Add Burst Search Type
+    %%% The Naming follows the Abbreviation for the BurstSearch Method.
+    switch BAMethod
+        case 1
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
+        case 2
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
+        case 3
+            FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
+        case 4
+            FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
+        case 5
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
+        case 6
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CnoMFD']);
+    end
+else
+    BID_folder = strsplit(BID_path,filesep);
+    if ~isempty(BID_folder{end})
+        BID_folder = BID_folder{end};
+    else
+        BID_folder = BID_folder{end-1};
+    end
+    FullFileName = fullfile(pathstr, [FileName '_BID_' BID_folder]);
 end
-
 %%% add the used parameters also to the filename
 % switch BAMethod
 %     case {1,3,5} %APBS L,M,T
