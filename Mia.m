@@ -6340,20 +6340,24 @@ switch mode
         switch gca
             case h.Mia_Image.Axes(1,2)
                 MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
-                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+                if UserValues.MIA.AR_Same ~=1 && size(MIAData.Data,1)>1
+                    MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+                end
             case h.Mia_Image.Axes(2,2)
                 MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
-                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
-            case h.Mia_Image.Axes(1,1)
-                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
-                    str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
-                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
-                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
-            case h.Mia_Image.Axes(2,1)
-                Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
-                    str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
-                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
-                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+                if h.Mia_Image.Settings.ROI_AR_Same.Value ~=1
+                    MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+                end
+            %case h.Mia_Image.Axes(1,1)
+            %    Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+            %        str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+            %    MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+            %    MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+            %case h.Mia_Image.Axes(2,1)
+            %    Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+            %        str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+            %   MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+            %   MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
         end
         if UserValues.MIA.AR_Same == 4 && size(MIAData.Data,1)>1
             MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
@@ -8602,10 +8606,10 @@ for i=mode
                     h.Plots.Image(1,2).UIContextMenu = [];
                     h.Plots.Image(2,2).UIContextMenu = [];
                     % right-click left image to drag normal ROI
-                    h.Plots.Image(1,1).UIContextMenu = [];
-                    h.Plots.Image(2,1).UIContextMenu = [];
-                    h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
-                    h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
+                    %h.Plots.Image(1,1).UIContextMenu = [];
+                    %h.Plots.Image(2,1).UIContextMenu = [];
+                    %h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
+                    %h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
                     Update_Plots([],[],1,1:size(MIAData.Data,1));
                 case 3 %%% Show arbitrary region controls
                     h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.Visible = 'on';
@@ -8627,10 +8631,10 @@ for i=mode
                     h.Plots.Image(1,2).UIContextMenu = h.Mia_Image.Menu;
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
                     % right-click left image to draw AROI
-                    h.Plots.Image(1,1).UIContextMenu = h.Mia_Image.Menu;
-                    h.Plots.Image(2,1).UIContextMenu = h.Mia_Image.Menu;
-                    h.Plots.Image(1,1).ButtonDownFcn = [];
-                    h.Plots.Image(2,1).ButtonDownFcn = [];
+                    %h.Plots.Image(1,1).UIContextMenu = h.Mia_Image.Menu;
+                    %h.Plots.Image(2,1).UIContextMenu = h.Mia_Image.Menu;
+                    %h.Plots.Image(1,1).ButtonDownFcn = [];
+                    %h.Plots.Image(2,1).ButtonDownFcn = [];
                     Mia_Correct([],[],1);
             end
         case 4
