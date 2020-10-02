@@ -1101,7 +1101,7 @@ h.Mia_Image.Settings.ROI_AR_Channel = uicontrol(...
     'Position',[0.02 0.54, 0.4 0.06],...
     'Callback',{@MIA_Various,5},...
     'Visible','off',...
-    'String',{'Channel 1','Channel 2'});
+    'String',{'Channel 1','Channel 2', 'Both'});
 if ismac
     h.Mia_Image.Settings.ROI_AR_Channel.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.ROI_AR_Channel.BackgroundColor = [1 1 1];
@@ -1607,7 +1607,7 @@ h.Mia_Image.Settings.kHz = uicontrol(...
     'Value',UserValues.MIA.Options.kHz,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.70, 0.35 0.06],...
+    'Position',[0.02 0.70, 0.5 0.06],...
     'Callback',{@MIA_Various,1.5},...
     'String','Photon counting');
 
@@ -1620,7 +1620,7 @@ h.Mia_Image.Settings.scanning = uicontrol(...
     'Value',UserValues.MIA.Options.scanning,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.63, 0.35 0.06],...
+    'Position',[0.02 0.63, 0.5 0.06],...
     'Callback',{@MIA_Various,9},...
     'String','Raster scanning');
 
@@ -1701,6 +1701,21 @@ if ismac
 end
 MIA_CustomFileType(h.Mia_Image.Settings.FileType,[],1);
 h.Mia_Image.Settings.Custom = h.Mia_Image.Settings.FileType.UserData{3};
+
+%%% Checkbox to toggle right-click context menu for left plot
+h.Mia_Image.Settings.LeftContextMenu = uicontrol(...
+    'Parent', h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',UserValues.MIA.Options.LeftContextMenu,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.3, 0.95 0.06],...
+    'Callback',{@MIA_Various,10},...
+    'String', 'AROI context menu on left image',...
+    'Tooltip',['Enable right-click context menu on left image' 10 ...
+    'when Arbitrary Region is selected']);
 
 %%% Text
 h.Text{end+1} = uicontrol(...
@@ -6353,16 +6368,20 @@ switch mode
                 if h.Mia_Image.Settings.ROI_AR_Same.Value ~=1
                     MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
                 end
-            %case h.Mia_Image.Axes(1,1)
-            %    Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
-            %        str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
-            %    MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
-            %    MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
-            %case h.Mia_Image.Axes(2,1)
-            %    Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
-            %        str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
-            %   MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
-            %   MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+            case h.Mia_Image.Axes(1,1)
+               Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                   str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+               MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+               if UserValues.MIA.AR_Same ~=1 && size(MIAData.Data,1)>1
+                   MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+               end
+            case h.Mia_Image.Axes(2,1)
+               Mask = Mask(str2double(h.Mia_Image.Settings.ROI_PosY.String):str2double(h.Mia_Image.Settings.ROI_PosY.String)+str2double(h.Mia_Image.Settings.ROI_SizeY.String)-1,...
+                   str2double(h.Mia_Image.Settings.ROI_PosX.String):str2double(h.Mia_Image.Settings.ROI_PosX.String)+str2double(h.Mia_Image.Settings.ROI_SizeX.String)-1);
+               MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
+               if h.Mia_Image.Settings.ROI_AR_Same.Value ~=1
+                   MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
+               end
         end
         if UserValues.MIA.AR_Same == 4 && size(MIAData.Data,1)>1
             MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
@@ -8611,10 +8630,10 @@ for i=mode
                     h.Plots.Image(1,2).UIContextMenu = [];
                     h.Plots.Image(2,2).UIContextMenu = [];
                     % right-click left image to drag normal ROI
-                    %h.Plots.Image(1,1).UIContextMenu = [];
-                    %h.Plots.Image(2,1).UIContextMenu = [];
-                    %h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
-                    %h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
+                    h.Plots.Image(1,1).UIContextMenu = [];
+                    h.Plots.Image(2,1).UIContextMenu = [];
+                    h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
+                    h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
                     Update_Plots([],[],1,1:size(MIAData.Data,1));
                 case 3 %%% Show arbitrary region controls
                     h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.Visible = 'on';
@@ -8636,10 +8655,17 @@ for i=mode
                     h.Plots.Image(1,2).UIContextMenu = h.Mia_Image.Menu;
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
                     % right-click left image to draw AROI
-                    %h.Plots.Image(1,1).UIContextMenu = h.Mia_Image.Menu;
-                    %h.Plots.Image(2,1).UIContextMenu = h.Mia_Image.Menu;
-                    %h.Plots.Image(1,1).ButtonDownFcn = [];
-                    %h.Plots.Image(2,1).ButtonDownFcn = [];
+                    if UserValues.MIA.Options.LeftContextMenu
+                        h.Plots.Image(1,1).UIContextMenu = h.Mia_Image.Menu;
+                        h.Plots.Image(2,1).UIContextMenu = h.Mia_Image.Menu;
+                        h.Plots.Image(1,1).ButtonDownFcn = [];
+                        h.Plots.Image(2,1).ButtonDownFcn = [];
+                    else
+                        h.Plots.Image(1,1).UIContextMenu = [];
+                        h.Plots.Image(2,1).UIContextMenu = [];
+                        h.Plots.Image(1,1).ButtonDownFcn = {@Mia_ROI,2};
+                        h.Plots.Image(2,1).ButtonDownFcn = {@Mia_ROI,2};
+                    end
                     Mia_Correct([],[],1);
             end
         case 4
@@ -8666,12 +8692,23 @@ for i=mode
         case 5
             %% Select channel for AROI
             channel = h.Mia_Image.Settings.ROI_AR_Channel.Value;
-            h.Mia_Image.Settings.ROI_AR_Int_Min.String = num2str(UserValues.MIA.AR_Int(channel));
-            h.Mia_Image.Settings.ROI_AR_Int_Max.String = num2str(UserValues.MIA.AR_Int(2+channel));
-            h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String = num2str(UserValues.MIA.AR_Int_Fold(channel));
-            h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String = num2str(UserValues.MIA.AR_Int_Fold(2+channel));
-            h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String = num2str(UserValues.MIA.AR_Var_Fold(channel));
-            h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String = num2str(UserValues.MIA.AR_Var_Fold(2+channel));
+            if channel == 3
+                for ch = 1:2
+                    UserValues.MIA.AR_Int(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
+                    UserValues.MIA.AR_Int(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
+                    UserValues.MIA.AR_Int_Fold(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+                    UserValues.MIA.AR_Int_Fold(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+                    UserValues.MIA.AR_Var_Fold(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+                    UserValues.MIA.AR_Var_Fold(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+                end
+            else
+                h.Mia_Image.Settings.ROI_AR_Int_Min.String = num2str(UserValues.MIA.AR_Int(channel));
+                h.Mia_Image.Settings.ROI_AR_Int_Max.String = num2str(UserValues.MIA.AR_Int(2+channel));
+                h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String = num2str(UserValues.MIA.AR_Int_Fold(channel));
+                h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String = num2str(UserValues.MIA.AR_Int_Fold(2+channel));
+                h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String = num2str(UserValues.MIA.AR_Var_Fold(channel));
+                h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String = num2str(UserValues.MIA.AR_Var_Fold(2+channel));
+            end
         case 6
             %% Callback for channel-specific AROI settings
             UserValues.MIA.AR_Region(1) = str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
@@ -8680,13 +8717,19 @@ for i=mode
             UserValues.MIA.AR_Median = h.Mia_Image.Settings.ROI_AR_median.Value;
             UserValues.MIA.AR_Framewise = h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value;
             % channel-specific stuff
-            channel = h.Mia_Image.Settings.ROI_AR_Channel.Value;
-            UserValues.MIA.AR_Int(channel) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
-            UserValues.MIA.AR_Int(2+channel) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
-            UserValues.MIA.AR_Int_Fold(channel) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-            UserValues.MIA.AR_Int_Fold(2+channel) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-            UserValues.MIA.AR_Var_Fold(channel) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-            UserValues.MIA.AR_Var_Fold(2+channel) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+            if h.Mia_Image.Settings.ROI_AR_Channel.Value == 3
+                channel = 1:2;
+            else
+                channel = h.Mia_Image.Settings.ROI_AR_Channel.Value;
+            end
+            for ch = channel
+                UserValues.MIA.AR_Int(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
+                UserValues.MIA.AR_Int(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
+                UserValues.MIA.AR_Int_Fold(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+                UserValues.MIA.AR_Int_Fold(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+                UserValues.MIA.AR_Var_Fold(ch) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+                UserValues.MIA.AR_Var_Fold(2+ch) = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+            end
             LSUserValues(1)
             Mia_Correct([],[],1)
         case 7
@@ -8725,6 +8768,11 @@ for i=mode
                 h.Mia_Image.Settings.Image_Pixel.Visible = 'off';
             end
             Update_Plots([],[],4);
+        case 10
+            %% toggle right-click context menu for left plot
+            UserValues.MIA.Options.LeftContextMenu = h.Mia_Image.Settings.LeftContextMenu.Value;
+            MIA_Various([],[],3)
+            LSUserValues(1)
     end
 end
 

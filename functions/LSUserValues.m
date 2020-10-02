@@ -3022,6 +3022,13 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.Options.scanning = S.MIA.Options.scanning;
     
+    %%% Left Context Menu checkbox
+    if ~isfield(S.MIA.Options, 'LeftContextMenu')
+        disp('WARNING: UserValues structure incomplete, field "Options.LeftContextMenu" missing');
+        S.MIA.Options.LeftContextMenu = 1;
+    end
+    P.MIA.Options.LeftContextMenu = S.MIA.Options.LeftContextMenu;
+    
     %%% S factor
     if ~isfield(S.MIA.Options, 'S')
         disp('WARNING: UserValues structure incomplete, field "Options.S" missing');
