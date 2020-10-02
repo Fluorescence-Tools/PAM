@@ -450,6 +450,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.MT_Number_Section was incomplete');
     end
     P.Settings.Pam.MT_Number_Section = S.Settings.Pam.MT_Number_Section;
+    %%% Checks, if Pam.ScanOffsetStart subfield exists
+    if ~isfield(S.Settings.Pam, 'ScanOffsetStart')
+        S.Settings.Pam.ScanOffsetStart=0;
+        disp('UserValues.Settings.Pam.ScanOffsetStart was incomplete');
+    end
+    P.Settings.Pam.ScanOffsetStart = S.Settings.Pam.ScanOffsetStart;
+    %%% Checks, if Pam.ScanOffsetEnd subfield exists
+    if ~isfield(S.Settings.Pam, 'ScanOffsetEnd')
+        S.Settings.Pam.ScanOffsetEnd=0;
+        disp('UserValues.Settings.Pam.ScanOffsetEnd was incomplete');
+    end
+    P.Settings.Pam.ScanOffsetEnd = S.Settings.Pam.ScanOffsetEnd;
     %%% Checks, if Pam.Multi_Cor subfield exists
     if ~isfield(S.Settings.Pam, 'ParallelProcessing') || ischar(S.Settings.Pam.ParallelProcessing)
         S.Settings.Pam.ParallelProcessing = 0;
