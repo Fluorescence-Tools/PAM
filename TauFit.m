@@ -3558,11 +3558,31 @@ switch obj
                         end
                         % define weighted least squares
                         wls = @(x) sum(((fitfun_dist(interlace(x0,x,fixed),xdata)-Decay(ignore:end))./sigma_est_fit).^2);                               
-                        x = fmincon(wls,x0(~fixed),[],[],[],[],lb(~fixed),ub(~fixed),@(x) nonlcon_gausswidth(interlace(x0,x,fixed),R_E_exp));
-                        % estimate jacobian and residuals
-                        opts.lsqnonlin.MaxIterations=1;
-                        [~, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
-                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                        [x,fval,~,~,~,~,hessian] = fmincon(wls,x0(~fixed),[],[],[],[],lb(~fixed),ub(~fixed),@(x) nonlcon_gausswidth(interlace(x0,x,fixed),R_E_exp));
+                        
+                        % code for support plane analsis of sigma
+                        % simply set a break point here to run SPA
+                        do_SPA = false;
+                        if do_SPA
+                            % fix sigma
+                            fixed(2) = true;
+                            %define range
+                            s = x(2)*linspace(0.9,1.1,10);
+                            x(2) = [];
+                            % run optimization
+                            fval = zeros(size(s));
+                            for i = 1:numel(s)
+                                x0(2) = s(i);
+                                wls = @(x) sum(((fitfun_dist(interlace(x0,x,fixed),xdata)-Decay(ignore:end))./sigma_est_fit).^2);  
+                                [x,fval(i)] = fmincon(wls,x0(~fixed),[],[],[],[],lb(~fixed),ub(~fixed),@(x) nonlcon_gausswidth(interlace(x0,x,fixed),R_E_exp));                   
+                            end
+                            fval = fval./(numel(Decay(ignore:end))-sum(~fixed));
+                            figure;plot(s,fval);
+                        end
+                        x = interlace(x0,x,fixed)';
+                        chi2 = fval/(numel(Decay(ignore:end))-sum(~fixed));
+                        err = sqrt(diag(inv(hessian)));
+                        TauFitData.ConfInt(~fixed,:) = x(~fixed) + [-err, err];
                     else
                         if ~poissonian_chi2
                             [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
@@ -3571,11 +3591,10 @@ switch obj
                             [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
                                 x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
                         end
+                        x = interlace(x0,x,fixed);
+                        chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
+                        TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                     end
-                    x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
-                    
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
                 else % plot only
                     x = {x0};
                 end
@@ -3625,16 +3644,11 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{6};
                 UserValues.TauFit.IRFShift{chan} = FitResult{7};
                 
-                % estimate the FRET-averaged distance
-                R = x(1); s = x(2); R0 = x(5);
-                r = linspace(max([R-3*s,0]),R+3*s,1000);
-                pR = normpdf(r,R,s); pR = pR./sum(pR);
-                E = (1+(r/R0).^6).^(-1);
-                mE = sum(pR.*E);
-                R_mE = R0.*(1./mE-1)^(1/6);
+                [R_mE, mE] = calc_RDA_E(x(1),x(2),x(5));
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
-                    sprintf('R(<E>) [A]: %.2f',R_mE)};
+                    sprintf('<E> = %.2f',mE);...
+                    sprintf('R(<E>) [A] = %.2f',R_mE)};
             case 'Distribution plus Donor only'
                 %%% Parameter:
                 %%% Center R
@@ -5074,8 +5088,16 @@ switch obj
             if ~exist('Decay_FitRange','var')
                 Decay_FitRange = Decay;
             end
+            
             %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
-            loglikelihood = @(x) (-1/2)*sum((ModelFun(x,xdata)./sigma_est-Decay_FitRange./sigma_est).^2);
+            if contains(TauFitData.FitType,'Anisotropy') || strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                if strcmp(TauFitData.FitType,'Distribution Fit - Global Model')
+                    sigma_est = sigma_est_fit;
+                end
+                loglikelihood = @(x) (-1/2)*sum((ModelFun(x,xdata)./sigma_est-Decay_FitRange./sigma_est).^2);
+            else
+                loglikelihood = @(x) (-1/2)*sum((ModelFun(x,xdata)./sigma_est(ignore:end)-Decay_FitRange(ignore:end)./sigma_est(ignore:end)).^2);
+            end
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,lb(~fixed),ub(~fixed),x(~fixed)',zeros(1,numel(x(~fixed))));
@@ -8434,3 +8456,11 @@ UserValues.TauFit.FitFix{chan_D}(14) = true;
 UserValues.TauFit.FitFix{chan_D}(2) = true;
 UserValues.TauFit.FitFix{chan_D}(6) = true;
 LSUserValues(1);
+
+function [R_mE,mE] = calc_RDA_E(R,s,R0)
+% calculate the average FRET efficiency and the FRET-averaged distance
+r = linspace(max([R-3*s,0]),R+3*s,1000);
+pR = normpdf(r,R,s); pR = pR./sum(pR);
+E = (1+(r/R0).^6).^(-1);
+mE = sum(pR.*E);
+R_mE = R0.*(1./mE-1)^(1/6);
