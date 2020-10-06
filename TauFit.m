@@ -3645,10 +3645,12 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{7};
                 
                 [R_mE, mE] = calc_RDA_E(x(1),x(2),x(5));
+                tauF = calc_tauf(x(1),x(2),x(5),FitResult{6});
                 % Also update status text
                 h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
-                    sprintf('<E> = %.2f',mE);...
-                    sprintf('R(<E>) [A] = %.2f',R_mE)};
+                    sprintf('<E> = %.4f',mE);...
+                    sprintf('R(<E>) = %.2f A',R_mE);...
+                    sprintf('<tauD(A)>F = %.2f ns',tauF)};
             case 'Distribution plus Donor only'
                 %%% Parameter:
                 %%% Center R
@@ -3736,8 +3738,14 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(13) = FitResult{6};
                 UserValues.TauFit.FitParams{chan}(14) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+                
+                [R_mE, mE] = calc_RDA_E(x(1),x(2),x(6));
+                tauF = calc_tauf(x(1),x(2),x(6),FitResult{7});
                 % Also update status text
-                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
+                    sprintf('<E> = %.4f',mE);...
+                    sprintf('R(<E>) = %.2f A',R_mE);...
+                    sprintf('<tauD(A)>F = %.2f ns',tauF)};
             case 'Two Distributions plus Donor only'
                 %%% Parameter:
                 %%% Center R1
@@ -3847,8 +3855,16 @@ switch obj
                 
                 h.PlotDynamicFRETLine.Visible = 'on';
                 h.PlotDynamicFRETLine_Sigma.Visible = 'on';
+                
+                [R_mE1, mE1] = calc_RDA_E(x(1),x(2),FitResult{9});
+                [R_mE2, mE2] = calc_RDA_E(x(3),x(4),FitResult{9});
+                tauF1 = calc_tauf(x(1),x(2),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
+                tauF2 = calc_tauf(x(3),x(4),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
                 % Also update status text
-                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
+                    sprintf('<E> = %.4f\t/\t%.4f',mE1,mE2);...
+                    sprintf('R(<E>) = %.2f\t/\t%.2f A',R_mE1,R_mE2);...
+                    sprintf('<tauD(A)>F = %.2f\t/\t%.2f ns',tauF1,tauF2)};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data
                 switch TauFitData.Who
                     case {'BurstBrowser','Burstwise'}
@@ -4048,10 +4064,16 @@ switch obj
                 
                 h.PlotDynamicFRETLine.Visible = 'on';
                 h.PlotDynamicFRETLine_Sigma.Visible = 'on';
+                
+                [R_mE1, mE1] = calc_RDA_E(x(1),x(2),FitResult{9});
+                [R_mE2, mE2] = calc_RDA_E(x(3),x(4),FitResult{9});
+                tauF1 = calc_tauf(x(1),x(2),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
+                tauF2 = calc_tauf(x(3),x(4),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
                 % Also update status text
-                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end-1}),...
-                    sprintf('red. Chi2 (DA): %.2f',chi2_DA),...
-                    sprintf('red. Chi2 (D0): %.2f',chi2_D0)};
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
+                    sprintf('<E> = %.4f\t/\t%.4f',mE1,mE2);...
+                    sprintf('R(<E>) = %.2f\t/\t%.2f A',R_mE1,R_mE2);...
+                    sprintf('<tauD(A)>F = %.2f\t/\t%.2f ns',tauF1,tauF2)};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -7574,31 +7596,25 @@ switch obj
                 s1 = cell2mat(h.FitPar_Table.Data(2,1));
                 R2 = cell2mat(h.FitPar_Table.Data(3,1));
                 s2 = cell2mat(h.FitPar_Table.Data(4,1));
-                R = 1:1:200;
-                pR1 = normpdf(R,R1,s1); pR1 = pR1./sum(pR1);
-                pR2 = normpdf(R,R2,s2); pR2 = pR2./sum(pR2);
-                switch TauFitData.FitType
-                    case 'Two Distributions plus Donor only'
-                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
-                        tauD0 = cell2mat(h.FitPar_Table.Data(10,1));
-                        t = (1+(R0./R).^6).^(-1)*tauD0;
-                        tau1 = sum(pR1.*t.^2)./sum(pR1.*t);
-                        tau2 = sum(pR2.*t.^2)./sum(pR2.*t);
-                    case 'Distribution Fit - Global Model'
-                        R0 = cell2mat(h.FitPar_Table.Data(9,1));
-                        tau0 = cell2mat(h.FitPar_Table.Data(10,1));
-                        tauD01 = cell2mat(h.FitPar_Table.Data(11,1));
-                        tauD02 = cell2mat(h.FitPar_Table.Data(12,1));
-                        x_tauD01 = cell2mat(h.FitPar_Table.Data(13,1));
-                        k_RET = (1./tau0).*((R0./R).^6); % k_RET as a function of R
-                        t1 = ((1./tauD01) + k_RET).^(-1);
-                        t2 = ((1./tauD02) + k_RET).^(-1);
-                        tau1 = (x_tauD01.*sum(pR1.*t1.^2)+(1-x_tauD01).*sum(pR1.*t2.^2))./...
-                            (x_tauD01.*sum(pR1.*t1)+(1-x_tauD01).*sum(pR1.*t2));
-                        tau2 = (x_tauD01.*sum(pR2.*t1.^2)+(1-x_tauD01).*sum(pR2.*t2.^2))./...
-                            (x_tauD01.*sum(pR2.*t1)+(1-x_tauD01).*sum(pR2.*t2));
-                end
+               
+                R0 = cell2mat(h.FitPar_Table.Data(9,1));
+                tau0 = cell2mat(h.FitPar_Table.Data(10,1));
+                tauD01 = cell2mat(h.FitPar_Table.Data(11,1));
+                tauD02 = cell2mat(h.FitPar_Table.Data(12,1));
+                x_tauD01 = cell2mat(h.FitPar_Table.Data(13,1));
                 
+                tau1 = calc_tauf(R1,s1,R0,[tauD01,tauD02,x_tauD01,tau0]);
+                tau2 = calc_tauf(R2,s2,R0,[tauD01,tauD02,x_tauD01,tau0]);
+%                 R = 1:1:200;
+%                 pR1 = normpdf(R,R1,s1); pR1 = pR1./sum(pR1);
+%                 pR2 = normpdf(R,R2,s2); pR2 = pR2./sum(pR2);
+%                 k_RET = (1./tau0).*((R0./R).^6); % k_RET as a function of R
+%                 t1 = ((1./tauD01) + k_RET).^(-1);
+%                 t2 = ((1./tauD02) + k_RET).^(-1);
+%                 tau1 = (x_tauD01.*sum(pR1.*t1.^2)+(1-x_tauD01).*sum(pR1.*t2.^2))./...
+%                     (x_tauD01.*sum(pR1.*t1)+(1-x_tauD01).*sum(pR1.*t2));
+%                 tau2 = (x_tauD01.*sum(pR2.*t1.^2)+(1-x_tauD01).*sum(pR2.*t2.^2))./...
+%                     (x_tauD01.*sum(pR2.*t1)+(1-x_tauD01).*sum(pR2.*t2));
             otherwise
                 return;
         end
@@ -8464,3 +8480,30 @@ pR = normpdf(r,R,s); pR = pR./sum(pR);
 E = (1+(r/R0).^6).^(-1);
 mE = sum(pR.*E);
 R_mE = R0.*(1./mE-1)^(1/6);
+
+function tauF = calc_tauf(RDA,s,R0,tauD0)
+% calculate the intensity-averaged donor fluorescence lifetime
+
+% distance distribution
+R = 0:1:200;%linspace(max([0,RDA-4*s]),RDA+4*s,1000);
+pR = normpdf(R,RDA,s); pR = pR./sum(pR);
+
+if numel(tauD0) == 1
+    % single-exponential donor
+    t = (1+(R0./R).^6).^(-1)*tauD0;
+    tauF = sum(pR.*t.^2)./sum(pR.*t);
+else
+    % multi-exponential donor
+    % first two elements of tauD0 are lifetime
+    % third is fraction of first lifetime
+    % fourth is the lifetime that belongs to R0        
+    tau0 = tauD0(4);
+    tauD01 = tauD0(1);
+    tauD02 = tauD0(2);
+    x_tauD01 = tauD0(3);
+    k_RET = (1./tau0).*((R0./R).^6); % k_RET as a function of R
+    t1 = ((1./tauD01) + k_RET).^(-1);
+    t2 = ((1./tauD02) + k_RET).^(-1);
+    tauF = (x_tauD01.*sum(pR.*t1.^2)+(1-x_tauD01).*sum(pR.*t2.^2))./...
+        (x_tauD01.*sum(pR.*t1)+(1-x_tauD01).*sum(pR.*t2));
+end
