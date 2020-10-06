@@ -303,7 +303,8 @@ h.Particle_Display_Type = uicontrol(...
     'Particles only',...
     'Particles overlay',...
     'Particles gray/jet',...
-    'No Mask'});
+    'No Mask',...
+    'Particle Lifetime'});
 
 %%% Button to re-extract phasor data
 h.Particle_ReExtractPhasor = uicontrol(...
@@ -640,17 +641,44 @@ switch h.Particle_Display_Type.Value
         %%% Scales Intensity image
         Int=(Int-Min)/(Max-Min);
         Image = repmat(Int,[1 1 3]);
+    case 9 %%% Lifetime image
+        Int = (Int-Min)/(Max-Min);
+        
+        % Extract frame lifetime, has to be done as Mean_LT is wrong in
+        % Phasor Data
+        G = PhasorViewer.g(:,:,Frame);
+        S = PhasorViewer.s(:,:,Frame);
+        Fi = atan(S./G);
+        Fi(isnan(Fi)) = 0;
+        TauP = real(tan(Fi)./(2*pi*ParticleViewer.Freq/10^9));
+        TauP(isnan(TauP)) = 0;
+        TauM = real(sqrt((1./(S.^2+G.^2))-1)/(2*pi*ParticleViewer.Freq/10^9));
+        TauM(isnan(TauM)) = 0;
+        LF = (TauP + TauM)/2;
+        
+        % Creates color image of LF with jet colormap
+        range = [1.8 2.6];
+        cmap = jet;
+        LF = ceil((LF - range(1))/(range(2)-range(1))*size(cmap, 1));
+        LF(LF < 1) = 1;
+        LF(LF > size(cmap, 1)) = size(cmap, 1);
+        rgbIm = reshape(cmap(LF, :), [size(LF) 3]);
+        
+        Mask = repmat(Mask,[1 1 3]);
+        
+        % scales final image according to Int.
+        Image= repmat(Int, [1 1 3]);
+        Image(Mask) = rgbIm(Mask).*Image(Mask);
 end
 
-%Update plot
-h.Particle_Display_Image.CData = Image;
+
 
 %plot particle label
 
 %Clear previous labels
 delete(findobj(h.Particle_Display.Children, 'type', 'text'));
 delete(findobj(h.Particle_Display.Children, 'type', 'line'));
-
+delete(findobj(h.Particle_Display.Children, 'type', 'scatter'));
 
 XOffset = str2double(h.Particle_LabelXOffset.String);
 YOffset = str2double(h.Particle_LabelYOffset.String);
@@ -667,6 +695,36 @@ for i = 1: numel(ParticleList)
    end
 end
 
+% for i = 1: numel(ParticleList)
+%     p = ParticleList(i);
+%     f = find(ParticleViewer.Regions(p).Frame == Frame);
+%     coord = ParticleViewer.Regions(p).Centroid(1:f, :);   
+%    if ParticleViewer.Highlight(p)
+%        hold(h.Particle_Display, 'on')
+%        %text(h.Particle_Display, coord(f,1) + XOffset, coord(f,2) - YOffset, num2str(p), 'Color', 'yellow');
+%        FrameThres1 = 160;
+%        ft1 = find(ParticleViewer.Regions(p).Frame == FrameThres1);
+%        FrameThres2 = 260;
+%        ft2 = find(ParticleViewer.Regions(p).Frame == FrameThres2);
+%        if f <= ft1
+%            line(h.Particle_Display, coord(:, 1), coord(:,2), 'Color','red');
+%        elseif f <= ft2
+%            line(h.Particle_Display, coord(1:ft1, 1), coord(1:ft1,2), 'Color','red');
+%            line(h.Particle_Display, coord(ft1:end, 1), coord(ft1:end,2), 'Color','yellow');
+%        else
+%            line(h.Particle_Display, coord(1:ft1, 1), coord(1:ft1,2), 'Color','red');
+%            line(h.Particle_Display, coord(ft1:ft2, 1), coord(ft1:ft2,2), 'Color','yellow');
+%            line(h.Particle_Display, coord(ft2:end, 1), coord(ft2:end,2), 'Color','cyan');
+%        end
+%        scatter(h.Particle_Display, coord(f,1), coord(f,2), 8, [1 0 0], 'filled');
+%        hold(h.Particle_Display, 'off')
+%    elseif h.Particle_ShowLabel.Value && (size(ParticleViewer.Regions(p).Centroid, 1) >= str2double(h.Particle_LabelMin.String))
+%        %text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'red');
+%    end
+% end
+
+%Update plot
+h.Particle_Display_Image.CData = Image;
 
 end
 
@@ -763,7 +821,7 @@ switch Plot_Type
         XValue = 1:size(ParticleViewer.TauP, 2);
         YValue = ParticleViewer.TauP(PartNum,:);
         YValue(YValue==0) = NaN;
-        LineSpec = '.-b';
+        LineSpec = '-b';
         YLabel = 'TauP (ns)';
         XLabel = 'Frames';
         Property = {'XLim', [1, size(YValue, 2)+1]};
@@ -771,7 +829,7 @@ switch Plot_Type
         XValue = 1:size(ParticleViewer.TauM, 2);
         YValue = ParticleViewer.TauM(PartNum,:);
         YValue(isinf(YValue)) = NaN;
-        LineSpec = '.-b';
+        LineSpec = '-b';
         YLabel = 'TauM (ns)';
         XLabel = 'Frames';
         Property = {'XLim', [1, size(YValue, 2)+1]};
@@ -782,7 +840,7 @@ switch Plot_Type
         TauM = ParticleViewer.TauM(PartNum,:);
         TauM(isinf(TauM)) = NaN;
         YValue = (TauP + TauM)/2;
-        LineSpec = '.-b';
+        LineSpec = '-b';
         YLabel = 'Lifetime (ns)';
         XLabel = 'Frames';
         Property = {'XLim', [1, size(YValue, 2)+1]};
@@ -792,7 +850,7 @@ switch Plot_Type
             YValue(ParticleViewer.Regions(PartNum).Frame)./ParticleViewer.Regions(PartNum).Area';
         XValue = 1:size(ParticleViewer.Intensity, 2);
         YValue(YValue==0) = NaN;
-        LineSpec = '.-r';
+        LineSpec = '-r';
         YLabel = 'Intensity (counts)';
         XLabel = 'Frames';
         Property = {'XLim', [1, size(YValue, 2)+1]};
@@ -833,8 +891,8 @@ switch Plot_Type
         TauM(isinf(TauM)) = NaN;
         XValue = (TauP + TauM)/2;
         XValue = mean(XValue, 2, 'omitnan');
-        YValue = ParticleViewer.Intensity;
-        YValue(YValue==0) = NaN;
+        YValue = arrayfun(@(x) mean(x.MeanIntensity), ParticleViewer.Regions);
+        %YValue(YValue==0) = NaN;
         YValue = mean(YValue, 2, 'omitnan');
         LineSpec = '.b';
         YLabel = 'Intensity (counts)';
@@ -850,6 +908,7 @@ if Plot_Type <= 4
                 Window = 2;
                 h.Particle_MovAvgWindow.String = '2';
             end
+            YStd = movstd(YValue, Window, 'omitnan');
             YValue = movmean(YValue, Window, 'omitnan');
             
             %removes partial averaging windows at start and end of trace
@@ -885,7 +944,13 @@ if Plot_Type <= 4
             YValue([1:idx_start idx_end:end]) = NaN;
     end
 end
-p = plot(axes, XValue, YValue, LineSpec);
+
+if Plot_Type <=4 && h.Particle_MovingAverage.Value ==2
+    cla(axes)
+    p = boundedline(XValue, YValue, YStd, LineSpec, axes, 'nan', 'gap');
+else
+    p = plot(axes, XValue, YValue, LineSpec);
+end
 
 % Addes steps to mean lifetime plot
 if Plot_Type == 3 && isfield(ParticleViewer, 'Steps') && ~isempty(ParticleViewer.Steps)
@@ -1037,8 +1102,8 @@ for i = 1:numel(Regions)
     if size(Regions(i).Frame, 1) > 1
         Regions(i).Centroid = interp1(Regions(i).Frame, Regions(i).Centroid,...
             (Regions(i).Frame(1):Regions(i).Frame(end))');
-        Regions(i).Eccentricity = interp1(Regions(i).Frame, Regions(i).Eccentricity,...
-            (Regions(i).Frame(1):Regions(i).Frame(end))', 'previous');
+        %Regions(i).Eccentricity = interp1(Regions(i).Frame, Regions(i).Eccentricity,...
+        %    (Regions(i).Frame(1):Regions(i).Frame(end))', 'previous');
         %%% interpolate roi positions and extract interpolated roi properties
         %%% [Area, PixelIdxList, PixelList, PixelValue, MeanInt, MaxInt, TotalCounts, Frame]
         [Regions(i).Area, Regions(i).PixelIdxList, Regions(i).PixelList,...
@@ -1214,8 +1279,10 @@ MeanInt = Int./Area;
 if h.Particle_MovingAverage.Value > 1
     %TauM = movmean(TauM, Window, 'omitnan');
     %TauP = movmean(TauP, Window, 'omitnan');
+    LFall_std = movstd(LFall, Var.MovingAvg, 0, 2, 'omitnan');
     LFall = movmean(LFall, Var.MovingAvg, 2, 'omitnan');
     Int(Int == 0) = NaN; % Sets 0 Intensity to NaN
+    Int_std = movstd(Int, Var.MovingAvg, 0, 2, 'omitnan');
     Int = movmean(Int, Var.MovingAvg, 2, 'omitnan');
 
     %removes partial averaging windows at start and end of trace
@@ -1259,7 +1326,8 @@ if Var.WriteTraces
     %Generate Time Vector
     Time = zeros(size(ParticleViewer.Intensity,2),1);
     for i=1:size(ParticleViewer.Intensity,2)
-        Time(i) = (Var.FrameTime*(i-0.5)+Var.Break*(ceil(i/Var.Submovie)-1))/60;
+        %Time(i) = (Var.FrameTime*(i-0.5)+Var.Break*(ceil(i/Var.Submovie)-1))/60;
+        Time(i) = Var.FrameTime*(i-0.5)+Var.Break*(ceil(i/Var.Submovie)-1);
     end
     %Get lifetime axis limits from settings
     LF_min = h.Particle_Export_Settings.Data{5};
@@ -1347,7 +1415,7 @@ for i = Start:Stop
     end
     waitbar(i/(Stop-Start+1), h.ProgressBar);
     PlotUpdate(i);
-    F = getframe(h.Particle_Display);
+    F = getframe(h.ParticleViewer);
     if i == Start
         imwrite(F.cdata, FullFileName);
     elseif i > Start
