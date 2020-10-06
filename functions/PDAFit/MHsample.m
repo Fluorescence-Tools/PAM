@@ -1,4 +1,4 @@
-function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure)
+function [samples,prob,acceptance] =  MHsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names,parent_figure,plot_interval)
 %%% Performs Metropolis-Hastings-Sampling of posterior distribution
 %%% Input parameters:
 %%% nsamples    -   Number of Samples to draw
@@ -32,6 +32,9 @@ if nargin > 8
     Display = 1;
     if nargin < 11 %%% no parent figure specified
         parent_figure = [];
+    end
+    if nargin < 12
+        plot_interval = 10;
     end
 else
     Display = 0;
@@ -112,14 +115,14 @@ while count < (nsamples) && (Stop == 0)
             samples(count,:) = param;
             prob(count) = Posterior_new;
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,100) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         else %%% value not accepted based on posterior, keep old value
             samples(count,:) = samples(count-1,:);
             prob(count) = prob(count-1);
             acceptance = acc/count;
-            if (Display ~= 0) && (mod(count,100) == 0)
+            if (Display ~= 0) && (mod(count,plot_interval) == 0)
                 UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
             end
         end
@@ -127,7 +130,7 @@ while count < (nsamples) && (Stop == 0)
         samples(count,:) = samples(count-1,:);
         prob(count) = prob(count-1);
         acceptance = acc/count;
-        if (Display ~= 0) && (mod(count,100) == 0)
+        if (Display ~= 0) && (mod(count,plot_interval) == 0)
             UpdatePlot(samples,prob,acceptance,count,plot_params,param_names,parent_figure);
         end
     end
@@ -151,7 +154,7 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     if isempty(parent_figure)
         %%% create a figure
         parent_figure = figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8],'Color',UserValues.Look.Back);
-        whitebg(parent_figure, UserValues.Look.Axes);
+        whitebg(parent_figure, UserValues.Look.Back);
     else
         handles = guidata(parent_figure);
         delete(parent_figure.Children);
@@ -182,9 +185,13 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     handles.bayesian.button_pause = uicontrol('Style','pushbutton','Parent',parent_figure,'Units','normalized','UserData',0,...
         'Position',[0.12 0.01 0.1 0.05],'Callback',@PauseCallback,'String','Pause','ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Control);
     handles.bayesian.text = uicontrol('Style','text','String','acceptance ratio = 0','Units','normalized','Position',[0.8 0 0.2 0.05],'Parent',parent_figure,'ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Back,'FontSize',12);
+    handles.bayesian.text_time = uicontrol('Style','text','String','est. time remaining: 0 min','Units','normalized','Position',[0.6 0 0.2 0.05],'Parent',parent_figure,'ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Back,'FontSize',12);
     drawnow;
     %%% save handles structure to guidata
     guidata(parent_figure,handles);
+    %%% start timer to estimate remaining time
+    tic;
+    handles.bayesian.text_time.UserData = 0;
 else
     handles = guidata(parent_figure);
     %%% update plots
@@ -198,6 +205,12 @@ else
         
     end
     handles.bayesian.text.String = sprintf('acceptance ratio = %.4f',acceptance);
+    
+    %%% estimate remaining time
+    time = toc;
+    handles.bayesian.text_time.UserData = handles.bayesian.text_time.UserData + time; % sum up time
+    handles.bayesian.text_time.String = sprintf('est. time remaining: %.1f min',handles.bayesian.text_time.UserData.*(size(samples,1)-count)./count./60);
+    tic; %restart timer
     drawnow;
 end 
 

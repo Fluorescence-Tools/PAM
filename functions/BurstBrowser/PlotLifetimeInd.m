@@ -15,6 +15,14 @@ if isempty(BurstData)
 end
 
 file = BurstMeta.SelectedFile;
+%%% read out the plot offset
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Contour'
+        offset = UserValues.BurstBrowser.Display.ContourOffset/100;
+    case {'Image','Scatter','Hex'}
+        offset = UserValues.BurstBrowser.Display.ImageOffset/100;
+end
+
 %%% reset axis motion function (used for phasor plot to read out lifetimes)
 h.BurstBrowser.WindowButtonMotionFcn = [];
 h.axes_lifetime_ind_2d_textbox.String = '';
@@ -23,12 +31,30 @@ switch BurstData{file}.BAMethod
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
-                paramX = 'Lifetime D [ns]';
-                paramY = 'FRET Efficiency';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime D [ns]';
+                        paramY = 'FRET Efficiency';
+                    case 2
+                        paramX = 'Lifetime D [ns]';
+                        paramY = 'log(FD/FA)';
+                    case 3
+                        paramX = 'FRET Efficiency';
+                        paramY = 'M1-M2';
+                end                
             case 2 %E vs tauRR
-                origin = h.axes_EvsTauRR;
-                paramX = 'Lifetime A [ns]';
-                paramY = 'FRET Efficiency';
+                origin = h.axes_EvsTauRR;                
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'FRET Efficiency';
+                    case 2
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'log(FD/FA)';
+                    case 3
+                        paramX = 'Lifetime A [ns]';
+                        paramY = 'FRET Efficiency';
+                end     
             case 3 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
                 paramX = 'Lifetime D [ns]';
@@ -48,16 +74,43 @@ switch BurstData{file}.BAMethod
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
-                paramX = 'Lifetime GG [ns]';
-                paramY = 'FRET Efficiency GR';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime GG [ns]';
+                        paramY = 'FRET Efficiency GR';
+                    case 2
+                        paramX = 'Lifetime GG [ns]';
+                        paramY = 'log(FGG/FGR)';
+                    case 3
+                        paramX = 'FRET Efficiency GR';
+                        paramY = 'M1-M2 GR';
+                end      
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
-                paramX = 'Lifetime RR [ns]';
-                paramY = 'FRET Efficiency GR';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'FRET Efficiency GR';
+                    case 2
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'log(FGG/FGR)';
+                    case 3
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'M1-M2 GR';
+                end
             case 3 %E1A vs tauBB
                 origin = h.axes_E_BtoGRvsTauBB;
-                paramX = 'Lifetime BB [ns]';
-                paramY = 'FRET Efficiency B->G+R';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 1
+                        paramX = 'Lifetime BB [ns]';
+                        paramY = 'FRET Efficiency B->G+R';
+                    case 2
+                        paramX = 'Lifetime BB [ns]';
+                        paramY = 'log(FBB/(FBG+FBR))';
+                    case 3
+                        paramX = 'Lifetime RR [ns]';
+                        paramY = 'M1-M2 B->G+R';
+                end
             case 4 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
                 paramX = 'Lifetime GG [ns]';
@@ -97,7 +150,8 @@ if exist('origin','var') %%% simply copy the plots
     h.axes_lifetime_ind_2d.XLabel.Color = UserValues.Look.Fore;
     h.axes_lifetime_ind_2d.YLabel.String = origin.YLabel.String;
     h.axes_lifetime_ind_2d.YLabel.Color = UserValues.Look.Fore;
-    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;
+    h.axes_lifetime_ind_2d.CLimMode = 'auto';
+    %h.axes_lifetime_ind_2d.CLim(1) = offset;
     %%% find the image plot
     xdata = plots(strcmp(type,'image')).XData;
     ydata = plots(strcmp(type,'image')).YData;
@@ -110,7 +164,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
     nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
     %%% set limits
-    if ~h.MultiselectOnCheckbox.UserData
+    if ~(h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
         datatoplot = BurstData{file}.DataCut;
         min_max = max(datatoplot(:,idx_x))-min(datatoplot(:,idx_x));
         x_lim = [max([-0.1,min(datatoplot(:,idx_x))-0.1*min_max]),min([1.1,max(datatoplot(:,idx_x))+0.1*min_max])];
@@ -120,7 +174,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
         NameArray = BurstData{file}.NameArray;
-        [H,xbins,ybins,x_lim,y_lim,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y});
+        [H,xbins,ybins,x_lim,y_lim,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{[-0.1,1.1],[-0.1,0.75]});
         if iscell(H)
             HH = zeros(numel(ybins),numel(xbins));
             for i = 1:numel(H)
@@ -184,7 +238,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         c(3).YData = datapoints(:,2);
         c(3).CData = colordata;
     end
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1) && UserValues.BurstBrowser.Display.Multiplot_Contour
         c(2).Visible = 'off';
         axes(h.axes_lifetime_ind_2d);
         % overlay contour plots
@@ -216,7 +270,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     end
     xlim(h.axes_lifetime_ind_2d,x_lim);
     ylim(h.axes_lifetime_ind_2d,y_lim);
-    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;    
+    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = offset;    
     %%% plot the universal circle
     if ~isempty(strfind(paramX,'gD'))
         h.axes_lifetime_ind_2d.XLabel.String = 'g_D';
@@ -232,7 +286,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     zdata = H;
     
     origin = []; origin.XLim = x_lim; origin.YLim = y_lim;       
-    origin.CLim = [0,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
+    origin.CLim = [max(H(:))*offset,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
 end
 h.axes_lifetime_ind_2d.CLim = origin.CLim;
 if(get(h.Hist_log10, 'Value')) % transform back for 1d hists

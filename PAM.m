@@ -33,13 +33,14 @@ s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' file
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );
 s.addText( 30, 50, 'PAM - PIE Analysis with MATLAB', 'FontSize', 30, 'Color', [1 1 1] );
-s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
+s.addText( 30, 80, 'v1.3', 'FontSize', 20, 'Color', [1 1 1] );
 s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 
 %%% Disables negative values for log plot warning
 warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
+warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
 %%% Loads user profile
 Profiles=LSUserValues(0);
 for i = 1:numel(Profiles)
@@ -933,12 +934,16 @@ h.Burst.Button_Menu = uicontextmenu;
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Load performed BurstSearch',...
     'Callback',@Load_Performed_BurstSearch);
+h.Burst.Button_Menu_fromBurstIDs = uimenu(h.Burst.Button_Menu,...
+    'Label','Generate Burst File from BurstIDs',...
+    'Callback',@Do_BurstAnalysis,...
+    'Separator','on');
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Export total measurement to PDA',...
     'Callback',@Export_total_to_PDA,...
     'Separator','on');
 h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
-    'Label','Estimate background count rates from burst experiment',...
+    'Label','Estimate background count rates from burst experiment or bursty buffer',...
     'Callback',@Estimate_Background_From_Burst,...
     'Separator','on');
 h.Burst.Button.UIContextMenu = h.Burst.Button_Menu;
@@ -954,6 +959,9 @@ h.Burst.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.Burst.BurstLifetime_Bu
 h.Burst.BurstLifetime_Button_Menu_StorePhasorReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
     'Label','Store current Phasor Reference in *.bur file',...
     'Callback',{@Store_IRF_Scat_inBur,2});
+h.Burst.BurstLifetime_Button_Menu_StoreDonorOnlyReference = uimenu(h.Burst.BurstLifetime_Button_Menu,...
+    'Label','Store current Donor-only Reference in *.bur file',...
+    'Callback',{@Store_IRF_Scat_inBur,3});
 
 %%% Button to start burstwise Lifetime Fitting
 h.Burst.BurstLifetime_Button = uicontrol(...
@@ -1097,6 +1105,9 @@ h.Burst.BurstPIE_Table = uitable(...
 %%% Labels for 2C-noMFD All-Photon Burst Search
 h.Burst.BurstPIE_Table_Content.APBS_twocolornoMFD.RowName = {'DD','DA','AA'};
 h.Burst.BurstPIE_Table_Content.APBS_twocolornoMFD.ColumnName = {'PIE Channel'};
+%%% Labels for 2C-noMFD Dual-Channel Burst Search
+h.Burst.BurstPIE_Table_Content.DCBS_twocolornoMFD.RowName = {'DD','DA','AA'};
+h.Burst.BurstPIE_Table_Content.DCBS_twocolornoMFD.ColumnName = {'PIE Channel'};
 %%% Labels for 2C-MFD All-Photon Burst Search
 h.Burst.BurstPIE_Table_Content.APBS_twocolorMFD.RowName = {'DD','DA','AA'};
 h.Burst.BurstPIE_Table_Content.APBS_twocolorMFD.ColumnName = {'Parallel','Perpendicular'};
@@ -1110,7 +1121,7 @@ h.Burst.BurstPIE_Table_Content.APBS_threecolorMFD.ColumnName = {'Parallel','Perp
 h.Burst.BurstPIE_Table_Content.TCBS_threecolorMFD.RowName = {'BB','BG','BR','GG','GR','RR'};
 h.Burst.BurstPIE_Table_Content.TCBS_threecolorMFD.ColumnName = {'Parallel','Perpendicular'};
 
-h.Burst.BurstSearchMethods = {'APBS_twocolorMFD','DCBS_twocolorMFD','APBS_threecolorMFD','TCBS_threecolorMFD','APBS_twocolornoMFD'};
+h.Burst.BurstSearchMethods = {'APBS_twocolorMFD','DCBS_twocolorMFD','APBS_threecolorMFD','TCBS_threecolorMFD','APBS_twocolornoMFD','DCBS_twocolornoMFD'};
 %%% Button to convert a measurement to a photon stream based on PIE
 %%% channel  selection
 h.Burst.PhotonstreamConvert_Button = uicontrol(...
@@ -1188,7 +1199,7 @@ h.Burst.BurstSearchSelection_Popupmenu = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'APBS 2C-MFD','DCBS 2C-MFD','APBS 3C-MFD','TCBS 3C-MFD','APBS 2C-noMFD'},...
+    'String',{'APBS 2C-MFD','DCBS 2C-MFD','APBS 3C-MFD','TCBS 3C-MFD','APBS 2C-noMFD','DCBS 2C-noMFD'},...
     'Callback',@Update_BurstGUI,...
     'Position',[0.05 0.55 0.9 0.08],...
     'TooltipString',sprintf(''));
@@ -1775,11 +1786,36 @@ h.Text{end+1} = uicontrol(...
     'Style','text',...
     'Units','normalized',...
     'FontSize',12,...
-    'String','Reference Background [Hz]:',...
+    'String','MI rebinning factor:',...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.885 0.30 0.025]);
+    'Position',[0.01 0.84 0.17 0.025]);
+%%% Editbox for rescaling TAC
+h.MI.Phasor_Rebin = uicontrol(...
+    'Parent',h.MI.Phasor_Panel,...
+    'Tag','MI_Phasor_Rebin',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','1',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.19 0.84 0.08 0.025],...
+    'Tooltipstring', 'e.g. a value of 16 rescales 4096 to 256 TAC bins',...
+    'Callback',@Rebinmsg);
+
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MI.Phasor_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','Ref. Background [Hz]:',...
+    'Horizontalalignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.75 0.885 0.20 0.025]);
 %%% Editbox for reference background correction
 h.MI.Phasor_BG_Ref = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -1802,7 +1838,7 @@ h.Text{end+1} = uicontrol(...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.855 0.20 0.025]);
+    'Position',[0.75 0.855 0.20 0.025]);
 %%% Editbox for background correction
 h.MI.Phasor_BG = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -1825,7 +1861,7 @@ h.Text{end+1} = uicontrol(...
     'Horizontalalignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.65 0.825 0.20 0.025]);
+    'Position',[0.75 0.825 0.20 0.025]);
 %%% Editbox for afterpulsing correction
 h.MI.Phasor_AP = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
@@ -2398,6 +2434,19 @@ h.MT.Number_Section = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.28 0.62 0.1 0.06]);
+%%% Checkbox for chunk-wise TCSPC data read-in
+h.MT.Use_Chunkwise_Read_In = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT_Use_Chunk-wise read-in',...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'String','Chunkwise TCSPC data read-in',...
+    'Callback',@Calculate_Settings,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.52 0.30 0.06]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2425,6 +2474,47 @@ if ismac
     h.MT.Image_Export.ForegroundColor = [0 0 0];
     h.MT.Image_Export.BackgroundColor = [1 1 1];
 end
+%%% Scan offset text and fields
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String', 'Scan offset [us]:',...
+    'Position',[0.6 0.4 0.25 0.08]);
+h.MT.ScanOffsetStart = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT_ScanOffsetStart',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Callback',@Calculate_Settings,...
+    'String','0',...
+    'TooltipString', sprintf([...
+    'Discards a portion of data at start \n'...
+    'and end of scan to correct for line sync issues.'...
+    '\nSet to 0 to disable.']),...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.8 0.4 0.08 0.08]);
+h.MT.ScanOffsetEnd = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT_ScanOffsetEnd',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Callback',@Calculate_Settings,...
+    'String','0',...
+    'TooltipString', sprintf([...
+    'Discards a portion of data at start and end\n'...
+    'of scan to correct for line sync issues.'...
+    '\nSet to 0 to disable.']),...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.9 0.4 0.08 0.08]);
 %%% Checkbox to determine if time trace is calculated
 h.MT.Use_TimeTrace = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2670,6 +2760,12 @@ h.PIE.PhasorReference = uimenu(...
     'Parent',h.PIE.List_Menu,...
     'Label','Save Phasor Reference for selected PIE Channel',...
     'Tag','PIE_Phasor_Ref',...
+    'Callback',@SaveLoadIrfScat);
+%%% Saves the current Measurement as Donor-only reference for the Channel
+h.PIE.DonorOnlyReference = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save Donor-only Reference for selected PIE Channel',...
+    'Tag','PIE_DonorOnly_Ref',...
     'Callback',@SaveLoadIrfScat);
 %%% PIE Channel list
 h.PIE.List = uicontrol(...
@@ -3756,6 +3852,19 @@ elseif obj == h.MT.Use_PCH
     end
     Update_Data([],[],0,0,2);
     Update_Display([],[],10);
+elseif obj == h.MT.ScanOffsetStart || obj == h.MT.ScanOffsetEnd
+    ScanOffsetStart = str2num(h.MT.ScanOffsetStart.String);
+    ScanOffsetEnd = str2num(h.MT.ScanOffsetEnd.String);
+    if ScanOffsetStart < 0
+        ScanOffsetStart = 0;
+    end
+    if ScanOffsetEnd > 0
+        ScanOffsetEnd = 0;
+    end
+    UserValues.Settings.Pam.ScanOffsetStart = ScanOffsetStart;
+    UserValues.Settings.Pam.ScanOffsetEnd = ScanOffsetEnd;
+    Update_Data([],[],0,0,3);
+    Update_Display([],[],3);
 elseif obj == h.MT.Use_TimeTrace
     UserValues.Settings.Pam.Use_TimeTrace=h.MT.Use_TimeTrace.Value;
     if UserValues.Settings.Pam.Use_TimeTrace
@@ -3842,8 +3951,18 @@ elseif obj == h.Trace.Log
         UserValues.Settings.Pam.PlotIRF = 'on';
     end
     Update_Display([],[],8);
-elseif obj == h.MI.ScatterPattern
+elseif obj == h.MI.IRF
     %%% Switches IRF Check Display
+    if strcmp(h.MI.IRF.Checked,'on')
+        h.MI.IRF.Checked = 'off';
+        UserValues.Settings.Pam.PlotIRF = 'off';
+    else
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+    end
+    Update_Display([],[],8);
+elseif obj == h.MI.ScatterPattern
+    %%% Switches Scatter Pattern Check Display
     if strcmp(h.MI.ScatterPattern.Checked,'on')
         h.MI.ScatterPattern.Checked = 'off';
         UserValues.Settings.Pam.PlotScat = 'off';
@@ -4159,7 +4278,7 @@ if any(mode==2)
                                      find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,2}))];
                             fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,1})),...
                                      find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,2}))];
-                        case {5} % 2color no-MFD
+                        case {5,6} % 2color no-MFD
                             donor = find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1}));
                             fret = find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1}));
                     end
@@ -4222,7 +4341,7 @@ if any(mode == 10)
         end
     end
     if UserValues.Settings.Pam.Use_PCH
-        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.String) == 1
+        if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
             for t = h.PIE.List.Value
                 %%% create plot
                 h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
@@ -4346,10 +4465,10 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-%     h.Image.Axes.XLim(1)= max(xlim(1),0.5);
-%     h.Image.Axes.XLim(2)= min(xlim(2),size(PamMeta.Image{Sel},2)+0.5);
-%     h.Image.Axes.YLim(1)= max(ylim(1),0.5);
-%     h.Image.Axes.YLim(2)= min(ylim(2),size(PamMeta.Image{Sel},1)+0.5);
+    h.Image.Axes.XLim(1)= 0.5;
+    h.Image.Axes.XLim(2)= size(PamMeta.Image{Sel},2)+0.5;
+    h.Image.Axes.YLim(1)= 0.5;
+    h.Image.Axes.YLim(2)= size(PamMeta.Image{Sel},1)+0.5;
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4871,6 +4990,7 @@ switch e.Key
         UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
         UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
+        UserValues.PIE.DonorOnlyReference{end+1} = zeros(1,4096);
         UserValues.PIE.PhasorReferenceLifetime(end+1) = 0;
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
@@ -5651,41 +5771,113 @@ Det = UserValues.PIE.Detector(PIEchannel);
 Rout = UserValues.PIE.Router(PIEchannel);
 From = UserValues.PIE.From(PIEchannel);
 To = UserValues.PIE.To(PIEchannel);
-if ~isempty(TcspcData.(type){Det,Rout})
-    if nargin == 2 %%% read whole photon stream
-        
-        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
-            TcspcData.MI{Det,Rout} >= From &...
-            TcspcData.MI{Det,Rout} <= To);
-        
-    elseif nargin == 3 %%% read only the specified block
-        %%% Calculates the block start times in clock ticks
-        Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
-        
-        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
-            TcspcData.MI{Det,Rout} >= From &...
-            TcspcData.MI{Det,Rout} <= To &...
-            TcspcData.MT{Det,Rout} >= Times(block) &...
-            TcspcData.MT{Det,Rout} < Times(block+1));
-        if strcmp(type,'MT')
-            Photons_PIEchannel = Photons_PIEchannel - Times(block);
+Combined = ~isempty(UserValues.PIE.Combined{PIEchannel});
+if ~Combined %%% read out normal PIE channel
+    if ~isempty(TcspcData.(type){Det,Rout})
+        if nargin == 2 %%% read whole photon stream
+
+            Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
+                TcspcData.MI{Det,Rout} >= From &...
+                TcspcData.MI{Det,Rout} <= To);
+
+        elseif nargin == 3 %%% read only the specified block
+            %%% Calculates the block start times in clock ticks
+            Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
+
+            Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
+                TcspcData.MI{Det,Rout} >= From &...
+                TcspcData.MI{Det,Rout} <= To &...
+                TcspcData.MT{Det,Rout} >= Times(block) &...
+                TcspcData.MT{Det,Rout} < Times(block+1));
+            if strcmp(type,'MT')
+                Photons_PIEchannel = Photons_PIEchannel - Times(block);
+            end
+        elseif nargin == 4 %%% read only the specified chunk
+            %%% define the chunk start and stop time based on chunksize and measurement
+            %%% time
+            %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
+            %%% (defined in minutes)
+            LimitLow = (block-1)*chunk*60/FileInfo.ClockPeriod+1;
+            LimitHigh = block*chunk*60/FileInfo.ClockPeriod;
+
+            Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
+                TcspcData.MI{Det,Rout} >= From &...
+                TcspcData.MI{Det,Rout} <= To &...
+                TcspcData.MT{Det,Rout} >= LimitLow &...
+                TcspcData.MT{Det,Rout} < LimitHigh);
         end
-    elseif nargin == 4 %%% read only the specified chunk
-        %%% define the chunk start and stop time based on chunksize and measurement
-        %%% time
-        %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
-        %%% (defined in minutes)
-        LimitLow = (block-1)*chunk*60/FileInfo.ClockPeriod+1;
-        LimitHigh = block*chunk*60/FileInfo.ClockPeriod;
-        
-        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
-            TcspcData.MI{Det,Rout} >= From &...
-            TcspcData.MI{Det,Rout} <= To &...
-            TcspcData.MT{Det,Rout} >= LimitLow &...
-            TcspcData.MT{Det,Rout} < LimitHigh);
+    else %%% PIE channel contains no photons
+        Photons_PIEchannel = [];
     end
-else %%% PIE channel contains no photons
-    Photons_PIEchannel = [];
+elseif Combined
+    PIEchannel =  UserValues.PIE.Combined{PIEchannel};
+    Det = UserValues.PIE.Detector(PIEchannel);
+    Rout = UserValues.PIE.Router(PIEchannel);
+    From = UserValues.PIE.From(PIEchannel);
+    To = UserValues.PIE.To(PIEchannel);
+
+    %%% get MT and MI of both channels (read both for sorting by macrotime
+    %%% later)
+    MT = []; MI = [];
+    for i = 1:numel(Det)
+        switch nargin
+            case 2 %%% read whole photon stream
+                MT = [MT; TcspcData.MT{Det(i),Rout(i)}(...
+                    TcspcData.MI{Det(i),Rout(i)} >= From(i) &...
+                    TcspcData.MI{Det(i),Rout(i)} <= To(i))];
+                if strcmp(type,'MI')
+                    MI = [MI; TcspcData.MI{Det(i),Rout(i)}(...
+                        TcspcData.MI{Det(i),Rout(i)} >= From &...
+                        TcspcData.MI{Det(i),Rout(i)} <= To)];
+                end
+            case 3 %%% read only the specified block
+                %%% Calculates the block start times in clock ticks
+                Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
+                
+                MT = [MT; TcspcData.MT{Det(i),Rout(i)}(...
+                    TcspcData.MI{Det(i),Rout(i)} >= From(i) &...
+                    TcspcData.MI{Det(i),Rout(i)} <= To(i) &...
+                    TcspcData.MT{Det(i),Rout(i)} >= Times(block) &...
+                    TcspcData.MT{Det(i),Rout(i)} < Times(block+1))];                
+                MT = MT - Times(block);
+                if strcmp(type,'MI')
+                    MI = [MI; TcspcData.MI{Det(i),Rout(i)}(...
+                        TcspcData.MI{Det(i),Rout(i)} >= From(i) &...
+                        TcspcData.MI{Det(i),Rout(i)} <= To(i) &...
+                        TcspcData.MT{Det(i),Rout(i)} >= Times(block) &...
+                        TcspcData.MT{Det(i),Rout(i)} < Times(block+1))];
+                end
+            case 4 %% read only the specified chunk
+                %%% define the chunk start and stop time based on chunksize and measurement
+                %%% time
+                %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
+                %%% (defined in minutes)
+                LimitLow = (block-1)*chunk*60/FileInfo.ClockPeriod+1;
+                LimitHigh = block*chunk*60/FileInfo.ClockPeriod;
+
+                MT = [MT; TcspcData.MT{Det(i),Rout(i)}(...
+                    TcspcData.MI{Det(i),Rout(i)} >= From(i) &...
+                    TcspcData.MI{Det(i),Rout(i)} <= To(i) &...
+                    TcspcData.MT{Det(i),Rout(i)} >= LimitLow &...
+                    TcspcData.MT{Det(i),Rout(i)} < LimitHigh)];
+                if strcmp(type,'MI')
+                    MI = [MI; TcspcData.MI{Det(i),Rout(i)}(...
+                        TcspcData.MI{Det(i),Rout(i)} >= From(i) &...
+                        TcspcData.MI{Det(i),Rout(i)} <= To(i) &...
+                        TcspcData.MT{Det(i),Rout(i)} >= LimitLow &...
+                        TcspcData.MT{Det(i),Rout(i)} < LimitHigh)];
+                end
+        end
+    end
+    %%% sort combined micro- and macrotimes by macrotimes
+    [~,idx] = sort(MT);
+    %%% assign output
+    switch type
+        case 'MT'
+            Photons_PIEchannel = MT(idx);
+        case 'MI'
+            Photons_PIEchannel = MI(idx);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5830,6 +6022,8 @@ h.MT.Binning.String=UserValues.Settings.Pam.MT_Binning;
 h.MT.Binning_PCH.String=UserValues.Settings.Pam.PCH_Binning;
 h.MT.Time_Section.String=UserValues.Settings.Pam.MT_Time_Section;
 h.MT.Number_Section.String=UserValues.Settings.Pam.MT_Number_Section;
+h.MT.ScanOffsetStart.String = UserValues.Settings.Pam.ScanOffsetStart;
+h.MT.ScanOffsetEnd.String = UserValues.Settings.Pam.ScanOffsetEnd;
 
 %%% Sets Correlation table to UserValues
 h.Cor.Table.RowName=[UserValues.PIE.Name 'Column'];
@@ -6929,9 +7123,15 @@ Det=h.MI.Phasor_Det.Value;
 UserValues.Phasor.Reference(Det,:)=0;
 % UserValues.Phasor.Reference = zeros(numel(UserValues.Detector.Det),4096);
 %%% Assigns current MI histogram as reference
+%%% rebin TCSPC data prior to phasor analysis (1 for no rebinning)
+rebin = [1:str2double(h.MI.Phasor_Rebin.String):FileInfo.MI_Bins];
+for i = 1:(numel(rebin)-1)
+    UserValues.Phasor.ReferenceRebinned(Det,i) = sum(PamMeta.MI_Hist{Det}(rebin(i):rebin(i+1)-1));
+end
+UserValues.Phasor.ReferenceRebinned(Det,numel(rebin)) = sum(PamMeta.MI_Hist{Det}(rebin(end):size(PamMeta.MI_Hist{Det},1))); %bins all remaining values in the last bin
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
-UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+UserValues.Phasor.Reference_MI_Bins = round(FileInfo.MI_Bins/str2double(h.MI.Phasor_Rebin.String));
 UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
 LSUserValues(1);
 
@@ -6966,16 +7166,16 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         %%% Saves pathname
         UserValues.File.PhasorPath=PathName;
         LSUserValues(1);
-
+        
         %% Calculates reference
-        Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        Shift=round(h.MI.Phasor_Slider.Value/str2double(h.MI.Phasor_Rebin.String)); % Shift between reference and file in MI bins, rescaled 
         Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
-        MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
         Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
+        MI_Bins = round(FileInfo.MI_Bins/str2double(h.MI.Phasor_Rebin.String)); % Total number of MI bins of file
         TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
-        From=str2double(h.MI.Phasor_From.String); % First MI bin to used
-        To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
+        From=str2double(h.MI.Phasor_From.String); % First MI bin to used, rescaled
+        To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used, rescaled
         if h.MI.Phasor_FramePopup.Value == 2
             Frames = size(FileInfo.LineTimes,1);
         else
@@ -6995,14 +7195,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
         
         %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
+        Ref=circshift(UserValues.Phasor.ReferenceRebinned(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
         Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
-        if From>1
-            Ref(1:(From-1))=0;
+        if round(From/str2double(h.MI.Phasor_Rebin.String))>1
+            Ref(1:(round(From/str2double(h.MI.Phasor_Rebin.String))-1))=0;
         end
-        if To<Ref_MI_Bins
-            Ref(To+1:end)=0;
+        if round(To/str2double(h.MI.Phasor_Rebin.String))<Ref_MI_Bins
+            Ref(round(To/str2double(h.MI.Phasor_Rebin.String))+1:end)=0;
         end
         Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
@@ -7032,6 +7232,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
         %%% Extracts microtimes
         PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+        %%% rebin TCSPC data prior to phasor analysis (1 for no rebinning)
+        PIE_MI = round(PIE_MI/str2double(h.MI.Phasor_Rebin.String));
         %%% Removes invalid photons (usually laser retraction)
         PIE_MI=PIE_MI(Bin~=0);
         Bin=Bin(Bin~=0);
@@ -7040,16 +7242,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
         Intensity=flip(permute(Intensity,[2 1 3]),1);
         
-        
+        % capital G and S are the phasor coordinates of the TCSPC channels
         G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
         %% Actual Calculation
 
         %%% Actual calculation in C++
-        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
+        % lowercase g and s are the mean phasor coordinates of each pixel
+        % Mean_LT is the mean arrival time per pixel in TCSPC bins
+        [Mean_LT, g,s] = DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
         
         %%% Reshapes data to images
+        % g, s and Mean_LT are pixels x lines x frames
         g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
         s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
         Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
@@ -7057,7 +7262,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                    
         %%% Background and Afterpulsing correction
         Use = zeros(1,MI_Bins);
-        Use(From:To) = 1/MI_Bins;
+        Use(round(From/str2double(h.MI.Phasor_Rebin.String)):round(To/str2double(h.MI.Phasor_Rebin.String))) = 1/MI_Bins;
         G = sum(G.*Use);
         S = sum(S.*Use);
         g = (g - G*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
@@ -7192,6 +7397,13 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'off';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window GX:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Photons per Time Window RR:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
         end
     case 2
         h.Burst.BurstParameter2_Text.String = 'Smoothing Window (2*N+1):';
@@ -7227,6 +7439,13 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter3_Text.String = 'Interphoton Time [us]:';
                 h.Burst.BurstParameter4_Text.Visible = 'off';
                 h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time GX [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Interphoton Time RR [us]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
         end
@@ -7310,7 +7529,7 @@ save(FileName, 'PDA', 'timebin')
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_BurstAnalysis(obj,~)
-global FileInfo UserValues PamMeta
+global FileInfo UserValues PamMeta TcspcData
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
@@ -7357,7 +7576,7 @@ SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
 Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
-ChunkSize = FileInfo.MeasurementTime/Number_of_Chunks;
+ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
 %%% Preallocation
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
@@ -7369,6 +7588,26 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Macrotime_all = cell(Number_of_Chunks,1);
     Microtime_all = cell(Number_of_Chunks,1);
     Channel_all = cell(Number_of_Chunks,1);
+end
+
+save_BID = true; % save burst IDs
+if save_BID
+    %%% to determine the global photon number, we need the array of all
+    %%% photons in the measurement
+    GlobalMacrotime = sort(vertcat(TcspcData.MT{:}));
+    BID_dummy = cell(Number_of_Chunks,1);
+end
+
+%%% do not do a burst search, but simply take the indices of the start/stop
+%%% photons from a burst ID *.bst file obtained from the Seidel software
+if obj == h.Burst.Button_Menu_fromBurstIDs
+    from_BurstIDs = true;
+    [FileName,PathName] = uigetfile({'*.bst'}, 'Choose a BurstID file (*.bst)', UserValues.File.Path, 'MultiSelect', 'off');
+    BurstIDs = dlmread(fullfile(PathName,FileName),'\t');
+    BID_path = PathName;
+    BID_file = FileName;
+else
+    from_BurstIDs = false;
 end
 
 for i = find(PamMeta.Selected_MT_Patches)'
@@ -7406,17 +7645,19 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        if BAMethod == 1
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
-        elseif BAMethod == 2
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 1
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 2
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+            end
         end
     elseif any(BAMethod == [3,4])
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
@@ -7462,21 +7703,22 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        if BAMethod == 3 %ACBS 3 Color
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
-        elseif BAMethod == 4 %TCBS
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
-                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
-            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 3 %ACBS 3 Color
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 4 %TCBS
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+            end
         end
-        
-    elseif BAMethod == 5 %2 color no MFD
+    elseif any(BAMethod == [5,6]) %2 color no MFD
         %prepare photons
         %read out macrotimes for all channels
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
@@ -7501,12 +7743,31 @@ for i = find(PamMeta.Selected_MT_Patches)'
         AllPhotons_Microtime = MI(index);
         clear MI index
         
-        %do search
-        T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-        M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-        L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-        [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+        if ~from_BurstIDs
+            if BAMethod == 5 %ACBS 2 Color-noMFD
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+            elseif BAMethod == 6 %DCBS 2 Color-noMFD
+                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+                L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+            end
+        end
     end
+    
+    if from_BurstIDs
+        %%% map the global photon numbers ("burstIDs") to the AllPhotons array
+        [~,start] = ismember(GlobalMacrotime(BurstIDs(:,1)),AllPhotons);
+        [~,stop] = ismember(GlobalMacrotime(BurstIDs(:,2)),AllPhotons);
+        valid = start > 0 & stop > 0;
+        start = start(valid); stop = stop(valid);
+        Number_of_Photons = stop-start+1;
+    end
+    
     %%% Process Data for this Chunk
     %%% Extract Macrotime, Microtime and Channel Information burstwise
     Macrotime_dummy{i} = cell(numel(Number_of_Photons),1);
@@ -7527,6 +7788,11 @@ for i = find(PamMeta.Selected_MT_Patches)'
         % Macrotime_all{i} = uint64(AllPhotons);
         % Microtime_all{i} = uint16(AllPhotons_Microtime);
         % Channel_all{i} = uint8(Channel);
+    end
+    if save_BID
+        % find the index of all starts and stops
+        [~,BID_dummy{i}(:,1)] = ismember(AllPhotons(start),GlobalMacrotime);
+        [~,BID_dummy{i}(:,2)] = ismember(AllPhotons(stop),GlobalMacrotime);
     end
 end
 
@@ -7550,6 +7816,10 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     Microtime_all = vertcat(Microtime_all{:});
     Channel_all = vertcat(Channel_all{:});
 end
+if save_BID
+    BID = vertcat(BID_dummy{:});
+end
+clear Macrotime_dummy Microtime_dummy Channel_dummy Macrotime_all Microtime_all Channel_all BID_dummy
 %% Parameter Calculation
 Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 
@@ -7769,7 +8039,7 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     for i = 1:6
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
-elseif BAMethod == 5 %only 3 channels
+elseif any(BAMethod == [5,6]) %only 3 channels
     
     Number_of_Photons_per_Color = zeros(Number_of_Bursts,3);
     for i = 1:3 %polarization resolved
@@ -7830,7 +8100,6 @@ end
 Countrate = Number_of_Photons./Duration;
 
 Progress(0.95,h.Progress.Axes, h.Progress.Text, 'Saving...');
-
 %% Save BurstSearch Results
 %%% The result is saved in a simple data array with dimensions
 %%% (NumberOfBurst x NumberOfParamters), DataArray. The column names are saved in a
@@ -7972,7 +8241,7 @@ elseif any(BAMethod == [3 4])
         'Number of Photons (RR par)',...
         'Number of Photons (RR perp)'...
         };
-elseif BAMethod == 5
+elseif any (BAMethod == [5,6])
     BurstData.DataArray = [...
         E...
         S...
@@ -8003,7 +8272,7 @@ elseif BAMethod == 5
         '|TGG-TGR| Filter',...
         'FRET 2CDE Filter',...
         'Duration [ms]',...
-        'Mean Macrotime [ms]',...
+        'Mean Macrotime [s]',...
         'Count rate [kHz]',...
         'Count rate (GG) [kHz]',...
         'Count rate (GR) [kHz]',...
@@ -8018,6 +8287,13 @@ end
 %%% Append other important parameters/values to BurstData structure
 BurstData.TACRange = FileInfo.TACRange;
 BurstData.BAMethod = BAMethod;
+if BurstData.BAMethod == 6
+    %%% Set DCBS-noMFD to APBS-noMFD
+    BurstData.BAMethod = 5;
+    % also overwrite the PIE channel selections to read out the right data further on
+    UserValues.BurstSearch.PIEChannelSelection{5} = UserValues.BurstSearch.PIEChannelSelection{6};
+    LSUserValues(1);
+end
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
 BurstData.ClockPeriod = FileInfo.ClockPeriod;
@@ -8037,10 +8313,34 @@ BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 %%% Save the lower and upper boundaries of the PIE Channels for later fFCS calculations
 BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
 BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
+%%% look for combined channels
+iscombined = ~cellfun(@isempty,UserValues.PIE.Combined(PIEChannels)); % will be not empty for combined channels
+if any(iscombined)
+    for i = 1:numel(iscombined)
+        if iscombined(i)
+            chans = UserValues.PIE.Combined{PIEChannels(i)};
+            Detector = []; Router = []; From = []; To = [];
+            for j = 1:numel(chans)
+                Detector(end+1) = UserValues.PIE.Detector(chans(j));
+                Router(end+1) = UserValues.PIE.Router(chans(j));
+                From(end+1) = UserValues.PIE.From(chans(j));
+                To(end+1) = UserValues.PIE.To(chans(j));
+            end
+            BurstData.PIE.Detector(i) = Detector(1); % save only the first detector for now
+            BurstData.PIE.Router(i) = Router(1);
+            BurstData.PIE.From(i) = min(From); % save min From range
+            BurstData.PIE.To(i) = max(To); % save max To range
+        end
+    end
+end
 
 % get the IRF, scatter decay and background from UserValues
 BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1,2]);
 
+% save the BIDs
+if save_BID
+    BurstData.BID = BID;
+end
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 
@@ -8049,36 +8349,44 @@ BurstData.PathName = FileInfo.Path;
 
 %%% the burst search parameters
 BurstSearchParameters = struct;
-BurstSearchParameters.BurstMinimumLength = L;
-%%% the used burst search and smoothing method
-BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
-BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
 BurstSearchParameters.PIEchannelselection = h.Burst.BurstPIE_Table.Data;
-switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
-    case 1 %%% Sliding time window
-        BurstSearchParameters.TimeWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.PhotonsPerTimewindow = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
-            BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
-            BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
-        end
-    case 2 %%% Interphoton time with Lee filter
-        BurstSearchParameters.SmoothingWindow = T;
-        if numel(M) == 1
-            BurstSearchParameters.InterphotonTimeThreshold = M;
-        elseif numel(M) == 2
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
-        elseif numel(M) == 3
-            BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
-            BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
-            BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
-        end
+if ~from_BurstIDs
+    BurstSearchParameters.BurstMinimumLength = L;
+    %%% the used burst search and smoothing method
+    BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
+    BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
+    switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
+        case 1 %%% Sliding time window
+            BurstSearchParameters.TimeWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.PhotonsPerTimewindow = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
+                BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
+                BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
+            end
+        case 2 %%% Interphoton time with Lee filter
+            BurstSearchParameters.SmoothingWindow = T;
+            if numel(M) == 1
+                BurstSearchParameters.InterphotonTimeThreshold = M;
+            elseif numel(M) == 2
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
+            elseif numel(M) == 3
+                BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
+                BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
+                BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
+            end
+    end
+else %%% generated from BurstIDs
+    BurstSearchParameters.BurstSearch = 'from BurstIDs';
+    BurstSearchParameters.BurstMinimumLength = 0;
+    BurstSearchParameters.BurstSearchSmoothingMethod = 'N/A';
+    BurstSearchParameters.BurstIDFile = BID_file;
+    BurstSearchParameters.BurstIDPath = BID_path;
 end
 BurstData.BurstSearchParameters = BurstSearchParameters;
 
@@ -8087,21 +8395,32 @@ if ~exist([pathstr filesep FileName],'dir')
 end
 pathstr = [pathstr filesep FileName];
 
-%%% Add Burst Search Type
-%%% The Naming follows the Abbreviation for the BurstSearch Method.
-switch BAMethod
-    case 1
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
-    case 2
-        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
-    case 3
-        FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
-    case 4
-        FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
-    case 5
-        FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
+if ~from_BurstIDs
+    %%% Add Burst Search Type
+    %%% The Naming follows the Abbreviation for the BurstSearch Method.
+    switch BAMethod
+        case 1
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
+        case 2
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
+        case 3
+            FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
+        case 4
+            FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
+        case 5
+            FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
+        case 6
+            FullFileName = fullfile(pathstr, [FileName '_DCBS_2CnoMFD']);
+    end
+else
+    BID_folder = strsplit(BID_path,filesep);
+    if ~isempty(BID_folder{end})
+        BID_folder = BID_folder{end};
+    else
+        BID_folder = BID_folder{end-1};
+    end
+    FullFileName = fullfile(pathstr, [FileName '_BID_' BID_folder]);
 end
-
 %%% add the used parameters also to the filename
 % switch BAMethod
 %     case {1,3,5} %APBS L,M,T
@@ -8293,6 +8612,8 @@ BAMethod = BurstData.BAMethod;
 BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
+% Initialize variables as dummies
+Macrotime = cell(0); Channel = cell(0);
 load(fullfile(Path,[File '.bps']),'-mat');
 %Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
 %Channel = cellfun(@double,Channel,'UniformOutput',false);
@@ -8306,7 +8627,7 @@ for t=1:numel(tau_2CDE)
     else
         tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
     end
-    if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
+    if any(BurstData.BAMethod == [1,2,5,6]) %2 Color Data
         FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
         ALEX_2CDE = zeros(numel(Macrotime),1);
         
@@ -8419,7 +8740,7 @@ h.Burst.Button.ForegroundColor = [0 0.8 0];
 %%% Enable Lifetime and 2CDE Button
 h.Burst.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
-if any(BurstData.BAMethod == [1,2,5])
+if any(BurstData.BAMethod == [1,2,5,6])
     if (sum(BurstData.DataArray(:,strcmp('Lifetime D [ns]',BurstData.NameArray))) == 0 )
         %%% no lifetime fit
         h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
@@ -8439,7 +8760,7 @@ end
 
 h.Burst.NirFilter_Button.Enable = 'on';
 %%% Check if NirFilter was calculated before
-if any(BurstData.BAMethod == [1,2,5])
+if any(BurstData.BAMethod == [1,2,5,6])
     if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
         %%% no NirFilter
         h.Burst.NirFilter_Button.ForegroundColor = [1 0 0];
@@ -8482,6 +8803,45 @@ switch type
         PhotonsA = Photons(Channel == 5 | Channel == 6);
         indexD = find((Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4));
         indexA = find((Channel == 5 | Channel == 6));
+        
+        %do burst search on each channel
+        MD = M(1);
+        MA = M(2);
+        %ACBS(Photons,T,M,L), don't specify L for no cutting!
+        [startD, stopD, ~] = APBS(PhotonsD,T,MD);
+        [startA, stopA, ~] = APBS(PhotonsA,T,MA);
+        
+        startD = indexD(startD);
+        stopD = indexD(stopD);
+        startA = indexA(startA);
+        stopA = indexA(stopA);
+        
+        validA = zeros(1,numel(startA));
+        for i = 1:numel(startA)
+            current = find(stopD-startA(i) > 0,1,'first');
+            if startD(current) < stopA(i)
+                startA(i) = max([startD(current) startA(i)]);
+                stopA(i) = min([stopD(current) stopA(i)]);
+                validA(i) = 1;
+            end
+        end
+        start = startA(validA == 1);
+        stop = stopA(validA == 1);
+        
+        Number_of_Photons = stop-start+1;
+        start(Number_of_Photons<L)=[];
+        stop(Number_of_Photons<L)=[];
+        Number_of_Photons(Number_of_Photons<L)=[];
+    case 'DCBS-noMFD'
+        %Dual Channel Burst Search for non MFD setups
+        %Get GX and RR photon streams
+        %1 = BB1/GG1
+        %2 = BG1/GR1
+        %3 = GG1/RR1
+        PhotonsD = Photons((Channel == 1 | Channel == 2));
+        PhotonsA = Photons(Channel == 3);
+        indexD = find((Channel == 1 | Channel == 2));
+        indexA = find(Channel == 3);
         
         %do burst search on each channel
         MD = M(1);
@@ -8751,7 +9111,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
         end
         
-    elseif BAMethod == 5 %2 color no MFD
+    elseif any(BAMethod == [5,6]) %2 color no MFD
         %prepare photons
         %read out macrotimes for all channels
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',1,ChunkSize);
@@ -8759,15 +9119,24 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',1,ChunkSize);
         AllPhotons_unsort = vertcat(Photons{:});
         %sort
-        [AllPhotons, ~] = sort(AllPhotons_unsort);
+        [AllPhotons, index] = sort(AllPhotons_unsort);
         clear AllPhotons_unsort
         %get colors of photons
-        
+        chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))]);
+        Channel = chan_temp(index);
         %do search
-        T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
-        M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
-        L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-        [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+        if BAMethod == 5 %ACBS 2 Color-noMFD
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+            [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
+        elseif BAMethod == 6 %DCBS 2 Color-noMFD
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
+            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+        end
     end
     
     %% prepare trace for display
@@ -8780,7 +9149,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             [ch3] = hist([Photons{1}; Photons{2}; Photons{3}; Photons{4}; Photons{5}; Photons{6}], xout);
             [ch1] = hist([Photons{7}; Photons{8}; Photons{9}; Photons{10}], xout);
             [ch2] = hist([Photons{11}; Photons{12}], xout);
-        case 5
+        case {5,6}
             [ch1] = hist([Photons{1}; Photons{2}], xout);
             [ch2] = hist([Photons{3}], xout);
     end
@@ -8885,7 +9254,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'off';
             h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'off';
-        case 2 %2color DCBS
+        case {2,6} %2color DCBS
             h.Plots.BurstPreview.Intensity_Threshold_ch1.Visible = 'on';
             h.Plots.BurstPreview.Intensity_Threshold_ch1.Color = [0 0.8 0];
             h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
@@ -8993,7 +9362,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Visible = 'off';
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.Visible = 'off';
-        case 2 %2color DCBS
+        case {2,6} %2color DCBS
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.Visible = 'on';
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.Color = [0 0.8 0];
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
@@ -9154,12 +9523,35 @@ switch obj
         
         for i = 1:numel(Sel)
             if isempty(UserValues.PIE.Combined{Sel(i)})
-                %%% Update IRF of selected channel
+                %%% Update Phasor Reference of selected channel
                 det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
                 UserValues.PIE.PhasorReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
                 UserValues.PIE.PhasorReferenceLifetime(Sel(i)) = lt;
             else
                 uiwait(msgbox('Phasor Reference cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
+        end
+        LSUserValues(1);
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.PIE.DonorOnlyReference
+        % Saves the current PIE channel as IRF pattern
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving Donor-Only Reference';
+        h.Progress.Axes.Color=[1 0 0];
+        %%% Find selected channels
+        Sel=h.PIE.List.Value;       
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update Donor-Only reference of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.DonorOnlyReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+            else
+                uiwait(msgbox('Donor-Only Reference cannot be saved for combined channels!', 'Important', 'modal'))
                 return
             end
         end
@@ -9442,6 +9834,13 @@ switch BurstData.BAMethod
             end
         end
         
+        %%% Read Out the Donor-Only Reference
+        TauFitData.DonorOnlyReference_Par = cell(1); TauFitData.DonorOnlyReference_Per = cell(1);
+        try
+            TauFitData.DonorOnlyReference_Par{1} = BurstData.DonorOnlyReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+            TauFitData.DonorOnlyReference_Per{1} = BurstData.DonorOnlyReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+        end
+        
         %%% Generate XData
         TauFitData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])) - BurstData.PIE.From(1);
         TauFitData.XData_Per{1} = (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])) - BurstData.PIE.From(2);
@@ -9509,7 +9908,7 @@ switch BurstData.BAMethod
         TauFitData.XData_Per{2} = (BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp])) - BurstData.PIE.From(8);
         TauFitData.XData_Par{3} = (BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar])) - BurstData.PIE.From(11);
         TauFitData.XData_Per{3} = (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])) - BurstData.PIE.From(12);
-    case 5 %noMFD
+    case {5,6} %noMFD
         %%% Read out the indices of the PIE channels
         idx_GG = 1;
         idx_RR = 3;
@@ -9549,6 +9948,9 @@ switch BurstData.BAMethod
 end
 %%% Read out relevant parameters
 TauFitData.BAMethod = BurstData.BAMethod;
+if BurstData.BAMethod == 6
+    TauFitData.BAMethod = 5;
+end
 %TauFitData.ClockPeriod = BurstData.FileInfo.ClockPeriod;
 TauFitData.TACRange = BurstData.FileInfo.TACRange; % in seconds
 TauFitData.MI_Bins = double(BurstData.FileInfo.MI_Bins); %anders, why double?
@@ -9588,46 +9990,112 @@ if isempty(BurstData)
 end
 
 if any(mode==0)
-    %% Save IRF
+    %% Save IRF (combine IRFS for combined channels)
     switch BurstData.BAMethod
         case {1,2}
             %%% Read out the Microtime Histograms of the IRF for the two channels
-            hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
-            hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
-            hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
-            BurstData.IRF = {hIRF_GGpar; hIRF_GGperp;...
-                hIRF_GRpar; hIRF_GRperp;...
-                hIRF_RRpar; hIRF_RRperp};
+            % hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            % hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            % hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            % BurstData.IRF = {hIRF_GGpar; hIRF_GGperp;...
+            %     hIRF_GRpar; hIRF_GRperp;...
+            %     hIRF_RRpar; hIRF_RRperp};
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+            chan = [GGpar;GGperp;GRpar;GRperp;RRpar;RRperp];
+            BurstData.IRF = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.IRF{i} = UserValues.PIE.IRF{chan(i)};
+                else %%% combine IRFs
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.IRF{i} =  UserValues.PIE.IRF{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.IRF{i} = BurstData.IRF{i} + UserValues.PIE.IRF{PIEchannel(j)};
+                    end
+                end
+            end
         case {3,4}
             %%% Read out the Microtime Histograms of the IRF for the two channels
-            hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
-            hIRF_BGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hIRF_BGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
-            hIRF_BRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            hIRF_BRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
-            hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
-            hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
-            hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
-            hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
-            hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
-            hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
-            BurstData.IRF = {hIRF_BBpar; hIRF_BBperp;...
-                hIRF_BGpar; hIRF_BGperp;...
-                hIRF_BRpar; hIRF_BRperp;...
-                hIRF_GGpar; hIRF_GGperp;...
-                hIRF_GRpar; hIRF_GRperp;...
-                hIRF_RRpar; hIRF_RRperp};
-        case 5 %noMFD
-            hIRF_GG = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hIRF_GR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hIRF_RR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            BurstData.IRF = {hIRF_GG;...
-                hIRF_GR;...
-                hIRF_RR};
+            % hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            % hIRF_BGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hIRF_BGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            % hIRF_BRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % hIRF_BRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            % hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
+            % hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
+            % hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
+            % hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
+            % hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
+            % hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
+            % BurstData.IRF = {hIRF_BBpar; hIRF_BBperp;...
+            %     hIRF_BGpar; hIRF_BGperp;...
+            %     hIRF_BRpar; hIRF_BRperp;...
+            %     hIRF_GGpar; hIRF_GGperp;...
+            %     hIRF_GRpar; hIRF_GRperp;...
+            %     hIRF_RRpar; hIRF_RRperp};
+                
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            BBpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            BBperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            BGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            BGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            BRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            BRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2}));
+            chan = [BBpar;BBperp;BGpar;BGperp;BRpar;BRperp;GGpar;GGperp;GRpar;GRperp;RRpar;RRperp];
+            BurstData.IRF = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.IRF{i} = UserValues.PIE.IRF{chan(i)};
+                else %%% combine IRFs                        
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.IRF{i} =  UserValues.PIE.IRF{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.IRF{i} = BurstData.IRF{i} + UserValues.PIE.IRF{PIEchannel(j)};
+                    end
+                end
+            end
+        case {5,6} %noMFD
+            % hIRF_GG = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hIRF_GR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hIRF_RR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % BurstData.IRF = {hIRF_GG;...
+            %     hIRF_GR;...
+            %     hIRF_RR};
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            GG = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GR = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            RR = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));                
+            chan = [GG;GR;RR];
+            BurstData.IRF = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.IRF{i} = UserValues.PIE.IRF{chan(i)};
+                else %%% combine IRFs
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.IRF{i} =  UserValues.PIE.IRF{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.IRF{i} = BurstData.IRF{i} + UserValues.PIE.IRF{PIEchannel(j)};
+                    end
+                end
+            end
     end
 end
 if any(mode==1)
@@ -9635,96 +10103,383 @@ if any(mode==1)
     switch BurstData.BAMethod
         case {1,2}
             % Scatter patterns for all burst channels
-            hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
-            hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
-            hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
-            BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
-                hScat_GRpar; hScat_GRperp;...
-                hScat_RRpar; hScat_RRperp};
+            % hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            % hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            % hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            % BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
+            %     hScat_GRpar; hScat_GRperp;...
+            %     hScat_RRpar; hScat_RRperp};
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+            chan = [GGpar;GGperp;GRpar;GRperp;RRpar;RRperp];
+            BurstData.ScatterPattern = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.ScatterPattern{i} = UserValues.PIE.ScatterPattern{chan(i)};
+                else %%% combine IRFs
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.ScatterPattern{i} =  UserValues.PIE.ScatterPattern{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.ScatterPattern{i} = BurstData.ScatterPattern{i} + UserValues.PIE.ScatterPattern{PIEchannel(j)};
+                    end
+                end
+            end
         case {3,4}
             % Scatter patterns for all burst channels
-            hScat_BBpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hScat_BBperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
-            hScat_BGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hScat_BGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
-            hScat_BRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            hScat_BRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
-            hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
-            hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
-            hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
-            hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
-            hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
-            hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
-            BurstData.ScatterPattern = {hScat_BBpar; hScat_BBperp;...
-                hScat_BGpar; hScat_BGperp;...
-                hScat_BRpar; hScat_BRperp;...
-                hScat_GGpar; hScat_GGperp;...
-                hScat_GRpar; hScat_GRperp;...
-                hScat_RRpar; hScat_RRperp};
-        case 5 %noMFD
+            % hScat_BBpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hScat_BBperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            % hScat_BGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hScat_BGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            % hScat_BRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % hScat_BRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            % hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
+            % hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
+            % hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
+            % hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
+            % hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
+            % hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
+            % BurstData.ScatterPattern = {hScat_BBpar; hScat_BBperp;...
+            %     hScat_BGpar; hScat_BGperp;...
+            %     hScat_BRpar; hScat_BRperp;...
+            %     hScat_GGpar; hScat_GGperp;...
+            %     hScat_GRpar; hScat_GRperp;...
+            %     hScat_RRpar; hScat_RRperp};
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            BBpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            BBperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            BGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            BGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            BRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            BRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2}));
+            chan = [BBpar;BBperp;BGpar;BGperp;BRpar;BRperp;GGpar;GGperp;GRpar;GRperp;RRpar;RRperp];
+            BurstData.ScatterPattern = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.ScatterPattern{i} = UserValues.PIE.ScatterPattern{chan(i)};
+                else %%% combine IRFs
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.ScatterPattern{i} =  UserValues.PIE.ScatterPattern{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.ScatterPattern{i} = BurstData.ScatterPattern{i} + UserValues.PIE.ScatterPattern{PIEchannel(j)};
+                    end
+                end
+            end
+        case {5,6} %noMFDtry
             % Scatter patterns for all burst channels
-            hScat_GG = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            hScat_GR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            hScat_RR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            BurstData.ScatterPattern = {hScat_GG;...
-                hScat_GR;...
-                hScat_RR};
+            % hScat_GG = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            % hScat_GR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            % hScat_RR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            % BurstData.ScatterPattern = {hScat_GG;...
+            %     hScat_GR;...
+            %     hScat_RR};
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            GG = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GR = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            RR = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            chan = [GG;GR;RR];
+            BurstData.ScatterPattern = cell(numel(chan),1);
+            for i = 1:numel(chan)
+                if isempty(UserValues.PIE.Combined{chan(i)}) %%% not a combined channel
+                    BurstData.ScatterPattern{i} = UserValues.PIE.ScatterPattern{chan(i)};
+                else %%% combine IRFs
+                    PIEchannel = UserValues.PIE.Combined{chan(i)};
+                    BurstData.ScatterPattern{i} =  UserValues.PIE.ScatterPattern{PIEchannel(1)};
+                    for j = 2:numel(PIEchannel)
+                        BurstData.ScatterPattern{i} = BurstData.ScatterPattern{i} + UserValues.PIE.ScatterPattern{PIEchannel(j)};
+                    end
+                end
+            end
     end
     %%% Background Counts
     BAMethod = BurstData.BAMethod;
     switch BAMethod
         case {1,2}
             % Background for all burst channels
-            BurstData.Background.Background_GGpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
-            BurstData.Background.Background_GGperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}));
-            BurstData.Background.Background_GRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
-            BurstData.Background.Background_GRperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}));
-            BurstData.Background.Background_RRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
-            BurstData.Background.Background_RRperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}));
+            % BurstData.Background.Background_GGpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+            % BurstData.Background.Background_GGperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}));
+            % BurstData.Background.Background_GRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
+            % BurstData.Background.Background_GRperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}));
+            % BurstData.Background.Background_RRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
+            % BurstData.Background.Background_RRperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}));
+
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+
+            if isempty(UserValues.PIE.Combined{GGpar}) %%% not a combined channel
+                BurstData.Background.Background_GGpar = UserValues.PIE.Background(GGpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GGpar};
+                BurstData.Background.Background_GGpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GGpar = BurstData.Background.Background_GGpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GGperp}) %%% not a combined channel
+                BurstData.Background.Background_GGperp = UserValues.PIE.Background(GGperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GGperp};
+                BurstData.Background.Background_GGperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GGperp = BurstData.Background.Background_GGperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GRpar}) %%% not a combined channel
+                BurstData.Background.Background_GRpar = UserValues.PIE.Background(GRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GRpar};
+                BurstData.Background.Background_GRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GRpar = BurstData.Background.Background_GRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GRperp}) %%% not a combined channel
+                BurstData.Background.Background_GRperp = UserValues.PIE.Background(GRperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GRperp};
+                BurstData.Background.Background_GRperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GRperp = BurstData.Background.Background_GRperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{RRpar}) %%% not a combined channel
+                BurstData.Background.Background_RRpar = UserValues.PIE.Background(RRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{RRpar};
+                BurstData.Background.Background_RRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_RRpar = BurstData.Background.Background_RRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{RRperp}) %%% not a combined channel
+                BurstData.Background.Background_RRperp = UserValues.PIE.Background(RRperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{RRperp};
+                BurstData.Background.Background_RRperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_RRperp = BurstData.Background.Background_RRperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
         case {3,4}
-            BurstData.Background.Background_BBpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
-            BurstData.Background.Background_BBperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}));
-            BurstData.Background.Background_BGpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
-            BurstData.Background.Background_BGperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}));
-            BurstData.Background.Background_BRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
-            BurstData.Background.Background_BRperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}));
-            BurstData.Background.Background_GGpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1}));
-            BurstData.Background.Background_GGperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2}));
-            BurstData.Background.Background_GRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1}));
-            BurstData.Background.Background_GRperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2}));
-            BurstData.Background.Background_RRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}));
-            BurstData.Background.Background_RRperp = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}));
-        case 5
+            % BurstData.Background.Background_BBpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+            % BurstData.Background.Background_BBperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}));
+            % BurstData.Background.Background_BGpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
+            % BurstData.Background.Background_BGperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}));
+            % BurstData.Background.Background_BRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
+            % BurstData.Background.Background_BRperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}));
+            % BurstData.Background.Background_GGpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1}));
+            % BurstData.Background.Background_GGperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2}));
+            % BurstData.Background.Background_GRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1}));
+            % BurstData.Background.Background_GRperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2}));
+            % BurstData.Background.Background_RRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}));
+            % BurstData.Background.Background_RRperp = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}));
+
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            BBpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            BBperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2}));
+            BGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            BGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2}));
+            BRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+            BRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}));
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1}));
+            GGperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1}));
+            GRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1}));
+            RRperp = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2}));
+
+            if isempty(UserValues.PIE.Combined{BBpar}) %%% not a combined channel
+                BurstData.Background.Background_BBpar = UserValues.PIE.Background(BBpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BBpar};
+                BurstData.Background.Background_BBpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BBpar = BurstData.Background.Background_BBpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{BBperp}) %%% not a combined channel
+                BurstData.Background.Background_BBperp = UserValues.PIE.Background(BBperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BBperp};
+                BurstData.Background.Background_BBperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BBperp = BurstData.Background.Background_BBperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{BGpar}) %%% not a combined channel
+                BurstData.Background.Background_BGpar = UserValues.PIE.Background(BGpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BGpar};
+                BurstData.Background.Background_BGpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BGpar = BurstData.Background.Background_BGpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{BGperp}) %%% not a combined channel
+                BurstData.Background.Background_BGperp = UserValues.PIE.Background(BGperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BGperp};
+                BurstData.Background.Background_BGperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BGperp = BurstData.Background.Background_BGperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{BRpar}) %%% not a combined channel
+                BurstData.Background.Background_BRpar = UserValues.PIE.Background(BRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BRpar};
+                BurstData.Background.Background_BRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BRpar = BurstData.Background.Background_BRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{BRperp}) %%% not a combined channel
+                BurstData.Background.Background_BRperp = UserValues.PIE.Background(BRperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{BRperp};
+                BurstData.Background.Background_BRperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_BRperp = BurstData.Background.Background_BRperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GGpar}) %%% not a combined channel
+                BurstData.Background.Background_GGpar = UserValues.PIE.Background(GGpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GGpar};
+                BurstData.Background.Background_GGpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GGpar = BurstData.Background.Background_GGpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GGperp}) %%% not a combined channel
+                BurstData.Background.Background_GGperp = UserValues.PIE.Background(GGperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GGperp};
+                BurstData.Background.Background_GGperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GGperp = BurstData.Background.Background_GGperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GRpar}) %%% not a combined channel
+                BurstData.Background.Background_GRpar = UserValues.PIE.Background(GRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GRpar};
+                BurstData.Background.Background_GRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GRpar = BurstData.Background.Background_GRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GRperp}) %%% not a combined channel
+                BurstData.Background.Background_GRperp = UserValues.PIE.Background(GRperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GRperp};
+                BurstData.Background.Background_GRperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GRperp = BurstData.Background.Background_GRperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{RRpar}) %%% not a combined channel
+                BurstData.Background.Background_RRpar = UserValues.PIE.Background(RRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{RRpar};
+                BurstData.Background.Background_RRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_RRpar = BurstData.Background.Background_RRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{RRperp}) %%% not a combined channel
+                BurstData.Background.Background_RRperp = UserValues.PIE.Background(RRperp);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{RRperp};
+                BurstData.Background.Background_RRperp = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_RRperp = BurstData.Background.Background_RRperp + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+        case {5,6}
             % Background for all burst channels
-            BurstData.Background.Background_GGpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+            % BurstData.Background.Background_GGpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+            % BurstData.Background.Background_GGperp = BurstData.Background.Background_GGpar;
+            % BurstData.Background.Background_GRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
+            % BurstData.Background.Background_GRperp = BurstData.Background.Background_GRpar;
+            % BurstData.Background.Background_RRpar = ...
+            %     UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
+            % BurstData.Background.Background_RRperp = BurstData.Background.Background_RRpar;
+
+            GGpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1}));
+            GRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1}));
+            RRpar = find(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}));
+
+            if isempty(UserValues.PIE.Combined{GGpar}) %%% not a combined channel
+                BurstData.Background.Background_GGpar = UserValues.PIE.Background(GGpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GGpar};
+                BurstData.Background.Background_GGpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GGpar = BurstData.Background.Background_GGpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{GRpar}) %%% not a combined channel
+                BurstData.Background.Background_GRpar = UserValues.PIE.Background(GRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{GRpar};
+                BurstData.Background.Background_GRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_GRpar = BurstData.Background.Background_GRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+            if isempty(UserValues.PIE.Combined{RRpar}) %%% not a combined channel
+                BurstData.Background.Background_RRpar = UserValues.PIE.Background(RRpar);
+            else %%% combine Background
+                PIEchannel = UserValues.PIE.Combined{RRpar};
+                BurstData.Background.Background_RRpar = 0;
+                for j = 1:numel(PIEchannel)
+                    BurstData.Background.Background_RRpar = BurstData.Background.Background_RRpar + UserValues.PIE.Background(PIEchannel(j));
+                end
+            end
+
             BurstData.Background.Background_GGperp = BurstData.Background.Background_GGpar;
-            BurstData.Background.Background_GRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
             BurstData.Background.Background_GRperp = BurstData.Background.Background_GRpar;
-            BurstData.Background.Background_RRpar = ...
-                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
             BurstData.Background.Background_RRperp = BurstData.Background.Background_RRpar;
     end
 end
@@ -9734,13 +10489,14 @@ if any(mode==2)
     %%% Read out the Microtime Histograms of the Phasor References for the channels
     switch BurstData.BAMethod
         case {1,2}
-            PhasorReference_GGpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            PhasorReference_GGperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
-            PhasorReference_GRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            PhasorReference_GRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
-            PhasorReference_RRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            PhasorReference_RRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
             try
+                PhasorReference_GGpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+                PhasorReference_GGperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+                PhasorReference_GRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+                PhasorReference_GRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+                PhasorReference_RRpar = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+                PhasorReference_RRperp = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+                
                 BurstData.Phasor.PhasorReference = {PhasorReference_GGpar; PhasorReference_GGperp;...
                     PhasorReference_GRpar; PhasorReference_GRperp;...
                     PhasorReference_RRpar; PhasorReference_RRperp};
@@ -9753,22 +10509,43 @@ if any(mode==2)
                     UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2}))];
             end
         case {5}
-            PhasorReference_GG = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
-            PhasorReference_GR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
-            PhasorReference_RR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
-            BurstData.Phasor.PhasorReference = {PhasorReference_GG;...
-                PhasorReference_GR;...
-                PhasorReference_RR};
-            BurstData.Phasor.PhasorReferenceLifetime = [...
-                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})),...
-                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
-                UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))];      
+            try
+                PhasorReference_GG = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+                PhasorReference_GR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+                PhasorReference_RR = UserValues.PIE.PhasorReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+                BurstData.Phasor.PhasorReference = {PhasorReference_GG;...
+                    PhasorReference_GR;...
+                    PhasorReference_RR};
+                BurstData.Phasor.PhasorReferenceLifetime = [...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})),...
+                    UserValues.PIE.PhasorReferenceLifetime(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1}))]; 
+            end
     end
+end
+
+if any(mode==3)
+    %% Save the Donor-Only Reference
+    %%% Read out the Microtime Histograms of the Donor-Only References for the donor channels
+    switch BurstData.BAMethod
+        case {1,2}
+            try
+                DonorOnlyReference_GGpar = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+                DonorOnlyReference_GGperp = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+
+                BurstData.DonorOnlyReference = {DonorOnlyReference_GGpar; DonorOnlyReference_GGperp};
+            end
+        case {5}
+            try
+                DonorOnlyReference = UserValues.PIE.DonorOnlyReference{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+                BurstData.DonorOnlyReference = {DonorOnlyReference_GG};
+            end
+        end
 end
 
 if ~strcmp(obj,'nothing')
     % function is called from right clicking the Burstwise lifetime button
-    save(BurstData.FileName,'BurstData');
+    save(BurstData.FileName,'BurstData','-append');
     Progress(1,h.Progress.Axes,h.Progress.Text);
     h.Progress.Text.String = FileInfo.FileName{1};
 end
@@ -9856,7 +10633,7 @@ switch BAMethod
         T_GR = Trace(Chan_Trace == 3 | Chan_Trace == 4);
         T_RR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
         T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4);
-    case 5 %noMFD
+    case {5,6} %noMFD
         T_GG = Trace(Chan_Trace == 1);
         T_GR = Trace(Chan_Trace == 2);
         T_RR = Trace(Chan_Trace == 3);
@@ -11353,9 +12130,9 @@ switch obj
             %%% contribute to the correlation function)
             %%% solution: perform calculations only on "valid" bins
             valid = (PamMeta.fFCS.Decay_Hist{u} ~= 0);
-            for i = active
-                valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
-            end
+            %for i = active
+            %    valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
+            %end
             Decay = PamMeta.fFCS.Decay_Hist{u}(valid);
             diag_Decay = zeros(numel(Decay));
             for i = 1:numel(Decay)
@@ -11366,8 +12143,12 @@ switch obj
                 MI_species = [MI_species, PamMeta.fFCS.MI_Hist{u}{i}(valid)./sum(PamMeta.fFCS.MI_Hist{u}{i}(valid))]; % re-normalize here since not all bins are used!
             end
             filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+            % compute the reconstruction of the decay pattern based on species (used for evaluation of filter quality)
+            reconstruction_temp = sum((MI_species'*diag_Decay*MI_species)^(-1)*MI_species',1);
+            reconstruction{u} = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),1);
+            reconstruction{u}(valid) = reconstruction_temp;
             %%% rescale filters back to total microtime range (no cut with valid)
-            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));
+            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));            
             for i = 1:numel(active)
                 filters(valid,i) = filters_temp(:,i);
             end
@@ -11418,6 +12199,33 @@ switch obj
         end
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)
+        %%% plot reconstruction against data for quality evaluation
+        f = figure('Color',[1,1,1]);f.Position(1) = 100;
+        subplot(4,1,2:4);hold on;
+        plot(PamMeta.fFCS.Decay_Hist{1},'LineWidth',2); plot(reconstruction{1},'LineWidth',2);        
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'YScale','lin','Box','on');
+        ylabel('Counts');
+        xlabel('TCSPC channel');
+        axis('tight');
+        xlim([1,numel(plotrange)]);
+        subplot(4,1,1);
+        plot((PamMeta.fFCS.Decay_Hist{1}-reconstruction{1})./sqrt(PamMeta.fFCS.Decay_Hist{1}),'LineWidth',2);
+        set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'Box','on');
+        xlim([1,numel(plotrange)]);
+        ylabel('w-res');
+        if h.Cor_fFCS.CrossCorr_Checkbox.Value == 1 %%% add second plot
+            f = figure('Color',[1,1,1]);f.Position(1) = 300;
+            subplot(4,1,2:4);hold on;
+            plot(reconstruction{2}); plot(PamMeta.fFCS.Decay_Hist{2});
+            set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'YScale','lin','Box','on');
+            xlim([1,numel(plotrange)]);
+            
+            subplot(4,1,1);
+            plot((PamMeta.fFCS.Decay_Hist{2}-reconstruction{2})./sqrt(PamMeta.fFCS.Decay_Hist{2}));
+            set(gca,'Color',[1,1,1],'LineWidth',2,'FontSize',16,'Box','on');
+            xlim([1,numel(plotrange)]);
+            ylabel('w-res');
+        end
     case h.Cor_fFCS.Do_fFCS_Button
         %%% do actual correlation with stored filters
         if isempty(PamMeta.fFCS.filters)
@@ -11485,10 +12293,9 @@ if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
         disp('No file loaded.');
         return;
-    end
-    
+    end    
     [~,FileName,~] = fileparts(FileInfo.FileName{1});
-    FilePath = [FileInfo.Path filesep FileName '.txt'];
+    FilePath = [FileInfo.Path filesep FileName '.txt'];    
     %%% open file
     [fid,err] = fopen(FilePath,'w');
     if fid == -1
@@ -11929,41 +12736,7 @@ else
     figure(notepad);
 end
 
-%%% Estimates background count rates from burst experiment using
-%%% exponential tail fit to interphoton time distribution
-%%% see Ingargiola, A. et al. PLoS ONE (2016) for more details
-function Estimate_Background_From_Burst(~,~)
-global UserValues TCSPCData FileInfo
-
-BAMethod = UserValues.BurstSearch.Method;
-%%% get channels to estimate background for
-chans = UserValues.BurstSearch.PIEChannelSelection{BAMethod}'; chans = chans(:);
-%%% MLE for Poissonian errors
-logL = @(x,xdata,ydata) sum(ydata.*log(ydata./(x(1).*exp(-xdata.*x(2)))) - ydata + x(1).*exp(-xdata.*x(2)) );
-for i = 1:numel(chans)
-    %%% read out photons
-    MT = Get_Photons_from_PIEChannel(chans{i},'Macrotime');
-    MT = diff(MT).*FileInfo.ClockPeriod*1000; % convert to interphoton time and milliseconds
-    %calculate histogram
-    [hMT, dt] = hist(MT,0:.1:max(MT));
-    valid = (dt>max(dt/5)) & (hMT > 1);
-    x0 = [hMT(1),3/max(dt)];
-    x = fmincon(@(x) logL(x,dt(valid),hMT(valid)),x0,[],[],[],[],[0,0],[Inf,Inf]);
-    figure; plot(dt,hMT);hold on; plot(dt,x(1).*exp(-dt.*x(2)));set(gca,'YScale','log');
-    bg(i) = x(2);
-    disp(sprintf('Fitted channel %d of %d',i,numel(chans)));
-end
-disp('The estimated background count rates are:')
-result = [chans,num2cell(bg')]';
-disp(sprintf('%s: %f kHz\n',result{:}));
-%%% sort background into channels and update display
-%%% Store Background Counts in PIE subfield of UserValues structure (PIE.Background) in kHz
-for i=1:numel(chans)%numel(UserValues.PIE.Name)
-    c = find(strcmp(UserValues.PIE.Name,chans{i}));
-    if isempty(UserValues.PIE.Combined{c})
-        UserValues.PIE.Background(c) = bg(c);
-    end
-end
-LSUserValues(1);
-Update_Display([],[],[1,8])
-disp('Done estimating background count rates from burst experiment.');
+function Rebinmsg(~,~)
+b = msgbox('save reference again');
+pause(2);
+close(b);

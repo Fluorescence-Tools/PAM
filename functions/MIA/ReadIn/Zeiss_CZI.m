@@ -79,7 +79,7 @@ switch mode
             'HorizontalAlignment','left',...
             'BackgroundColor', UserValues.Look.Back,...
             'ForegroundColor', UserValues.Look.Fore,...
-            'Position',[0.02 0.3, 0.25 0.05],...
+            'Position',[0.02 0.3, 0.3 0.05],...
             'String','Z-plane to load');
     case 2 %%% Load Data
         h = guidata(findobj('Tag','Mia'));
@@ -181,7 +181,7 @@ switch mode
             h.Mia_ICS.Fit_Table.Data(15,:) = {'3'};
             h.Mia_Image.Settings.Image_Pixel.String = '10';
             h.Mia_ICS.Fit_Table.Data(13,:) = {'10'};
-            h.Mia_Image.Settings.Image_Size.String = '50';
+            h.Mia_Image.Settings.Pixel_Size.String = '50';
             h.Mia_ICS.Fit_Table.Data(11,:) = {'50'};
             
             MIAData.FileName{1}{i}=FileName{i};
@@ -217,7 +217,7 @@ switch mode
             Start = strfind(Scaling,'<Value>');
             Stop = strfind(Scaling,'</Value>');
             
-            h.Mia_Image.Settings.Image_Size.String = num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
+            h.Mia_Image.Settings.Pixel_Size.String = num2str(round(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9));
             h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);};
             
             Data = bfopen(fullfile(Path,FileName{i}),h.Mia_Progress_Axes,h.Mia_Progress_Text,i,numel(FileName));
@@ -289,13 +289,20 @@ switch mode
                 Spectral_Range{i}=1:N_C;
             end
             
-            
-            %%% Adds data to global variable
-            MIAData.Data{1,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
-            if ~isempty(Channel2) && min(Channel2)<=N_C
-                MIAData.Data{2,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
+            if i == 1 %first file or only 1 file
+                %%% Adds data to global variable
+                totalF = 0;
+                MIAData.Data{1,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
+                if ~isempty(Channel2) && min(Channel2)<=N_C
+                    MIAData.Data{2,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
+                end
+            else
+                totalF = size(MIAData.Data{1,1}, 3);
+                MIAData.Data{1,1}(:,:,end+1:end+N_F) = 0;
+                if ~isempty(Channel2) && min(Channel2)<=N_C
+                    MIAData.Data{2,1}(:,:,end+1:end+N_F) = 0;
+                end               
             end
-            
             Spectrum{i} = zeros(N_C,1);
             Z = 0;
             for j=1:size(Data{1,1},1)
@@ -310,6 +317,8 @@ switch mode
                 C = mod(j-1,N_C)+1;
                 %%% Current frame
                 F = floor((j-1)/(N_C*N_Z))+1;
+                % for every next file, frames have to be added to the end :
+                F = F + totalF;
                 %%% current Z position
                 if C == 1
                     Z = Z+1;

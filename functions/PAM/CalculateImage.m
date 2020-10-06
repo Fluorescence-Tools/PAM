@@ -1,6 +1,6 @@
 function [Image,Bin] = CalculateImage(PIE_MT, mode)
 
-global FileInfo
+global FileInfo UserValues
 % function that groups everything concerning image calculations from SPC data
 
 % mode = 1 is called for summed up intensity image only
@@ -11,6 +11,16 @@ global FileInfo
 Pixel = zeros(FileInfo.Lines,FileInfo.Pixels+1);
 Bin=[];
 Image = [];
+
+ScanOffsetStart = UserValues.Settings.Pam.ScanOffsetStart * 1e-6;
+ScanOffsetEnd = UserValues.Settings.Pam.ScanOffsetEnd * 1e-6;
+if ScanOffsetStart ~= 0 || ScanOffsetEnd ~= 0
+    CorrectScanOffset = true;
+    %disp ('Warning: correcting for scan offset discards a portion of photon data at the beginning and end of each scan. Disable by setting scan offset to 0 in Settings tab.')
+else
+    CorrectScanOffset = false;
+end
+
 if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame start or no markers
     
         Pixeltimes=[];
@@ -18,19 +28,33 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
             for j=1:FileInfo.Lines
                 Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineTimes(i,j+1),FileInfo.Pixels+1);
             end
-            Pixeltimes = [Pixeltimes, reshape(Pixel(:,1:(end-1))',1,[])]; %#ok<AGROW>
+            LinPixel = reshape(Pixel(:,1:(end-1))',1,[]);
+            if CorrectScanOffset
+                PixelOffset = ScanOffsetStart : (ScanOffsetEnd-ScanOffsetStart)/(numel(LinPixel)-1) : ScanOffsetEnd;
+                LinPixel = LinPixel + PixelOffset;
+            end
+            Pixeltimes = [Pixeltimes, LinPixel]; %#ok<AGROW>
         end
         Pixeltimes(end+1)=FileInfo.MeasurementTime;
-        
+
         switch mode
             case 1 %%% Summed up image              
                 [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*FileInfo.Pixels));
+                if CorrectScanOffset
+                    Image(end) = 0; %sets final pixel of each frame to 0 to avoid scaling issues
+                end
                 Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines),[2 1]));
             case 2 %%% Summed up image vector with photon-to-pixel assignement
                 [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*FileInfo.Pixels));                
+                if CorrectScanOffset
+                    Image(end) = 0; %sets final pixel of each frame to 0 to avoid scaling issues
+                end
             case 3 %%% Full image
-                [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
+                [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));           
                 Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]));
+                if CorrectScanOffset
+                    Image(1, FileInfo.Pixels, :) = 0; %sets final pixel of each frame to 0 to avoid scaling issues
+                end
             case 4 %%% Full image vector with photon-to-pixel assignement
                 [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
         end    

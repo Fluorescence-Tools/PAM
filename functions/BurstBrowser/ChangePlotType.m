@@ -20,7 +20,7 @@ end
 switch obj
     case h.PlotTypePopumenu
         set([h.MarkerSize_edit,h.MarkerSize_text,h.MarkerColor_button,h.MarkerColor_text,...
-        h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines,h.PlotCutoff_edit,h.PlotCutoff_text,h.ContourFill],...
+        h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines,h.PlotCutoff_edit,h.PlotCutoff_text,h.ContourFill,h.Multiplot_Contour],...
         'Visible','off');
             
         UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
@@ -62,7 +62,7 @@ switch obj
                     end
                 end
             end
-            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines,h.PlotCutoff_edit,h.PlotCutoff_text,h.ContourFill],...
+            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines,h.PlotCutoff_edit,h.PlotCutoff_text,h.ContourFill,h.Multiplot_Contour],...
              'Visible','on');
             h.PlotOffset_text.String = 'Plot Offset [%]';
             h.PlotOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);

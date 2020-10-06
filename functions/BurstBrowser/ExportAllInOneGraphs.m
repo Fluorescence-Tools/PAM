@@ -121,6 +121,7 @@ for k = 1:1%numel(file) %loop through all selected species
             panel_copy{f}(a).YColor = [0,0,0];
             panel_copy{f}(a).XLabel.Color = [0,0,0];
             panel_copy{f}(a).YLabel.Color = [0,0,0];
+%             panel_copy{f}(a).Children(1).Visible = 'off';
         end
         for a = 3
             panel_copy{f}(a).YColor = [0 0 0];
@@ -205,7 +206,7 @@ for k = 1:1%numel(file) %loop through all selected species
         Pos.X.S_E =     [0.82 0.88 0.35 0.06].*norm_to_pix;
         Pos.XY.S_E =    [0.82 0.53 0.35 0.35].*norm_to_pix;
         Pos.cbar =      [0.98,0.49,0.19,0.02].*norm_to_pix;
-        Pos.table =     [0.6000 0.180 0.2750 0.2750];
+        Pos.table =     [0.6000 0.155 0.2750 0.3];
     else
         %[1, 3, 2;
         %[4,  , 5];
@@ -242,13 +243,14 @@ for k = 1:1%numel(file) %loop through all selected species
     end
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
+    hfigallinone.Children(1).XLim = [-0.1 1.1];
     
     hfigallinone.Children(2).Units = 'pixel';
     hfigallinone.Children(2).Position = Pos.X.tauD_E;   
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
-    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;    
     try
         hfigallinone.Children(2).YAxis.FontSize = fontsize;
     end
@@ -265,6 +267,7 @@ for k = 1:1%numel(file) %loop through all selected species
     hfigallinone.Children(3).YGrid = 'on';
     hfigallinone.Children(3).YTickLabel = [];
     hfigallinone.Children(3).YLabel.String = '';
+    hfigallinone.Children(3).YLim = [-0.1 1.1];
     
     b = 1;
     labels = hfigallinone.Children(b).XTickLabel;
@@ -478,7 +481,8 @@ for k = 1:1%numel(file) %loop through all selected species
     hfigallinone.Children(3).XAxisLocation = 'top';
     hfigallinone.Children(3).XLabel.Position = [0.50 1.0 0];
     hfigallinone.Children(3).XGrid = 'on';
-    hfigallinone.Children(3).YGrid = 'on';    
+    hfigallinone.Children(3).YGrid = 'on';
+    hfigallinone.Children(3).YLim = [-0.1 1.1];
 %     b = 2;
 %     labels = hfigallinone.Children(b).XTickLabel;
 %     if hfigallinone.Children(b).XTick(1) == hfigallinone.Children(b).XLim(1)
@@ -641,8 +645,8 @@ for k = 1:1%numel(file) %loop through all selected species
             text_box = [text_box sprintf('$G_{A}$: & %.2f\\\\ ',corr.GfactorRed)];
             text_box = [text_box ' & \\ '];
             text_box = [text_box '\bf{Dye parameters} & \\ '];
-            text_box = [text_box sprintf('Foerster distance: & %d $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
-            text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
+            text_box = [text_box sprintf('Foerster distance: & %.1f $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
+            text_box = [text_box sprintf('Linker length: & %.1f $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
             text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
             text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
             text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
@@ -660,8 +664,8 @@ for k = 1:1%numel(file) %loop through all selected species
             Beta_GR = sprintf('%.2f/', corr.Beta_GR); Beta_GR = Beta_GR(1:end-1);
             GfactorGreen = sprintf('%.2f/', corr.GfactorGreen); GfactorGreen = GfactorGreen(1:end-1);
             GfactorRed = sprintf('%.2f/', corr.GfactorRed); GfactorRed = GfactorRed(1:end-1);
-            FoersterRadius = sprintf('%d/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
-            LinkerLength = sprintf('%d/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
+            FoersterRadius = sprintf('%.1f/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
+            LinkerLength = sprintf('%.1f/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
             DonorLifetime = sprintf('%.2f/', corr.DonorLifetime); DonorLifetime = DonorLifetime(1:end-1);
             AcceptorLifetime = sprintf('%.2f/', corr.AcceptorLifetime); AcceptorLifetime = AcceptorLifetime(1:end-1);
             r0_green = sprintf('%.2f/', corr.r0_green); r0_green = r0_green(1:end-1);
@@ -678,7 +682,7 @@ for k = 1:1%numel(file) %loop through all selected species
                 table = [table '<tr><td>G<sub>A</sub>:</td><td>' GfactorRed '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' r0_red '</td></tr>'];
                 table = [table '</table></html>'];
             else
-                fontsize = 8.5; if ispc; fontsize = fontsize./1.2;end
+                fontsize = 10; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
                 table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
@@ -697,7 +701,7 @@ for k = 1:1%numel(file) %loop through all selected species
     end
     %%% Set all units to pixels for easy editing without resizing
     hfigallinone.Units = 'pixels';
-    offset_y = 70; %%% shift everything down
+    offset_y = 80; %%% shift everything down
     offset_x = 30; %%% shift everything left
     for i = 1:numel(hfigallinone.Children)
         if isprop(hfigallinone.Children(i),'Units');
@@ -743,5 +747,9 @@ end
 h.ParameterListX.Value = old_paramX;
 h.ParameterListY.Value = old_paramY;
 %BurstMeta.SelectedFile = file_old;
+if ~isempty(BurstMeta.ReportFile)
+    %%% a report file exists, add figure to it
+    report_generator([],[],2,h);
+end
 UpdatePlot([],[],h);
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');

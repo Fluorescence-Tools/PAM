@@ -16,14 +16,19 @@ fields = fieldnames(handle);
 for i = 1:numel(fields)
     if any(strcmp(fields{i},{'Color','BackgroundColor','ForegroundColor','EdgeColor','XColor','YColor','ZColor','GridColor','MinorGridColor','TextColor'}))
         if ~strcmp(handle.(fields{i}),'none')
-            % invert color
-            handle.(fields{i}) = [1 1 1] - handle.(fields{i});
+            if all(handle.(fields{i}) == [1 1 1]) && ~strcmp(handle.Type,'uibuttongroup')
+                % make transparent
+                handle.(fields{i}) = 'none';
+            else
+                 % invert color
+                handle.(fields{i}) = [1 1 1] - handle.(fields{i});
+            end
         end
     end
 end
 
 for i = 1:numel(handle.Children)
-    if any(strcmp(handle.Children(i).Type,{'axes','legend','text'}))
+    if any(strcmp(handle.Children(i).Type,{'axes','legend','text','uibuttongroup','colorbar'}))
         dark_mode(handle.Children(i)); % recursive looping over children
     end
 end

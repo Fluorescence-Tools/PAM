@@ -1,9 +1,17 @@
-function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,Chunkwise)
 
 %%% Input parameters:
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
+%%% Chunkwise: Data read-in in consecutive chunks and maximum Data limit
+if nargin < 7 % Chunkwise not specified
+    Chunkwise = false;
+end
+
 fid=fopen(FileName,'r');
+fseek(fid,0,1);
+filesize = ftell(fid);
+fseek(fid,0,-1);
 
 Progress(0/NumFiles,ProgressAxes,ProgressText,['Processing Header of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
@@ -66,6 +74,7 @@ while 1
     TagTyp = fread(fid, 1, 'uint32');   % TagHead.Typ
     % TagHead.Value will be read in the
     % right type function
+    TagIdent = genvarname(TagIdent);
     if TagIdx > -1
         EvalName = [TagIdent '(' int2str(TagIdx + 1) ')'];
     else
@@ -125,7 +134,7 @@ while 1
                 %%% Catch case where length of TagString exceeds length of
                 %%% UsrHeadName character array
                 if eval(['size(' TagIdent ',2) < numel(TagString)'])
-                    eval([TagIdent '(:,end:numel(TagString)) = '' '''])
+                    eval([TagIdent '(:,end:numel(TagString)) = '' '';']);
                 end
             end
             try;eval([EvalName '=TagString;']);end;
@@ -248,6 +257,12 @@ switch TTResultFormat_TTTRRecType
             Header.LineStartMarker = 1;
             Header.LineStopMarker = 2;
             Header.FrameStartMarker = 3;
+        elseif strcmp(CreatorSW_Name,'SymPhoTime 64')
+            if exist('ImgHdr_LineStart','var')
+                Header.LineStartMarker = ImgHdr_LineStart;
+                Header.LineStopMarker = ImgHdr_LineStop;
+                Header.FrameStartMarker = ImgHdr_Frame;
+            end
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -280,8 +295,26 @@ switch TTResultFormat_TTTRRecType
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-        
-        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T3Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                fileChunks = ceil(filesize/NoE);
+                T3Record = zeros(NoE/4*(fileChunks-1),1);
+                for i = 1:fileChunks-1
+                    T3Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T3Record = [T3Record;fread(fid, NoE/4, 'ubit32')];
+            end
+        else
+            T3Record = fread(fid, Inf, 'ubit32');     % all 32 bits
+        end
         
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
@@ -307,7 +340,7 @@ switch TTResultFormat_TTTRRecType
         
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
         
-        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection = zeros(1,length(nsync));
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
@@ -335,6 +368,50 @@ switch TTResultFormat_TTTRRecType
         dtime = dtime(ValidIndices);
 
     case rtPicoHarpT3
+        
+        Header.Measurement_SubMode = Measurement_SubMode;
+
+        Header.PixX = [];
+        Header.PixY = [];
+        Header.bidir = [];
+        Header.FrameStartMarker = [];
+        Header.LineStartMarker = [];
+        Header.LineStopMarker = [];
+        Header.FrameStart = [];
+        Header.LineStart = [];
+        Header.LineStop = [];
+        Header.Frames = [];
+        Header.PixResol = [];
+        Header.SinCorrection = [];
+        
+        if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
+            Header.PixX = ImgHdr_PixX; end
+        if exist ('ImgHdr_PixY' , 'var') % Number of pixels in the y direction
+            Header.PixY =  ImgHdr_PixY; end
+        if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
+            Header.bidir = ImgHdr_BiDirect; end
+            if Header.bidir
+                msgbox('Bidirectional data cannot be loaded at this point!'); return
+            end
+        if exist ('ImgHdr_Frame', 'var') % frame bit in 6-bit CH entry
+            Header.FrameStartMarker = ImgHdr_Frame; end
+        if exist ('ImgHdr_LineStart', 'var') % linestart bit in 6-bit CH entry
+            Header.LineStartMarker = ImgHdr_LineStart;  end
+        if exist ('ImgHdr_LineStop', 'var') % linestop bit in 6-bit CH entry
+            Header.LineStopMarker = ImgHdr_LineStop;  end
+        if exist ('NumberOfFrames', 'var')
+            Header.Frames = NumberOfFrames; end
+        if exist ('ImgHdr_PixResol', 'var')
+            Header.PixResol = ImgHdr_PixResol; end
+        if exist ('ImgHdr_SinCorrection', 'var')
+            Header.SinCorrection = ImgHdr_SinCorrection; end
+        
+        % marker bit locations
+        if strcmp(CreatorSW_Name,'SymPhoTime 64')
+            Header.LineStartMarker = ImgHdr_LineStart;
+            Header.LineStopMarker = ImgHdr_LineStop;
+            Header.FrameStartMarker = 4;
+        end
         
         T3WRAPAROUND=65536;
         
@@ -365,10 +442,34 @@ switch TTResultFormat_TTTRRecType
         OverflowCorrection( (special == 0) & (channel == 15)) = 1;
         OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
         
+        % all timetags
+        TimeTag = double(nsync)'+OverflowCorrection;
+        % imaging marker timetags
+        if ~isempty(Header.FrameStartMarker)
+            Header.FrameStart = TimeTag(channel == 15 & special == Header.FrameStartMarker);         
+        end
+        if ~isempty(Header.LineStartMarker)
+            Header.LineStart = TimeTag(channel == 15 & special == Header.LineStartMarker);
+            % discard before first frame
+            Header.LineStart = Header.LineStart(Header.LineStart > Header.FrameStart(1));
+            % discard after last frame
+            Header.LineStart = Header.LineStart(Header.LineStart < Header.FrameStart(end));
+        end
+        if ~isempty(Header.LineStopMarker)
+            Header.LineStop = TimeTag(channel == 15 & special == Header.LineStopMarker);
+            Header.LineStop(end+1) = Header.FrameStart(end);
+            % discard before first frame
+            Header.LineStop = Header.LineStop(Header.LineStop > Header.FrameStart(1));
+            % discard after last frame
+            Header.LineStop = Header.LineStop(Header.LineStop < Header.FrameStart(end));
+        end
+        Header.FrameStart(end) = []; % remove last incomplete frame
+        Header.Frames = numel(Header.FrameStart);
+        
         ValidIndices = ((channel >= 1) & (channel <= 4));
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);
-        dtime = dtime(ValidIndices);
+        dtime = dtime(ValidIndices);        
 end
 
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);

@@ -3193,8 +3193,21 @@ for i=Images %%% Plots Phasor Data
         %%% Applies colormap
         Image=reshape(ImageColor(Int(:),:),size(Int,1),size(Int,2),3);
         
+        for ii = 1:numel(h.Phasor_ROI)
+            if strcmp(h.Phasor_ROI(ii).Visible, 'on') || strcmp(h.Phasor_ROI(ii).Visible, 'off')
+                %R2018a
+                if strcmp(h.Phasor_ROI(ii).Visible, 'on')
+                    x(ii) = true;
+                else
+                    x(ii) = false;
+                end
+            else %R2020a or later
+                x(ii) = logical(h.Phasor_ROI(ii).Visible);
+            end
+        end
+        
         %%% Selects, which masks are applied
-        if strfind(cell2mat({h.Phasor_ROI.Visible}),'on')>0 
+        if any(x)
             %% ROIs selected
             Mask=zeros(size(Image));
             roi=zeros(size(Image,1),size(Image,2),6);

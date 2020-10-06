@@ -21,8 +21,9 @@ for i = 1:numel(BurstMeta.fFCS.Result.FileName)
     Cor_Average = BurstMeta.fFCS.Result.Cor_Average{i};
     Cor_SEM = BurstMeta.fFCS.Result.Cor_SEM{i};
     Cor_Array = BurstMeta.fFCS.Result.Cor_Array{i};
+    MetaData  = BurstMeta.fFCS.Result.MetaData{i};
     
-    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array','MetaData');
 end
 %%% Update FCSFit Path
 UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;

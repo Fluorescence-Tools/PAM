@@ -24,34 +24,73 @@ end
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
     %%% Calculate static FRET line in presence of linker fluctuations
-    [staticFRETline, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+    [E, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
         BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
+    switch UserValues.BurstBrowser.Settings.LifetimeMode
+        case 2 % convert E to FD/FA
+            E = log(1./E-1);
+        case 3 % convert to moment difference
+            E_temp = E;
+            E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetime); % (1-E)*E_F
+            tau = E_temp;
+    end
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
-    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
+    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = E;
     %BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     if any(BurstData{file}.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
-        [staticFRETline,~,tau] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+        [E,~,tau] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
             BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
             BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
+        switch UserValues.BurstBrowser.Settings.LifetimeMode
+            case 2 % convert E to FD/FA
+                E(E>=1) = NaN;
+                E = log(1./E-1);
+            case 3 % convert to moment difference
+                E_temp = E;
+                E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetimeBlue); % (1-E)*E_F
+                tau = E_temp;
+        end
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
-        BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.YData = staticFRETline;
+        BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.YData = E;
     end
 end
-if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETRemove_Menu])
+if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETArbitrary_Menu, h.DynamicFRETManual_Menu, h.DynamicFRETManualSigma_Menu, h.DynamicFRETRemove_Menu])
     switch obj
-        case {h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu}
-            if obj == h.PlotDynamicFRETButton
-                menu_stored = h.axes_EvsTauGG.UIContextMenu; 
+        case {h.PlotDynamicFRETButton, h.DynamicFRETArbitrary_Menu, h.DynamicFRETManual_Menu,h.DynamicFRETManualSigma_Menu}
+            if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETArbitrary_Menu])
+                menu_stored = h.axes_EvsTauGG.UIContextMenu;
                 h.axes_EvsTauGG.UIContextMenu = []; set(h.axes_EvsTauGG.Children,'UIContextMenu',[]);
                 h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
+                if any(BurstData{file}.BAMethod == [3,4])
+                    menu_stored_3C = h.axes_E_BtoGRvsTauBB.UIContextMenu;
+                    h.axes_E_BtoGRvsTauBB.UIContextMenu = []; set(h.axes_E_BtoGRvsTauBB.Children,'UIContextMenu',[]);
+                end
                 %%% Query Lifetimes using ginput
-                if verLessThan('MATLAB','9.5')
-                    [x,y,button] = ginput(2);
-                else % 2018b onwards
-                    [x,y,button] = my_ginput(2);
+                switch h.LifetimeTabgroup.SelectedTab.Title
+                    case 'All'
+                        [x,y,button] = ginputax(h.axes_EvsTauGG,2,h);
+                    case 'Individual'
+                        [x,y,button] = ginputax(h.axes_lifetime_ind_2d,2,h);
+                end
+                h.PlotDynamicFRETButton.String = 'Dynamic FRET line';
+
+                if strcmp(h.LifetimeTabgroup.SelectedTab.Title,'All')
+                    switch BurstData{file}.BAMethod
+                        case {1,2,5}
+                            % set individual tab to select E vs. tau plot
+                            h.lifetime_ind_popupmenu.Value = 1;
+                        case {3,4}
+                            switch gca
+                                case h.axes_EvsTauGG
+                                    % set individual tab to select E vs. tau plot
+                                    h.lifetime_ind_popupmenu.Value = 1;
+                                case h.axes_E_BtoGRvsTauBB
+                                    h.lifetime_ind_popupmenu.Value = 3;
+                            end
+                    end
                 end
                 if gca == h.axes_lifetime_ind_2d
                     switch BurstData{file}.BAMethod
@@ -66,40 +105,92 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                             switch h.lifetime_ind_popupmenu.Value
                                 case 1 % E vs tauGG is selected
                                     axes(h.axes_EvsTauGG)
+                                case 3 % E B->G+R vs tauBB is selected
+                                    axes(h.axes_E_BtoGRvsTauBB);
                             end
                     end
                 end
-                if (gca ~= h.axes_EvsTauGG) && h.lifetime_ind_popupmenu.Value == 1
+                if ~any(BurstData{file}.BAMethod == [3,4]) && gca ~= h.axes_EvsTauGG && h.lifetime_ind_popupmenu.Value == 1
                     m=msgbox('Click on a E vs. tauGG axis!');
                     pause(1);
                     delete(m);
                     return;
                 end
+                switch BurstData{file}.BAMethod
+                    case {1,2,5}
+                        E_axes = 1;
+                        Phasor_axes = {5,6};
+                    case {3,4}
+                        E_axes = {1,3};
+                        Phasor_axes = {7,8};
+                end
                 switch h.lifetime_ind_popupmenu.Value
-                    case 1 % E vs tau relation
-                        %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-                        %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                        %    x);
-                        if button(1) == 1 %%% left mouseclick, update first line, reset all others off
-                            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
-                            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3).Visible = 'off';
-                            line = 1;
-                        elseif button(1) == 3
-                            %%% Check for visibility of plots
-                            for i = 1:3
-                                vis(i) = strcmp(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Visible,'on');
-                            end
-                            if sum(vis) == 3 %% all visible
-                                line = 3; %%% update last plot
-                            elseif sum(vis) == 0 %% all hidden
+                    case E_axes % E vs tau relation
+                        if h.lifetime_ind_popupmenu.Value == 1 % EvsTauGG
+                            if button(1) == 1 %%% left mouseclick, update first line, reset all others off
+                                BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
+                                BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3).Visible = 'off';
                                 line = 1;
-                            else %%% find the first hidden plot
-                                line = find(vis == 0, 1,'first');
+                            elseif button(1) == 3
+                                %%% Check for visibility of plots
+                                for i = 1:3
+                                    vis(i) = strcmp(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Visible,'on');
+                                end
+                                if sum(vis) == 3 %% all visible
+                                    line = 3; %%% update last plot
+                                elseif sum(vis) == 0 %% all hidden
+                                    line = 1;
+                                else %%% find the first hidden plot
+                                    line = find(vis == 0, 1,'first');
+                                end
+                            end
+                            if obj == h.DynamicFRETArbitrary_Menu
+                                %%% sanitize user input
+                                % make sure that the point is not below the
+                                % static FRET line
+                                tau_stat = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData;
+                                E_stat = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData;
+                                for ii = 1:numel(x)
+                                    % find nearest tau on static line
+                                    [~,ix_tau] = min(abs(tau_stat-x(ii)));
+                                    % find nearest E on static line
+                                    [~,ix_E] = min(abs(E_stat-y(ii)));
+                                    % check if we are below static line
+                                    if y(ii) < E_stat(ix_tau) && x(ii) < tau_stat(ix_E)
+                                        % if we are below, find the closest
+                                        % point on the static FRET line
+                                        d = sqrt(((tau_stat-x(ii))./BurstData{file}.Corrections.DonorLifetime).^2.+(E_stat-y(ii)).^2);
+                                        [~, ix_stat] = min(d);
+                                        x(ii) = tau_stat(ix_stat);
+                                        y(ii) = E_stat(ix_stat);
+                                    end
+                                end
+                            end
+                        elseif h.lifetime_ind_popupmenu.Value == 3 % 3color, E_B->G+R vs tauBB
+                            if button(1) == 1 %%% left mouseclick, update first line, reset all others off
+                                BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(2).Visible = 'off';
+                                BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(3).Visible = 'off';
+                                line = 1;
+                            elseif button(1) == 3
+                                %%% Check for visibility of plots
+                                for i = 1:3
+                                    vis(i) = strcmp(BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(i).Visible,'on');
+                                end
+                                if sum(vis) == 3 %% all visible
+                                    line = 3; %%% update last plot
+                                elseif sum(vis) == 0 %% all hidden
+                                    line = 1;
+                                else %%% find the first hidden plot
+                                    line = find(vis == 0, 1,'first');
+                                end
                             end
                         end
                         h.axes_EvsTauGG.UIContextMenu = menu_stored; set(h.axes_EvsTauGG.Children,'UIContextMenu',menu_stored);
                         h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
-                    case {5,6} % Phasor plots
+                        if any(BurstData{file}.BAMethod == [3,4])
+                            h.axes_E_BtoGRvsTauBB.UIContextMenu = menu_stored_3C; set(h.axes_E_BtoGRvsTauBB.Children,'UIContextMenu',menu_stored_3C);
+                        end
+                    case Phasor_axes % Phasor plots
                         % draw a line through the universal circles
                         m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
                         % use p-q formula
@@ -110,10 +201,18 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                         h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
                         return;
                 end
-            elseif obj == h.DynamicFRETManual_Menu
+            elseif any(obj == [h.DynamicFRETManual_Menu,h.DynamicFRETManualSigma_Menu])
                 %%% Query using edit box
-                %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
-                data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,{'1','1','3'});
+                switch obj
+                    case h.DynamicFRETManual_Menu
+                        data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,...
+                            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),num2str(UserValues.BurstBrowser.Settings.DynFRETLineTau1),num2str(UserValues.BurstBrowser.Settings.DynFRETLineTau2)});
+                    case h.DynamicFRETManualSigma_Menu
+                        data = inputdlg({'Line #','R1 [A]','R2 [A]','sigma1 [A]','sigma2 [A]'},'Enter State Distances and Widths',1,...
+                            {num2str(UserValues.BurstBrowser.Settings.DynFRETLine_Line),...
+                            num2str(UserValues.BurstBrowser.Settings.DynFRETLineR1),num2str(UserValues.BurstBrowser.Settings.DynFRETLineR2)...
+                            num2str(UserValues.BurstBrowser.Settings.DynFRETLineS1),num2str(UserValues.BurstBrowser.Settings.DynFRETLineS2)});
+                end
                 data = cellfun(@str2double,data);
                 if any(isnan(data)) || isempty(data)
                     return;
@@ -123,15 +222,103 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 if line < 1 || line > 3
                     return;
                 end
-                %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-                %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                %    x);
+                % Update UserValues
+                UserValues.BurstBrowser.Settings.DynFRETLine_Line = line;
+                switch obj
+                    case h.DynamicFRETManual_Menu
+                        UserValues.BurstBrowser.Settings.DynFRETLineTau1 = x(1);
+                        UserValues.BurstBrowser.Settings.DynFRETLineTau2 = x(2);
+                    case h.DynamicFRETManualSigma_Menu
+                        UserValues.BurstBrowser.Settings.DynFRETLineR1 = x(1);
+                        UserValues.BurstBrowser.Settings.DynFRETLineR2 = x(2);
+                        UserValues.BurstBrowser.Settings.DynFRETLineS1 = x(3);
+                        UserValues.BurstBrowser.Settings.DynFRETLineS2 = x(4);
+                end
+                
+                switch BurstData{file}.BAMethod
+                    case {1,2,5}
+                        Phasor_axes = {5,6};
+                    case {3,4}
+                        Phasor_axes = {7,8};
+                end
+                switch h.lifetime_ind_popupmenu.Value
+                    case Phasor_axes % Phasor plots
+                        % get channel (donor or acceptor)
+                        chan = h.lifetime_ind_popupmenu.Value-4;
+                        % Calculate frequency
+                        Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+                        % convert lifetimes to phasor coordinates
+                        g = 1./(1+(2*pi*Freq*x).^2);
+                        s = (2*pi*Freq*x).*g;
+                        x = g; y = s;
+                        % draw a line through the universal circles
+                        m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
+                        % use p-q formula
+                        p = (2*m*b-1)/(m^2+1); q = b^2/(m^2+1);
+                        xp1 = -p/2 - sqrt(p^2/4-q); xp2 =  -p/2 + sqrt(p^2/4-q);
+                        xp = xp1:0.01:xp2; yp = m*xp+b;
+                        plot(xp,yp,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine2,'Parent',h.axes_lifetime_ind_2d);
+                        h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
+                        return;
+                end
             end
-            [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
-                x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
-            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
-            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
-            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
+            if UserValues.BurstBrowser.Settings.LifetimeMode == 3
+                % we picked FRET efficiency, not lifetime
+                % better would be to find the nearest point on the static
+                % FRET line!
+                switch BurstData{file}.BAMethod
+                    case {1,2,5}
+                        x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
+                    case {3,4}
+                        if h.lifetime_ind_popupmenu.Value == 1
+                            x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
+                        elseif h.lifetime_ind_popupmenu.Value == 3
+                            x = BurstData{file}.Corrections.DonorLifetimeBlue.*(1-x);
+                        end
+                end
+            end
+            if any(BurstData{file}.BAMethod == [1,2,5]) || (any(BurstData{file}.BAMethod == [3,4]) && h.lifetime_ind_popupmenu.Value == 1)
+                if obj ~= h.DynamicFRETArbitrary_Menu
+                    if numel(x) == 2 % binary line with global sigma
+                        [E, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+                            x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+                    elseif numel(x) == 4 % binary line with individual sigma
+                        [E, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+                            x(1),x(2),BurstData{file}.Corrections.FoersterRadius,[x(3),x(4)]);
+                    end
+                elseif obj == h.DynamicFRETArbitrary_Menu
+                    %%% plot arbitrary line
+                    [E, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+                            x,y);
+                end
+                BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 2 % convert E to FD/FA
+                        E = log(1./E-1);
+                    case 3 % convert to moment difference
+                        E_temp = E;
+                        E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetime); % (1-E)*E_F
+                        tau = E_temp;
+                end
+                BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
+                BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = E;
+            elseif any(BurstData{file}.BAMethod == [3,4]) && h.lifetime_ind_popupmenu.Value == 3
+                % E vs tauBB
+                [E, ~,tau] = dynamicFRETline_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+                    x(1),x(2),BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
+                    BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
+                BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(line).Visible = 'on';
+                switch UserValues.BurstBrowser.Settings.LifetimeMode
+                    case 2 % convert E to FD/FA
+                        E = log(1./E-1);
+                    case 3 % convert to moment difference
+                        E_temp = E;
+                        E = (1-E).*(1-tau./BurstData{file}.Corrections.DonorLifetimeBlue); % (1-E)*E_F
+                        tau = E_temp;
+                end
+                BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(line).XData = tau;
+                BurstMeta.Plots.Fits.dynamicFRET_E_BtoGRvsTauBB(line).YData = E;
+            end
         case h.DynamicFRETRemove_Menu
             data = inputdlg({'Line #'},'Remove dynamic line...',1,{'1'});
             data = cellfun(@str2double,data);
@@ -236,7 +423,14 @@ if obj == h.ManualAnisotropyButton
     BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =[];BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = [];
     h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
     if verLessThan('MATLAB','9.5')
-        [x,y,button] = ginput(1);
+        switch h.LifetimeTabgroup.SelectedTab.Title
+            case 'All'
+                h.lifetime_ind_popupmenu.Value = 1;
+                [x,y,button] = ginputax({h.axes_rGGvsTauGG,h.axes_rRRvsTauRR, h.axes_rBBvsTauBB},1,h);
+            case 'Individual'
+                [x,y,button] = ginputax(h.axes_lifetime_ind_2d,1,h);
+        end
+        h.ManualAnisotropyButton.String = 'Manual Perrin line';
     else % 2018b onwards
         [x,y,button] = my_ginput(1);
     end
@@ -246,12 +440,12 @@ if obj == h.ManualAnisotropyButton
         switch BurstData{file}.BAMethod
             case {1,2}
                 switch h.lifetime_ind_popupmenu.Value
-                    case 3 %%% rGG  vs tauGG
+                    case 3 %%% rGG 'Manual Perrin line' vs tauGG
                         axes(h.axes_rGGvsTauGG);
                     case 4
                         axes(h.axes_rRRvsTauRR);
                     otherwise
-                        m = msgbox('Click on a anistropy axis!');
+                        m = msgbox('Click on an anistropy axis!');
                         pause(1)
                         delete(m)
                         return;

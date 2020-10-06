@@ -1,4 +1,4 @@
-function states = simulate_state_trajectory(dynamic_rates,simtime,frequency)
+function states = simulate_state_trajectory(dynamic_rates,simtime,frequency,dynamic)
 %%% Simulates dynamic system interconverting between size(dynamic_rates,1)
 %%% states.
 %%%
@@ -38,6 +38,12 @@ end
 % convert simTime to number of TimeSteps
 timesteps = ceil(simtime * frequency);
 
+if ~dynamic
+    dynamic_rates = 1./dynamic_rates;
+    dynamic_rates = dynamic_rates*1E-3;
+    dynamic_rates(isinf(dynamic_rates)) = 1E6;
+    dynamic_rates(isnan(dynamic_rates)) = 0;
+end
 %%% convert to probability per step
 % Assuming k/f is close to zero, we can approximate:
 % pTrans = dynamic_rates./frequency;
@@ -55,16 +61,15 @@ pTrans(isnan(pTrans)) = 0;
 % calculate diagonal elements from off-diagonal elements
 % diagonal elements are 1-sum(p_else)
 for i = 1:size(pTrans,1)
-    pTrans(i,i) = 1-sum(pTrans(i,:));
+    pTrans(i,i) = 1-sum(pTrans(:,i));
 end
 
 %%% For input to the mex file, the rates must have the following structure:
 %%% p = [p11,p12,13,...p21,p22,p23,...p31,p32,p33,...]
 p=[];
 for i = 1:size(pTrans,1)
-    p = [p,pTrans(i,:)];
+    p = [p,pTrans(:,i)'];
 end
-
 % get number of states
 n_states = size(dynamic_rates,1);
 % obtain equlibrium distribution by solving K*p_eq = 0 and sum(p_eq) = 1
