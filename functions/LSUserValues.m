@@ -1382,6 +1382,13 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.LineStyle = S.TauFit.LineStyle;
     
+    %%% Checks, if TauFit.RebinFactor exists
+    if ~isfield(S.TauFit,'RebinFactor')
+        S.TauFit.RebinFactor=1;
+        disp('UserValues.TauFit.RebinFactor was incomplete');
+    end
+    P.TauFit.RebinFactor = S.TauFit.RebinFactor;
+    
     %%% Checks, if TauFit.use_weighted_residuals exists
     if ~isfield(S.TauFit,'use_weighted_residuals')
         S.TauFit.use_weighted_residuals=1;
