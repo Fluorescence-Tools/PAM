@@ -2220,8 +2220,13 @@ else
     %%% reenable anisotropy fit methods
     h.FitMethod_Popupmenu.String = h.FitMethods;
 end
-Update_Plots(obj)
-UpdateOptions(h.Rebin_Histogram_Edit)
+
+if UserValues.TauFit.RebinFactor > 1
+    UpdateOptions(h.Rebin_Histogram_Edit);
+else
+    Update_Plots(obj);
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Save Data to decay (*.dec) file format %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
