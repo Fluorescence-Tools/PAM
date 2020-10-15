@@ -1812,6 +1812,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
                             TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
                         end
+                        TauFitData.External.Donly = cell(size(TauFitData.External.MI_Hist));
                         %%% assign donor only if existent
                         if any(startsWith(PIEchans{j},'DOnly'))
                             %%% check whether polarization data or not
@@ -3914,32 +3915,34 @@ switch obj
                         %%% combine to summed decay
                         Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
                         sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
-                    case 'External'
-                        %%% check if donly is defined
-                        if ~isempty(TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value})
-                            Decay_donly = TauFitData.External.Donly{h.PIEChannelPar_Popupmenu.Value};
-                            Decay_donly = Decay_donly((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
-                            sigma_est_donly = sqrt(Decay_donly);  sigma_est_donly(sigma_est_donly==0) = 1;
-                        else
-                            disp('No Donor only sample loaded.');
-                            return;
-                        end
-                    case 'TauFit'
+                    case {'TauFit','External'}                           
                         PIE_1 = h.PIEChannelPar_Popupmenu.Value;
                         PIE_2 = h.PIEChannelPer_Popupmenu.Value;
-                        %%% read donor only from UserValues
-                        donly_par = UserValues.PIE.DonorOnlyReference{PIE_1}';
-                        donly_per = UserValues.PIE.DonorOnlyReference{PIE_2}';
-                        if isempty(donly_par) || isempty(donly_per)
-                            disp('No donor only reference defined.');
-                            return;
+                        switch TauFitData.Who
+                            case 'External'
+                                %%% check if donly is defined and read out
+                                if ~isempty(TauFitData.External.Donly{PIE_1})
+                                    donly_par = TauFitData.External.Donly{PIE_1}';
+                                    donly_per = TauFitData.External.Donly{PIE_2}';                                   
+                                else
+                                    disp('No Donor only sample loaded.');
+                                    return;
+                                end
+                            case 'TauFit'
+                                %%% read donor only from UserValues
+                                donly_par = UserValues.PIE.DonorOnlyReference{PIE_1}';
+                                donly_per = UserValues.PIE.DonorOnlyReference{PIE_2}';
+                                if isempty(donly_par) || isempty(donly_per)
+                                    disp('No donor only reference defined.');
+                                    return;
+                                end
                         end
                         %%% since we can't just read the plots, we have to shift the data here
                         %%% using the shift applied to the DA sample
                         donly_par = donly_par((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
                         tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{chan});
                         donly_per = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
-                        
+
                         if PIE_1 == PIE_2
                             Decay_donly = donly_par;
                             sigma_est_donly = sqrt(Decay_donly); sigma_est_donly(sigma_est_donly==0) = 1;
@@ -6994,6 +6997,12 @@ if obj == h.Rebin_Histogram_Edit
         TauFitData.OriginalHistograms.hScat_Par = TauFitData.hScat_Par;
         TauFitData.OriginalHistograms.hScat_Per = TauFitData.hScat_Per;
         TauFitData.OriginalHistograms.TACChannelWidth = TauFitData.TACChannelWidth;
+        %%% also apply to donor only
+        if strcmp(TauFitData.Who,'External')
+            if isfield(TauFitData.External,'Donly')
+               TauFitData.OriginalHistograms.Donly = TauFitData.External.Donly;
+            end
+        end
     end
     if new_res > 1
         %%% Rebin histogram in TauFitData
@@ -7006,6 +7015,14 @@ if obj == h.Rebin_Histogram_Edit
             TauFitData.hScat_Per{i} = downsamplebin(TauFitData.OriginalHistograms.hScat_Per{i},new_res)';
             TauFitData.XData_Par{i} = 1:numel(TauFitData.hMI_Par{i});
             TauFitData.XData_Per{i} = 1:numel(TauFitData.hMI_Per{i});
+            %%% also apply to donor only
+            if strcmp(TauFitData.Who,'External')
+                if isfield(TauFitData.External,'Donly')
+                    if ~isempty(TauFitData.External.Donly{i})
+                        TauFitData.External.Donly{i} = downsamplebin(TauFitData.OriginalHistograms.Donly{i},new_res)';
+                    end
+                end
+            end
         end
         TauFitData.TACChannelWidth = new_res*TauFitData.OriginalHistograms.TACChannelWidth;
     elseif new_res == 1
@@ -7019,6 +7036,14 @@ if obj == h.Rebin_Histogram_Edit
             TauFitData.hScat_Per{i} = TauFitData.OriginalHistograms.hScat_Per{i};
             TauFitData.XData_Par{i} = 1:numel(TauFitData.hMI_Par{i});
             TauFitData.XData_Per{i} = 1:numel(TauFitData.hMI_Per{i});
+            %%% also apply to donor only
+            if strcmp(TauFitData.Who,'External')
+                if isfield(TauFitData.External,'Donly')
+                    if ~isempty(TauFitData.External.Donly{i})
+                        TauFitData.External.Donly{i} = TauFitData.OriginalHistograms.Donly{i};
+                    end
+                end
+            end
         end
         TauFitData.TACChannelWidth = TauFitData.OriginalHistograms.TACChannelWidth;
     end
