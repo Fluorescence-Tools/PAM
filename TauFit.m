@@ -1845,6 +1845,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     end
                     h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
                     h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
+                    
+                    %%% Update title to reflect the filename
+                    h.TauFit.Name = ['TauFit - Loaded file: ' FileName{1}];
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
                     [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'},'Choose data file...',UserValues.File.TauFitPath);
