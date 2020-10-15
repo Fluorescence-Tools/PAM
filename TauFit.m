@@ -1787,7 +1787,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     TauFitData.External.MI_Hist = {};
                     TauFitData.External.IRF = {};
                     TauFitData.External.Scat = {};
-                    for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range etc)
+                    for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range, donor only etc etc)
                         decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
                         %%% read other data
                         fid = fopen(fullfile(PathName,FileName{j}),'r');
@@ -1800,6 +1800,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                         end
                         PIEchans{j} = strsplit(line,'\t');
                         PIEchans{j}(cellfun(@isempty,PIEchans{j})) = [];
+                        PIEchans{j} = PIEchans{j}(1:(size(decay_data,2)/3)); % remove empty channels at the end (DOnly)
                         if numel(FileName) > 1 %%% multiple files loaded, append the file name to avoid confusion of identically named PIE channels
                             for i = 1:numel(PIEchans{j})
                                 PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
@@ -1810,6 +1811,23 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                             TauFitData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
                             TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
                             TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
+                        end
+                        %%% assign donor only if existent
+                        if any(startsWith(PIEchans{j},'DOnly'))
+                            %%% check whether polarization data or not
+                            %%% and assign donor only
+                            if any(strcmp(PIEchans{j},'DOnly1'))
+                                donly_idx_par = strcmp(PIEchans{j},'DOnly1');
+                                donly_idx_per = strcmp(PIEchans{j},'DOnly2');
+                                dd_idx_par = strcmp(PIEchans{j},'DD1');
+                                dd_idx_per = strcmp(PIEchans{j},'DD2');
+                                TauFitData.External.Donly{dd_idx_par} = TauFitData.External.MI_Hist{donly_idx_par};
+                                TauFitData.External.Donly{dd_idx_per} = TauFitData.External.MI_Hist{donly_idx_per};
+                            else
+                                donly_idx = strcmp(PIEchans{j},'DOnly');
+                                dd_idx = strcmp(PIEchans{j},'DD');
+                                TauFitData.External.Donly{dd_idx} = TauFitData.External.MI_Hist{donly_idx};
+                            end
                         end
                     end
                     PIEchans = horzcat(PIEchans{:});
