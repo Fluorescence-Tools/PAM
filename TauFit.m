@@ -3955,6 +3955,11 @@ switch obj
                             sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
                         end
                 end
+                if size(Decay_donly,1) > size(Decay_donly,2)
+                    Decay_donly = Decay_donly';
+                    sigma_est_donly = sigma_est_donly';                    
+                end
+                
                 I0_donly = 2*max(Decay_donly);
                 x0(end+1) = I0_donly;
                 lb(end+1) = 0;
@@ -3991,7 +3996,7 @@ switch obj
                 ModelFun = @(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata);
                 
                 %%% Prepare data as vector
-                Decay_DA = Decay;
+                Decay_DA = Decay;                
                 Decay =  [Decay_DA(ignore:end); Decay_donly(ignore:end)];
                 Decay_stacked = [Decay_DA(ignore:end) Decay_donly(ignore:end)];
                 Decay_FitRange = Decay_stacked;
