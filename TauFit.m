@@ -7401,13 +7401,14 @@ switch obj
                                 from = [from TauFitData.PIE.From([1,2])];
                                 to = [to TauFitData.PIE.To([1,2])];
                                 chan_names(end+1:end+2) = {'DOnly1','DOnly2'};
+                                microtimeHistograms = [microtimeHistograms, zeros(TauFitData.FileInfo.MI_Bins,3)];
                             end
                         case {3,4}
                             from = TauFitData.PIE.From([1,2,7,8,11,12]);
                             to = TauFitData.PIE.To([1,2,7,8,11,12]);
                     end
                     c = 1;
-                    for i = 1:2:5
+                    for i = 1:2:numel(chan_names)
                         range = from(i):to(i);
                         microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{c};
                         microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{c};
