@@ -1787,6 +1787,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     TauFitData.External.MI_Hist = {};
                     TauFitData.External.IRF = {};
                     TauFitData.External.Scat = {};
+                    if isfield(TauFitData,'OriginalHistograms')
+                        TauFitData = rmfield(TauFitData,'OriginalHistograms');
+                    end
                     for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range, donor only etc etc)
                         decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
                         %%% read other data
@@ -2218,6 +2221,7 @@ else
     h.FitMethod_Popupmenu.String = h.FitMethods;
 end
 Update_Plots(obj)
+UpdateOptions(h.Rebin_Histogram_Edit)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Save Data to decay (*.dec) file format %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
