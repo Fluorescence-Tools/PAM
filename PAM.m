@@ -7819,7 +7819,7 @@ end
 if save_BID
     BID = vertcat(BID_dummy{:});
 end
-clear Macrotime_dummy Microtime_dummy Channel_dummy Macrotime_all Microtime_all Channel_all BID_dummy
+clear Macrotime_dummy Microtime_dummy Channel_dummy BID_dummy
 %% Parameter Calculation
 Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 

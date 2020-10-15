@@ -134,7 +134,9 @@ switch mode
             h.DatabaseBB.Save.Enable = 'off';
         end
     case 3 %% Load database
-        Path = UserValues.File.BurstBrowserDatabasePath;
+        %Path = UserValues.File.BurstBrowserDatabasePath;
+        Path = strsplit(UserValues.File.BurstBrowserPath,filesep);
+        Path = fullfile(Path{1:end-1});
         [FileName, Path] = uigetfile({'*.bdb', 'Burst Database file (*.bdb)';'*.dab','PAM Database file (*.dab)'}, 'Choose database to load',Path,'MultiSelect', 'on');
         if ~iscell(FileName)
             if  FileName == 0
@@ -161,7 +163,54 @@ switch mode
             end
             if sum(valid) == 0
                 disp('Database file does not contain *.bur files or files are not accessible.');
-                return;
+                disp('Attempting to fix paths...');
+                correct_drive = [];
+                for j = 1:size(db.database,1)
+                    fn = [db.database{j,2} filesep db.database{j,1}];
+                    if contains(fn,'/Volumes/')
+                        % Database was generated on Mac+
+                        % remove first three path elements (these are empty/Volumes/VolumeName/)
+                        fn_windows = strsplit(fn,'/');
+                        fn_windows = fullfile(fn_windows{4:end});                        
+                        if isempty(correct_drive)
+                            % loop through all available network drives
+                            % get all letters
+                            letters = char(65:90);
+                            drives = false(size(letters));
+                            for c = 1:numel(letters)
+                                drives(c) = exist([letters(c) ':\'], 'dir' ) == 7;
+                            end
+                            drives = letters(drives);
+                            % loop through and see if the first file in
+                            % database exists
+                            correct_drive = false(numel(drives));
+                            for d = 1:numel(drives)
+                                correct_drive(d) = exist([drives(d) ':\' fn_windows],'file') > 0;
+                            end
+                            correct_drive = [drives(correct_drive) ':'];
+                        end
+                        if ~isempty(correct_drive) % correct drive has been found
+                            % fix the path
+                            path_windows = strsplit(db.database{j,2},'/');                            
+                            db.database{j,2} = fullfile(correct_drive,fullfile(path_windows{4:end}));
+                            valid(j) = true;
+                            % reconstruct the display string
+                            db.str{j} = [db.database{j,1} ' (path:' db.database{j,2} ')'];
+                        end
+                    else
+                        % Path is Windows, User is on Mac
+                        disp('Database was generated on Windows, you are using Mac.');
+                        disp('This conversion is not yet implemented.');
+                        return;
+                    end
+                    if isempty(correct_drive)
+                        % correct drive has not been found
+                        disp('The database could not be fixed.');
+                        return;
+                    else
+                        disp('Database was migrated from Mac to Windows. Please resave.');
+                    end
+                end
             end
             % remove invalid
             db.str = db.str(valid); db.database=db.database(valid,:);
@@ -178,7 +227,9 @@ switch mode
         end
         LSUserValues(1);
     case 4 %% Save complete database
-        Path = UserValues.File.BurstBrowserDatabasePath;
+        %Path = UserValues.File.BurstBrowserDatabasePath;
+        Path = strsplit(UserValues.File.BurstBrowserPath,filesep);
+        Path = fullfile(Path{1:end-1});
         [File, Path] = uiputfile({'*.bdb', 'Database file (*.bdb)'}, 'Save database', Path);
         if File == 0
             return;
