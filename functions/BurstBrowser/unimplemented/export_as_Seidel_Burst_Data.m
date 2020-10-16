@@ -58,6 +58,11 @@ for i = 1:numel(bur_parameters)
         bur_data(:,i) = DataArray(:,strcmp(ParameterNames,bur_parameters_BB{i}));
     end
 end
+if isfield(BurstData{file},'BID')
+    % burst IDs (start/stop photon numbers) exist
+    bur_data(:,1:2) = BurstData{file}.BID;
+end
+
 bg4_data = zeros(size(DataArray,1),numel(bg4_parameters));
 for i = 1:numel(bg4_parameters)
     if ~isempty(bg4_parameters_BB{i})
