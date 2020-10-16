@@ -15,7 +15,7 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting data...');
 ParameterNames = BurstData{file}.NameArray;
 DataArray = BurstData{file}.DataArray;
 % convert macrotime to ms
-DataArray(:,strcmp(ParameterNames,'Duration [ms]')) = DataArray(:,strcmp(ParameterNames,'Duration [ms]'))*1000;
+DataArray(:,strcmp(ParameterNames,'Mean Macrotime [s]')) = DataArray(:,strcmp(ParameterNames,'Mean Macrotime [s]'))*1000;
 % split and save in bur, bg4, br4, by4 files
 
 % the parameters needed for the margarita files
