@@ -8,7 +8,7 @@ end
 file = BurstMeta.SelectedFile;
 PathName = uigetdir(UserValues.File.BurstBrowserPath,'Select folder');
 
-% 'bg4','bi4_bur','br4','info'
+% 'bg4','bi4_bur','br4','Info'
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting data...');
 
 % get the data
@@ -142,7 +142,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Saving data...');
 if ~exist([PathName filesep 'Info'],'dir')
     mkdir([PathName filesep 'Info']);
 end
-fn = [PathName filesep 'info' filesep BurstData{file}.FileNameSPC];
+fn = [PathName filesep 'Info' filesep BurstData{file}.FileNameSPC];
 fn= [fn '.mti'];
 fid = fopen(fn,'w');
 for i = 1:numel(BurstData{file}.FileInfo.FileName)
