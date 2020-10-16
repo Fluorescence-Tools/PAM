@@ -1,4 +1,4 @@
-function Export_As_Seidel_Burst_Data(obj,~)
+function Export_Seidel_Burst_Data(obj,~)
 global UserValues BurstData BurstMeta
 if isempty(obj)
     h = guidata(findobj('Tag','BurstBrowser'));
