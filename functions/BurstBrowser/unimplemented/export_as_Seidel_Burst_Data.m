@@ -139,8 +139,8 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Saving data...');
 
 % save the required mti file
 % this file contains the path to the data file and the measurement duration
-if ~exist([PathName filesep 'info'],'dir')
-    mkdir([PathName filesep 'info']);
+if ~exist([PathName filesep 'Info'],'dir')
+    mkdir([PathName filesep 'Info']);
 end
 fn = [PathName filesep 'info' filesep BurstData{file}.FileNameSPC];
 fn= [fn '.mti'];
