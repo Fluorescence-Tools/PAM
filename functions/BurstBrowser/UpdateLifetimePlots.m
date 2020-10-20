@@ -90,7 +90,7 @@ switch UserValues.BurstBrowser.Settings.LifetimeMode
         end
     case 3
         if ~h.MultiselectOnCheckbox.UserData
-            YLim = [min(min(datatoplot(:,idxE)),-0.25) max(max(datatoplot(:,idxE)),0.5)];
+            YLim = [min(min(datatoplot(:,idxE)),-0.05) max(max(datatoplot(:,idxE)),0.3)];
         else
             YLim = [];
         end
