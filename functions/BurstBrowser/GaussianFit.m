@@ -65,6 +65,15 @@ if gof.adjrsquare < 0.95 %%% fit was bad
     elseif Amax == 2
         mean = coefficients(5);
     end
+    % check that the coefficient makes sense, i.e. is in the range -0.1 to 0.5
+    if mean < -0.1 || mean > 0.5
+        % take the other Gauss
+        if Amax == 1
+            mean = coefficients(5);
+        elseif Amax == 2
+            mean = coefficients(2);
+        end
+    end
     GaussFun = Gauss2fun(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
     G1 = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
     Gauss1 = G1(coefficients(1),coefficients(2),coefficients(3),coefficients(7)/2,x_data);
@@ -78,6 +87,6 @@ if gof.adjrsquare < 0.95 %%% fit was bad
         GaussFun = Gauss2fun(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
     end
 end
-if mean < 0
+if mean < -0.1
     mean = 0;
 end
