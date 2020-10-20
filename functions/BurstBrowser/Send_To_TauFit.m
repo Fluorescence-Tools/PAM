@@ -115,7 +115,7 @@ end
 dur = BurstData{file}.DataArray(valid,strcmp('Duration [ms]',BurstData{file}.NameArray));
 dur = sum(dur).*1E-3; % duration in seconds
 fprintf('\nDuration of exported bursts: %.2f s\n',dur);
-if exist('dur_donly','var')
+if exist('valid_donly','var')
     dur_donly = BurstData{file}.DataArray(valid_donly,strcmp('Duration [ms]',BurstData{file}.NameArray));
     dur_donly = sum(dur_donly).*1E-3; % duration in seconds
     fprintf('Duration of exported bursts (donly): %.2f s\n',dur_donly);
