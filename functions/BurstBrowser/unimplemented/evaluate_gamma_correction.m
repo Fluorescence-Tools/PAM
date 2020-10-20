@@ -30,7 +30,7 @@ rotate = false;
 % Threshold for burst number for a bin to be considered
 N_burst_min = 20;
 
-%%% for E-S+
+%%% for E-S
 Ebins = linspace(-0.2,1.2,1.4/0.025);
 if binwise
     %%% bin along E axis
@@ -130,7 +130,7 @@ else
     Ebins = linspace(-0.1,1.1,60);
 end
 if binwise
-    [hTau, ~, binTau] = histcounts(tau,tau_bins);
+    [hTau, ~, binTau] = histcounts(tauNorm,tau_bins);
     %%% determine mean FRET efficiency/stoichiometry and standard deviation for every bin
     mE = nan(size(hTau));
     sE = nan(size(hTau));
