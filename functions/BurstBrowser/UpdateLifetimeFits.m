@@ -264,11 +264,13 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETArbitrary_Menu, h.DynamicFR
             end
             if UserValues.BurstBrowser.Settings.LifetimeMode == 3
                 % we picked FRET efficiency, not lifetime
-                % better would be to find the nearest point on the static
-                % FRET line!
+                % find the point on the static FRET line and convert to lifetime
                 switch BurstData{file}.BAMethod
                     case {1,2,5}
-                        x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
+                        [E, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                                BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+                         x = [tau(find(E<x(1),1,'first')), tau(find(E<x(2),1,'first'))];
+                         %x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
                     case {3,4}
                         if h.lifetime_ind_popupmenu.Value == 1
                             x = BurstData{file}.Corrections.DonorLifetime.*(1-x);
