@@ -1,5 +1,5 @@
 %%% this function evaluates the deviation of the 
-function evaluate_gamma_correction()
+function evaluate_gamma_correction(binwise)
 global BurstData BurstMeta UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -21,8 +21,10 @@ else
     tau = get_multiselection_data(h,'Lifetime D [ns]');
 end
 
-% binwise or burstwise?
-binwise = true;
+if nargin < 1
+    % binwise or burstwise?
+    binwise = false;    
+end
 
 % rotate E-tau plot by 45�?
 rotate = true;
@@ -132,6 +134,7 @@ else
     tau_bins = linspace(0,1.1,55);
     Ebins = linspace(-0.1,1.1,60);
 end
+
 if binwise
     [hTau, ~, binTau] = histcounts(tauNorm,tau_bins);
     %%% determine mean FRET efficiency/stoichiometry and standard deviation for every bin
@@ -166,27 +169,47 @@ if binwise
     %%%  calculate deviation to  static FRET line
     w_res_E = (mE-E_model)./sE;
     chi2_Etau = sum(w_res_E(isfinite(w_res_E)).^2)./sum(isfinite(w_res_E));
-    fprintf('red. Chi2 E-tau: %.2f\n',chi2_Etau);    
-else
-    E_model = staticFRETline(tauNorm.*BurstData{file}.Corrections.DonorLifetime);
+    fprintf('red. Chi2 E-tau: %.2f\n',chi2_Etau);
+    
     if rotate
+        % transform back to normal lifetime to compute the static FRET line
+        mt = 2^(-1/2)*(tauNorm+E);
+        E_model_burstwise = staticFRETline(mt*BurstData{file}.Corrections.DonorLifetime);
         %%% rotate static FRET line by 45° = pi/4;
-        deltaEtau = 2^(-1/2)*(tauNorm-E_model);
-        sigmaEtau = 2^(-1/2)*(tauNorm+E_model);
-        tauNorm = deltaEtau;
-        E_model = sigmaEtau;
+        deltaEtau = 2^(-1/2)*(mt-E_model_burstwise);
+        sigmaEtau = 2^(-1/2)*(mt+E_model_burstwise);
+        tauNorm_burstwise = deltaEtau;
+        E_model_burstwise = sigmaEtau;
+    else
+        E_model_burstwise = staticFRETline(tauNorm.*BurstData{file}.Corrections.DonorLifetime);
     end
+    % calculate burstwise deviation and RMSE
+    res_E = (E-E_model_burstwise);
+else
+    if rotate
+        % transform back to normal lifetime to compute the static FRET line
+        mt = 2^(-1/2)*(tauNorm+E);
+        E_model_burstwise = staticFRETline(mt*BurstData{file}.Corrections.DonorLifetime);
+        %%% rotate static FRET line by 45° = pi/4;
+        deltaEtau = 2^(-1/2)*(mt-E_model_burstwise);
+        sigmaEtau = 2^(-1/2)*(mt+E_model_burstwise);
+        tauNorm_model = deltaEtau;
+        E_model = sigmaEtau;
+    else        
+        E_model = staticFRETline(tauNorm.*BurstData{file}.Corrections.DonorLifetime);
+        tauNorm_model = tauNorm;
+    end
+    % calculate burstwise deviation and RMSE
+    res_E = (E-E_model);
 end
-% calculate burstwise deviation and RMSE
-res_E = (E-E_model);
 RMSE_Etau = sqrt(sum(res_E(isfinite(res_E)).^2)./numel(res_E(isfinite(res_E))));
 fprintf('RMSE E-tau: %.4f\n',RMSE_Etau);
 
 ax1 = subplot(2,2,2); hold on;
 if binwise
     scatter(mTauNorm_model,w_res_E,'filled','MarkerFaceColor',colors(1,:));
-else
-    scatter(tauNorm,res_E,5,'filled','MarkerFaceColor','k');
+else   
+    scatter(tauNorm_model,res_E,5,'filled','MarkerFaceColor','k');
 end
 plot([-1,1],[0,0],'--r','LineWidth',1.5);
 ax2 = subplot(2,2,4);hold on;
@@ -218,6 +241,7 @@ ax2.Position(4) = 0.60;
 ax1.Position(4) = 0.15;
 ax1.Position(2) = ax2.Position(2)+ax2.Position(4)+0.03;
 linkaxes([ax1,ax2],'x');
+
 axis(ax2,'tight');
 if rotate
     xlim([-1,1]); ylim([0.5,1]);
@@ -236,7 +260,41 @@ if binwise
 else
     title(ax1,sprintf('RMSE (E-\\tau): %.4f',RMSE_Etau),'Interpreter','tex','FontSize',fontsize-1);
 end
+
+if ~binwise
+    % add histogram of residuals
+    f = gcf;
+    set(f.Children,'Units','pixel');
+    f.Position(4) = f.Position(4)+150;
+    ax_S = f.Children(4);
+    ax_tau = f.Children(2);
+    offset = [0,120,0,50];
+    ax_res_S = axes('Units','pixels','Position',ax_S.Position+offset);
+    ax_res_tau = axes('Units','pixels','Position',ax_tau.Position+offset);
+    set([ax_res_S,ax_res_tau],'Box','on','LineWidth',1.5,'Units','normalized','FontSize',fontsize,'Layer','top','Color',[1,1,1],'nextplot','add');
+    
+    % plot histogram
+    histogram(ax_res_S,res_S,'Edgecolor','none','FaceColor',[0.2,0.2,0.2]);
+    plot(ax_res_S,[0,0],[0,ax_res_S.YLim(2)],'--r','LineWidth',1.5);
+    xlabel(ax_res_S,'deviation');
+    ylabel(ax_res_S,'#');
+    histogram(ax_res_tau,res_E,'Edgecolor','none','FaceColor',[0.2,0.2,0.2]);
+    plot(ax_res_tau,[0,0],[0,ax_res_tau.YLim(2)],'--r','LineWidth',1.5);
+    xlabel(ax_res_tau,'deviation');
+    ylabel(ax_res_tau,'#');
+    
+    title(ax_res_tau,ax_tau.Title.String);
+    title(ax_res_S,ax_S.Title.String);
+    ax_tau.Title.String = '';
+    ax_S.Title.String = '';
+end
+
 % copy to clipboard
-data = {'RMSE E-S',RMSE_ES;'red. Chi2 E-S',chi2_ES;...
-    'RMSE E-tau',RMSE_Etau;'red. Chi2 E-tau',chi2_Etau};
+if binwise    
+    data = {'RMSE E-S',RMSE_ES;'red. Chi2 E-S',chi2_ES;...
+        'RMSE E-tau',RMSE_Etau;'red. Chi2 E-tau',chi2_Etau};
+else
+    data = {'RMSE E-S',RMSE_ES;...
+        'RMSE E-tau',RMSE_Etau};
+end
 Mat2clip(data);
