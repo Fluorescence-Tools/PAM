@@ -123,7 +123,7 @@ end
 [~,staticFRETline,~] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
             BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
 if rotate            
-    tau_bins = linspace(-1,1,50);
+    tau_bins = linspace(-1/sqrt(2),1/sqrt(2),50);
     Ebins = linspace(0.5,1,50);
 else
     tau_bins = linspace(0,1.1,55);
@@ -147,7 +147,18 @@ if binwise
         end
     end
 
-    E_model = staticFRETline(mTauNorm.*BurstData{file}.Corrections.DonorLifetime);
+    if rotate
+        % transform back to normal lifetime to compute the static FRET line
+        mt = 2^(-1/2)*(mTauNorm+mE);
+        E_model = staticFRETline(mt*BurstData{file}.Corrections.DonorLifetime);
+        %%% rotate static FRET line by 45° = pi/4;
+        deltaEtau = 2^(-1/2)*(mt-E_model);
+        sigmaEtau = 2^(-1/2)*(mt+E_model);
+        mTauNorm_model = deltaEtau;
+        E_model = sigmaEtau;
+    else
+        E_model = staticFRETline(mTauNorm.*BurstData{file}.Corrections.DonorLifetime);
+    end
     %%%  calculate deviation to  static FRET line
     w_res_E = (mE-E_model)./sE;
     chi2_Etau = sum(w_res_E(isfinite(w_res_E)).^2)./sum(isfinite(w_res_E));
@@ -169,7 +180,7 @@ fprintf('RMSE E-tau: %.4f\n',RMSE_Etau);
 
 ax1 = subplot(2,2,2); hold on;
 if binwise
-    scatter(mTauNorm,w_res_E,'filled','MarkerFaceColor',colors(1,:));
+    scatter(mTauNorm_model,w_res_E,'filled','MarkerFaceColor',colors(1,:));
 else
     scatter(tauNorm,res_E,5,'filled','MarkerFaceColor','k');
 end
