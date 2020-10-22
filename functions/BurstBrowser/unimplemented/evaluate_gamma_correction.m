@@ -25,7 +25,7 @@ end
 binwise = true;
 
 % rotate E-tau plot by 45°?
-rotate = false;
+rotate = true;
 
 % Threshold for burst number for a bin to be considered
 N_burst_min = 20;
@@ -148,13 +148,6 @@ if binwise
     end
 
     E_model = staticFRETline(mTauNorm.*BurstData{file}.Corrections.DonorLifetime);
-    if rotate
-        %%% rotate static FRET line by 45Â° = pi/4;
-        deltaEtau = 2^(-1/2)*(mTauNorm-E_model);
-        sigmaEtau = 2^(-1/2)*(mTauNorm+E_model);
-        mTauNorm = deltaEtau;
-        E_model = sigmaEtau;
-    end
     %%%  calculate deviation to  static FRET line
     w_res_E = (mE-E_model)./sE;
     chi2_Etau = sum(w_res_E(isfinite(w_res_E)).^2)./sum(isfinite(w_res_E));
