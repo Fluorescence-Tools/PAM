@@ -22,10 +22,10 @@ else
 end
 
 % binwise or burstwise?
-binwise = false;
+binwise = true;
 
 % rotate E-tau plot by 45°?
-rotate = false;
+rotate = true;
 
 % Threshold for burst number for a bin to be considered
 N_burst_min = 20;
