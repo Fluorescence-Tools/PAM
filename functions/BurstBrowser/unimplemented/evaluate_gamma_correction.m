@@ -22,10 +22,10 @@ else
 end
 
 % binwise or burstwise?
-binwise = true;
+binwise = false;
 
 % rotate E-tau plot by 45°?
-rotate = true;
+rotate = false;
 
 % Threshold for burst number for a bin to be considered
 N_burst_min = 20;
@@ -100,8 +100,11 @@ ylabel(ax1,'w. res.');
 xlabel(ax2,'FRET efficiency');
 ylabel(ax2,'Stoichiometry');
 
-title(ax1,['\chi^2_{r}' sprintf('(E-S): %.2f\nRMSE (E-S): %.4f',chi2_ES,RMSE_ES)],'Interpreter','tex','FontSize',fontsize-1);
-
+if binwise
+    title(ax1,['\chi^2_{r}' sprintf('(E-S): %.2f\nRMSE (E-S): %.4f',chi2_ES,RMSE_ES)],'Interpreter','tex','FontSize',fontsize-1);
+else
+    title(ax1,sprintf('RMSE (E-S): %.4f',RMSE_ES),'Interpreter','tex','FontSize',fontsize-1);
+end
 %%% for E-tau
 % filter tau = 0
 valid = tau > 0;
@@ -123,7 +126,7 @@ end
 [~,staticFRETline,~] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
             BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
 if rotate            
-    tau_bins = linspace(-1/sqrt(2),1/sqrt(2),50);
+    tau_bins = linspace(-1,1,50);
     Ebins = linspace(0.5,1,50);
 else
     tau_bins = linspace(0,1.1,55);
@@ -157,6 +160,7 @@ if binwise
         mTauNorm_model = deltaEtau;
         E_model = sigmaEtau;
     else
+        mTauNorm_model = mTauNorm;
         E_model = staticFRETline(mTauNorm.*BurstData{file}.Corrections.DonorLifetime);
     end
     %%%  calculate deviation to  static FRET line
@@ -227,8 +231,11 @@ end
 ax1.XTickLabel = [];
 ylabel(ax1,'w. res.');
 
-title(ax1,['\chi^2_{r}' sprintf('(E-\\tau): %.2f\nRMSE (E-\\tau): %.4f',chi2_Etau,RMSE_Etau)],'Interpreter','tex','FontSize',fontsize-1);
-
+if binwise
+    title(ax1,['\chi^2_{r}' sprintf('(E-\\tau): %.2f\nRMSE (E-\\tau): %.4f',chi2_Etau,RMSE_Etau)],'Interpreter','tex','FontSize',fontsize-1);
+else
+    title(ax1,sprintf('RMSE (E-\\tau): %.4f',RMSE_Etau),'Interpreter','tex','FontSize',fontsize-1);
+end
 % copy to clipboard
 data = {'RMSE E-S',RMSE_ES;'red. Chi2 E-S',chi2_ES;...
     'RMSE E-tau',RMSE_Etau;'red. Chi2 E-tau',chi2_Etau};
