@@ -114,3 +114,16 @@ To report bugs or suggest improvements and bugfixes, please use the 'Issues' fun
 For this, a free GitLab account is required.
 
 To contribute to PAM, please consult the [contribution guide](https://gitlab.com/PAM-PIE/PAM/blob/master/CONTRIBUTING.md).
+
+List of contributors
+=========================
+
+We are thankful to all who contributed to the ongoing development of PAM. If you contributed but do not see your name below, please don't hesitate to contact us.
+
+Thanks go to:
+* Simon Wanninger
+* Chen Qian
+* Nader Danaf
+* Ivan Maslov
+* Lucy van Pelt
+* Philip Messer
