@@ -431,6 +431,7 @@ else
         Image = Image.*Color;
     else
         Image = Color;
+        offset = 0;
     end
     BurstMeta.Plots.Main_Plot(1).XData = xbins;
     BurstMeta.Plots.Main_Plot(1).YData = ybins;

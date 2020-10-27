@@ -37,6 +37,8 @@ if ~isempty(eventdata.Modifier)
                         %%% add current view to report
                         report_generator([],[],2,h);
                     end
+                case 'o'
+                    copy_figure_to_clipboard();
             end
     end
 else

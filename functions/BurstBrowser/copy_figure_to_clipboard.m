@@ -24,5 +24,10 @@ end
 % call ExportGraphs for this axis
 fig = ExportGraphs(obj,[],0);
 
-print(fig,'-clipboard','-dbitmap');
+if verLessThan('matlab','9.8') %%% earlier than 2020a, copy as bitmap
+    print(fig,'-clipboard','-dbitmap');
+else
+    %%% from 2020a, there is a new function available
+    copygraphics(fig,'ContentType','image','Resolution',150)
+end
 delete(fig);
