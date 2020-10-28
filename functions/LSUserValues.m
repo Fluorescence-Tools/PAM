@@ -1164,7 +1164,8 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     if size(S.BurstSearch.SearchParameters,2) < 6
-        S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
+        S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5];...
+            [100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
