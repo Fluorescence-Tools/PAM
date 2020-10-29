@@ -1,7 +1,7 @@
-function [cm_data] = roma(m)
+function [cm_data] = grayc(m)
 
-cm = load('ScientificColourMaps6/roma.mat');
-cm = cm.roma;
+cm = load('ScientificColourMaps6/grayC.mat');
+cm = cm.grayC;
 
 if nargin < 1
     cm_data = cm;
@@ -12,5 +12,3 @@ else
     cm_data(cm_data(:,1)>1,1)=cm_data(cm_data(:,1)>1,1)-1;
     cm_data=hsv2rgb(cm_data);
 end
-
-cm_data = flipud(cm_data);
