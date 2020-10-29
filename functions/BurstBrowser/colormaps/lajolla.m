@@ -12,3 +12,5 @@ else
     cm_data(cm_data(:,1)>1,1)=cm_data(cm_data(:,1)>1,1)-1;
     cm_data=hsv2rgb(cm_data);
 end
+
+cm_data = flipud(cm_data);
