@@ -8,7 +8,7 @@ if nargin < 3
     ask_file = 1;
 end
 h = guidata(obj);
-fontsize = 24;
+fontsize = 22;
 linewidth = 2;
 if ispc
     fontsize = fontsize*0.72;
@@ -672,7 +672,7 @@ switch obj
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
-                    panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
+                    panel_copy.Children(i).Position = [0.79 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
                     if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
@@ -710,7 +710,7 @@ switch obj
                         end
                     end
                 case 'axes_lifetime_ind_1d_x'
-                    panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
+                    panel_copy.Children(i).Position = [0.14 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
@@ -747,33 +747,33 @@ switch obj
                         end
                     end
                 case 'axes_lifetime_ind_2d'
-                    panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
+                    panel_copy.Children(i).Position = [0.14 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
                     ax2d = i;
-                    switch BurstData{file}.BAMethod
-                        case {1,2}
-                            switch h.lifetime_ind_popupmenu.Value
-                                case {3,4} % Ansiotropy plot, adjust y axis label
-                                    panel_copy.Children(i).YLabel.Position(1) =...
-                                        panel_copy.Children(i).YLabel.Position(1) + 0.1;
-                            end
-                        case {3,4}
-                            switch h.lifetime_ind_popupmenu.Value
-                                case {4,5,6} % Ansiotropy plot, adjust y axis label
-                                    panel_copy.Children(i).YLabel.Position(1) =...
-                                        panel_copy.Children(i).YLabel.Position(1) + 0.1;
-                            end
-                    end
+%                     switch BurstData{file}.BAMethod
+%                         case {1,2}
+%                             switch h.lifetime_ind_popupmenu.Value
+%                                 case {3,4} % Ansiotropy plot, adjust y axis label
+%                                     panel_copy.Children(i).YLabel.Position(1) =...
+%                                         panel_copy.Children(i).YLabel.Position(1) + 0.1;
+%                             end
+%                         case {3,4}
+%                             switch h.lifetime_ind_popupmenu.Value
+%                                 case {4,5,6} % Ansiotropy plot, adjust y axis label
+%                                     panel_copy.Children(i).YLabel.Position(1) =...
+%                                         panel_copy.Children(i).YLabel.Position(1) + 0.1;
+%                             end
+%                     end
             end
         end
         if ~verLessThan('MATLAB','9.4') %%% for some reason, the change before is disregarded by MATLAB in 2018a onwards.
-            panel_copy.Children(ax2d).Position = [0.12 0.135 0.65 0.65];
+            panel_copy.Children(ax2d).Position = [0.14 0.135 0.65 0.65];
         end
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
                 'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',linewidth); 
-            cbar.Position = [0.8,0.85,0.18,0.025];
+            cbar.Position = [0.82,0.85,0.18,0.025];
             cbar.Label.String = 'Occurrence';
             cbar.TickLabelsMode = 'auto';
             if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
@@ -1022,6 +1022,12 @@ for i = 1:numel(hfig.Children)
         hfig.Children(i).Units = 'pixels';
     end
 end
+
+%%% adjust figure size for lifetime plots to accomodate all data
+if obj == h.Export2DLifetime_Menu
+    hfig.Position(3) = hfig.Position(3) + 50;
+end
+    
 %%% Combine the Original FileName and the parameter names
 if isfield(BurstData{file},'FileNameSPC')
     if strcmp(BurstData{file}.FileNameSPC,'_m1')
