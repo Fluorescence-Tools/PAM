@@ -8,7 +8,7 @@ plot_name = ax.Title.String;
 child = ax.Children;
 valid = zeros(numel(child),1);
 for i = 1:numel(child)
-    if strcmp(child(i).Type,'line') || strcmp(child(i).Type,'bar')
+    if strcmp(child(i).Type,'line') || strcmp(child(i).Type,'bar') || strcmp(child(i).Type,'scatter')
         valid(i) = 1;
     end
 end
