@@ -80,7 +80,9 @@ switch mode
             'BackgroundColor', UserValues.Look.Back,...
             'ForegroundColor', UserValues.Look.Fore,...
             'Position',[0.02 0.3, 0.3 0.05],...
-            'String','Z-plane to load');
+            'String','Z-plane(s):',...
+            'Tooltipstring',['Checks the .czi file for z-stacks' 10 ...
+            'Write a number or a range e.g. 1:5, to load']);
     case 2 %%% Load Data
         h = guidata(findobj('Tag','Mia'));
         
@@ -292,58 +294,72 @@ switch mode
             if i == 1 %first file or only 1 file
                 %%% Adds data to global variable
                 totalF = 0;
-                MIAData.Data{1,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
+                MIAData.Data{1,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F*numel(Zplane),'uint16');
                 if ~isempty(Channel2) && min(Channel2)<=N_C
-                    MIAData.Data{2,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
+                    MIAData.Data{2,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F*numel(Zplane),'uint16');
                 end
             else
                 totalF = size(MIAData.Data{1,1}, 3);
-                MIAData.Data{1,1}(:,:,end+1:end+N_F) = 0;
+                MIAData.Data{1,1}(:,:,end+1:end+N_F*numel(Zplanes)) = 0;
                 if ~isempty(Channel2) && min(Channel2)<=N_C
-                    MIAData.Data{2,1}(:,:,end+1:end+N_F) = 0;
+                    MIAData.Data{2,1}(:,:,end+1:end+N_F*numel(Zplanes)) = 0;
                 end               
             end
             Spectrum{i} = zeros(N_C,1);
-            Z = 0;
-            for j=1:size(Data{1,1},1)
-                %%% the order of the data (frame-channel-z) is 
-                %%% 111 121 ... 1c1 112 ... 1c2 ... ... 1nz 211 ... ... fnz
-                %%% the code currently only loads 1 particular z plane
-                %%% because Mia has no option for displaying different Z
-                %%% planes. Also the data format on Mia is not compatible
-                %%% with it yet.
-                
-                %%% Current channel     
-                C = mod(j-1,N_C)+1;
-                %%% Current frame
-                F = floor((j-1)/(N_C*N_Z))+1;
-                % for every next file, frames have to be added to the end :
-                F = F + totalF;
-                %%% current Z position
-                if C == 1
-                    Z = Z+1;
-                    if Z > N_Z
-                        Z = 1;
-                    end
-                end
-                
-                %%% Adds data to channel 1
-                if ~isempty(intersect(Channel1,C))
-                    if ~isempty(intersect(Zplane,Z))
-                        MIAData.Data{1,1}(:,:,F) = MIAData.Data{1,1}(:,:,F)+uint16(Data{1,1}{j,1});
-                    end
-                end
-                %%% Adds data to channel 2
-                if ~isempty(intersect(Channel2,C))
-                    if ~isempty(intersect(Zplane,Z))
-                        MIAData.Data{2,1}(:,:,F) = MIAData.Data{2,1}(:,:,F)+uint16(Data{1,1}{j,1});
-                    end
-                end
-                
-                %%% Calculates averaged spectrum for displaying
-                Spectrum{i}(C)=Spectrum{i}(C)+sum(double(Data{1,1}{j,1}(:)));
-                
+            zz=1;
+            if numel(Zplane)>1
+                %make sure the correlation blocksize is compatible with the
+                %moving average correction frame range
+                h.Mia_Image.Calculations.Cor_ICS_Window.String = num2str(N_F-str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)+1);
+                h.Mia_Image.Calculations.Cor_ICS_Offset.String = num2str(N_F);
+            else
+                h.Mia_Image.Calculations.Cor_ICS_Window.String = num2str(N_F);
+                h.Mia_Image.Calculations.Cor_ICS_Offset.String = num2str(N_F);
             end
+            for z=Zplane %loop through all z-planes user wants to load
+                Z = 0;
+                for j=1:size(Data{1,1},1)
+                    %%% the order of the data (frame-channel-z) is
+                    %%% 111 121 ... 1c1 112 ... 1c2 ... ... 1nz 211 ... ... fnz
+                    %%% the code currently only loads 1 particular z plane
+                    %%% because Mia has no option for displaying different Z
+                    %%% planes. Also the data format on Mia is not compatible
+                    %%% with it yet.
+                    
+                    %%% Current channel
+                    C = mod(j-1,N_C)+1;
+                    %%% Current frame
+                    F = floor((j-1)/(N_C*N_Z))+1;
+                    % for every next file, frames have to be added to the end :
+                    F = F + totalF;
+                    %%% current Z position
+                    if C == 1
+                        Z = Z+1;
+                        if Z > N_Z
+                            Z = 1;
+                        end
+                    end
+                    
+                    %%% Adds data to channel 1
+                    if ~isempty(intersect(Channel1,C))
+                        if ~isempty(intersect(z,Z))
+                            MIAData.Data{1,1}(:,:,F+(zz-1)*N_F) = MIAData.Data{1,1}(:,:,F+(zz-1)*N_F)+uint16(Data{1,1}{j,1});
+                        end
+                    end
+                    %%% Adds data to channel 2
+                    if ~isempty(intersect(Channel2,C))
+                        if ~isempty(intersect(z,Z))
+                            MIAData.Data{2,1}(:,:,F+(zz-1)*N_F) = MIAData.Data{2,1}(:,:,F+(zz-1)*N_F)+uint16(Data{1,1}{j,1});
+                        end
+                    end
+                    
+                    %%% Calculates averaged spectrum for displaying
+                    Spectrum{i}(C)=Spectrum{i}(C)+sum(double(Data{1,1}{j,1}(:)));
+                    
+                end
+                zz = zz+1;
+            end
+            
             Spectrum{i}=Spectrum{i}/sum(Spectrum{i});
         end
         
