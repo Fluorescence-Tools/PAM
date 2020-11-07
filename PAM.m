@@ -1174,7 +1174,7 @@ h.Burst.BurstSearchSmoothing_Popupmenu = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Sliding Time Window','Interphoton Time with Lee Filter'},...
+    'String',{'Sliding Time Window','Interphoton Time with Lee Filter','Change Point Analysis'},...
     'Callback',@Update_BurstGUI,...
     'Position',[0.05 0.75 0.9 0.08],...
     'TooltipString',sprintf(''));
@@ -7349,6 +7349,9 @@ if isempty(obj) || obj == h.Burst.BurstSearchSelection_Popupmenu
     h.Burst.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
 elseif obj == h.Burst.BurstSearchSmoothing_Popupmenu
     UserValues.BurstSearch.SmoothingMethod = obj.Value;
+    if UserValues.BurstSearch.SmoothingMethod == 3
+        UserValues.BurstSearch.SmoothingMethod = 1;
+    end
     LSUserValues(1);
     BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
 end
@@ -8987,6 +8990,9 @@ elseif BurstIdentification == 2
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1);
     stop = find(valid(1:end-1)-valid(2:end)==1);
+elseif BurstIdentification == 3
+    threshold = M./T*1000; % in kHz
+    [start,stop] = get_changepoints(Photons,threshold);
 end
 clear valid;
 
@@ -9039,7 +9045,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     ChunkSize = 1; %1 minute
     T_preview = 60*ChunkSize/FileInfo.ClockPeriod;
     BAMethod = UserValues.BurstSearch.Method;
-    SmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+    SmoothingMethod =  UserValues.BurstSearch.SmoothingMethod;%h.Burst.BurstSearchSmoothing_Popupmenu.Value;
     
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons
