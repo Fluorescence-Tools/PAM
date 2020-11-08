@@ -68,11 +68,12 @@ end
 start = vertcat(start{:});
 stop = vertcat(stop{:});
 
-% if numel(stop) < numel(start)
-%     % last stop missing
-%     stop(end+1) = numel(dt);
-% end
-% if numel(start) < numel(stop)
-%     % first start is missing
-%     stop(1) = [];
-% end
+while numel(start) ~= numel(stop)
+    if numel(stop) < numel(start)
+        % last stop missing
+        start(end) = [];
+    elseif numel(start) < numel(stop)
+        % first start is missing
+        stop(1) = [];
+    end
+end
