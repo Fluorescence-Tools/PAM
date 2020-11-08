@@ -14,6 +14,7 @@ if ~exist(temp_dir,'dir')
     mkdir(temp_dir);
 end
 temp_filename = fullfile(temp_dir,'temp');
+temp_filename = [temp_filename '.dat'];
 % define temp file name
 file_ext = {'cp','ah','bic'};
 for i = 2:Nstates
@@ -31,15 +32,32 @@ for i = 1:(N_splits-1)
         dt_temp = dt((i-1)*split_photons+1 : i*split_photons);
     end
     fprintf('Number of photons: %i (%i of %i)\n',numel(dt_temp),i,N_splits);
-    get_changepoints_mex(dt_temp,...
-        SyncPeriod,alpha,ci,Nstates,temp_filename);
-    r = struct;
-    for f = 1:numel(file_ext)
-        fn = [temp_filename '.' file_ext{f}];
-        % read file into struct
-        r.(strrep(file_ext{f},'.','')) = dlmread(fn);
-        % delete file
-        delete(fn);
+    
+    if 0
+        % use the mex function (sometimes crashes, which is not
+        % recoverable)
+        get_changepoints_mex(dt_temp,...
+            SyncPeriod,alpha,ci,Nstates,temp_filename);
+    else
+        % call the function through the command line instead
+        % first, write the temporarily to the disc
+        dlmwrite(temp_filename,[0;dt_temp]);
+        % get exe location
+        exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint.exe'];
+        [status,cmd_out] = system([exe_loc ' ' temp_filename sprintf(' %d %.2f %.2f %i',SyncPeriod,alpha,ci,Nstates)], '-echo');
+        delete(temp_filename);
+    end
+    if status == 0
+        r = struct;
+        for f = 1:numel(file_ext)
+            fn = [temp_filename '.' file_ext{f}];
+            % read file into struct
+            r.(strrep(file_ext{f},'.','')) = dlmread(fn);
+            % delete file
+            delete(fn);
+        end
+    else % if no file was written
+        r = [];
     end
     result{i} = r;
 end
