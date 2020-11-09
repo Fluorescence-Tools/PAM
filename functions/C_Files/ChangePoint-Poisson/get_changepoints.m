@@ -7,7 +7,7 @@ global FileInfo PathToApp
 %%% Threshold is given in kHz
 SyncPeriod = FileInfo.SyncPeriod;
 Nstates = 5; % the number of intensity levels
-alpha = 0.05; % Type-I error rate alpha
+alpha = 0.01; % Type-I error rate alpha
 ci = 0.69; % selection confidence interval of 69%
 temp_dir = fullfile(PathToApp,'functions','temp');
 if ~exist(temp_dir,'dir')
