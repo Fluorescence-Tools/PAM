@@ -9,6 +9,8 @@ SyncPeriod = FileInfo.SyncPeriod;
 Nstates = 5; % the number of intensity levels
 alpha = 0.01; % Type-I error rate alpha
 ci = 0.69; % selection confidence interval of 69%
+include_sigma = true; % extend the burst range to include the confidence interval
+
 temp_dir = fullfile(PathToApp,'functions','temp');
 if ~exist(temp_dir,'dir')
     mkdir(temp_dir);
@@ -77,8 +79,13 @@ for i = 1:numel(result)
             d = diff(valid_regions);
             start_idx = d == 1;
             stop_idx = d == -1;
-            start{i} = result{i}.cp(start_idx,1)+(i-1)*split_photons;
-            stop{i} = result{i}.cp(stop_idx,1)+(i-1)*split_photons;
+            if ~include_sigma
+                start{i} = result{i}.cp(start_idx,1)+(i-1)*split_photons;
+                stop{i} = result{i}.cp(stop_idx,1)+(i-1)*split_photons;
+            else % extend range to include the sigma boundaries
+                start{i} = result{i}.cp(start_idx,2)+(i-1)*split_photons;
+                stop{i} = result{i}.cp(stop_idx,3)+(i-1)*split_photons;
+            end
         end
     end
 end
