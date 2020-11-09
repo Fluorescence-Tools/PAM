@@ -22,19 +22,32 @@ file_ext = {'cp','ah','bic'};
 for i = 2:Nstates
     file_ext{end+1} = sprintf('em.%i',i);
 end
+
+% get exe location
+exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint.exe'];
+if ~exist(exe_loc,'file')
+    disp('changepoint.exe not found. Please compile the executable.');
+end
+% get logfile location
+logfile_loc = [PathToApp filesep 'functions' filesep 'temp' filesep 'logfile.txt'];
+if exist(logfile_loc,'file')
+    % delete if exists
+    delete(logfile_loc);
+end
+
 % run analysis
 dt = diff(Photons);
 split_photons = 20000;
 N_splits = ceil(numel(dt)./split_photons);
 result = cell(N_splits,1);
+pid = cell(N_splits,1);
+fprintf('Detecting change points...\n'); b = 0;
 for i = 1:(N_splits-1)
     if i == N_splits-1 % combine the last two bins to avoid too small intervals
         dt_temp = dt((i-1)*split_photons+1 : end);
     else
         dt_temp = dt((i-1)*split_photons+1 : i*split_photons);
-    end
-    fprintf('Number of photons: %i (%i of %i)\n',numel(dt_temp),i,N_splits);
-    
+    end    
     if 0
         % use the mex function (sometimes crashes, which is not
         % recoverable)
@@ -43,22 +56,46 @@ for i = 1:(N_splits-1)
     else
         % call the function through the command line instead
         % first, write the temporarily to the disc
-        dlmwrite(temp_filename,[0;dt_temp]);
-        % get exe location
-        exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint.exe'];
-        [status,cmd_out] = system([exe_loc ' ' temp_filename sprintf(' %d %.2f %.2f %i',SyncPeriod,alpha,ci,Nstates)], '-echo');
-        delete(temp_filename);
+        temp_filename_unique = [temp_filename(1:end-4) '_' num2str(i) temp_filename(end-3:end)];
+        dlmwrite(temp_filename_unique,[0;dt_temp]);
+        [~,cmd_out] = system([exe_loc ' ' temp_filename_unique sprintf(' %d %.2f %.2f %i',SyncPeriod,alpha,ci,Nstates) ' >> ' logfile_loc ' & echo $!']);
+        delete(temp_filename_unique);
+        % store the process ID to kill it later
+        id = strsplit(cmd_out,'\n');
+        pid{i} = id{end-1};
     end
-    if status == 0
+    %%% update progress bar
+    p = floor(100*i/(N_splits-1)); % the progress in %
+    fprintf(repmat('\b',1,b));
+    text = sprintf(['|' repmat('-',1,p) repmat(' ',1,100-p) '| %i%%\n'],p);
+    fprintf(['|' repmat('-',1,p) repmat(' ',1,100-p) '| %i%%\n'],p);
+    b = numel(text);
+end
+
+fprintf('Waiting 10 seconds for subprocesses to finish...');
+pause(10); % wait for all processes to finish
+% kill all processes (routine sometimes hangs)
+for i = 1:numel(pid)
+    if ~isempty(pid{i})
+        [status,~] = system(['kill ' pid{i}]);
+        if status == 0
+            fprintf('Killed process with id %s before completion.\n',pid{i});
+        end
+    end
+end
+fprintf('Done.\n');
+
+for i = 1:(N_splits-1)
+    try
         r = struct;
         for f = 1:numel(file_ext)
-            fn = [temp_filename '.' file_ext{f}];
+            fn = [temp_filename(1:end-4)  '_' num2str(i) temp_filename(end-3:end) '.' file_ext{f}];
             % read file into struct
             r.(strrep(file_ext{f},'.','')) = dlmread(fn);
             % delete file
             delete(fn);
         end
-    else % if no file was written
+    catch % if no file was written
         r = [];
     end
     result{i} = r;
