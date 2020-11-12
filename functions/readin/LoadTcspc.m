@@ -951,7 +951,16 @@ switch (Type)
             end
             
         end
-        FileInfo.MeasurementTime = double(PhotonHDF5_Data.acquisiton_duration); %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        % read duration
+        dur_TCSPC = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        dur_HDF = double(PhotonHDF5_Data.acquisiton_duration);
+        % prefer metadata, but default to data-based determination if there
+        % is a large discrepancy.
+        if abs(dur_HDF-dur_TCSPC)/dur_TCSPC > 0.1
+            FileInfo.MeasurementTime = dur_TCSPC;
+        else
+            FileInfo.MeasurementTime = dur_HDF;
+        end        
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')
