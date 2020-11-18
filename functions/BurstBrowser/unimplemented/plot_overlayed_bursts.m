@@ -80,7 +80,7 @@ xh = xh-xh(ix_peak);
 
 % plot
 color = lines(2);
-figure('Position',[100,100,1000,400]);
+figure('Position',[100,100,1000,400],'Color',[1,1,1]);
 subplot(1,2,1); hold on;
 plot(xh(1:ix_peak+1),h(1:ix_peak+1),'LineWidth',2);
 plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2);
@@ -88,13 +88,13 @@ plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2);
 %plot(xh(numel(xh)/2+1:end),h(numel(xh)/2+1:end),'LineWidth',2);
 xlabel('time (ms)');
 ylabel('count rate [kHz]');
-set(gca,'LineWidth',2,'FontSize',18,'Box','on');
+set(gca,'LineWidth',2,'FontSize',18,'Box','on','Color',[1,1,1]);
 subplot(1,2,2); hold on;
 plot(-xh(ix_peak:-1:1),h(ix_peak:-1:1),'LineWidth',2,'Color',[color(1,:),1]);
 plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2,'Color',[color(2,:),1]);
 xlabel('time difference to mean arrival time (ms)');
 ylabel('count rate [kHz]');
-set(gca,'XScale','log','LineWidth',2,'FontSize',18,'Box','on');
+set(gca,'XScale','log','LineWidth',2,'FontSize',18,'Box','on','Color',[1,1,1]);
 
 do_fit = false;
 if do_fit
