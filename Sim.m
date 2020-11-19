@@ -661,7 +661,7 @@ h.Sim_Barrier = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers','Dynamic Restricted Zones','Dynamic Diffusion Barriers','Different Diffusion Parameters'},...
+    'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers','Dynamic Restricted Zones','Dynamic Diffusion Barriers','Different Diffusion Parameters','Nanopore'},...
     'Callback',@Sim_Settings,...
     'Position',[0.55 0.78 0.25 0.1]);
 if ismac
@@ -2341,19 +2341,25 @@ if ~advanced
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
                     SimData.Map = {1};
                 end
-            case {2,3,4,5,8} %%% Static Maps
+            case {2,3,4,5,8,9} %%% Static Maps
                 if isfield(SimData,'Map') && iscell(SimData.Map)
-                    SimData.Map{1} = double(SimData.Map{1});
-                    if size(SimData.Map{1},1)<BS(1) || size(SimData.Map{1},2)<BS(2)
-                        Map_Type = 1;
-                    else
-                        if size(SimData.Map{1},1)>BS(1)
-                            SimData.Map{1} = SimData.Map{1}(1:BS(1),:);
-                        end
-                        if size(SimData.Map{1},2)>BS(2)
-                            SimData.Map{1} = SimData.Map{1}(:,1:BS(1));
-                        end
-                        SimData.Map{1}(isnan(SimData.Map{1})) = 1;
+                    if Map_Type ~= 9 % 2D Maps
+                        SimData.Map{1} = double(SimData.Map{1});
+                        if size(SimData.Map{1},1)<BS(1) || size(SimData.Map{1},2)<BS(2)
+                            Map_Type = 1;
+                        else
+                            if size(SimData.Map{1},1)>BS(1)
+                                SimData.Map{1} = SimData.Map{1}(1:BS(1),:);
+                            end
+                            if size(SimData.Map{1},2)>BS(2)
+                                SimData.Map{1} = SimData.Map{1}(:,1:BS(2));
+                            end
+                            SimData.Map{1}(isnan(SimData.Map{1})) = 1;
+                        end                        
+                    elseif Map_Type == 9 % Special case - Nanopore
+                        SimData.Map{1} = ones(1000); % dummy map, not used later
+                        pore_thickness = 100; % pore thickness in nanometers
+                        pore_radius = 25; % pore radius in nanometers
                     end
                 else
                     Map_Type = 1;
@@ -2421,6 +2427,7 @@ if ~advanced
         %%% set random number seed
         rng(seed);
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
+        %for j = 1:NoP
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2432,7 +2439,15 @@ if ~advanced
             elseif Map_Type == 6
                 while SimData.Map{1}(floor(Pos(1))+1,floor(Pos(2))+1,1) == 0
                     Pos = (BS-1).*rand(1,3);
-                end            
+                end
+            elseif Map_Type == 9
+                % make sure all molecules are in the upper half
+                while Pos(3) < BS(3)/2 % molecules is below pore
+                    Pos(3) = (BS(3)-1).*rand(1,1);
+                end
+                %while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1,floor(Pos(3))+1) == 0
+                %    Pos = (BS-1).*rand(1,3);
+                %end
             end        
             Frametime = Simtime/Frames;
 
@@ -2445,7 +2460,7 @@ if ~advanced
                     Sel = 1;
                 end
 
-                %%% Puts partilces back into their areas, if areas moved
+                %%% Puts particles back into their areas, if areas moved
                 if k>1 && any(Map_Type == [6,7])
                     if SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2))+1) ~= SimData.Map{k}(floor(Pos(1)+1),floor(Pos(2)+1))
                         [X,Y] = find(SimData.Map{k} == SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2)+1)));
@@ -2454,21 +2469,36 @@ if ~advanced
                         Pos(2) = Y(Index(1));
                     end                
                 end
-
+                
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                [Photons,  MI, Channel, Pos] = DifSim(...
-                    Frametime, BS,... General Parameters
-                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
-                    D,Pos,... Particle parameters
-                    wr,wz,... Focus parameters
-                    dX,dY,dZ,... Focus shift parameters
-                    ExP,DetP,BlP,... %%% Probability parameters (Excitation, Detection and Bleaching)
-                    LT,... %%% Lifetime of the different colors
-                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
-                    uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
-                    Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+                if Map_Type ~= 9                
+                    [Photons,  MI, Channel, Pos] = DifSim(...
+                        Frametime, BS,... General Parameters
+                        Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
+                        D,Pos,... Particle parameters
+                        wr,wz,... Focus parameters
+                        dX,dY,dZ,... Focus shift parameters
+                        ExP,DetP,BlP,... %%% Probability parameters (Excitation, Detection and Bleaching)
+                        LT,... %%% Lifetime of the different colors
+                        FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                        uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
+                        Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+                else
+                    [Photons,  MI, Channel, Pos, PosX, PosY, PosZ] = DifSim_Nanopore_mac(...
+                        Frametime, BS,... General Parameters
+                        Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
+                        D,Pos,... Particle parameters
+                        wr,wz,... Focus parameters
+                        dX,dY,dZ,... Focus shift parameters
+                        ExP,DetP,BlP,... %%% Probability parameters (Excitation, Detection and Bleaching)
+                        LT,... %%% Lifetime of the different colors
+                        FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                        uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
+                        Map_Type, SimData.Map{Sel},...  %%% Type of barriers/quenching and barrier map
+                        pore_thickness, pore_radius);  %%% The nanopore parameters
+                end
                 %%% Channel is a 8 bit number that defines the exact photon type
                 %%% bits 0,1 for excitation laser
                 %%% bits 2,3 for excited dye
