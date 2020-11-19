@@ -114,9 +114,9 @@ void Simulate_Diffusion(
                         Pos[0] = New_Pos[0];
                         Pos[1] = New_Pos[1];
                         Pos[2] = New_Pos[2];
-                        Invalid_Pos = false;
-                        break;
-                    }                    
+                        Invalid_Pos = false;                        
+                    }
+                    break;
                 case 4: case 7: /// Transition Barriers with equal directional transition probabilities (Only in 2D)
                     New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
                     Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
