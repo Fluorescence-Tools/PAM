@@ -89,6 +89,8 @@ plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2);
 xlabel('time (ms)');
 ylabel('count rate [kHz]');
 set(gca,'LineWidth',2,'FontSize',18,'Box','on','Color',[1,1,1]);
+xlim([-10,10]);
+
 subplot(1,2,2); hold on;
 plot(-xh(ix_peak:-1:1),h(ix_peak:-1:1),'LineWidth',2,'Color',[color(1,:),1]);
 plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2,'Color',[color(2,:),1]);
@@ -104,7 +106,7 @@ if do_fit
     plot(-xh(ix_peak:-1:1),fit_before(-xh(ix_peak:-1:1)),'Color',color(1,:),'LineWidth',3);
     plot(xh(ix_peak+1:end),fit_after(xh(ix_peak+1:end)),'Color',color(2,:),'LineWidth',3);
 end
-%xlim([-5,10]);
+%xlim([-10,10]);
 %ylim([0,2500]);
 axis('tight');
 legend({'rise','fall'});
