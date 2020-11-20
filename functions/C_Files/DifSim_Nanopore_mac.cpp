@@ -74,6 +74,8 @@ void Simulate_Diffusion(
     //double r = 25; // the diameter of the nanopore
     //printf("Thickness: %.2f, Radius: %.2f\n",d,r);
     bool in_membrane;
+    bool in_pore;
+    double D_rel;
     
     for (i=0; i<SimTime; i++) 
     {
@@ -81,20 +83,40 @@ void Simulate_Diffusion(
         while (Invalid_Pos)
         {
             /// Particle movement /////////////////////////////////////////////
-            if (Map_Type != 8) /// Standard movement
-            {
-                New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
-                New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
-            }
-            else /// Position dependent diffusion
+            if (Map_Type == 8) /// Position dependent diffusion
             {
                 Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
                 New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*normal(mt); // Go one step in x direction
                 New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*normal(mt); // Go one step in y direction
+                if (Box[2] > 0) { New_Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+                else { Box[2] = 0; } // Puts particle inside plane
             }
-            if (Box[2] > 0) { New_Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
-            else { Box[2] = 0; } // Puts particle inside plane
-            
+            else if (Map_Type == 9) /// Nanopore
+            {
+                // the "map" is just the relative diffusion coefficient in the pore
+                // check if we are in the pore
+                D_rel = 1;
+                if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+d)
+                { // we are in the layer region
+                    if ( ((New_Pos[0]-Box[0]/2)*(New_Pos[0]-Box[0]/2) + (New_Pos[1]-Box[1]/2)*(New_Pos[1]-Box[1]/2)) < r*r)
+                    { // we are in the pore
+                        //printf("In the pore at %.2f %.2f %.2f. Relative diffusion coefficient: %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2],Map[0]);
+                        D_rel = Map[0];
+                    }
+                }                
+                New_Pos[0] = Pos[0] + sqrt(D_rel)*normal(mt); // Go one step in x direction
+                New_Pos[1] = Pos[1] + sqrt(D_rel)*normal(mt); // Go one step in y direction
+                if (Box[2] > 0) { New_Pos[2] = Pos[2] + sqrt(D_rel)*normal(mt); } // Go one step in z direction, if not 2D
+                else { Box[2] = 0; } // Puts particle inside plane
+            }
+            else  /// Standard movement
+            {
+                New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
+                New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+                if (Box[2] > 0) { New_Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+                else { Box[2] = 0; } // Puts particle inside plane
+            }
+                        
             /// Particle exits border /////////////////////////////////////////
             while ((New_Pos[0] < 0.0) || (New_Pos[0] > Box[0]) || (New_Pos[1] < 0.0) || (New_Pos[1] > Box[1]) || (New_Pos[2] < 0.0) || (New_Pos[2] > Box[2]))
             {
@@ -134,7 +156,7 @@ void Simulate_Diffusion(
                         Invalid_Pos = false;
                         break;
                     }
-                case 9: /// Diffusion with restricted zones (3D)
+                case 9: /// Directed diffusion through nanopore
                     in_membrane = false;
                     // check if we are in the pore layer
                     if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+d)
@@ -144,7 +166,10 @@ void Simulate_Diffusion(
                             in_membrane = true;
                             //printf("Invalid position at %.2f %.2f %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2]);
                         }
-                        else {printf("Pore crossing at %.2f %.2f %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2]);}
+                        else
+                        {
+                            //printf("Pore crossing at %.2f %.2f %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2]);
+                        }
                     }
                     if (!in_membrane) 
                     {

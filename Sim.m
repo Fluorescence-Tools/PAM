@@ -2355,9 +2355,9 @@ if ~advanced
                                 SimData.Map{1} = SimData.Map{1}(:,1:BS(2));
                             end
                             SimData.Map{1}(isnan(SimData.Map{1})) = 1;
-                        end                        
+                        end                          
                     elseif Map_Type == 9 % Special case - Nanopore
-                        SimData.Map{1} = ones(1000); % dummy map, not used later
+                        SimData.Map{1} = 0.1; % Relative diffusion coefficient in the pore D_pore/D0
                         pore_thickness = 100; % pore thickness in nanometers
                         pore_radius = 25; % pore radius in nanometers
                     end
@@ -2426,8 +2426,8 @@ if ~advanced
         start(Update)
         %%% set random number seed
         rng(seed);
-        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
-        %for j = 1:NoP
+        %parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
+        for j = 1:NoP
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
