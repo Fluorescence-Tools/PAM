@@ -9045,6 +9045,7 @@ end
                 profile = 'MPEG-4';
                 v = VideoWriter(fullfile(PathName, FileName), profile);
                 v.FrameRate = 5;
+                v.Quality = 100;
                 open(v)
                 %Write the matrix of data A to the video file.
                 
