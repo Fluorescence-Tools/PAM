@@ -2059,10 +2059,22 @@ if Mode==0 %%% Loads user values
     P.BurstBrowser.Settings.SaveFileExportFigure = S.BurstBrowser.Settings.SaveFileExportFigure;
     %%% Check, if BurstBrowser.Settings.PDATimeBin subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PDATimeBin')
-        S.BurstBrowser.Settings.PDATimeBin=1;
+        S.BurstBrowser.Settings.PDATimeBin='1';
         disp('UserValues.BurstBrowser.Settings.PDATimeBin was incomplete');
     end
     P.BurstBrowser.Settings.PDATimeBin = S.BurstBrowser.Settings.PDATimeBin;
+    %%% Check, if BurstBrowser.Settings.TimeWindow_TimeBin subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'TimeWindow_TimeBin')
+        S.BurstBrowser.Settings.TimeWindow_TimeBin='1,2,3';
+        disp('UserValues.BurstBrowser.Settings.TimeWindow_TimeBin was incomplete');
+    end
+    P.BurstBrowser.Settings.TimeWindow_TimeBin = S.BurstBrowser.Settings.TimeWindow_TimeBin;
+    %%% Check, if BurstBrowser.Settings.TimeWindow_PhotonThreshold subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'TimeWindow_PhotonThreshold')
+        S.BurstBrowser.Settings.TimeWindow_PhotonThreshold=50;
+        disp('UserValues.BurstBrowser.Settings.TimeWindow_PhotonThreshold was incomplete');
+    end
+    P.BurstBrowser.Settings.TimeWindow_PhotonThreshold = S.BurstBrowser.Settings.TimeWindow_PhotonThreshold;
     %%% Check, if BurstBrowser.Settings.PDA_ExportLifetime subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PDA_ExportLifetime')
         S.BurstBrowser.Settings.PDA_ExportLifetime=false;
