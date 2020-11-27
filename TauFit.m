@@ -1853,13 +1853,22 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.TauFit.Name = ['TauFit - Loaded file: ' FileName{1}];
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'},'Choose data file...',UserValues.File.TauFitPath);
+                    filetypes = {'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'};
+                    if UserValues.TauFit.FileTypeTXT == 2
+                        filetypes = flipud(filetypes);
+                    end
+                    [FileName, PathName, FilterIndex] = uigetfile_with_preview(filetypes,'Choose data file...',UserValues.File.TauFitPath);
                     if isempty(FileName)
                         return;
                     end
                     if FilterIndex == 0
                         return;
                     end
+                    if UserValues.TauFit.FileTypeTXT == 2
+                        %%% switch again
+                        FilterIndex = 3-FilterIndex; % 1->2, 2->1
+                    end
+                    UserValues.TauFit.FileTypeTXT  = FilterIndex;
                     UserValues.File.TauFitPath = PathName;
                     if ~iscell(FileName)
                         FileName = {FileName};

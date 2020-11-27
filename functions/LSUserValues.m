@@ -1441,6 +1441,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.DonorOnlyReferenceSource was incomplete');
     end
     P.TauFit.DonorOnlyReferenceSource = S.TauFit.DonorOnlyReferenceSource;
+    %%% Checks, if TauFit.FileTypeTXT exists
+    if ~isfield(S.TauFit,'FileTypeTXT')
+        S.TauFit.FileTypeTXT=1;
+        disp('UserValues.TauFit.FileTypeTXT was incomplete');
+    end
+    P.TauFit.FileTypeTXT = S.TauFit.FileTypeTXT;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
