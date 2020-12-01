@@ -1764,7 +1764,7 @@ LSUserValues(1)
 %%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(obj,~)
-global UserValues TauFitData FileInfo TcspcData PamMeta
+global UserValues TauFitData FileInfo PamMeta
 h = guidata(findobj('Tag','TauFit'));
 
 %%% check how we got here
@@ -1968,7 +1968,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
             end
         case h.LoadData_Button
             PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
-            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
+            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;           
     end
     
     %%% set the channel variable
@@ -1977,7 +1977,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     %%% Microtime Histograms
     TauFitData.hMI_Par{chan} = TauFitData.External.MI_Hist{PIEChannel_Par};
     TauFitData.hMI_Per{chan} = TauFitData.External.MI_Hist{PIEChannel_Per};
-    
+        
     %%% Read out the Microtime Histograms of the IRF for the two channels
     TauFitData.hIRF_Par{chan} = TauFitData.External.IRF{PIEChannel_Par}';
     TauFitData.hIRF_Per{chan} = TauFitData.External.IRF{PIEChannel_Per}';
@@ -1997,6 +1997,16 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     %%% Generate XData
     TauFitData.XData_Par{chan} = 1:numel(TauFitData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
     TauFitData.XData_Per{chan} = 1:numel(TauFitData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
+    
+    %%% if rebinning is performed, store as original data
+    if isfield(TauFitData,'OriginalHistograms')
+        TauFitData.OriginalHistograms.hMI_Par{chan} = TauFitData.hMI_Par{chan};
+        TauFitData.OriginalHistograms.hMI_Per{chan} = TauFitData.hMI_Per{chan};
+        TauFitData.OriginalHistograms.hIRF_Par{chan} = TauFitData.hIRF_Par{chan};
+        TauFitData.OriginalHistograms.hIRF_Per{chan} = TauFitData.hIRF_Per{chan};
+        TauFitData.OriginalHistograms.hScat_Par{chan} = TauFitData.hScat_Par{chan};
+        TauFitData.OriginalHistograms.hScat_Per{chan} = TauFitData.hScat_Per{chan};
+    end
     
     %%% Update PIEchannelSelection
     UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
@@ -8041,7 +8051,7 @@ switch MEM_mode
         for i = 1:size(ps,1)
             model_all(i,:) = (decay_ind'*ps(i,:)')'+decay_offset;
         end
-        if ~linear_R
+        if strcmp(mode,'dist') && ~linear_R
             %%% reweight the distribution for R binning
             w = gradient(tau)./gradient(R); % binning correction
             norm_ps = sum(ps,2); % area
