@@ -26,7 +26,7 @@ void Simulate_Diffusion(
         double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64_t *NPhotons, double *PosX, double *PosY, double *PosZ,
         unsigned long Time,
         double Map_Type, double *Map,
-        double d, double r)        
+        double thickness, double radius, double penetration)        
 {
     /// Counting variable definition
 	__int64_t i = 0;
@@ -96,9 +96,9 @@ void Simulate_Diffusion(
                 // the "map" is just the relative diffusion coefficient in the pore
                 // check if we are in the pore
                 D_rel = 1;
-                if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+d)
+                if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+thickness)
                 { // we are in the layer region
-                    if ( ((New_Pos[0]-Box[0]/2)*(New_Pos[0]-Box[0]/2) + (New_Pos[1]-Box[1]/2)*(New_Pos[1]-Box[1]/2)) < r*r)
+                    if ( ((New_Pos[0]-Box[0]/2)*(New_Pos[0]-Box[0]/2) + (New_Pos[1]-Box[1]/2)*(New_Pos[1]-Box[1]/2)) < radius*radius)
                     { // we are in the pore
                         //printf("In the pore at %.2f %.2f %.2f. Relative diffusion coefficient: %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2],Map[0]);
                         D_rel = Map[0];
@@ -159,9 +159,9 @@ void Simulate_Diffusion(
                 case 9: /// Directed diffusion through nanopore
                     in_membrane = false;
                     // check if we are in the pore layer
-                    if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+d)
+                    if ( New_Pos[2] > Box[2]/2 && New_Pos[2] < Box[2]/2+thickness)
                     { // we are in the layer region
-                        if ( ((New_Pos[0]-Box[0]/2)*(New_Pos[0]-Box[0]/2) + (New_Pos[1]-Box[1]/2)*(New_Pos[1]-Box[1]/2)) > r*r)
+                        if ( ((New_Pos[0]-Box[0]/2)*(New_Pos[0]-Box[0]/2) + (New_Pos[1]-Box[1]/2)*(New_Pos[1]-Box[1]/2)) > radius*radius)
                         { // we are not in the pore
                             in_membrane = true;
                             //printf("Invalid position at %.2f %.2f %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2]);
@@ -300,11 +300,11 @@ void Simulate_Diffusion(
                 {
                     /// Calculate absolute excitation probability
                     // if above pore, set to 0
-                    if (Pos[2] > Box[2]/2+d) {
+                    if (Pos[2] > Box[2]/2+thickness) {
                         Ex = 0;
                     }
-                    else if (Pos[2] < Box[2]/2+d && Pos[2] > Box[2]/2) {// if in pore, use evanescent field
-                        Ex = ExP[4*j+k]*exp(-(Pos[2]-Box[2]/2)/(d/2));
+                    else if (Pos[2] < Box[2]/2+thickness && Pos[2] > Box[2]/2) {// if in pore, use evanescent field
+                        Ex = ExP[4*j+k]*exp(-(Pos[2]-Box[2]/2)/penetration);
                     }
                     else { // otherwise, Gaussian
                         Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
@@ -421,8 +421,8 @@ void Simulate_Diffusion(
 ///////////////////////////////////////////////////////////////////////////
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=24)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","22 inputs required."); }
+    if(nrhs!=25)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","25 inputs required."); }
     //if (nlhs!=4)
     //{ mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","4 outputs required."); }
     
@@ -459,7 +459,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     double pore_thickness = mxGetScalar(prhs[22]);
     double pore_radius = mxGetScalar(prhs[23]);
-
+    double pore_penetration = mxGetScalar(prhs[24]);
+    
     double *Macrotimes;
     Macrotimes = (double*) mxCalloc(4*SimTime, sizeof(double));
     unsigned short *Microtimes;
@@ -486,7 +487,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Macrotimes, Microtimes, Channel, NPhotons, PosX, PosY, PosZ,// Output parameters
         Time, // Additional random seed value
         Map_Type, Map, // Map for quenching/barriers etc.
-        pore_thickness, pore_radius); // Nanopore parameters
+        pore_thickness, pore_radius, pore_penetration); // Nanopore parameters
     const mwSize NP[]={static_cast<mwSize>(NPhotons[0]),1};
     const mwSize SizePos[]={3,1};
      
