@@ -77,6 +77,9 @@ switch obj
     case h.TimeBinPDAEdit
         % store it as a string cause it might not be a number but a range
         UserValues.BurstBrowser.Settings.PDATimeBin = obj.String;
+    case h.TimeBin_TimeWindow_Edit
+        % store it as a string cause it might not be a number but a range
+        UserValues.BurstBrowser.Settings.TimeWindow_TimeBin = obj.String;
     case h.CompareFRETHist_Waterfall
         UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall = obj.Value;
     case h.MultiPlot_PlotType

@@ -8,12 +8,14 @@ h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 %%% query photon threshold
-threshold = inputdlg({'Minimum number of photons'},'Set threshold',[1 45],{'50'},'on');
+threshold = inputdlg({'Minimum number of photons'},'Set threshold',[1 45],{num2str(UserValues.BurstBrowser.Settings.TimeWindow_PhotonThreshold)},'on');
 if isempty(threshold)
     return;
 else
     threshold = str2double(threshold{1});
 end
+UserValues.BurstBrowser.Settings.TimeWindow_PhotonThreshold = threshold;
+
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
@@ -25,12 +27,13 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
-xProx = linspace(-0.1,1.1,61);
-timebin = {10E-3,5E-3,2E-3,1E-3,0.5E-3,0.25E-3};
+xProx = linspace(-0.1,1.1,UserValues.BurstBrowser.Display.NumberOfBinsX+1);
+timebin = 1E-3*str2num(UserValues.BurstBrowser.Settings.TimeWindow_TimeBin); %{10E-3,5E-3,2E-3,1E-3,0.5E-3,0.25E-3};
+Hist = cell(numel(timebin),1);
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
-    duration = timebin{t}/BurstData{file}.ClockPeriod;
+    duration = timebin(t)/BurstData{file}.ClockPeriod;
     %%% Get the maximum number of bins possible in data set
     max_duration = double(ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration));
     %convert absolute macrotimes to relative macrotimes
@@ -84,10 +87,11 @@ for t = 1:numel(timebin)
         NF = NFP + NFS;
         NR = NRP + NRS;
     end
-    valid = (NG+NF+NR) > threshold; NG = NG(valid); NF = NF(valid); NR = NR(valid);
-    NG = NG - timebin{t}.*(BurstData{file}.Background.Background_GGpar+BurstData{file}.Background.Background_GGperp);
-    NF = NF - timebin{t}.*(BurstData{file}.Background.Background_GRpar+BurstData{file}.Background.Background_GRperp);
-    NR = NR - timebin{t}.*(BurstData{file}.Background.Background_RRpar+BurstData{file}.Background.Background_RRperp);
+    valid = (NG+NF) > threshold;%(NG+NF+NR) > threshold;
+    NG = NG(valid); NF = NF(valid); NR = NR(valid);
+    NG = NG - timebin(t).*(BurstData{file}.Background.Background_GGpar+BurstData{file}.Background.Background_GGperp);
+    NF = NF - timebin(t).*(BurstData{file}.Background.Background_GRpar+BurstData{file}.Background.Background_GRperp);
+    NR = NR - timebin(t).*(BurstData{file}.Background.Background_RRpar+BurstData{file}.Background.Background_RRperp);
     NF = NF - BurstData{1, 1}.Corrections.CrossTalk_GR.*NG - BurstData{1, 1}.Corrections.DirectExcitation_GR.*NR;
     Prox = NF./(BurstData{1, 1}.Corrections.Gamma_GR.*NG+NF);
     
@@ -111,19 +115,20 @@ xlabel('FRET efficiency');
 ylabel('occurrence (norm.)');
 xlim([-0.1,1.1]);
 for i = 1:numel(timebin)
-    leg{i} = [num2str(timebin{i}*1000) ' ms'];
+    leg{i} = [num2str(timebin(i)*1000) ' ms'];
 end
 legend(leg,'Box','off');
 
 %%% also make image plot
-Hist = flipud(vertcat(Hist{1:6}));
+Hist = flipud(vertcat(Hist{:}));
 f2 = figure('Color',[1,1,1]);
 f2.Position(1) = f1.Position(1) +  f1.Position(3);
-im = imagesc(xProx,fliplr(horzcat(timebin{1:6}))*1000,Hist);
+im = imagesc(xProx,timebin*1000,Hist);
 ax = gca;
 ax.YDir = 'normal';
 ax.FontSize = 20;
 xlabel('FRET efficiency');
 ylabel('time bin [ms]');
-ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),timebin,'UniformOutput',false)');
+ax.YTick = 1:numel(timebin);
+ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),num2cell(timebin),'UniformOutput',false)');
 Progress(1,h.Progress_Axes,h.Progress_Text);
