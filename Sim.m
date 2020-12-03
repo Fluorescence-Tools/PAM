@@ -2606,7 +2606,7 @@ if ~advanced
                         uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
                         Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 else
-                    [Photons,  MI, Channel, Pos, PosX, PosY, PosZ] = DifSim_Nanopore_mac(...
+                    [Photons,  MI, Channel, Pos, PosX, PosY, PosZ] = DifSim_Nanopore(...
                         Frametime, BS,... General Parameters
                         Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
                         D,Pos,... Particle parameters
