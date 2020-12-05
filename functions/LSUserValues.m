@@ -1272,6 +1272,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.IRFLength was wrong size');
     end
     P.TauFit.IRFLength = S.TauFit.IRFLength;
+    %%% Checks, if TauFit.IRFBackground exists
+    %%% (This field contains the IRF Background editbox/slider value)
+    if ~isfield(S.TauFit,'IRFBackground')
+        S.TauFit.IRFBackground={0,0,0,0,0};
+        disp('UserValues.TauFit.IRFBackground was incomplete');
+    end
+    P.TauFit.IRFBackground = S.TauFit.IRFBackground;
     %%% Checks, if TauFit.IRFShift exists
     %%% (This field contains the IRF Shift editbox/slider value)
     if ~isfield(S.TauFit,'IRFShift')
