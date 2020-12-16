@@ -204,3 +204,16 @@ if isfield(BurstData{file},'AdditionalParameters')
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'BVA standard deviation')) = BurstData{file}.AdditionalParameters.BVAStandardDeviation;
     end
 end
+
+%%% add time difference to previous event
+if ~sum(strcmp(BurstData{file}.NameArray,'Time difference to previous burst [ms]'))
+    BurstData{file}.NameArray{end+1} = 'Time difference to previous burst [ms]';
+    mt = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Mean Macrotime [s]'));
+    BurstData{file}.DataArray(:,end+1) = [NaN;mt(2:end)-mt(1:end-1)]*1000;
+end
+%%% add time difference to next event
+if ~sum(strcmp(BurstData{file}.NameArray,'Time difference to next burst [ms]'))
+    BurstData{file}.NameArray{end+1} = 'Time difference to next burst [ms]';
+    mt = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Mean Macrotime [s]'));
+    BurstData{file}.DataArray(:,end+1) = [abs(mt(1:end-1)-mt(2:end));NaN]*1000;
+end
