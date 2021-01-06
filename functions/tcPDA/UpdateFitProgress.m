@@ -15,6 +15,9 @@ stop = false;
 if(strcmp(state,'init')) 
         fig = findobj('Name','Optimization PlotFcns');
         if isempty(fig)
+            fig = findobj('Name','Optimization Plot Function');
+        end
+        if isempty(fig)
             fig = findobj('Name','Pattern Search');
         end
         fig.Visible = 'off';
