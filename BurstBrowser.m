@@ -727,7 +727,7 @@ if isempty(hfig)
     h.RemoveFileMenuItem = javax.swing.JMenuItem('Remove File');
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
-    h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
+    h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern for fFCS');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
     h.ReprocessTimeWindow = javax.swing.JMenuItem('Time Window (Reprocess)');
     %h.EvsTauConfInt = javax.swing.JMenuItem('E vs. Tau (Conf. Int.)');
@@ -5131,7 +5131,7 @@ if isempty(hfig)
         'Callback',@Update_fFCS_GUI,...
         'FontSize',fontsize_normal);
     
-    %%% Button to Update Microtime Histograms
+    %%% Button to Update Microtime Histograms    
     h.Plot_Microtimes_button = uicontrol(...
         'Style','pushbutton',...
         'Tag','Plot_Microtimes_button',...
@@ -5143,7 +5143,7 @@ if isempty(hfig)
         'ForegroundColor',Look.Fore,...
         'BackgroundColor',Look.Control,...
         'Callback',@Update_MicrotimeHistogramsfFCS);
-    
+
     %%% Button to calculate filters
     h.Calc_fFCS_Filter_button = uicontrol(...
         'Style','pushbutton',...
