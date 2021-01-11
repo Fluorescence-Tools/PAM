@@ -1534,6 +1534,7 @@ SimData.General(1).IRFWidth = 250;
 SimData.General(1).HeterogeneityUpdate = 10;
 SimData.General(1).LinkerWidth = 5;
 SimData.General(1).DynamicRate = 0;
+
 SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
 SimData.Species(1).Color = 1;
@@ -1580,6 +1581,12 @@ SimData.Species(1).DistanceWidth(4,1) = 5;
 SimData.Species(1).DistanceWidth(3,2) = 5;
 SimData.Species(1).DistanceWidth(4,2) = 5;
 SimData.Species(1).DistanceWidth(4,3) = 5;
+
+SimData.Species(1).NanoporeDiameter = 50;
+SimData.Species(1).NanoporeThickness = 100;
+SimData.Species(1).RelativePoreDiffusion = 100;
+SimData.Species(1).NanoporePenetration = 25;
+
 
 SimData.General(1).Species = SimData.Species(1);
 
@@ -2291,7 +2298,11 @@ switch mode
                 h.Sim_Ani{i,j}.String = num2str(SimData.Species(Sel).Aniso(i,j));
             end
         end
-
+        h.Sim_Nanopore_RelativeDiffusion.String = num2str(SimData.Species(Sel).RelativePoreDiffusion);
+        h.Sim_NanoporeDiameter.String = num2str(SimData.Species(Sel).NanoporeDiameter);
+        h.Sim_NanoporePenetration.String = num2str(SimData.Species(Sel).NanoporePenetration);
+        h.Sim_NanoporeThickness.String = num2str(SimData.Species(Sel).NanoporeThickness);
+        
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
         Update_Concentration(Sel,h.Sim_File_List.Value);
@@ -2546,8 +2557,8 @@ if ~advanced
         start(Update)
         %%% set random number seed
         rng(seed);
-        %parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
-        for j = 1:NoP
+        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
+        %for j = 1:NoP
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2606,7 +2617,7 @@ if ~advanced
                         uint32(seed+k+j),...%%% Uses seed, frame and particle to have more precision of the random seed (second resolution)
                         Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 else
-                    [Photons,  MI, Channel, Pos, PosX, PosY, PosZ] = DifSim_Nanopore(...
+                    [Photons,  MI, Channel, Pos] = DifSim_Nanopore(...
                         Frametime, BS,... General Parameters
                         Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
                         D,Pos,... Particle parameters
