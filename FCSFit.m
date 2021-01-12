@@ -1988,9 +1988,13 @@ for i=1:size(FCSMeta.Plots,1)
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
         if ~strcmp(FCSMeta.DataType,'FRET') && isempty(strfind(FCSMeta.DataType,'nsFCS'))
-            x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000); %plot fit function in higher binning than data!
+            x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000)'; %plot fit function in higher binning than data!
         else %%% FRET or nsFCS data %if strcmp(FCSMeta.DataType,'FRET') || ~isempty(strfind(FCSMeta.DataType,'nsFCS'))
-            x = linspace(FCSMeta.Data{i,1}(1),FCSMeta.Data{i,1}(end),10000); %plot fit function in higher binning than data!  
+            if strcmp(FCSMeta.DataType,'FRET')
+                x = linspace(FCSMeta.Data{i,1}(1),FCSMeta.Data{i,1}(end),10000)'; %plot fit function in higher binning than data!  
+            else
+                x = FCSMeta.Data{i,1}; % for nsFCS, binning is usually fine enough
+            end
         end
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
