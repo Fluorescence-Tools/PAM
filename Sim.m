@@ -2305,6 +2305,7 @@ switch mode
         
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
+        Sim_Settings(h.Sim_Barrier,[]);
         Update_Concentration(Sel,h.Sim_File_List.Value);
 end
 
