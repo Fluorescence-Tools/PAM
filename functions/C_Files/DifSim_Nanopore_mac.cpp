@@ -23,7 +23,7 @@ void Simulate_Diffusion(
         double *ExP, double *DetP, double *BlP,
         double *LT,
         double *Rates, double *Cross,        
-        double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64_t *NPhotons, double *PosX, double *PosY, double *PosZ,
+        double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64_t *NPhotons, //double *PosX, double *PosY, double *PosZ,
         unsigned long Time,
         double Map_Type, double *Map,
         double thickness, double radius, double penetration)        
@@ -174,9 +174,9 @@ void Simulate_Diffusion(
                     if (!in_membrane) 
                     {
                         //printf("Valid position at %.2f %.2f %.2f\n",New_Pos[0],New_Pos[1],New_Pos[2]);
-                        PosX[i] = New_Pos[0];
-                        PosY[i] = New_Pos[1];
-                        PosZ[i] = New_Pos[2];
+                        //PosX[i] = New_Pos[0];
+                        //PosY[i] = New_Pos[1];
+                        //PosZ[i] = New_Pos[2];
                         Pos[0] = New_Pos[0];
                         Pos[1] = New_Pos[1];
                         Pos[2] = New_Pos[2];
@@ -467,12 +467,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Microtimes = (unsigned short*) mxCalloc(4*SimTime, sizeof(unsigned short));
     unsigned char *Channel;
     Channel = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));    
-    double *PosX;
-    PosX = (double*) mxCalloc(4*SimTime, sizeof(double));
-    double *PosY;
-    PosY = (double*) mxCalloc(4*SimTime, sizeof(double));
-    double *PosZ;
-    PosZ = (double*) mxCalloc(4*SimTime, sizeof(double));
+    //double *PosX;
+    //PosX = (double*) mxCalloc(4*SimTime, sizeof(double));
+    //double *PosY;
+    //PosY = (double*) mxCalloc(4*SimTime, sizeof(double));
+    //double *PosZ;
+    //PosZ = (double*) mxCalloc(4*SimTime, sizeof(double));
     __int64_t *NPhotons;
     NPhotons=(__int64_t*) mxCalloc(1, sizeof(__int64_t));
     
@@ -484,7 +484,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         ExP, DetP, BlP, // Excitation, Detection and Bleching Probabilities
         LT, // Lifetime
         Rates, Cross, // Parameter containing FRET/Crosstalk rates
-        Macrotimes, Microtimes, Channel, NPhotons, PosX, PosY, PosZ,// Output parameters
+        Macrotimes, Microtimes, Channel, NPhotons, //PosX, PosY, PosZ,// Output parameters
         Time, // Additional random seed value
         Map_Type, Map, // Map for quenching/barriers etc.
         pore_thickness, pore_radius, pore_penetration); // Nanopore parameters
@@ -502,16 +502,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[2] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
     plhs[3] = mxCreateNumericArray(2, SizePos, mxDOUBLE_CLASS, mxREAL);
     
-    const mwSize NT[]={static_cast<mwSize>(SimTime),1};        
-    plhs[4] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
-    plhs[5] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
-    plhs[6] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
+    //const mwSize NT[]={static_cast<mwSize>(SimTime),1};        
+    //plhs[4] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
+    //plhs[5] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
+    //plhs[6] = mxCreateNumericArray(2, NT, mxDOUBLE_CLASS, mxREAL);
     
     mxSetData(plhs[0], Macrotimes);
     mxSetData(plhs[1], Microtimes);
     mxSetData(plhs[2], Channel);
     mxSetData(plhs[3], Final_Pos);
-    mxSetData(plhs[4], PosX);
-    mxSetData(plhs[5], PosY);   
-    mxSetData(plhs[6], PosZ);
+    //mxSetData(plhs[4], PosX);
+    //mxSetData(plhs[5], PosY);   
+    //mxSetData(plhs[6], PosZ);
 }
