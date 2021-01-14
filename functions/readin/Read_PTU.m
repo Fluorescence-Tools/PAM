@@ -366,7 +366,136 @@ switch TTResultFormat_TTTRRecType
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);
         dtime = dtime(ValidIndices);
+        
+    case rtHydraHarpT2 %%% T2 Version 1 read-in
+        
+        Header.Measurement_SubMode = Measurement_SubMode;
 
+        Header.PixX = [];
+        Header.PixY = [];
+        Header.bidir = [];
+        Header.FrameStartMarker = [];
+        Header.LineStartMarker = [];
+        Header.LineStopMarker = [];
+        Header.FrameStart = [];
+        Header.LineStart = [];
+        Header.LineStop = [];
+        Header.Frames = [];
+        Header.PixResol = [];
+        Header.SinCorrection = [];
+        
+        if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
+            Header.PixX = ImgHdr_PixX; end
+        if exist ('ImgHdr_PixY' , 'var') % Number of pixels in the y direction
+            Header.PixY =  ImgHdr_PixY; end
+        if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
+            Header.bidir = ImgHdr_BiDirect; end
+            if Header.bidir
+                msgbox('Bidirectional data cannot be loaded at this point!'); return
+            end
+        if exist ('ImgHdr_Frame', 'var') % frame bit in 6-bit CH entry
+            Header.FrameStartMarker = ImgHdr_Frame; end
+        if exist ('ImgHdr_LineStart', 'var') % linestart bit in 6-bit CH entry
+            Header.LineStartMarker = ImgHdr_LineStart;  end
+        if exist ('ImgHdr_LineStop', 'var') % linestop bit in 6-bit CH entry
+            Header.LineStopMarker = ImgHdr_LineStop;  end
+        if exist ('NumberOfFrames', 'var')
+            Header.Frames = NumberOfFrames; end
+        if exist ('ImgHdr_PixResol', 'var')
+            Header.PixResol = ImgHdr_PixResol; end
+        if exist ('ImgHdr_SinCorrection', 'var')
+            Header.SinCorrection = ImgHdr_SinCorrection; end
+        
+        % marker bit locations, when acquired by Leuven homebuilt LSM
+        if strcmp(CreatorSW_Name,'HydraHarp AcqUI')
+            % Select the custom Leuven_PTU read-in routine and custom datatype!
+            Header.LineStartMarker = 2; %linestarts and -stops are both in here!
+            Header.FrameStartMarker = 1; %framestarts and -stops are both in here!
+        elseif strcmp(CreatorSW_Name,'Imspector')
+            Header.LineStartMarker = 1;
+            Header.LineStopMarker = 2;
+            Header.FrameStartMarker = 3;
+        elseif strcmp(CreatorSW_Name,'SymPhoTime 64')
+            if exist('ImgHdr_LineStart','var')
+                Header.LineStartMarker = ImgHdr_LineStart;
+                Header.LineStopMarker = ImgHdr_LineStop;
+                Header.FrameStartMarker = ImgHdr_Frame;
+            end
+        end
+        
+
+        Version = 1;
+        T2WRAPAROUND_V1=33552000;
+        T2WRAPAROUND_V2=33554432; % = 2^25  IMPORTANT! THIS IS NEW IN FORMAT V2.0
+        
+        Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        if Chunkwise
+            if filesize > 2E9
+                filesize = 2E9;
+                msgbox('Maximum filesize reached. Loading ~2 GB...', 'Warning','warn');
+                T2Record = zeros(filesize/4,1);
+                fileChunks = ceil(filesize/NoE);
+                for i = 1:fileChunks
+                    T2Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+            else
+                fileChunks = ceil(filesize/NoE);
+                T2Record = zeros(NoE/4*(fileChunks-1),1);
+                for i = 1:fileChunks-1
+                    T2Record((i-1)*NoE/4+1:i*(NoE/4)) = fread(fid, NoE/4, 'ubit32');     % all 32 bits:
+                end
+                T2Record = [T2Record;fread(fid, NoE/4, 'ubit32')];
+            end
+        else
+            T2Record = fread(fid, Inf, 'ubit32');     % all 32 bits
+        end
+        
+        Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        
+        % microtime, MI
+        dtime = uint16(bitand(bitshift(T2Record,-10),33554431));  % the last 25 bits:
+        %   the dtime unit depends on "Resolution" that can be obtained from header
+        
+        Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        
+        % see CHANNEL
+        channel = int8(bitand(bitshift(T2Record,-25),63));   % the next 6 bits
+        
+        Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        
+        special = logical(bitand(bitshift(T2Record,-31),1));   % the last bit:
+        
+        clear T2Record
+        
+        Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        
+        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection( (special == 1) & (channel == 63) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
+%         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
+%             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
+%         end
+        OverflowCorrection = T2WRAPAROUND_V1.*cumsum(OverflowCorrection);
+        
+        % all timetags
+        TimeTag = double(dtime)'+OverflowCorrection;
+        
+        % imaging marker timetags
+        if ~isempty(Header.FrameStartMarker)
+            Header.FrameStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.FrameStartMarker));
+        end
+        if ~isempty(Header.LineStartMarker)
+            Header.LineStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStartMarker));
+        end
+        if ~isempty(Header.LineStopMarker)
+            Header.LineStop = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStopMarker));
+        end
+        
+        % photon timetags
+        ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
+        TimeTag = double(dtime(ValidIndices))' + OverflowCorrection(ValidIndices);
+        channel = channel(ValidIndices);
+%         dtime = dtime(ValidIndices);
+        dtime = ones(length(channel), 1);
     case rtPicoHarpT3
         
         Header.Measurement_SubMode = Measurement_SubMode;

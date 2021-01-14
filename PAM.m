@@ -4523,7 +4523,11 @@ if any(mode==4)
         h.Plots.MI_All(numel(PamMeta.MI_Hist)+1:end)=[];
         cellfun(@delete,Unused)
     end
-    h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins];       
+    if FileInfo.MI_Bins == 1 % T2 workaround
+        h.MI.All_Axes.XLim = [0 FileInfo.MI_Bins];
+    else
+        h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins]; 
+    end
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
         if ~isempty(h.Plots.MI_All{i}) && isvalid(h.Plots.MI_All{i})
@@ -4552,7 +4556,11 @@ if any(mode==4)
             h.Plots.MI_Ind{i}.YData=PamMeta.MI_Hist{UserValues.Detector.Plots(i)};
             h.Plots.MI_Ind{i}.Color=UserValues.Detector.Color(UserValues.Detector.Plots(i),:);
             %%% Set XLim to Microtime Range
-            h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
+            if FileInfo.MI_Bins == 1 % T2 workaround
+                h.Plots.MI_Ind{i}.Parent.XLim = [0 FileInfo.MI_Bins];
+            else
+                h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
+            end
         end
     end
     %%% Resets PIE patch scale
@@ -4751,6 +4759,9 @@ if any(mode==6)
     Pha=PamMeta.MI_Hist{Det}(From:To);
     %h.Plots.Phasor.YData=(Pha-min(Pha))/(max(Pha)-min(Pha));
     h.Plots.Phasor.YData=Pha/max(Pha);
+    if To == From % workaround for T2 data (TACRange = 0)
+        To = To+1;
+    end
     h.MI.Phasor_Axes.XLim=[From To];
 end
 
@@ -5694,7 +5705,11 @@ if any(mode==1)
             h.MI.Individual{i,2*(1+j)-1}.YLabel.String = 'Counts';
             h.MI.Individual{i,2*(1+j)-1}.YLabel.Color = UserValues.Look.Fore;
             h.MI.Individual{i,2*(1+j)-1}.XLabel.Color = UserValues.Look.Fore;
-            h.MI.Individual{i,2*(1+j)-1}.XLim=[1 FileInfo.MI_Bins];
+            if FileInfo.MI_Bins == 1 % T2 workaround
+                h.MI.Individual{i,2*(1+j)-1}.XLim=[0 FileInfo.MI_Bins];
+            else
+                h.MI.Individual{i,2*(1+j)-1}.XLim=[1 FileInfo.MI_Bins];
+            end
             %%% Individual microtime popup for channel selection
             h.MI.Individual{i,2*(1+j)} = uicontrol(...
                 'Parent',h.MI.Individual{i,2},...
