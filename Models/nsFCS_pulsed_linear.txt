@@ -1,0 +1,17 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+General model to fit the nanosecond correlation of a pulsed experiment using
+constant time binning in the range of -200 ns to 200 ns.
+
+Based on equation 13 of Felekyan et al., 2005.  
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): t0             = 0;	LB = -Inf;     UB = Inf;
+Param(2): tauD      = 5;	LB = 0;     UB = Inf;
+Param(3): tL        = 40; LB = 0; UB=Inf;f
+Param(4): C0      = 0.5;	LB = 0;     UB = Inf;
+Param(5): Cj     = 1;    LB = 0;     UB = Inf;
+Param(6): Npeaks          = 100; LB = 0;     UB = Inf;f
+Param(7): offset = -1; LB = -Inf; UB = Inf;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/P(4); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT = P(7)+P(4)*exp(-abs(x-P(1)*1e-9)/P(2)/1e-9)+P(5)*sum(exp(-abs(repmat(x,1,round(P(6)))-P(1)*1e-9+repmat(1:round(P(6)),numel(x),1)*P(3)*1e-9)/P(2)/1e-9)+exp(-abs(repmat(x,1,round(P(6)))-P(1)*1e-9-repmat(1:round(P(6)),numel(x),1)*P(3)*1e-9)/P(2)/1e-9),2);
