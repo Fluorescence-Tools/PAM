@@ -874,7 +874,12 @@ switch (Type)
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
         if isempty(FileInfo.MI_Bins)
-            FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            if max(cellfun(@any,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))))
+                FileInfo.MI_Bins = 1;
+                FileInfo.TACRange = 0;
+            else
+                FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            end
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
