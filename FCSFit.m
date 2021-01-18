@@ -788,6 +788,10 @@ end
 switch Type
     case {1,2} %%% Averaged correlation files
         FCSMeta.DataType = 'FCS averaged';
+        [~,fn,~] = fileparts(FileName{1});
+        if strcmp(fn(end-5:end),'_nsFCS')
+            FCSMeta.DataType = [FCSMeta.DataType ' (nsFCS)'];
+        end
         for i=1:numel(FileName)
             %%% Reads files (1 == .mcor; 2 == .cor)
             if Type == 1
@@ -847,6 +851,10 @@ switch Type
         SwitchGUI(h,'FCS');
     case {3,4} %% Individual curves from correlation files
         FCSMeta.DataType = 'FCS individual';
+        [~,fn,~] = fileparts(FileName{1});
+        if strcmp(fn(end-5:end),'_nsFCS')
+            FCSMeta.DataType = [FCSMeta.DataType ' (nsFCS)'];
+        end
         for i=1:numel(FileName)
             %%% Reads files (3 == .mcor; 4 == .cor)
             if Type == 3
@@ -1840,21 +1848,24 @@ if isnan(Max)
     Max = UserValues.FCSFit.Fit_Max;
     h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
 end
-if ~strcmp(FCSMeta.DataType,'FRET')
+if ~strcmp(FCSMeta.DataType,'FRET') && isempty(strfind(FCSMeta.DataType,'nsFCS'))
     if (Min < 0)
         Min = 0;
     end
-else
+    if (Max < 0)
+        Max = 1;
+    end
+elseif strcmp(FCSMeta.DataType,'FRET') % FRET histogram fitting
     if (Min < -0.25)
         Min = -0.25;
     end
     if (Max > 1.25)
         Max = 1.25;
     end
+elseif ~isempty(strfind(FCSMeta.DataType,'nsFCS'))
+    % do nothing
 end
-if (Max < 0)
-    Max = 1;
-end
+
 if (Min > Max) || (Max < Min)
     a = Min; b = Max;
     Min = b;
@@ -1871,6 +1882,16 @@ if ~isempty(FCSData.Data) && ~strcmp(FCSMeta.DataType,'FRET')
     end
     if (Max > maxTime)
         Max = maxTime;
+    end
+end
+if ~isempty(strfind(FCSMeta.DataType,'nsFCS')) % nsFCS
+    %%% get minimium x value
+    minTime = 0;
+    for i = 1:numel(FCSData.Data)
+        minTime = min([minTime,FCSData.Data{i}.Cor_Times(1)]);
+    end
+    if (Min < minTime)
+        Min = minTime;
     end
 end
 h.Fit_Min.String = num2str(Min);
@@ -1966,10 +1987,14 @@ for i=1:size(FCSMeta.Plots,1)
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
-        if ~strcmp(FCSMeta.DataType,'FRET')
-            x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000); %plot fit function in higher binning than data!
-        else
-            x = linspace(FCSMeta.Data{i,1}(1),FCSMeta.Data{i,1}(end),10000); %plot fit function in higher binning than data!
+        if ~strcmp(FCSMeta.DataType,'FRET') && isempty(strfind(FCSMeta.DataType,'nsFCS'))
+            x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000)'; %plot fit function in higher binning than data!
+        else %%% FRET or nsFCS data %if strcmp(FCSMeta.DataType,'FRET') || ~isempty(strfind(FCSMeta.DataType,'nsFCS'))
+            if strcmp(FCSMeta.DataType,'FRET')
+                x = linspace(FCSMeta.Data{i,1}(1),FCSMeta.Data{i,1}(end),10000)'; %plot fit function in higher binning than data!  
+            else
+                x = FCSMeta.Data{i,1}; % for nsFCS, binning is usually fine enough
+            end
         end
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
@@ -2047,7 +2072,7 @@ for i=1:size(FCSMeta.Plots,1)
         FCSMeta.Plots{i,2}.Visible='on';
         FCSMeta.Plots{i,3}.Visible='on';
         %% Updates data errorbars/ turns them off
-        if Plot_Errorbars
+        if Plot_Errorbars && isempty(strfind(FCSMeta.DataType,'nsFCS')) % disable error bars for nsFCS because it is too slow
             if ~strcmp(FCSMeta.DataType,'FRET')
                 if isfield(FCSMeta.Plots{i,1}, 'LNegativeDelta')
                     FCSMeta.Plots{i,1}.YNegativeDelta=FCSMeta.Data{i,3}/B;
@@ -2071,13 +2096,21 @@ for i=1:size(FCSMeta.Plots,1)
         else
             FCSMeta.Plots{i,1}.Visible = 'off';
             FCSMeta.Plots{i,4}.Visible = 'on';
+            if ~isempty(strfind(FCSMeta.DataType,'nsFCS'))
+                % plot dummy data (too many datapoints for nsFCS make the plot slow)
+                %FCSMeta.Plots{i,1}.XData = 0;
+                %FCSMeta.Plots{i,1}.YData = 0;
+                warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
+                FCSMeta.Plots{i,1}.YNegativeDelta = 0;
+                FCSMeta.Plots{i,1}.YPositiveDelta = 0;
+            end
         end
     else
         %% Hides plots
         FCSMeta.Plots{i,1}.Visible='off';
         FCSMeta.Plots{i,2}.Visible='off';
         FCSMeta.Plots{i,3}.Visible='off';
-        FCSMeta.Plots{i,4}.Visible='off';
+        FCSMeta.Plots{i,4}.Visible='off';        
     end
 end
 
