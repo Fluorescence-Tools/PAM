@@ -1,28 +1,40 @@
+%% load data
 global BurstData BurstTCSPCData BurstMeta
-file = BurstMeta.SelectedFile;
-if isempty(BurstTCSPCData{file})
-    Load_Photons();
-end
-mt = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
-ch = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
-% convert channel to color and discard RR photons
-switch BurstData{file}.BAMethod
-    case {1,2}
-        RRix = 5;
-    case 5 % noMFD
-        RRix = 3;
-end
-for i = 1:numel(mt)
-    % discard RR
-    mt{i} = double(mt{i}(ch{i} < RRix));
-    ch{i} = double(ch{i}(ch{i} < RRix));
-    % convert channel to color (1->D; 2->A)
-    if any(BurstData{file}.BAMethod == [1,2])
-        ch{i} = ceil(ch{i}/2);
+burst = false;
+if burst
+    file = BurstMeta.SelectedFile;
+    if isempty(BurstTCSPCData{file})
+        Load_Photons();
     end
+    mt = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
+    ch = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
+    % convert channel to color and discard RR photons
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            RRix = 5;
+        case 5 % noMFD
+            RRix = 3;
+    end
+    for i = 1:numel(mt)
+        % discard RR
+        mt{i} = double(mt{i}(ch{i} < RRix));
+        ch{i} = double(ch{i}(ch{i} < RRix));
+        % convert channel to color (1->D; 2->A)
+        if any(BurstData{file}.BAMethod == [1,2])
+            ch{i} = ceil(ch{i}/2);
+        end
+    end
+    mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
+else
+    % simulated time trace
+    mt = [Sim_Photons_1{1};Sim_Photons_1{2}];
+    ch = [ones(size(Sim_Photons_1{1}));2*ones(size(Sim_Photons_1{2}))];
+    [mt,ix] = sort(mt);
+    ch = ch(ix);
+    mt = {mt*1e-6};
+    ch = {ch};
 end
-mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
-
+%% fitting
 n_states = 2;
 switch n_states
     case 2
@@ -77,7 +89,7 @@ if vit
     s = viterbi(mt{i},ch{i},fitres(1:n_states*(n_states-1)),fitres(n_states*(n_states-1)+1:end));
 end
 
-trans = false;
+trans = true;
 if trans && n_states == 2
     % compare logL of model with transition time over a range
     % logL of tp = 0
