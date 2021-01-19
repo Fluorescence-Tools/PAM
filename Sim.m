@@ -2562,7 +2562,7 @@ if ~advanced
         %for j = 1:NoP
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
-
+    
             %%% Pts particles in allowed areas for restricted area simulations
             if Map_Type==3
                 while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
@@ -2978,7 +2978,12 @@ if advanced
         parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)            
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
-
+            if NoP == 1 && all(D == 0)
+                % single particle that will never move
+                % --> i.e. immobolized trace
+                % place in center
+                Pos = BS/2;
+            end
             %%% Pts particles in allowed areas for restricted area simulations
             if Map_Type==3
                 while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
