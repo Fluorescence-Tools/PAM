@@ -82,7 +82,7 @@ if trans && n_states == 2
     % compare logL of model with transition time over a range
     % logL of tp = 0
     logL0 = GP_logL_burst(mt,ch,fitres(1:2),fitres(3:4));
-    tp = logspace(-6,-3,20); % from 1 to 1000 µs
+    tp = logspace(-6,-3,50); % from 1 to 1000 µs
     kT = 1./(2*tp);
     logL = zeros(1,numel(kT));
     for i = 1:numel(kT)
@@ -90,4 +90,6 @@ if trans && n_states == 2
     end
     figure;
     semilogx(tp,logL-logL0);
+    ax = gca;
+    ax.YLim(1) = -100;
 end
