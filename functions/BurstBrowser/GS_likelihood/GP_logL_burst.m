@@ -40,7 +40,8 @@ end
 E = diag(E);
 
 % calculate likelihoods
-logL = 0;
-for i = 1:numel(t)
-    logL = logL + GP_logL_mex(t{i},c{i},K,E);
+logL = zeros(numel(t),1);
+parfor i = 1:numel(t)
+    logL(i) = GP_logL_mex(t{i},c{i},K,E);
 end
+logL = sum(logL);
