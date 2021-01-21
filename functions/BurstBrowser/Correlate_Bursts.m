@@ -34,7 +34,7 @@ NumChans = size(CorrMat,1);
 NCor = sum(sum(CorrMat));
 
 switch obj
-    case h.Correlate_Button
+    case {h.Correlate_Button, h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu}
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
         Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
         if isempty(BurstTCSPCData{file})
@@ -48,7 +48,15 @@ switch obj
         for k = 1:numel(MT)
             MT{k} = MT{k}-MT{k}(1) +1;
         end
-          
+        
+        % add microtime for nsFCS
+        if any(obj == [h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu])
+            MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
+            for k = 1:numel(MT)
+                MT{k} = MT{k}*BurstData{file}.FileInfo.MI_Bins + ...
+                    uint64(MI{k});
+            end
+        end
     case {h.CorrelateWindow_Button, h.BurstwiseDiffusionTime_Menu}
         if isempty(PhotonStream{file})
             success = Load_Photons('aps');
@@ -224,18 +232,29 @@ for i=1:NumChans
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             switch obj
-                case {h.Correlate_Button,h.CorrelateWindow_Button}
-                    %%% Do Correlation
-                    [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
-
-                    %%% Calculates average and standard error of mean (without tinv_table yet
-                    if size(Cor_Array,2)>1
-                        Cor_Average=mean(Cor_Array,2);
-                        Cor_SEM=std(Cor_Array,0,2);
-                    else
-                        Cor_Average=Cor_Array{1};
-                        Cor_SEM=Cor_Array{1};
+                case {h.Correlate_Button,h.CorrelateWindow_Button,h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu}
+                    switch obj
+                        case {h.Correlate_Button,h.CorrelateWindow_Button,h.FullCorrelation_Menu}
+                            %%% Do Correlation
+                            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
+                            if obj == h.FullCorrelation_Menu % resolution is micerotime resolution
+                                Cor_Times = Cor_Times*(BurstData{file}.FileInfo.TACRange/BurstData{file}.FileInfo.MI_Bins)*UserValues.Settings.Pam.Cor_Divider;
+                            else
+                                Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
+                            end
+                            %%% Calculates average and standard error of mean (without tinv_table yet
+                            if size(Cor_Array,2)>1
+                                Cor_Average=mean(Cor_Array,2);
+                                Cor_SEM=std(Cor_Array,0,2);
+                            else
+                                Cor_Average=Cor_Array{1};
+                                Cor_SEM=Cor_Array{1};
+                            end
+                        case h.Burstwise_nsFCS_linear_Menu
+                            [Cor_Array, Cor_Times] = nsFCS_burstwise(MT1,MT2);
+                            % no error estimate for now
+                            Cor_Average = Cor_Array;
+                            Cor_SEM = ones(size(Cor_Average));
                     end
 
                     %%% Save the correlation file
@@ -243,10 +262,15 @@ for i=1:NumChans
                     filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
                     species = strrep(species,':','');
                     species = strrep(species,'/','-');
-                    if obj == h.CorrelateWindow_Button
-                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
-                    else
-                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
+                    switch obj 
+                        case h.CorrelateWindow_Button
+                            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
+                        case h.Correlate_Button
+                            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
+                        case h.Burstwise_nsFCS_linear_Menu
+                            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw_nsFCS' '.mcor'];
+                        case h.FullCorrelation_Menu
+                            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw_fullFCS' '.mcor'];
                     end
                     %%% Checks, if file already exists
                     if  exist(Current_FileName,'file')
@@ -347,3 +371,56 @@ UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
 LSUserValues(1);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
+
+function [G_norm, G_timeaxis] = nsFCS_burstwise(MT1,MT2)
+global BurstData BurstMeta UserValues
+file = BurstMeta.SelectedFile;
+% set parameters
+time_unit = BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/BurstData{file}.FileInfo.MI_Bins;
+limit = round(10E-6/time_unit); %%% only calculate from -10mus to 10mus
+resolution = ceil(100E-12/time_unit); %%% set to 100 ps                    
+% concatenate
+MT1 = cellfun(@double,MT1,'UniformOutput',false);
+MT2 = cellfun(@double,MT2,'UniformOutput',false);
+
+bins = (-limit:resolution:limit)';
+nphot = 0;
+maxtime = 0;
+G_raw = zeros(numel(bins),1);
+for k = 1:numel(MT1)
+    maxtime = maxtime + max(max([MT1{k};MT2{k}]));
+
+    channel = [ones(numel(MT1{k}),1); 2*ones(numel(MT2{k}),1)];
+    ArrivalTime = [MT1{k}; MT2{k}];
+
+    [ArrivalTime, idx] = sort(ArrivalTime);
+    channel = channel(idx);
+
+    dc = diff(channel);
+    dt = diff(ArrivalTime);
+    dt = dt.*dc;
+    dt = dt(dt ~= 0);
+
+    G_raw = G_raw + histc(dt,bins);
+    nphot = nphot+numel(dt);
+end
+%normalization
+Nav = nphot^2*resolution/maxtime;
+G_norm = G_raw/Nav;
+G_timeaxis = bins*time_unit;
+
+%%% pileup correction
+% function for fitting of pileup, including one antibunching term and one
+% bunching term
+fun = @(A,B,C,t_offset,t_pileup,t_lifetime,t_bunching,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime))).*(1+C*exp(-(abs(x-t_offset)/t_bunching)));
+fun_pileup = @(tau,t_offset,x) exp(-(abs(x-t_offset)/tau));
+start_point = [1 1 1 0 round(10E-6/time_unit) round(1e-9/time_unit) round(100e-9/time_unit)];
+lb = [0 0 0 -Inf round(1E-6/time_unit) 0 round(10E-9/time_unit)];
+ub = [Inf Inf Inf Inf Inf round(10E-9/time_unit) round(1E-6/time_unit)];
+% total histogram
+hnorm = sum(G_norm,2);
+fit1 = fit(bins,hnorm,fun,'StartPoint',start_point,'Lower',lb,'Upper',ub);
+coeff = coeffvalues(fit1);
+pileup = fun_pileup(coeff(5),coeff(4),bins);
+% correction for pileup
+G_norm = G_norm./pileup-1;
