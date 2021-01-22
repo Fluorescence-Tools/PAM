@@ -53,8 +53,8 @@ switch obj
         if any(obj == [h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu])
             MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
             for k = 1:numel(MT)
-                MT{k} = MT{k}*BurstData{file}.FileInfo.MI_Bins + ...
-                    uint64(MI{k});
+                MT{k} = double(MT{k})*BurstData{file}.FileInfo.MI_Bins + ...
+                    double(MI{k});
             end
         end
     case {h.CorrelateWindow_Button, h.BurstwiseDiffusionTime_Menu}
