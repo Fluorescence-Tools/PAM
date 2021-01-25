@@ -6921,13 +6921,6 @@ global UserValues
 bins = (-limit:resolution:limit)';
 G_norm = cell(1,numel(t1));
 G_raw = cell(1,numel(t1));
-% function for fitting of pileup, including one antibunching term and one
-% bunching term
-fun = @(A,B,C,t_offset,t_pileup,t_lifetime,t_bunching,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime))).*(1+C*exp(-(abs(x-t_offset)/t_bunching)));
-fun_pileup = @(tau,t_offset,x) exp(-(abs(x-t_offset)/tau));
-start_point = [1 1 1 0 round(10E-6/time_unit) round(1e-9/time_unit) round(100e-9/time_unit)];
-lb = [0 0 0 -Inf round(1E-6/time_unit) 0 round(10E-9/time_unit)];
-ub = [Inf Inf Inf Inf Inf round(10E-9/time_unit) round(1E-6/time_unit)];
 parfor (i = 1:numel(t1),UserValues.Settings.Pam.ParallelProcessing)
     maxtime = max(max([t1{i};t2{i}]));
     
@@ -6945,17 +6938,28 @@ parfor (i = 1:numel(t1),UserValues.Settings.Pam.ParallelProcessing)
     G_raw{i} = histc(dt,bins);
     %normalization
     Nav = numel(dt)^2*resolution/maxtime;
-    hnorm = G_raw{i}/Nav;
-    
-    %pileup correction
-    fit1 = fit(bins,hnorm,fun,'StartPoint',start_point,'Lower',lb,'Upper',ub);
-    coeff = coeffvalues(fit1);
-    pileup = fun_pileup(coeff(5),coeff(4),bins);
-    G_norm{i} = hnorm./pileup-1;
+    G_norm{i} = G_raw{i}/Nav;
 end
 G_timeaxis = bins;
-G_norm = cell2mat(G_norm);
 G_raw = cell2mat(G_raw);
+G_norm = cell2mat(G_norm);
+
+%%% pileup correction
+% function for fitting of pileup, including one antibunching term and one
+% bunching term
+fun = @(A,B,C,t_offset,t_pileup,t_lifetime,t_bunching,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime))).*(1+C*exp(-(abs(x-t_offset)/t_bunching)));
+fun_pileup = @(tau,t_offset,x) exp(-(abs(x-t_offset)/tau));
+start_point = [1 1 1 0 round(10E-6/time_unit) round(1e-9/time_unit) round(100e-9/time_unit)];
+lb = [0 0 0 -Inf round(1E-6/time_unit) 0 round(10E-9/time_unit)];
+ub = [Inf Inf Inf Inf Inf round(10E-9/time_unit) round(1E-6/time_unit)];
+% total histogram
+hnorm = sum(G_norm,2);
+fit1 = fit(bins,hnorm,fun,'StartPoint',start_point,'Lower',lb,'Upper',ub);
+coeff = coeffvalues(fit1);
+pileup = fun_pileup(coeff(5),coeff(4),bins);
+% correction for pileup
+G_norm = G_norm./pileup-1;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for lifetime correlation  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

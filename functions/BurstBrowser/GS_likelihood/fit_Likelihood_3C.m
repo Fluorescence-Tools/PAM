@@ -10,21 +10,28 @@ if burst
     ch = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
     % convert channel to color and discard RR photons
     switch BurstData{file}.BAMethod
-        case {1,2}
-            RRix = 5;
+        case {3,4}
+            RRix = 11;
         case 5 % noMFD
-            RRix = 3;
+            RRix = 6;
     end
     for i = 1:numel(mt)
         % discard RR
         mt{i} = double(mt{i}(ch{i} < RRix));
         ch{i} = double(ch{i}(ch{i} < RRix));
         % convert channel to color (1->D; 2->A)
-        if any(BurstData{file}.BAMethod == [1,2])
+        if any(BurstData{file}.BAMethod == [3,4])
             ch{i} = ceil(ch{i}/2);
         end
     end
     mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
+    
+    % extract GG and GR photons
+    mt_2C = cellfun(@(x,y) x(y==4 | y==5),mt,ch,'UniformOutput',false);
+    ch_2C = cellfun(@(x) x(x==4 | x==5)-3,ch,'UniformOutput',false);
+    % extract BB, BG and BR photons
+    mt_3C = cellfun(@(x,y) x(y==1 | y==2 | y == 3),mt,ch,'UniformOutput',false);
+    ch_3C = cellfun(@(x) x(x==1 | x==2 | x == 3),ch,'UniformOutput',false);
 else
     % simulated time trace
     mt = [Sim_Photons_1{1};Sim_Photons_1{2}];
@@ -39,37 +46,39 @@ n_states = 2;
 switch n_states
     case 2
         % minimize the negLogL
-        fitfun = @(x) (-1)*GP_logL_burst(mt,ch,[x(1),x(2)],[x(3),x(4)]);
+        fitfun = @(x) (-1)*GP_logL_3C_burst(mt_2C,ch_2C,mt_3C,ch_3C,x(1:2),x(3:4),x(5:8));
 
         % initial values
         % set rates to 1/100mus
         k0 = [0.1,0.1]*1E3;
-        E0 = 1./(1+([60,40]./50).^6);%[0.25,0.8];
-        lb = [0,0,0,0];
-        ub = [1E6,1E6,1,1];
-        fixE = true;
+        E0 = [0.1,0.5,... % 2color FRET efficiency
+              0.1,0.4,... % acceptor fraction 1
+              0.1,0.5];   % acceptor fraction 2
+        lb = [0,0,0,0,0,0,0,0];
+        ub = [1E6,1E6,1,1,1,1,1,1];
+        fixE = false;
         if fixE
-            lb(end-1:end) = E0;
-            ub(end-1:end) = E0;   
+            lb(end-5:end) = E0;
+            ub(end-5:end) = E0;   
         end
-    case 3
-        % minimize the negLogL
-        fitfun = @(x) (-1)*GP_logL_burst(mt,ch,x(1:6),x(7:9));
-
-        % initial values
-        % set rates to 1/1ms
-        k0 = [1,1,1,1,1,1]*1E3;
-        E0 =  1./(1+([60,50,40]./50).^6);%[0.25,0.525,0.8];
-        
-        lb = zeros(1,numel(k0)+numel(E0));
-        % maximum rate of 1E6 Hz
-        ub = [1E6*ones(1,numel(k0)),ones(1,numel(E0))];
-            
-        fixE = true;
-        if fixE
-            lb(end-2:end) = E0;
-            ub(end-2:end) = E0;   
-        end
+%     case 3
+%         % minimize the negLogL
+%         fitfun = @(x) (-1)*GP_logL_burst(mt,ch,x(1:6),x(7:9));
+% 
+%         % initial values
+%         % set rates to 1/1ms
+%         k0 = [1,1,1,1,1,1]*1E3;
+%         E0 =  1./(1+([60,50,40]./50).^6);%[0.25,0.525,0.8];
+%         
+%         lb = zeros(1,numel(k0)+numel(E0));
+%         % maximum rate of 1E6 Hz
+%         ub = [1E6*ones(1,numel(k0)),ones(1,numel(E0))];
+%             
+%         fixE = true;
+%         if fixE
+%             lb(end-2:end) = E0;
+%             ub(end-2:end) = E0;   
+%         end
 end
 
 
@@ -89,7 +98,7 @@ if vit
     s = viterbi(mt{i},ch{i},fitres(1:n_states*(n_states-1)),fitres(n_states*(n_states-1)+1:end));
 end
 
-trans = true;
+trans = false;
 if trans && n_states == 2
     % compare logL of model with transition time over a range
     % logL of tp = 0
