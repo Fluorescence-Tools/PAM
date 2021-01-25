@@ -1,4 +1,4 @@
-function logL = GP_logL_3C_burst(t_2C,c_2C,t_3C,c_3C,K,E_2C,E_3C,kT)
+function logL = GP_logL_3C_burst(t_2C,c_2C,t_3C,c_3C,K,E_2C,E_3C,kT,E_TS)
 % t -   Macrotimes of photons (cell array)
 % c -   Color of photons (1->BB,2->BG,3->BR,4->GG,5->GR) (cell array)
 % K -   transition rate matrix
@@ -9,6 +9,7 @@ function logL = GP_logL_3C_burst(t_2C,c_2C,t_3C,c_3C,K,E_2C,E_3C,kT)
 
 if nargin < 8
     kT = 0;
+    E_TS = [0,0,0];
 end
 
 if kT == 0
@@ -28,7 +29,8 @@ else % transition time model
         2*K(1),0,2*K(2);
         0,kT,0];
     % set E of intermediate state to average
-    E = [E(1),sum(E)/2,E(2)];
+	E_2C = [E_2C(1) E_TS(1) E_2C(2)];
+    E_3C = [E_3C(1) E_TS(2) E_3C(2) E_3C(3) E_TS(3) E_3C(4)];
 end
 % fill in diagonals of K matrix
 if all(diag(K) == 0)

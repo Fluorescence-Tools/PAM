@@ -25,22 +25,26 @@ if burst
         end
     end
     mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
-    
-    % extract GG and GR photons
-    mt_2C = cellfun(@(x,y) x(y==4 | y==5),mt,ch,'UniformOutput',false);
-    ch_2C = cellfun(@(x) x(x==4 | x==5)-3,ch,'UniformOutput',false);
-    % extract BB, BG and BR photons
-    mt_3C = cellfun(@(x,y) x(y==1 | y==2 | y == 3),mt,ch,'UniformOutput',false);
-    ch_3C = cellfun(@(x) x(x==1 | x==2 | x == 3),ch,'UniformOutput',false);
 else
     % simulated time trace
-    mt = [Sim_Photons_1{1};Sim_Photons_1{2}];
-    ch = [ones(size(Sim_Photons_1{1}));2*ones(size(Sim_Photons_1{2}))];
+    mt = [Sim_Photons_1{1}(Sim_MI_1{1}<2000);Sim_Photons_1{2}(Sim_MI_1{2}<2000);Sim_Photons_1{3}(Sim_MI_1{3}<2000);... % BB, BG, BR
+        Sim_Photons_1{2}(Sim_MI_1{2}>2000 & Sim_MI_1{2} < 4000) ;Sim_Photons_1{3}(Sim_MI_1{3}>2000 & Sim_MI_1{3} < 4000)]; % GG, GR
+    ch = [ones(sum(Sim_MI_1{1}<2000),1);...
+        2*ones(sum(Sim_MI_1{2}<2000),1);...
+        3*ones(sum(Sim_MI_1{3}<2000),1);...
+        4*ones(sum(Sim_MI_1{2}>2000 & Sim_MI_1{2} < 4000),1);...
+        5*ones(sum(Sim_MI_1{3}>2000 & Sim_MI_1{3} < 4000),1)];
     [mt,ix] = sort(mt);
     ch = ch(ix);
     mt = {mt*1e-6};
     ch = {ch};
 end
+% extract GG and GR photons
+mt_2C = cellfun(@(x,y) x(y==4 | y==5),mt,ch,'UniformOutput',false);
+ch_2C = cellfun(@(x) x(x==4 | x==5)-3,ch,'UniformOutput',false);
+% extract BB, BG and BR photons
+mt_3C = cellfun(@(x,y) x(y==1 | y==2 | y == 3),mt,ch,'UniformOutput',false);
+ch_3C = cellfun(@(x) x(x==1 | x==2 | x == 3),ch,'UniformOutput',false);
 %% fitting
 n_states = 2;
 switch n_states
@@ -50,10 +54,10 @@ switch n_states
 
         % initial values
         % set rates to 1/100mus
-        k0 = [0.1,0.1]*1E3;
-        E0 = [0.1,0.5,... % 2color FRET efficiency
-              0.1,0.4,... % acceptor fraction 1
-              0.1,0.5];   % acceptor fraction 2
+        k0 = [0.5,0.5]*1E3;
+        E0 = [0.2,0.5,... % 2color FRET efficiency
+              0.25,0.2,... % acceptor fraction 1
+              0.25,0.5];   % acceptor fraction 2
         lb = [0,0,0,0,0,0,0,0];
         ub = [1E6,1E6,1,1,1,1,1,1];
         fixE = false;
@@ -98,19 +102,26 @@ if vit
     s = viterbi(mt{i},ch{i},fitres(1:n_states*(n_states-1)),fitres(n_states*(n_states-1)+1:end));
 end
 
-trans = false;
+trans = true;
 if trans && n_states == 2
     % compare logL of model with transition time over a range
     % logL of tp = 0
-    logL0 = GP_logL_burst(mt,ch,fitres(1:2),fitres(3:4));
+    logL0 = GP_logL_3C_burst(mt_2C,ch_2C,mt_3C,ch_3C,fitres(1:2),fitres(3:4),fitres(5:8));
+    
+    % calculate the E of the transition state based on the distances
+    R0 = [50,50,50];
+    R = [60,60,60]; % GR BG BR
+    eff = (1+(R./R0).^6).^(-1); % GR BG BR
+    effprime = [eff(1) [eff(2)*(1-eff(3)) (1-eff(2))*eff(3)]./(1-eff(2)*eff(3))]; % GR BG BR
+    E_TS = [effprime(1) effprime(2)*(1-effprime(1)) effprime(2)*effprime(1)+effprime(3)]; % GR BG BR
+    
     tp = logspace(-6,-3,50); % from 1 to 1000 µs
     kT = 1./(2*tp);
     logL = zeros(1,numel(kT));
     for i = 1:numel(kT)
-        logL(i) = GP_logL_burst(mt,ch,fitres(1:2),fitres(3:4),kT(i));
+        logL(i) = GP_logL_3C_burst(mt_2C,ch_2C,mt_3C,ch_3C,fitres(1:2),fitres(3:4),fitres(5:8),kT(i),E_TS);
     end
     figure;
     semilogx(tp,logL-logL0);
     ax = gca;
-    ax.YLim(1) = -100;
 end
