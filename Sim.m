@@ -3756,7 +3756,8 @@ SimData.General(end+1) = data;
 h.Sim_File_List.String{end+1} = SimData.General(end).Name;
 File_List_Callback([],[],3);
 
-
+h.Sim_Dyn_Table.RowName = h.Sim_List.String;
+h.Sim_Dyn_Table.ColumnName = h.Sim_List.String;
 
 
 
