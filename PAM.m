@@ -7445,7 +7445,7 @@ if isempty(obj) || obj == h.Burst.BurstSearchSelection_Popupmenu
     h.Burst.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
 elseif obj == h.Burst.BurstSearchSmoothing_Popupmenu
     UserValues.BurstSearch.SmoothingMethod = obj.Value;
-    if UserValues.BurstSearch.SmoothingMethod == 3
+    if UserValues.BurstSearch.SmoothingMethod == 4
         UserValues.BurstSearch.SmoothingMethod = 1;
     end
     LSUserValues(1);
