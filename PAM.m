@@ -1174,7 +1174,7 @@ h.Burst.BurstSearchSmoothing_Popupmenu = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Sliding Time Window','Interphoton Time with Lee Filter'},...
+    'String',{'Sliding Time Window','Interphoton Time with Lee Filter','CUSUM'},...
     'Callback',@Update_BurstGUI,...
     'Position',[0.05 0.75 0.9 0.08],...
     'TooltipString',sprintf(''));
@@ -7501,7 +7501,7 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
         end
-    case 2
+    case 2 % Interphoton time with Lee filter
         h.Burst.BurstParameter2_Text.String = 'Smoothing Window (2*N+1):';
         switch BAMethod %%% define which Burst Search Parameters are to be displayed
             case 'APBS_twocolorMFD'
@@ -7541,6 +7541,50 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter3_Text.String = 'Interphoton Time GX [us]:';
                 h.Burst.BurstParameter4_Text.Visible = 'on';
                 h.Burst.BurstParameter4_Text.String = 'Interphoton Time RR [us]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+        end
+    case 3
+        h.Burst.BurstParameter2_Text.String = 'Background [kHz]:';
+        switch BAMethod %%% define which Burst Search Parameters are to be displayed
+            case 'APBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold GX [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Threshold RR [kHz]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'APBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'TCBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold BX [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Threshold GX [kHz]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'on';
+                h.Burst.BurstParameter5_Text.String = 'Threshold RR [kHz]:';
+                h.Burst.BurstParameter5_Edit.Visible = 'on';
+            case 'APBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Threshold GX [kHz]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Threshold RR [kHz]:';
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
@@ -8476,6 +8520,7 @@ if ~from_BurstIDs
                 BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
                 BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
             end
+        case 3
     end
 else %%% generated from BurstIDs
     BurstSearchParameters.BurstSearch = 'from BurstIDs';
@@ -9083,6 +9128,10 @@ elseif BurstIdentification == 2
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1);
     stop = find(valid(1:end-1)-valid(2:end)==1);
+elseif BurstIdentification == 3
+    IT = M; % threshold in kHz
+    IB = T; % background in kHz
+    [start, stop] = CUSUM_burstsearch(Photons,IB,IT);
 end
 clear valid;
 
@@ -9099,7 +9148,7 @@ if numel(start) ~= 0 && numel(stop) ~=0
     end
 end
 % and ignore bursts with less than L photons
-%only cut if L is specified (it is not for DCBS sub-searches)
+% only cut if L is specified (it is not for DCBS sub-searches)
 if ~isempty(stop) && ~isempty(start)
     Number_of_Photons = stop-start+1;
 else
@@ -9111,6 +9160,108 @@ if nargin > 3
     stop(Number_of_Photons<L)=[];
     Number_of_Photons(Number_of_Photons<L)=[];
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for CUSUM based burst search                              %%%%
+%%% Based on: Zhang, K. & Yang, H. Photon-by-photon determination of   %%%%
+%%% emission bursts from diffusing single chromophores.                %%%%
+%%% J Phys Chem B 109, 21930-21937 (2005).                             %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [START,STOP] = CUSUM_burstsearch(Photons,IB,IT)
+global FileInfo
+START = [];
+STOP = [];
+% convert photons to delay times
+dt = diff(Photons);
+
+% parameters (all count rates are given in kHz and need to be converted to
+% the used clock period)
+IB = IB*1E3*FileInfo.ClockPeriod; % background count rate per clock period
+IT = IT*1E3*FileInfo.ClockPeriod; % threshold intensity
+% alternative parameterization based on molecular brightness to determine
+% the threshold
+% I0 = I0*1E3*FileInfo.ClockPeriod; % intensity of molecule at the center of PSF (molecular brightness)
+% IT = I0*exp(-2)+IB; % threshold intensity at 1/e^2
+
+% error rates
+alpha = 1/numel(Photons);
+beta = 0.05;
+% calculate the expectation value of the log likelihood ratio
+x = 0:1:max(dt);
+fB = exp(-x*IB); fB = fB./sum(fB);
+fT = exp(-x*IT); fT = fT./sum(fT);
+lambda = log(fT)-log(fB);
+%mlambdaB = sum(fB.*lambda);
+mlambdaT = sum(fT.*lambda);
+% define CUSUM threshold h
+h = -log(alpha*log(alpha^(-1))/(3*(mlambdaT+1)^2)); % eq. 4
+% define SPRT thresholds A and B
+B = beta/(1-alpha);
+A = (1-beta)/alpha;
+
+start_next = 1; % of the next burst
+stop = 1; % stop of the previous burst, start searching from here
+while start_next < numel(dt) % we have not reached the end
+    % find the first edge using CUSUM
+    start = CUSUM(dt,h,fB,fT,stop);
+    
+    % estimate the end of burst using SPRT
+    stop_est = SPRT(dt,A,B,fB,fT,start);
+
+    % find the next edge using CUSUM
+    start_next = CUSUM(dt,h,fB,fT,stop_est);
+
+    % do backwards CUSUM to refine the end of the previous burst
+    stop = bCUSUM(dt,h,fB,fT,start,start_next,10);
+
+    if stop < stop_est
+        if isempty(START) || START(end) ~= start
+            START(end+1,1) = start;
+            STOP(end+1,1) = stop;
+        else % sometimes, the algorithm gets stuck
+            % move on
+            stop = stop + 10;
+        end
+    end
+end
+
+function ix = CUSUM(dt,h,fB,fT,ix_start)
+% find the first edge using CUSUM
+if nargin < 5
+    ix_start = 1;
+end
+ix = ix_start;
+S = 0;
+while S < h && ix < numel(dt)
+    S = max([S+log(fT(dt(ix)+1))-log(fB(dt(ix)+1)),0]);
+    ix = ix + 1;
+end
+
+function ix = SPRT(dt,A,B,fB,fT,ix_start)
+% estimate the burst end using SPRT
+if nargin < 6
+    ix_start = 1;
+end
+ix = ix_start;
+LAMBDA = fT(dt(ix_start)+1)/fB(dt(ix_start)+1);
+while LAMBDA > B && ix < numel(dt)
+    ix = ix+1;
+    LAMBDA = LAMBDA*fT(dt(ix)+1)/fB(dt(ix)+1);
+    if LAMBDA >= A
+        LAMBDA = A;
+    elseif LAMBDA <= B
+        LAMBDA = B;
+    end
+end
+
+function ix = bCUSUM(dt,h,fB,fT,ix_start,ix_next,offset)
+if nargin < 7
+    offset = 10; % offset necessary because if we start in the burst, the threshold is crossed in the beginning already.
+end
+dt_b = dt(ix_next-offset:-1:ix_start);
+ix = ix_next-offset-CUSUM(dt_b,h,fB,fT);
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9345,8 +9496,10 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
+            elseif SmoothingMethod == 2  %%% take the inverse of the interphoton time
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif  SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = M*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'off';
             h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'off';
@@ -9356,16 +9509,20 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M(1)/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
+            elseif SmoothingMethod == 2 %%% take the inverse of the interphoton time
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M(1))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif  SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = M(1)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'on';
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Color = [0.8 0 0];
             h.Plots.BurstPreview.Intensity_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = 1000*M(2)/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
-                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 2 %%% take the inverse of the interphoton time
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = (1E3/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = M(2)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'off';
         case 4 %TCBS
@@ -9374,24 +9531,30 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M(1)/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
+            elseif SmoothingMethod == 2 %%% take the inverse of the interphoton time
                 h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M(1))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = M(1)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'on';
             h.Plots.BurstPreview.Intensity_Threshold_ch2.Color = [0.8 0 0];
             h.Plots.BurstPreview.Intensity_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = 1000*M(2)/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
-                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 2 %%% take the inverse of the interphoton time
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = (1E3/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = M(2)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'on';
             h.Plots.BurstPreview.Intensity_Threshold_ch3.Color = [0 0 0.8];
             h.Plots.BurstPreview.Intensity_Threshold_ch3.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1
                 h.Plots.BurstPreview.Intensity_Threshold_ch3.YData = 1000*M(3)/T*ones(1,numel(PamMeta.Burst.Preview.x));
-            else %%% take the inverse of the interphoton time
-                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = (1E3/M(3))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 2 %%% take the inverse of the interphoton time
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.YData = (1E3/M(3))*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 % parameter M is the count rate
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.YData = M(3)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
     end
     %% Plot Interphoton time trace (just from all photons here...)
@@ -9453,8 +9616,10 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the mean countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (T/M)*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = M*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (1/M)*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Visible = 'off';
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.Visible = 'off';
@@ -9464,16 +9629,20 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the mean countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (T/M(1))*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = M(1)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (1/M(1))*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Visible = 'on';
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Color = [0.8 0 0];
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the mean countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = (T/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = M(2)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = (1/M(2))*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.Visible = 'off';
         case 4 %TCBS
@@ -9482,24 +9651,30 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.Interphoton_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the mean countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (T/M(1))*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = M(1)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch1.YData = (1/M(1))*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Visible = 'on';
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.Color = [0.8 0 0];
             h.Plots.BurstPreview.Interphoton_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the mean countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = (T/M(2))*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = M(2)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch2.YData = (1/M(2))*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.Visible = 'on';
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.Color = [0 0 0.8];
             h.Plots.BurstPreview.Interphoton_Threshold_ch3.XData = PamMeta.Burst.Preview.x;
             if SmoothingMethod == 1 %%% take the inverse of the estimated countrate
                 h.Plots.BurstPreview.Interphoton_Threshold_ch3.YData = (T/M(3))*ones(1,numel(PamMeta.Burst.Preview.x));
-            else
+            elseif SmoothingMethod == 2
                 h.Plots.BurstPreview.Interphoton_Threshold_ch3.YData = M(3)*ones(1,numel(PamMeta.Burst.Preview.x));
+            elseif SmoothingMethod == 3 %%% take the inverse of the mean countrate
+                h.Plots.BurstPreview.Interphoton_Threshold_ch3.YData = (1/M(3))*1000*ones(1,numel(PamMeta.Burst.Preview.x));
             end
     end
     %%% Color selected regions in Interphoton time plot
