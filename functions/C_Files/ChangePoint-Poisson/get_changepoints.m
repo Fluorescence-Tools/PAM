@@ -24,9 +24,19 @@ for i = 2:Nstates
 end
 
 % get exe location
-exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint.exe'];
+if ispc
+    exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint_win.exe'];
+elseif isunix
+    if ismac
+        exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint_mac.exe'];
+    else
+        disp('Linux currently not supported. Please compile the executable yourself and contact suppport.');
+        return;
+    end
+end
+
 if ~exist(exe_loc,'file')
-    disp('changepoint.exe not found. Please compile the executable.');
+    disp('Executable not found.');
 end
 % get logfile location
 logfile_loc = [PathToApp filesep 'functions' filesep 'temp' filesep 'logfile.txt'];
