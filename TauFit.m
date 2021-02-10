@@ -561,6 +561,42 @@ h.Ignore_Text = uicontrol(...
     'Position',[0.51 0.625 0.1 0.175],...
     'Tag','Ignore_Text');
 
+%%% Slider for Selection of IRF Length
+h.IRFBackground_Slider = uicontrol(...
+    'Style','slider',...
+    'Parent',h.Slider_Panel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.67 0.425 0.32 0.125],...
+    'Tag','IRFBackground_Slider',...
+    'Callback',@Update_Plots);
+
+h.IRFBackground_Edit = uicontrol(...
+    'Parent',h.Slider_Panel,...
+    'Style','edit',...
+    'Tag','IRFBackground_Edit',...
+    'Units','normalized',...
+    'Position',[0.61 0.425 0.05 0.15],...
+    'String','0',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'FontSize',10,...
+    'Callback',@Update_Plots);
+
+h.IRFBackground_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Slider_Panel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HorizontalAlignment','left',...
+    'FontSize',10,...
+    'String','IRF Background',...
+    'TooltipString','Background cut-off for the IRF',...
+    'Position',[0.51 0.425 0.1 0.175],...
+    'Tag','IRFBackground_Text');
+
 %%% Slider for Selection of relative IRF Shift
 h.IRFrelShift_Slider = uicontrol(...
     'Style','slider',...
@@ -1656,6 +1692,7 @@ for i = 1:3 %max number of pairs for fitting
     TauFitData.StartPar{i} = UserValues.TauFit.StartPar{i};
     TauFitData.ShiftPer{i} = UserValues.TauFit.ShiftPer{i};
     TauFitData.IRFLength{i} = UserValues.TauFit.IRFLength{i};
+    TauFitData.IRFBackground{i} = UserValues.TauFit.IRFBackground{i};
     TauFitData.IRFShift{i} = UserValues.TauFit.IRFShift{i};
     TauFitData.IRFrelShift{i} = UserValues.TauFit.IRFrelShift{i};
     TauFitData.ScatShift{i} = UserValues.TauFit.ScatShift{i};
@@ -1684,9 +1721,8 @@ if strcmp(TauFitData.Who,'Burstwise')
 else
     % set method to stored method
     h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
-    Method_Selection(h.FitMethod_Popupmenu,[]);
 end
-
+Method_Selection(h.FitMethod_Popupmenu,[]);
 %%% User clicked 'Burst Analysis' button on the Burst or Batch analysis tab
 %%% when 'Fit Lifetime' checkbox was checked.
 if exist('ph','var')
@@ -1764,7 +1800,7 @@ LSUserValues(1)
 %%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(obj,~)
-global UserValues TauFitData FileInfo TcspcData PamMeta
+global UserValues TauFitData FileInfo PamMeta
 h = guidata(findobj('Tag','TauFit'));
 
 %%% check how we got here
@@ -1853,13 +1889,22 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.TauFit.Name = ['TauFit - Loaded file: ' FileName{1}];
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    [FileName, PathName, FilterIndex] = uigetfile_with_preview({'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'},'Choose data file...',UserValues.File.TauFitPath);
+                    filetypes = {'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'};
+                    if UserValues.TauFit.FileTypeTXT == 2
+                        filetypes = flipud(filetypes);
+                    end
+                    [FileName, PathName, FilterIndex] = uigetfile_with_preview(filetypes,'Choose data file...',UserValues.File.TauFitPath);
                     if isempty(FileName)
                         return;
                     end
                     if FilterIndex == 0
                         return;
                     end
+                    if UserValues.TauFit.FileTypeTXT == 2
+                        %%% switch again
+                        FilterIndex = 3-FilterIndex; % 1->2, 2->1
+                    end
+                    UserValues.TauFit.FileTypeTXT  = FilterIndex;
                     UserValues.File.TauFitPath = PathName;
                     if ~iscell(FileName)
                         FileName = {FileName};
@@ -1959,7 +2004,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
             end
         case h.LoadData_Button
             PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
-            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
+            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;           
     end
     
     %%% set the channel variable
@@ -1968,7 +2013,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     %%% Microtime Histograms
     TauFitData.hMI_Par{chan} = TauFitData.External.MI_Hist{PIEChannel_Par};
     TauFitData.hMI_Per{chan} = TauFitData.External.MI_Hist{PIEChannel_Per};
-    
+        
     %%% Read out the Microtime Histograms of the IRF for the two channels
     TauFitData.hIRF_Par{chan} = TauFitData.External.IRF{PIEChannel_Par}';
     TauFitData.hIRF_Per{chan} = TauFitData.External.IRF{PIEChannel_Per}';
@@ -1988,6 +2033,16 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     %%% Generate XData
     TauFitData.XData_Par{chan} = 1:numel(TauFitData.hMI_Par{chan});%ToFromPar - ToFromPar(1);
     TauFitData.XData_Per{chan} = 1:numel(TauFitData.hMI_Per{chan});%ToFromPer - ToFromPer(1);
+    
+    %%% if rebinning is performed, store as original data
+    if isfield(TauFitData,'OriginalHistograms')
+        TauFitData.OriginalHistograms.hMI_Par{chan} = TauFitData.hMI_Par{chan};
+        TauFitData.OriginalHistograms.hMI_Per{chan} = TauFitData.hMI_Per{chan};
+        TauFitData.OriginalHistograms.hIRF_Par{chan} = TauFitData.hIRF_Par{chan};
+        TauFitData.OriginalHistograms.hIRF_Per{chan} = TauFitData.hIRF_Per{chan};
+        TauFitData.OriginalHistograms.hScat_Par{chan} = TauFitData.hScat_Par{chan};
+        TauFitData.OriginalHistograms.hScat_Per{chan} = TauFitData.hScat_Per{chan};
+    end
     
     %%% Update PIEchannelSelection
     UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
@@ -2418,6 +2473,19 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     TauFitData.IRFLength{chan} = tmp;
     h.IRFLength_Edit.String = num2str(tmp);
     
+    %%% IRF Background is between 0 and 1
+    h.IRFBackground_Slider.Min = 0;
+    h.IRFBackground_Slider.Max = 1;
+    h.IRFBackground_Slider.SliderStep =[.01, .1];
+    if UserValues.TauFit.IRFBackground{chan} >= 0 && UserValues.TauFit.IRFBackground{chan} <= 1
+        tmp = UserValues.TauFit.IRFBackground{chan};
+    else
+        tmp = 0;
+    end
+    h.IRFBackground_Slider.Value = tmp;
+    TauFitData.IRFBackground{chan} = tmp;
+    h.IRFBackground_Edit.String = num2str(tmp);
+    
     %%% IRF Shift has the same limits as the perp shift property
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
@@ -2548,6 +2616,13 @@ if isobject(obj) % check if matlab object
             if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
                 TauFitData.IRFLength{chan} = TauFitData.Length{chan};
             end
+        case {h.IRFBackground_Slider, h.IRFBackground_Edit}
+            if obj == h.IRFBackground_Slider
+                TauFitData.IRFBackground{chan} = obj.Value;
+            elseif obj == h.IRFBackground_Edit
+                TauFitData.IRFBackground{chan} = str2double(obj.String);
+                obj.String = num2str(TauFitData.IRFBackground{chan});
+            end
         case {h.IRFShift_Slider, h.IRFShift_Edit}
             %%% Update Value
             if obj == h.IRFShift_Slider
@@ -2624,6 +2699,7 @@ if isprop(obj,'Style')
             h.Length_Edit.String = num2str(TauFitData.Length{chan});
             h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer{chan});
             h.IRFLength_Edit.String = num2str(TauFitData.IRFLength{chan});
+            h.IRFBackground_Edit.String = num2str(TauFitData.IRFBackground{chan});
             h.IRFShift_Edit.String = num2str(TauFitData.IRFShift{chan});
             h.IRFrelShift_Edit.String = num2str(TauFitData.IRFrelShift{chan});
             h.ScatShift_Edit.String = num2str(TauFitData.ScatShift{chan});
@@ -2635,6 +2711,7 @@ if isprop(obj,'Style')
             h.Length_Slider.Value = TauFitData.Length{chan};
             h.ShiftPer_Slider.Value = TauFitData.ShiftPer{chan};
             h.IRFLength_Slider.Value = TauFitData.IRFLength{chan};
+            h.IRFBackground_Slider.Value = TauFitData.IRFBackground{chan};
             h.IRFShift_Slider.Value = TauFitData.IRFShift{chan};
             h.IRFrelShift_Slider.Value = TauFitData.IRFrelShift{chan};
             h.ScatShift_Slider.Value = TauFitData.ScatShift{chan};
@@ -2646,6 +2723,7 @@ if isprop(obj,'Style')
     UserValues.TauFit.Length{chan} = TauFitData.Length{chan};
     UserValues.TauFit.ShiftPer{chan} = TauFitData.ShiftPer{chan};
     UserValues.TauFit.IRFLength{chan} = TauFitData.IRFLength{chan};
+    UserValues.TauFit.IRFBackground{chan} = TauFitData.IRFBackground{chan};
     UserValues.TauFit.IRFShift{chan} = TauFitData.IRFShift{chan};
     UserValues.TauFit.IRFrelShift{chan} = TauFitData.IRFrelShift{chan};
     UserValues.TauFit.ScatShift{chan} = TauFitData.ScatShift{chan};
@@ -2673,6 +2751,7 @@ if strcmp(TauFitData.Who,'BurstBrowser')
                 UserValues.TauFit.Length{chan_copy} = TauFitData.Length{chan};
                 UserValues.TauFit.ShiftPer{chan_copy} = TauFitData.ShiftPer{chan};
                 UserValues.TauFit.IRFLength{chan_copy} = TauFitData.IRFLength{chan};
+                UserValues.TauFit.IRFBackground{chan_copy} = TauFitData.IRFBackground{chan};
                 UserValues.TauFit.IRFShift{chan_copy} = TauFitData.IRFShift{chan};
                 UserValues.TauFit.IRFrelShift{chan_copy} = TauFitData.IRFrelShift{chan};
                 UserValues.TauFit.ScatShift{chan_copy} = TauFitData.ScatShift{chan};
@@ -2702,11 +2781,28 @@ h.Plots.Decay_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{ch
 h.Plots.IRF_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
 tmp = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
+if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+    %%% additional processing of the IRF to remove constant background
+    tmp = tmp - mean(TauFitData.hIRF_Par{chan}(end-round(numel(TauFitData.hIRF_Par{chan})/10):end));
+else % do baseline correction
+    %tmp = tmp - max(tmp).*TauFitData.IRFBackground{chan};
+    tmp(tmp<max(tmp).*TauFitData.IRFBackground{chan}) = NaN;
+end
+tmp(tmp<0) = NaN;
 h.Plots.IRF_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the perpendicular IRF channel
 h.Plots.IRF_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
 %tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
 tmp = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
+if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+    %%% additional processing of the IRF to remove constant background
+    tmp = tmp - mean(TauFitData.hIRF_Per{chan}(end-round(numel(TauFitData.hIRF_Per{chan})/10):end));
+else % do baseline correction
+    %tmp = tmp - max(tmp).*TauFitData.IRFBackground{chan};
+    tmp(tmp<max(tmp).*TauFitData.IRFBackground{chan}) = NaN;
+end
+tmp(tmp<0) = NaN;
+%tmp = tmp./max(tmp).*max(h.Plots.Decay_Per.YData);
 h.Plots.IRF_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the parallel Scat channel
 h.Plots.Scat_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
@@ -2975,8 +3071,14 @@ IRFPer = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.ShiftPer{chan}+T
 IRFPattern = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan}) + 2*IRFPer(1:TauFitData.Length{chan});
 IRFPattern = IRFPattern'./sum(IRFPattern);
 
-%%% additional processing of the IRF to remove constant background
-IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+    %%% additional processing of the IRF to remove constant background
+    IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end));
+else % do baseline correction
+    IRFPattern = IRFPattern - max(IRFPattern).*TauFitData.IRFBackground{chan};
+end
+IRFPattern(IRFPattern<0) = 0;
+IRFPattern = IRFPattern./sum(IRFPattern);
 
 cleanup_IRF = UserValues.TauFit.cleanup_IRF;
 if cleanup_IRF
@@ -4125,8 +4227,15 @@ switch obj
                 IRFPattern = cell(2,1);
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
-                for i = 1:2
-                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                for i = 1:2                    
+                    if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                        %%% additional processing of the IRF to remove constant background
+                        IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end));
+                    else % do baseline correction
+                        IRFPattern{i} = IRFPattern{i} - max(IRFPattern{i}).*TauFitData.IRFBackground{chan};
+                    end
+                    IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    IRFPattern{i} = IRFPattern{i}./sum(IRFPattern{i});
                 end
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
@@ -4251,7 +4360,14 @@ switch obj
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
                 for i = 1:2
-                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                        %%% additional processing of the IRF to remove constant background
+                        IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end));
+                    else % do baseline correction
+                        IRFPattern{i} = IRFPattern{i} - max(IRFPattern{i}).*TauFitData.IRFBackground{chan};
+                    end
+                    IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    IRFPattern{i} = IRFPattern{i}./sum(IRFPattern{i});
                 end
                 
                 %%% Define separate Scatter Patterns
@@ -4395,7 +4511,14 @@ switch obj
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
                 for i = 1:2
-                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                        %%% additional processing of the IRF to remove constant background
+                        IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end));
+                    else % do baseline correction
+                        IRFPattern{i} = IRFPattern{i} - max(IRFPattern{i}).*TauFitData.IRFBackground{chan};
+                    end
+                    IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    IRFPattern{i} = IRFPattern{i}./sum(IRFPattern{i});
                 end
                 
                 %%% Define separate Scatter Patterns
@@ -4527,7 +4650,14 @@ switch obj
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
                 for i = 1:2
-                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                        %%% additional processing of the IRF to remove constant background
+                        IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end));
+                    else % do baseline correction
+                        IRFPattern{i} = IRFPattern{i} - max(IRFPattern{i}).*TauFitData.IRFBackground{chan};
+                    end
+                    IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    IRFPattern{i} = IRFPattern{i}./sum(IRFPattern{i});
                 end
                 
                 %%% Define separate Scatter Patterns
@@ -4674,7 +4804,14 @@ switch obj
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
                 for i = 1:2
-                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                        %%% additional processing of the IRF to remove constant background
+                        IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end));
+                    else % do baseline correction
+                        IRFPattern{i} = IRFPattern{i} - max(IRFPattern{i}).*TauFitData.IRFBackground{chan};
+                    end
+                    IRFPattern{i}(IRFPattern{i}<0) = 0;
+                    IRFPattern{i} = IRFPattern{i}./sum(IRFPattern{i});
                 end
                 
                 %%% Define separate Scatter Patterns
@@ -6127,7 +6264,14 @@ switch TauFitData.BAMethod
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
-                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+                if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                    %%% additional processing of the IRF to remove constant background
+                    IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end));
+                else % do baseline correction
+                    IRFPattern = IRFPattern - max(IRFPattern).*TauFitData.IRFBackground{chan};
+                end
+                IRFPattern(IRFPattern<0) = 0;
+                IRFPattern = IRFPattern./sum(IRFPattern);
                 % clean up by fitting to gamma distribution
                 if UserValues.TauFit.cleanup_IRF
                     IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
@@ -6135,8 +6279,7 @@ switch TauFitData.BAMethod
                 else
                     Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
                 end
-                
-                %Irf = Irf-min(Irf(Irf~=0));
+
                 Irf = Irf./sum(Irf);
                 IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from plots
@@ -6461,8 +6604,17 @@ switch TauFitData.BAMethod
                 hIRF_per = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern./sum(IRFPattern);
+                
                 %%% additional processing of the IRF to remove constant background
-                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+                if TauFitData.IRFBackground{chan} == 0 % do standard background correction
+                    %%% additional processing of the IRF to remove constant background
+                    IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end));
+                else % do baseline correction
+                    IRFPattern = IRFPattern - max(IRFPattern).*TauFitData.IRFBackground{chan};
+                end
+                IRFPattern(IRFPattern<0) = 0;
+                IRFPattern = IRFPattern./sum(IRFPattern);
+                
                 % clean up by fitting to gamma distribution
                 if UserValues.TauFit.cleanup_IRF
                     IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
@@ -8032,7 +8184,7 @@ switch MEM_mode
         for i = 1:size(ps,1)
             model_all(i,:) = (decay_ind'*ps(i,:)')'+decay_offset;
         end
-        if ~linear_R
+        if strcmp(mode,'dist') && ~linear_R
             %%% reweight the distribution for R binning
             w = gradient(tau)./gradient(R); % binning correction
             norm_ps = sum(ps,2); % area

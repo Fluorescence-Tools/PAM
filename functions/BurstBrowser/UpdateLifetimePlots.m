@@ -202,8 +202,9 @@ else
 end
 
 h.axes_EvsTauGG.CLimMode = 'auto';
-h.axes_EvsTauGG.CLim(1) = max(H(:))*offset;
-try;h.axes_EvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
+try
+    h.axes_EvsTauGG.CLim = [max(H(:))*offset, max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
+end
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);

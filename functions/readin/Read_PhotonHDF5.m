@@ -165,6 +165,10 @@ otherwise
     detectors =  h5read(file,'/photon_data/detectors');
 
     det = unique(detectors);
+    %%% remove wrong detector assignemnts evaluating to 127
+    if any(det == 127)
+        det(det == 127) = [];
+    end
     MT = cell(10,1); MI = cell(10,1);
     for i = 1:numel(det)
         MT{det(i)+1} = double(timestamps(detectors == det(i)))';
@@ -180,8 +184,8 @@ otherwise
     
     %%% /photon_data group
     %%% /photon_data/measurement_specs
-    datastruct.photon_data.measurement_specs.alex_excitation_period1 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period1');
-    datastruct.photon_data.measurement_specs.alex_excitation_period2 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period2');
+    try;datastruct.photon_data.measurement_specs.alex_excitation_period1 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period1');end
+    try;datastruct.photon_data.measurement_specs.alex_excitation_period2 = h5read(file,'/photon_data/measurement_specs/alex_excitation_period2');end
     datastruct.photon_data.measurement_specs.laser_repetition_rate = h5read(file,'/photon_data/measurement_specs/laser_repetition_rate');
     datastruct.photon_data.measurement_specs.measurement_type = measurement_type;
     %%% /photon_data/measurement_specs/detectors_specs

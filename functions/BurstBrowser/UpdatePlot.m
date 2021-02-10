@@ -253,8 +253,11 @@ if ~advanced
         case {'Image','Scatter','Hex'}
             offset = UserValues.BurstBrowser.Display.ImageOffset/100;
     end
-    h.axes_general.CLim(1) = max(HH(:))*offset;
-    h.axes_general.CLim(2) = max(HH(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
+    clim = [max(HH(:))*offset, ...
+        max(HH(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
+    if ~all(clim == 0)
+        h.axes_general.CLim = clim;
+    end
     %%% Disable ZScale Axis
     h.axes_ZScale.Visible = 'off';
     set(BurstMeta.Plots.ZScale_hist,'Visible','off');

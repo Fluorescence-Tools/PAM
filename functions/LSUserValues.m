@@ -317,7 +317,7 @@ if Mode==0 %%% Loads user values
         '*.sim','PAM simulation file';...
         '*.ppf','PAM photon file (Created by PAM)';...
         '*.ptu','PicoQuant universal file format (*.ptu)';...
-        '*.h5','PhotonHDF5 file (*.h5,*.hdf5)';...
+        '*.h5;*.hdf5','PhotonHDF5 file (*.h5,*.hdf5)';...
         '*.t3r','TimeHarp200 TTTR file (*.t3r)';...
         '*.raw','Confocor3 raw file (*.raw)'};
 
@@ -1168,6 +1168,10 @@ if Mode==0 %%% Loads user values
             [100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
+    if size(S.BurstSearch.SearchParameters,1) < 3
+        S.BurstSearch.SearchParameters(3,1:6)={[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
     %%% Checks, if BurstSearch.SaveTotalPhotonStream exists
     if ~isfield(S.BurstSearch,'SaveTotalPhotonStream')
@@ -1272,6 +1276,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.IRFLength was wrong size');
     end
     P.TauFit.IRFLength = S.TauFit.IRFLength;
+    %%% Checks, if TauFit.IRFBackground exists
+    %%% (This field contains the IRF Background editbox/slider value)
+    if ~isfield(S.TauFit,'IRFBackground')
+        S.TauFit.IRFBackground={0,0,0,0,0};
+        disp('UserValues.TauFit.IRFBackground was incomplete');
+    end
+    P.TauFit.IRFBackground = S.TauFit.IRFBackground;
     %%% Checks, if TauFit.IRFShift exists
     %%% (This field contains the IRF Shift editbox/slider value)
     if ~isfield(S.TauFit,'IRFShift')
@@ -1441,6 +1452,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.DonorOnlyReferenceSource was incomplete');
     end
     P.TauFit.DonorOnlyReferenceSource = S.TauFit.DonorOnlyReferenceSource;
+    %%% Checks, if TauFit.FileTypeTXT exists
+    if ~isfield(S.TauFit,'FileTypeTXT')
+        S.TauFit.FileTypeTXT=1;
+        disp('UserValues.TauFit.FileTypeTXT was incomplete');
+    end
+    P.TauFit.FileTypeTXT = S.TauFit.FileTypeTXT;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
@@ -2059,10 +2076,22 @@ if Mode==0 %%% Loads user values
     P.BurstBrowser.Settings.SaveFileExportFigure = S.BurstBrowser.Settings.SaveFileExportFigure;
     %%% Check, if BurstBrowser.Settings.PDATimeBin subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PDATimeBin')
-        S.BurstBrowser.Settings.PDATimeBin=1;
+        S.BurstBrowser.Settings.PDATimeBin='1';
         disp('UserValues.BurstBrowser.Settings.PDATimeBin was incomplete');
     end
     P.BurstBrowser.Settings.PDATimeBin = S.BurstBrowser.Settings.PDATimeBin;
+    %%% Check, if BurstBrowser.Settings.TimeWindow_TimeBin subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'TimeWindow_TimeBin')
+        S.BurstBrowser.Settings.TimeWindow_TimeBin='1,2,3';
+        disp('UserValues.BurstBrowser.Settings.TimeWindow_TimeBin was incomplete');
+    end
+    P.BurstBrowser.Settings.TimeWindow_TimeBin = S.BurstBrowser.Settings.TimeWindow_TimeBin;
+    %%% Check, if BurstBrowser.Settings.TimeWindow_PhotonThreshold subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'TimeWindow_PhotonThreshold')
+        S.BurstBrowser.Settings.TimeWindow_PhotonThreshold=50;
+        disp('UserValues.BurstBrowser.Settings.TimeWindow_PhotonThreshold was incomplete');
+    end
+    P.BurstBrowser.Settings.TimeWindow_PhotonThreshold = S.BurstBrowser.Settings.TimeWindow_PhotonThreshold;
     %%% Check, if BurstBrowser.Settings.PDA_ExportLifetime subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PDA_ExportLifetime')
         S.BurstBrowser.Settings.PDA_ExportLifetime=false;

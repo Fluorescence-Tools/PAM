@@ -24,7 +24,7 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
         if isfield(BurstMeta,'fFCS') && isfield(BurstMeta.fFCS,'syntheticpatterns_names')
             species_names = [species_names,BurstMeta.fFCS.syntheticpatterns_names];
         end
-        species_names = [species_names,{'Load synthetic pattern...'}];
+        species_names = [species_names,{'Load microtime pattern...'}];
         h.fFCS_Species1_popupmenu.String = species_names;
         h.fFCS_Species1_popupmenu.Value = 1;
         h.fFCS_Species2_popupmenu.String = species_names;
@@ -43,11 +43,11 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
         end
         h.Plot_Microtimes_button.Enable = 'on';
     else %%% Set to empty
-        h.fFCS_Species1_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species1_popupmenu.String = 'Load microtime pattern...';
         h.fFCS_Species1_popupmenu.Value = 1;
-        h.fFCS_Species2_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species2_popupmenu.String = 'Load microtime pattern...';
         h.fFCS_Species2_popupmenu.Value = 1;
-        h.fFCS_Species3_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species3_popupmenu.String = 'Load microtime pattern...';
         h.fFCS_Species3_popupmenu.Value = 1;
         h.Plot_Microtimes_button.Enable = 'off';
         h.Calc_fFCS_Filter_button.Enable = 'off';
@@ -56,7 +56,7 @@ if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popup
 else
     %%% popupmenu selection was changed
     if obj.Value == numel(obj.String) %%% we clicked the last element, which is used to load a synthetic pattern
-        [File,Path] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Choose a synthetic microtime pattern',UserValues.File.BurstBrowserPath);
+        [File,Path] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Load a microtime pattern',UserValues.File.BurstBrowserPath);
         if File == 0
             return;
         end
@@ -103,8 +103,14 @@ else
             for j = 1:numel(Det)
                 MIPattern{Det(j),Rout(j)} = data(:,j);
             end
-            [~,BurstMeta.fFCS.syntheticpatterns_names{end+1},~] = fileparts(filename{1}{1});
-            BurstMeta.fFCS.syntheticpatterns{end+1}.MIPattern = MIPattern;
+            [~,patternname,~] = fileparts(filename{1}{1});
+            idx = find(strcmp(patternname,BurstMeta.fFCS.syntheticpatterns_names));
+            if isempty(idx)
+                BurstMeta.fFCS.syntheticpatterns_names{end+1} = patternname;
+                BurstMeta.fFCS.syntheticpatterns{end+1}.MIPattern = MIPattern;
+            else %%% overwrite
+                BurstMeta.fFCS.syntheticpatterns{idx}.MIPattern = MIPattern;
+            end
         end
         Update_fFCS_GUI([],[]);
     else

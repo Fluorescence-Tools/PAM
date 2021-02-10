@@ -14,7 +14,7 @@ if isdeployed
 %         PathToApp = fileparts(PathToApp);
 %     end
     if ~ismac % on UNIX and Windows, the relevant data is placed in a subfolder "PAM" in ctfroot
-        PathToApp = [PathToApp filesep 'PAM'];
+        %PathToApp = [PathToApp filesep 'PAM'];
     end
 else
     %%% if not deployed, the folder to PAM. is one up from /functions

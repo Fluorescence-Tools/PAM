@@ -777,13 +777,23 @@ switch (Type)
             
             [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),5E8,h.Progress.Axes,h.Progress.Text,i,numel(FileName),h.MT.Use_Chunkwise_Read_In.Value);
             
+            %Hasselt problem with laser flyback
+            NoFlyback = 0;
+            if NoFlyback
+                scaling = Header.SyncRate/20000000;
+                %all times (frame,line,clock,sync are scaled with the syncrate
+            else
+                scaling = 1;
+            end
+            
             if isempty(FileInfo.SyncPeriod)
-                FileInfo.SyncPeriod = 1/Header.SyncRate;
+                FileInfo.SyncPeriod = 1/Header.SyncRate*scaling;
             end
             if isempty(FileInfo.ClockPeriod)
-                FileInfo.ClockPeriod = 1/Header.SyncRate;
+                FileInfo.ClockPeriod = 1/Header.SyncRate*scaling;
             end
             if isempty(FileInfo.Resolution)
+                %timing resolution in picoseconds
                 FileInfo.Resolution = Header.Resolution;
             end
             if isfield(Header,'MI_Bins') % only returned for TimeHarp260 T3 data
@@ -833,9 +843,12 @@ switch (Type)
                 FileInfo.Frames = FileInfo.Frames + f;
                 
                 %%% create actual image and line times
-                FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart+MaxMT)'*FileInfo.ClockPeriod];
-                lstart = reshape((Header.LineStart+MaxMT),[],f)'*FileInfo.ClockPeriod;
-                lstop = reshape((Header.LineStop+MaxMT),[],f)'*FileInfo.ClockPeriod;
+                FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart./scaling+MaxMT)'*FileInfo.ClockPeriod];
+                disp('time per frame');
+                disp(diff(FileInfo.ImageTimes)); % this should be constant
+                
+                lstart = reshape((Header.LineStart./scaling+MaxMT),[],f)'*FileInfo.ClockPeriod;
+                lstop = reshape((Header.LineStop./scaling+MaxMT),[],f)'*FileInfo.ClockPeriod;
                 FileInfo.LineTimes=[FileInfo.LineTimes; lstart];
                 FileInfo.LineStops=[FileInfo.LineStops; lstop];
                 
@@ -861,7 +874,12 @@ switch (Type)
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
         if isempty(FileInfo.MI_Bins)
-            FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            if max(cellfun(@any,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))))
+                FileInfo.MI_Bins = 1;
+                FileInfo.TACRange = 0;
+            else
+                FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            end
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
@@ -951,7 +969,16 @@ switch (Type)
             end
             
         end
-        FileInfo.MeasurementTime = double(PhotonHDF5_Data.acquisiton_duration); %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        % read duration
+        dur_TCSPC = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        dur_HDF = double(PhotonHDF5_Data.acquisiton_duration);
+        % prefer metadata, but default to data-based determination if there
+        % is a large discrepancy.
+        if abs(dur_HDF-dur_TCSPC)/dur_TCSPC > 0.1
+            FileInfo.MeasurementTime = dur_TCSPC;
+        else
+            FileInfo.MeasurementTime = dur_HDF;
+        end        
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')

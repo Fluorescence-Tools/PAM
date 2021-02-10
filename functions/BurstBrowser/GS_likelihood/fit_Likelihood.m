@@ -1,17 +1,40 @@
+%% load data
 global BurstData BurstTCSPCData BurstMeta
-file = BurstMeta.SelectedFile;
-mt = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
-ch = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
-% convert channel to color and discard RR photons
-for i = 1:numel(mt)
-    % discard RR
-    mt{i} = double(mt{i}(ch{i} < 5));
-    ch{i} = double(ch{i}(ch{i} < 5));
-    % convert channel to color (1->D; 2->A)
-    ch{i} = ceil(ch{i}/2);
+burst = true;
+if burst
+    file = BurstMeta.SelectedFile;
+    if isempty(BurstTCSPCData{file})
+        Load_Photons();
+    end
+    mt = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
+    ch = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
+    % convert channel to color and discard RR photons
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            RRix = 5;
+        case 5 % noMFD
+            RRix = 3;
+    end
+    for i = 1:numel(mt)
+        % discard RR
+        mt{i} = double(mt{i}(ch{i} < RRix));
+        ch{i} = double(ch{i}(ch{i} < RRix));
+        % convert channel to color (1->D; 2->A)
+        if any(BurstData{file}.BAMethod == [1,2])
+            ch{i} = ceil(ch{i}/2);
+        end
+    end
+    mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
+else
+    % simulated time trace
+    mt = [Sim_Photons_1{1};Sim_Photons_1{2}];
+    ch = [ones(size(Sim_Photons_1{1}));2*ones(size(Sim_Photons_1{2}))];
+    [mt,ix] = sort(mt);
+    ch = ch(ix);
+    mt = {mt*1e-6};
+    ch = {ch};
 end
-mt = cellfun(@(x) x*BurstData{file}.SyncPeriod,mt,'UniformOutput',false);
-
+%% fitting
 n_states = 2;
 switch n_states
     case 2
@@ -20,11 +43,11 @@ switch n_states
 
         % initial values
         % set rates to 1/100mus
-        k0 = [1,1]*1E1;
-        E0 = [0.2,0.8];
+        k0 = [0.1,0.1]*1E3;
+        E0 = 1./(1+([60,40]./50).^6);%[0.25,0.8];
         lb = [0,0,0,0];
-        ub = [1E5,1E5,1,1];
-        fixE = false;
+        ub = [1E6,1E6,1,1];
+        fixE = true;
         if fixE
             lb(end-1:end) = E0;
             ub(end-1:end) = E0;   
@@ -35,12 +58,12 @@ switch n_states
 
         % initial values
         % set rates to 1/1ms
-        k0 = [1,1,1,1,1,1]*1E2;
-        E0 = [0.06,0.36,0.76];
+        k0 = [1,1,1,1,1,1]*1E3;
+        E0 =  1./(1+([60,50,40]./50).^6);%[0.25,0.525,0.8];
         
         lb = zeros(1,numel(k0)+numel(E0));
-        % maximum rate of 1/100µs
-        ub = [1E4*ones(1,numel(k0)),ones(1,numel(E0))];
+        % maximum rate of 1E6 Hz
+        ub = [1E6*ones(1,numel(k0)),ones(1,numel(E0))];
             
         fixE = true;
         if fixE
@@ -66,12 +89,12 @@ if vit
     s = viterbi(mt{i},ch{i},fitres(1:n_states*(n_states-1)),fitres(n_states*(n_states-1)+1:end));
 end
 
-trans = false;
-if trans & n_states == 2
+trans = true;
+if trans && n_states == 2
     % compare logL of model with transition time over a range
     % logL of tp = 0
     logL0 = GP_logL_burst(mt,ch,fitres(1:2),fitres(3:4));
-    tp = logspace(-6,-2,15); % from 1 to 100 µs
+    tp = logspace(-6,-3,50); % from 1 to 1000 µs
     kT = 1./(2*tp);
     logL = zeros(1,numel(kT));
     for i = 1:numel(kT)
@@ -79,4 +102,6 @@ if trans & n_states == 2
     end
     figure;
     semilogx(tp,logL-logL0);
+    ax = gca;
+    ax.YLim(1) = -100;
 end
