@@ -1172,6 +1172,10 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.SearchParameters(3,1:6)={[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
+    if size(S.BurstSearch.SearchParameters,1) < 4
+        S.BurstSearch.SearchParameters(4,1:6)={[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
     %%% Checks, if BurstSearch.SaveTotalPhotonStream exists
     if ~isfield(S.BurstSearch,'SaveTotalPhotonStream')
