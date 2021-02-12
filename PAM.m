@@ -9312,7 +9312,7 @@ while start_next < numel(dt) % we have not reached the end
     % do backwards CUSUM to refine the end of the previous burst
     stop = bCUSUM(dt,h,fB,fT,start,start_next,10);
 
-    if stop < stop_est
+    if stop < stop_est && stop > start
         if isempty(START) || START(end) ~= start
             START(end+1,1) = start;
             STOP(end+1,1) = stop;
