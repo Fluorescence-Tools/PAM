@@ -48,13 +48,15 @@ using namespace std;
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=3)
-    { mexErrMsgIdAndTxt("dyn_Sim:nrhs","3 inputs required."); }
+    if(nrhs!=5)
+    { mexErrMsgIdAndTxt("dyn_Sim:nrhs","5 inputs required."); }
     if (nlhs!=2)
     { mexErrMsgIdAndTxt("dyn_Sim:nlhs","2 outputs required."); }
     double * dur = mxGetPr(prhs[0]);
-    double * dwell_mean = mxGetPr(prhs[1]);
-    double * p_eq = mxGetPr(prhs[2]);
+    const int n_states = mxGetScalar(prhs[1]);
+    double * dwell_mean = mxGetPr(prhs[2]);
+    double * p_eq = mxGetPr(prhs[3]);
+    double * k_dyn = mxGetPr(prhs[4]);
     vector<double> state_dwell_time;
     vector<double> in_state;
     double * alloc_state_dwell;
@@ -64,13 +66,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int i;
     int trans;
     double t;
-    bool state;
+    int s;
+    int state;
     double tau;
+    double prob;
+    double state_changes[] = {1,1,2,-1,0,1,-2,-1};
     random_device rd;
     mt19937 mt(rd()); // initialize mersenne twister engine
     uniform_real_distribution<double> equal_dist(0.0,1.0);
-    binomial_distribution<int> roll(1,p_eq[1]);
-    state = roll(mt);
+    discrete_distribution<> distribution {p_eq[0],p_eq[1],p_eq[2]};
+    state = distribution(mt);
     t = 0;
     while (t<*dur){
         tau = -log(equal_dist(mt)) * dwell_mean[state];
@@ -80,7 +85,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         }
         state_dwell_time.push_back(t);
         in_state.push_back(state);
-        state = !state;
+        prob = equal_dist(mt);
+        for (s=0; s<n_states; ++s){
+            if (prob<=k_dyn[(n_states)*state+s]){
+                state += state_changes[(n_states)*state+s];
+                break;
+            }
+        }
     }
     int n1 = state_dwell_time.size();
     int n2 = in_state.size();
