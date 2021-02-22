@@ -13,6 +13,8 @@ if obj == h.Secondary_Tab_Correlation_Divider_Menu
         end
         UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));
     end
+elseif obj == h.Secondary_Tab_Correlation_Afterpulsing_Menu
+    UserValues.Settings.Pam.
 elseif obj == h.Secondary_Tab_Correlation_Standard2CMFD_Menu
     h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
     switch BurstData{BurstMeta.SelectedFile}.BAMethod
