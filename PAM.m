@@ -8756,26 +8756,26 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
     case 'Interphoton Time with Lee Filter' %%% Interphoton time with Lee filter
         fprintf(fid,'Smoothing window:\t\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
         if isfield(BurstData.BurstSearchParameters,'InterphotonTimeThreshold')
-            fprintf(fid,'Interphoton time threshold:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThreshold);
+            fprintf(fid,'Interphoton time threshold [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'InterphotonTimeThresholdBX')
-            fprintf(fid,'Interphoton time threshold GX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
-            fprintf(fid,'Interphoton time threshold RR:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
+            fprintf(fid,'Interphoton time threshold GX [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
+            fprintf(fid,'Interphoton time threshold RR [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
         else
-            fprintf(fid,'Interphoton time threshold BX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdBX);
-            fprintf(fid,'Interphoton time threshold GX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
-            fprintf(fid,'Interphoton time threshold RR:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
+            fprintf(fid,'Interphoton time threshold BX [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdBX);
+            fprintf(fid,'Interphoton time threshold GX [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
+            fprintf(fid,'Interphoton time threshold RR [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
         end
     case 'CUSUM'
         fprintf(fid,'Background signal:\t\t%d\n',BurstData.BurstSearchParameters.BackgroundSignal);
         if isfield(BurstData.BurstSearchParameters,'IntensityThreshold')
-            fprintf(fid,'Intensity threshold:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
+            fprintf(fid,'Intensity threshold [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'IntensityThresholdBX')
-            fprintf(fid,'Intensity threshold GX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
-            fprintf(fid,'Intensity threshold RR:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
+            fprintf(fid,'Intensity threshold GX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
+            fprintf(fid,'Intensity threshold RR [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
         else
-            fprintf(fid,'Intensity threshold BX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdBX);
-            fprintf(fid,'Intensity threshold GX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
-            fprintf(fid,'Intensity threshold RR:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
+            fprintf(fid,'Intensity threshold BX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdBX);
+            fprintf(fid,'Intensity threshold GX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
+            fprintf(fid,'Intensity threshold RR [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
         end
     case 'Change Point Analysis'        
         if isfield(BurstData.BurstSearchParameters,'IntensityThreshold')
