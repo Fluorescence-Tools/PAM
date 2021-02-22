@@ -8766,7 +8766,7 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
             fprintf(fid,'Interphoton time threshold RR [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
         end
     case 'CUSUM'
-        fprintf(fid,'Background signal:\t\t%d\n',BurstData.BurstSearchParameters.BackgroundSignal);
+        fprintf(fid,'Background signal [kHz]:\t\t%d\n',BurstData.BurstSearchParameters.BackgroundSignal);
         if isfield(BurstData.BurstSearchParameters,'IntensityThreshold')
             fprintf(fid,'Intensity threshold [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'IntensityThresholdBX')
@@ -8779,14 +8779,14 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
         end
     case 'Change Point Analysis'        
         if isfield(BurstData.BurstSearchParameters,'IntensityThreshold')
-            fprintf(fid,'Intensity threshold:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
+            fprintf(fid,'Intensity threshold [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'IntensityThresholddBX')
-            fprintf(fid,'Intensity threshold GX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
-            fprintf(fid,'Intensity threshold RR:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
+            fprintf(fid,'Intensity threshold GX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
+            fprintf(fid,'Intensity threshold RR [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
         else
-            fprintf(fid,'Intensity threshold BX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdBX);
-            fprintf(fid,'Intensity threshold GX:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
-            fprintf(fid,'Intensity threshold RR:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
+            fprintf(fid,'Intensity threshold BX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdBX);
+            fprintf(fid,'Intensity threshold GX [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdGX);
+            fprintf(fid,'Intensity threshold RR [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThresholdRR);
         end
 end
 
