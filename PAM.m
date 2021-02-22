@@ -4112,6 +4112,16 @@ elseif obj == h.Cor.AfterPulsingCorrection
         h.Cor.AggregateCorrection.Value = 0;
     end
     UserValues.Settings.Pam.AfterpulsingCorrection = h.Cor.AfterPulsingCorrection.Value;
+    %%% check if BurstBrowser is open, if yes, change value there
+    hBB = findobj('Tag','BurstBrowser');
+    if ~isempty(hBB)
+        hBB = guidata(hBB);
+        if UserValues.Settings.Pam.AfterpulsingCorrection == 1
+            hBB.Secondary_Tab_Correlation_Afterpulsing_Menu.Checked = 'on';
+        else
+            hBB.Secondary_Tab_Correlation_Afterpulsing_Menu.Checked = 'off';
+        end
+    end
 elseif obj == h.Cor.AggregateCorrection
     %%% disable afterpulsing removal
     if obj.Value == 1
