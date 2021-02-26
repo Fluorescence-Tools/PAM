@@ -690,7 +690,7 @@ switch (Type)
         FileInfo.MeasurementTime = Totaltime/Header.Freq;
         FileInfo.LineTimes = FileInfo.LineTimes/Header.Freq;
         FileInfo.HeaderSim = Header;
-    case 5 %%% Pam Photon File
+    case 5 %%% Pam Photon File (*.ppf)
         if strcmp(UserValues.Detector.Auto,'off')
             TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
             TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
@@ -719,6 +719,7 @@ switch (Type)
             FileInfo.NumberOfFiles = FileInfo.NumberOfFiles + Loaded.Info.NumberOfFiles;
         end
         FileInfo.FileName = FileName;
+        FileInfo.NumberOfFiles=numel(FileName);
     case 6 %%% .PTU files from HydraHarp Software V3.0
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
