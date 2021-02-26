@@ -720,6 +720,7 @@ switch (Type)
         end
         FileInfo.FileName = FileName;
         FileInfo.NumberOfFiles=numel(FileName);
+        FileInfo.FileType = 'PAM photon file';
     case 6 %%% .PTU files from HydraHarp Software V3.0
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
