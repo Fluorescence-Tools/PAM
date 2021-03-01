@@ -103,7 +103,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         [E,sSelected,sPerBin,BinCenters] = BVA_expData();
         
         Progress(0.5,h.Progress_Axes,h.Progress_Text,'Simulating Model 1...');
-        
+        %kinetic_consistency_check_2species_test
         %%% Simulate Model 1 %%%
         [E_sim,sSelected_sim,sPerBin_sim] = ...
             kinetic_consistency_check_2species('BVA',...
@@ -131,14 +131,14 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
             case 1            
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%%% Compare two models to experimental data %%%%%%%
-                %%%%%%% and plot separately                     %%%%%%%
+                %%%%%%%            and plot separately          %%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 
                 % simulate second model
                 Progress(0.75,h.Progress_Axes,h.Progress_Text,'Simulating Model 2...');
                 
                 [E_sim_Model2,sSelected_sim_Model2,sPerBin_sim_Model2] = ...
-                    kinetic_consistency_check_2species('BVA',...
+                    kinetic_consistency_check_2species_test('BVA',...
                     UserValues.BurstBrowser.Settings.BVA_DynamicStates_Model2,...
                     UserValues.BurstBrowser.Settings.BVA_StaticStates_Model2,...
                     rate_matrix_Model2,R_states_Model2,sigmaR_states_Model2,...
@@ -402,8 +402,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                     plot(BinCenters',sPerBin_sim,'d','MarkerSize',12,'MarkerEdgeColor','none',...
                         'MarkerFaceColor',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
                     
-                    lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_Model1_legend,'Position',[0.705 0.715 0.235 0.23535],'Box','on');
-                    lgd.FontSize = ffontsize*0.95;
+                    
                     face_alpha = 0.8;
                     plot_marignal_1D_hist(ax,E,sSelected,face_alpha,UserValues.BurstBrowser.Display.ColorLine1,ffontsize,0)
                     plot_marignal_1D_hist(ax,E_sim,sSelected_sim,face_alpha,UserValues.BurstBrowser.Display.ColorLine2,ffontsize,1)
@@ -412,6 +411,8 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                     X_expectedSD = linspace(0,1,1000);
                     sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
                     plot(ax,X_expectedSD,sigm,'k','LineWidth',3);
+                    lgd = legend(ax,['Binned' newline 'EXP Data'],SSR_Model1_legend,['Expected SD'],'Position',[0.705 0.715 0.235 0.23535],'Box','on');
+                    lgd.FontSize = ffontsize*0.8;
                     if UserValues.BurstBrowser.Settings.BVAdynFRETline == true
                         E1 = 1/(1+(R_states(1,1)/BurstData{file}.Corrections.FoersterRadius)^6);
                         E2 = 1./(1+(R_states(1,2)/BurstData{file}.Corrections.FoersterRadius)^6);

@@ -6690,11 +6690,15 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 h.Cor.Correlations_Tabs.SelectedTab = h.Cor.Individual_Tab{i};
                 %%% Changes Tab Name
                 h.Cor.Individual_Tab{i}.Title = [PIE_Name1 '_x_' PIE_Name2];
+                lgd_str = cell(size(Cor_Array,2),1); % generate legend strings
                 for j = 1:size(Cor_Array,2)
                     h.Cor.Individual_Axes{i}.Children(j).XData = Cor_Times;
                     h.Cor.Individual_Axes{i}.Children(j).YData = Cor_Array(:,j);
                     h.Cor.Individual_Axes{i}.Children(j).ButtonDownFcn ={@Cor_Selection,1};
+                    lgd_str{j} = ['Block #' num2str(j)];
                 end
+                %%% Enable legend
+                legend(h.Cor.Individual_Axes{i},lgd_str);
                 %%% Saves filename in axes
                 h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
                 h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;

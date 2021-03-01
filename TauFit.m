@@ -7650,7 +7650,7 @@ switch obj
             pathname = UserValues.File.TauFitPath;
         end
         
-        [filename, pathname, FilterIndex] = uigetfile('*.txt','Load lifetime data...',pathname,...
+        [filename, pathname, FilterIndex] = uigetfile('*.csv','Load lifetime data...',pathname,...
             'MultiSelect','on');
         if FilterIndex == 0
             return;

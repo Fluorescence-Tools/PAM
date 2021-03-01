@@ -11,6 +11,7 @@ R0 = BurstData{file}.Corrections.FoersterRadius;
 gamma = BurstData{file}.Corrections.Gamma_GR;
 ct = BurstData{file}.Corrections.CrossTalk_GR;
 de = BurstData{file}.Corrections.DirectExcitation_GR;
+rate_matrix_3state = rate_matrix;
 switch type
     case 'BVA'
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
@@ -36,100 +37,108 @@ switch type
         %%% simulate kinetics
         %%% for BVA, we need to consider the actual photons, so simulate a
         %%% full trajectory
-        freq = 100*max(rate_matrix(:)); % set frequency for kinetic scheme evaluation to 100 times of fastest process
         channel = cell(numel(mt),2);
+        dur = BurstData{file}.DataArray(BurstData{file}.Selected,find(strcmp('Duration [ms]',BurstData{file}.NameArray))); % duration in milliseconds
         for species = 1:2
-            if species == 2
-                rate_matrix = amplitudes;
+            if species == 2 % static
+                if nansum(amplitudes(:)) == 0
+                    continue
+                end
+                rate_matrix = 1./amplitudes;
+                rate_matrix = rate_matrix*1E-6;
+                rate_matrix(isinf(rate_matrix)) = 1E-6;
+                rate_matrix(isnan(rate_matrix)) = 0;
                 R_states = R_states_static;
                 sigmaR = sigmaR_static;
-                dynamic = 0;
                 n_states = n_states_static;
-            else
-                dynamic = 1;
+                change_prob = zeros(n_states);
+            else % dynamic
                 n_states = n_states_dyn;
-            end
-            if nansum(rate_matrix) == 0
-                continue
-            end
-            states = cell(numel(mt),1);
-            % convert macrotime to seconds and subtract first time point
-            mt_sec = cellfun(@(x) double(x-x(1))*BurstData{file}.ClockPeriod,mt,'UniformOutput',false);
-            dur = cell2mat(cellfun(@(x) x(end),mt_sec,'UniformOutput',false)); %duration
-            for i = 1:numel(mt) %%% loop over bursts
-                %%% evaluate kinetic scheme
-                states{i} = simulate_state_trajectory(rate_matrix,dur(i),freq,dynamic);
-            end
-            % convert macrotime to units of freq
-            mt_freq = cellfun(@(x) floor(x*freq)+1,mt_sec,'UniformOutput',false);
-            %%% brightness correction
-            %
-            % Do this either by discarding photons of dimmer species a priori
-            %   (Note: This violates the photon statistics, as less photons are
-            %   used here.)
-            % Or by duplicating/removing photons under the assumption of Poissonian
-            % statistics.
-            %   (Note: This keeps photons roughly constant.)
-            brightness_correction = true;
-            discard = true;
-            if brightness_correction
-                for i = 1:n_states
-                    Qr(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
+                if n_states == 3
+                    change_prob = cumsum(rate_matrix);
+                    change_prob = change_prob ./ repmat(change_prob(end,:),3,1);
                 end
-                if discard
-                    %%% normalize by maximum brightness
-                    Qr = Qr./max(Qr);
-                    detected = cellfun(@(x,y) binornd(1,Qr(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
-                    mt_freq = cellfun(@(x,y) x(y==1),mt_freq,detected,'UniformOutput',false);
-                else
-                    %%% normalize by medium brightness
-                    Qr = Qr./mean(Qr);
-                    % draw poisson distrubted random numbers for each photon
-                    detected = cellfun(@(x,y) poissrnd(Qr(x(min(y,end)))),states_dyn,mt_freq,'UniformOutput',false);
-                    %%% remove invalid 3photon detections from mt_freq, and duplicate those with detected > 1
-                    for i = 1:numel(mt_freq)
-                        mt_freq_resampled = mt_freq{i};
-                        mt_freq_resampled(detected{i} == 0) = [];
-                        for j = 2:max(detected{i})
-                            mt_freq_resampled = [mt_freq_resampled; mt_freq{i}(detected{i} == j)];
-                        end
-                        mt_freq{i} = sort(mt_freq_resampled);
-                    end
+                if sum(rate_matrix) == 0
+                    continue
                 end
             end
-            %%% generate channel variable based on kinetic scheme       
-            %%% assign channel based on states
-            %%% without conformational broadening
-            % channel = cellfun(@(x,y) binornd(1,E_states(x(min(y,end)))),states,mt_freq,'UniformOutput',false);
-            %%% with conformational broadening
-            % roll efficiencies of each state for every burst
-            E_burst = cell(numel(mt_freq),1);
+            
+            dwell_mean = 1 ./ sum(rate_matrix) * 1E3;
+            for i = 1:n_states
+                rate_matrix(i,i) = -sum(rate_matrix(:,i));
+            end
+            rate_matrix(end+1,:) = ones(1,n_states);
+            b = zeros(n_states,1); b(end+1) = 1;
+            p_eq = rate_matrix\b;
             gamma = BurstData{file}.Corrections.Gamma_GR;
             ct = BurstData{file}.Corrections.CrossTalk_GR;
             de = BurstData{file}.Corrections.DirectExcitation_GR;
-            BG_Donor = 1000*dur*(BurstData{file}.Background.Background_GGpar + BurstData{file}.Background.Background_GGperp);
-            BG_FRET = 1000*dur*(BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp);
-            for b = 1:numel(mt_freq)
-                E_burst{b} = 1./(1+(normrnd(R_states,sigmaR)/R0).^6);
-                % convert to proximity ratio (see SI of ALEX paper) 
-                %E_burst{b} = ((gamma-ct)*E_burst{b}+ct+de)./((gamma-ct-1).*E_burst{b}+ct+de+1);
-                E_burst{b} = (gamma*E_burst{b}+ct*(1-E_burst{b})+de)./(gamma*E_burst{b}+ct*(1-E_burst{b})+de + (1-E_burst{b}));
-                % with background
-                E_burst{b} = ((numel(mt_freq{b})-BG_Donor(b)-BG_FRET(b)).*E_burst{b}+BG_FRET(b))./numel(mt_freq{b});
+            BG_Donor = dur*(BurstData{file}.Background.Background_GGpar + BurstData{file}.Background.Background_GGperp);
+            BG_FRET = dur*(BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp);
+            Qr = zeros(n_states, 1);
+            for i = 1:n_states
+                Qr(i) = calc_relative_brightness(R_states(i),gamma,ct,de,R0);
             end
-            channel(:,species) = cellfun(@(x,y,z) binornd(1,z(x(min(y,end)))),states,mt_freq,E_burst,'UniformOutput',false);
+            
+            discard = true;
+            if discard
+                % normalize by maximum brightness
+                Qr = Qr./max(Qr);
+            else
+                % normalize by medium brightness
+                Qr = Qr./mean(Qr);
+            end
+            for i = 1:length(mt)
+                if n_states == 2
+                    [state_dwell, in_state] = Gillespie_2states_BVA(dur(i),dwell_mean,p_eq);
+                else
+                    [state_dwell, in_state] = Gillespie_inf_states_BVA(dur(i),n_states,dwell_mean,p_eq, change_prob);
+                end
+                arrivalT = double(mt{i,1}-mt{i,1}(1,1)) * BurstData{file}.ClockPeriod/1E-3;
+                states = zeros(length(arrivalT), 1);
+                t = 0;
+                for j = 1:length(in_state)
+                    states(arrivalT >= t & arrivalT <= state_dwell(j)) = in_state(j)+1;
+                    t = state_dwell(j);
+                end
+                % max(arrivalT) may not match burst duration, add
+                % state of previous photon here
+                if states(end) == 0
+                    states(end) = states(end-1);
+                end
+                % discarding photons of dimmer species a priori
+                if discard
+                    detected = binornd(1, Qr(states));
+                    states = states(logical(detected));
+                else
+                    % draw poisson distrubted random numbers for each ph
+                    detected = poissrnd(1, Qr(states));
+                    % remove invalid 3photon detections from mt_freq, and duplicate those with detected > 1
+                    states_resampled = states;
+                    states_resampled(detected == 0) = [];
+                    for j = 2:max(detected)
+                        states_resampled = [states_resampled; states(detected == j)];
+                    end
+                    states = states_resampled;
+                end
+                % roll efficiencies of each state for every burst
+                E_burst = 1./(1+(normrnd(R_states,sigmaR)/R0).^6);
+                % convert to proximity ratio (see SI of ALEX paper)
+                E_burst = (gamma*E_burst+ct*(1-E_burst)+de)./(gamma*E_burst+ct*(1-E_burst)+de + (1-E_burst));
+                % with background
+                E_burst = ((numel(mt{i})-BG_Donor(i)-BG_FRET(i)).*E_burst+BG_FRET(i))./numel(mt{i});
+                % assign channel based on states
+                channel{i, species} = binornd(1, E_burst(states));
+            end
         end
-        % visualize
-        % figure;area(states{i}-1,'FaceAlpha',0.15,'EdgeColor','none');hold on; scatter(mt_freq{i},0.5*ones(size(mt_freq{i})),20,colors(channel{i}+1,:));
-        
-        % Combine dynamic and static simulation
+        % Combine dynamic and static species
         if n_states_static == 3
             amplitudes = amplitudes/1E3/2;
         else
             amplitudes = amplitudes/1E3;
         end
         amplitudes(isnan(amplitudes)) = 0;
-        amplitudes(isinf(amplitudes)) = 0;
+        amplitudes(isinf(amplitudes)) = 0; 
         staticcut = round(sum(amplitudes(:)) / (1+sum(amplitudes(:))) * length(channel));
         channel(1:staticcut,1) = channel(1:staticcut,2);
         channel(:,2) = [];
@@ -163,7 +172,7 @@ switch type
                     sPerBin(j,1) = std(EPerBin);
                 end
             end
-        end 
+        end
     case 'Lifetime' % Do both E-tau and phasor
         if UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method == 3
             do_phasor = true;
