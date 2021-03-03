@@ -50,11 +50,19 @@ SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %%% 1       GG
 %%% 2       GR
 %%% 3       RR
+if SmoothingMethod ~= 4 % use chunks to estimate the error
+    Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
+    ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
+    index_loop = find(PamMeta.Selected_MT_Patches)';
+else
+    % process as one chnk to save time
+    Number_of_Chunks = 1;
+    ChunkSize = FileInfo.MeasurementTime/60;
+    index_loop = 1;
+end
 
-Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
-ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
-offset = [0,0];
-for i = find(PamMeta.Selected_MT_Patches)'
+offset = [0,0]; % the photon offset between chunks
+for i = index_loop
     Progress((i-1)/Number_of_Chunks,h.Progress.Axes, h.Progress.Text,'Estimating Event Rates...');
     % get the photons and assign them to the color channels
     if any(BAMethod == [1 2]) %ACBS 2 Color
@@ -162,10 +170,16 @@ start = {vertcat(start{:,1}),vertcat(start{:,2})};
 stop = {vertcat(stop{:,1}),vertcat(stop{:,2})};
 PhotonsCh = {vertcat(PhotonsCh{:,1}),vertcat(PhotonsCh{:,2})};
 event_rates = sum(event_number_mat,1)./FileInfo.MeasurementTime;
-event_rates_error = std(event_number_mat,1)./(ChunkSize*60);
+if SmoothingMethod ~= 4
+    event_rates_error = std(event_number_mat,1)./(ChunkSize*60);
+end
 fprintf('Event rates:\n');
 for i = 1:NChan
-    fprintf('Channel %i: %.2f pm %.2f Hz\n',i,event_rates(i),event_rates_error(i));
+    if SmoothingMethod ~= 4
+        fprintf('Channel %i: %.2f pm %.2f Hz\n',i,event_rates(i),event_rates_error(i));
+    else
+        fprintf('Channel %i: %.2f Hz\n',i,event_rates(i));
+    end
 end
 
 %%% Update Display
@@ -188,7 +202,6 @@ switch BAMethod %make histograms for lower display with binning T_classic
         ch{1} = hist(PhotonsCh{1}, xout);
         ch{2} = hist(PhotonsCh{2}, xout);
 end
-%xout = xout+Bin_Time/2;
 % convert start/stop to photon arrival times (i.e. burst range)
 x = {[],[]};
 y = {[],[]};
@@ -205,8 +218,8 @@ lw = 1.5;
 fs = 18;
 colors = {[0, 0.4471,0.7412],[0.8510, 0.3255, 0.0980]};
 hfig = figure('Position',[100,100,800,600],'Color',[1,1,1]);
-ax1 = axes('Parent',hfig,'Position',[0.15,0.55,0.8,0.4],'Color',[1,1,1],'Box','on','Linewidth',lw,'FontSize',fs);
-ax2 = axes('Parent',hfig,'Position',[0.15,0.15,0.8,0.4],'Color',[1,1,1],'Box','on','Linewidth',lw,'FontSize',fs);
+ax1 = axes('Parent',hfig,'Position',[0.15,0.5,0.8,0.4],'Color',[1,1,1],'Box','on','Linewidth',lw,'FontSize',fs);
+ax2 = axes('Parent',hfig,'Position',[0.15,0.1,0.8,0.4],'Color',[1,1,1],'Box','on','Linewidth',lw,'FontSize',fs);
 %slider = uicontrol('Parent',hfig,'Style','slider','Units','normalized','Position',[0.1,0.01,0.8,0.05]);
 
 linkaxes([ax1,ax2],'x');
@@ -216,12 +229,12 @@ plot(ax1,xout*FileInfo.ClockPeriod,ch{1},'Color',colors{1});
 plot(ax1,xout*FileInfo.ClockPeriod,ch{2},'Color',colors{2});
 xlim([0 1]);%FileInfo.MeasurementTime]);
 set(ax1,'YLimMode','auto');
-
+yl = ax1.YLim;
 % plot the selected burst regions
 for j = 1:2
-    area(ax1,x{j}*FileInfo.ClockPeriod,y{j}*ax1.YLim(2),'EdgeColor','none','FaceAlpha',0.25,'FaceColor',colors{j});
+    area(ax1,x{j}*FileInfo.ClockPeriod,y{j}*max(ch{j}),'EdgeColor','none','FaceAlpha',0.25,'FaceColor',colors{j});
 end
-
+ax1.YLim = yl;
 %%% Plot Interphoton time trace
 axes(ax2); hold on;
 for j = 1:2
@@ -236,5 +249,12 @@ for j = 1:2
     area(ax2,x{j}*FileInfo.ClockPeriod,y{j}*yl(2),'EdgeColor','none','FaceAlpha',0.25,'FaceColor',colors{j});
 end
 ylim(ax2,yl);
+
+ax1.XAxisLocation = 'top';
+ax1.YTickLabel{1} = '';
+ylabel(ax1,'count rate [kHz]')
+ylabel(ax2,'interphoton time [\mus]','interpreter','tex');
+xlabel(ax1,'time [s]');
+xlabel(ax2,'time [s]');
 
 function update_plot(~,~)

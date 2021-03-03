@@ -47,7 +47,7 @@ end
 
 % run analysis
 dt = diff(Photons);
-split_photons = 20000;
+split_photons = 25000;
 N_splits = ceil(numel(dt)./split_photons);
 result = cell(N_splits,1);
 pid = cell(N_splits,1);
@@ -82,8 +82,8 @@ for i = 1:(N_splits-1)
     b = numel(text);
 end
 
-fprintf('Waiting 5 seconds for subprocesses to finish...');
-pause(5); % wait for all processes to finish
+fprintf('Waiting 10 seconds for subprocesses to finish...\n');
+pause(10); % wait for all processes to finish
 % kill all processes (routine sometimes hangs)
 for i = 1:numel(pid)
     if ~isempty(pid{i})
