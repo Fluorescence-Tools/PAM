@@ -1263,6 +1263,21 @@ h.Burst.BurstParameter2_Text = uicontrol(...
     'Callback',@BurstSearchParameterUpdate,...
     'Position',[0.05 0.35 0.65 0.08],...
     'TooltipString',sprintf(''));
+%%% Edit Box for Parameter6 (time Window for second channel)
+%%% Note: This was added later. No text is needed.
+h.Burst.BurstParameter6_Edit = uicontrol(...
+    'Style','edit',...
+    'Parent',h.Burst.SubPanel_BurstSearch,...
+    'Tag','BurstParameter6_Edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','500',...
+    'Callback',@BurstSearchParameterUpdate,...
+    'Position',[0.85 0.35 0.1 0.08],...
+    'TooltipString',sprintf(''),...
+    'Visible','off');
 %%% Edit Box for Parameter3 (Photons per Time Window Threshold 1)
 h.Burst.BurstParameter3_Edit = uicontrol(...
     'Style','edit',...
@@ -7472,10 +7487,13 @@ h.Burst.BurstParameter2_Edit.String = num2str(UserValues.BurstSearch.SearchParam
 h.Burst.BurstParameter3_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(3));
 h.Burst.BurstParameter4_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(4));
 h.Burst.BurstParameter5_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(5));
+h.Burst.BurstParameter6_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(6));
 BurstSearchParameterUpdate([],[]);
 %%% Update Text based on BAMethod AND Smoothing Method
 h.Burst.BurstParameter2_Text.Visible = 'on';
 h.Burst.BurstParameter2_Edit.Visible = 'on';
+h.Burst.BurstParameter6_Edit.Visible = 'off';
+h.Burst.BurstParameter2_Edit.Position(3) = 0.2;
 switch UserValues.BurstSearch.SmoothingMethod
     case 1 %Sliding Time Window
         h.Burst.BurstParameter2_Text.String = 'Time Window [us]:';
@@ -7493,6 +7511,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
             case 'APBS_threecolorMFD'
                 h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
                 h.Burst.BurstParameter4_Text.Visible = 'off';
@@ -7520,6 +7540,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
         end
     case 2 % Interphoton time with Lee filter
         h.Burst.BurstParameter2_Text.String = 'Smoothing Window (2*N+1):';
@@ -7537,6 +7559,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
             case 'APBS_threecolorMFD'
                 h.Burst.BurstParameter3_Text.String = 'Interphoton Time [us]:';
                 h.Burst.BurstParameter4_Text.Visible = 'off';
@@ -7564,6 +7588,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
         end
     case 3 % CUSUM burst search        
         h.Burst.BurstParameter2_Text.String = 'Background [kHz]:';
@@ -7581,6 +7607,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
             case 'APBS_threecolorMFD'
                 h.Burst.BurstParameter3_Text.String = 'Threshold [kHz]:';
                 h.Burst.BurstParameter4_Text.Visible = 'off';
@@ -7608,6 +7636,8 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter6_Edit.Visible = 'on';
+                h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
         end
     case 4 % changepoint burst search
         h.Burst.BurstParameter2_Text.Visible = 'off';
@@ -7652,7 +7682,7 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter4_Text.String = 'Threshold RR [kHz]:';
                 h.Burst.BurstParameter4_Edit.Visible = 'on';
                 h.Burst.BurstParameter5_Text.Visible = 'off';
-                h.Burst.BurstParameter5_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';               
         end
 end
 
@@ -7667,7 +7697,7 @@ if obj == h.Burst.BurstPIE_Table %change in PIE channel selection
 else %change in edit boxes
     UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method} = [str2double(h.Burst.BurstParameter1_Edit.String),...
         str2double(h.Burst.BurstParameter2_Edit.String), str2double(h.Burst.BurstParameter3_Edit.String), str2double(h.Burst.BurstParameter4_Edit.String),...
-        str2double(h.Burst.BurstParameter5_Edit.String)];
+        str2double(h.Burst.BurstParameter5_Edit.String),str2double(h.Burst.BurstParameter6_Edit.String)];
 end
 LSUserValues(1);
 
@@ -7857,7 +7887,8 @@ for i = find(PamMeta.Selected_MT_Patches)'
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
                 [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
             elseif BAMethod == 2
-                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                T = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(6)];
                 M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
@@ -9058,9 +9089,11 @@ switch type
         %do burst search on each channel
         MD = M(1);
         MA = M(2);
+        TD = T(1);
+        TA = T(2);
         %ACBS(Photons,T,M,L), don't specify L for no cutting!
-        [startD, stopD, ~] = APBS(PhotonsD,T,MD);
-        [startA, stopA, ~] = APBS(PhotonsA,T,MA);
+        [startD, stopD, ~] = APBS(PhotonsD,TD,MD);
+        [startA, stopA, ~] = APBS(PhotonsA,TA,MA);
         
         startD = indexD(startD);
         stopD = indexD(stopD);
@@ -9097,9 +9130,11 @@ switch type
         %do burst search on each channel
         MD = M(1);
         MA = M(2);
+        TD = T(1);
+        TA = T(2);
         %ACBS(Photons,T,M,L), don't specify L for no cutting!
-        [startD, stopD, ~] = APBS(PhotonsD,T,MD);
-        [startA, stopA, ~] = APBS(PhotonsA,T,MA);
+        [startD, stopD, ~] = APBS(PhotonsD,TD,MD);
+        [startA, stopA, ~] = APBS(PhotonsA,TA,MA);
         
         startD = indexD(startD);
         stopD = indexD(stopD);
@@ -9300,9 +9335,9 @@ IT = IT*1E3*FileInfo.ClockPeriod; % threshold intensity
 alpha = 1/numel(Photons);
 beta = 0.05;
 % calculate the expectation value of the log likelihood ratio
-x = 0:1:max(dt);
-fB = exp(-x*IB); fB = fB./sum(fB);
-fT = exp(-x*IT); fT = fT./sum(fT);
+x = 0:1:max([max(dt), ceil(-log(1E-3)/IB)]);
+fB = exp(-x*IB); fB = fB./sum(fB); fB(fB==0) = eps;
+fT = exp(-x*IT); fT = fT./sum(fT); fT(fT==0) = eps;
 lambda = log(fT)-log(fB);
 %mlambdaB = sum(fB.*lambda);
 mlambdaT = sum(fT.*lambda);
@@ -9320,21 +9355,27 @@ while start_next < numel(dt) % we have not reached the end
     
     % estimate the end of burst using SPRT
     stop_est = SPRT(dt,A,B,fB,fT,start);
+    if stop_est > start+5 % require an offest of at least 5 photons
+        % find the next edge using CUSUM
+        start_next = CUSUM(dt,h,fB,fT,stop_est);
 
-    % find the next edge using CUSUM
-    start_next = CUSUM(dt,h,fB,fT,stop_est);
+        % do backwards CUSUM to refine the end of the previous burst
+        stop = bCUSUM(dt,h,fB,fT,start,start_next,10);
 
-    % do backwards CUSUM to refine the end of the previous burst
-    stop = bCUSUM(dt,h,fB,fT,start,start_next,10);
-
-    if stop < stop_est && stop > start
-        if isempty(START) || START(end) ~= start
-            START(end+1,1) = start;
-            STOP(end+1,1) = stop;
-        else % sometimes, the algorithm gets stuck
-            % move on
-            stop = stop + 10;
+        if stop < stop_est && stop > start
+            if isempty(START) || START(end) ~= start
+                START(end+1,1) = start;
+                STOP(end+1,1) = stop;
+            else % sometimes, the algorithm gets stuck
+                % move on
+                stop = start + 10;
+                start_next = stop; % to trigger exit condition
+            end
         end
+    else % sometimes, the algorithm gets stuck
+        % move on
+        stop = start + 10;
+        start_next = stop; % to trigger exit condition
     end
 end
 
@@ -9345,10 +9386,13 @@ if nargin < 5
 end
 ix = ix_start;
 S = 0;
+s = [];
 while S < h && ix < numel(dt)
     S = max([S+log(fT(dt(ix)+1))-log(fB(dt(ix)+1)),0]);
+    s(end+1) = S;
     ix = ix + 1;
 end
+ix;
 
 function ix = SPRT(dt,A,B,fB,fT,ix_start)
 % estimate the burst end using SPRT
@@ -9426,7 +9470,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 2
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            T = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(6)];
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
@@ -9491,7 +9536,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 6 %DCBS 2 Color-noMFD
-            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            T = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(6)];
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);

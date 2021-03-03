@@ -1182,6 +1182,11 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.SearchParameters(4,1:6)={[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
+    if numel(S.BurstSearch.SearchParameters{1}) < 6
+        %%% added an additional parameter, append to all arrays
+        S.BurstSearch.SearchParameters = cellfun(@(x) [x,x(2)], S.BurstSearch.SearchParameters,'UniformOutput',false);
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
     %%% Checks, if BurstSearch.SaveTotalPhotonStream exists
     if ~isfield(S.BurstSearch,'SaveTotalPhotonStream')
