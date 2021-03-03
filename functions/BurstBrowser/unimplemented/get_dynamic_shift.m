@@ -54,6 +54,12 @@ y_line = BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData;
 d = sqrt((x_line-point(1)).^2+(y_line-point(2)).^2);
 [ds,ix_ds] = min(d);
 
+% are we above or below the line?
+% find closest x-coordinate to maximum point of population
+[~, ix_Tau] = min(abs(x_line-muTau));
+if point(2) < y_line(ix_Tau)
+    ds = (-1)*ds;
+end
 %fprintf('Dynamic shift: %.3f\n',ds);
 hold on;
 scatter(point(1),point(2),200,'x','MarkerEdgeColor','k','LineWidth',2);
@@ -68,7 +74,8 @@ y = BurstMeta.Plots.Mixture.Main_Plot(ix+1).YData;
 z = BurstMeta.Plots.Mixture.Main_Plot(ix+1).ZData; z = z./max(z(:));
 LevelList = 0.32;
 [c,hC] = contour(x,y,z,'LevelList',LevelList,'Fill','off','LineColor',[0,0,0],'LineWidth',2,'ShowText','off');
-viscircles([point;point],[SEM,sigma],'LineStyle','-');
+viscircles(point,SEM,'LineStyle','-');
+%viscircles([point;point],[SEM,sigma],'LineStyle','-');
 
 title(sprintf('dynamic shift = %.3f\nSEM of population = %.4f',ds,SEM),'FontSize',14);
 Mat2clip([ds,SEM]);
