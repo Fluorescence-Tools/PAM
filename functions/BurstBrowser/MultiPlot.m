@@ -215,7 +215,7 @@ end
 
 if nargout > 0 %%% we requested the histogram, do not plot!
     H_ind = H; %%% assign cell array to last output
-    if (gcbo == h.MultiPlotButton) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
+    if ~isempty(gcbo) && (gcbo == h.MultiPlotButton) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
         HistOut = H; %%% just return the cell array
     else
         Hcum = H{1};

@@ -993,12 +993,14 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
+    BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
+    if (paramx ~= paramy)
+        BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
+    end
     if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.UserData
         BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
         BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
         BurstMeta.Fitting.BurstCount = H;
-        BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
-        BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
     end
     if advanced
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
