@@ -1211,11 +1211,11 @@ h.Burst.BurstSearchSelection_ANDOR_Popupmenu = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'AND','OR','XOR'},...
+    'String',{'AND','OR (merge)','OR (no merge)','XOR'},...
     'Callback',@Update_BurstGUI,...
-    'Position',[0.65 0.55 0.3 0.08],...
+    'Position',[0.55 0.55 0.44 0.08],...
     'Visible','off',...
-    'TooltipString',sprintf('AND: only regions where all channels detect a burst are selected\nOR: all regions where either channels detects a burst are selected\nXOR: exclusive OR - regions were only a single channel detected a burst are selected'));
+    'TooltipString',sprintf('AND: only regions where all channels detect a burst are selected\nOR: all regions where either channels detects a burst are selected. merge/no merge decides whether overlapping bursts are merged or kept as separate events.\nXOR: exclusive OR - regions were only a single channel detected a burst are selected'));
 if ismac
     h.Burst.BurstSearchSelection_Popupmenu.ForegroundColor = [0 0 0];
     h.Burst.BurstSearchSelection_Popupmenu.BackgroundColor = [1 1 1];
@@ -7495,7 +7495,7 @@ if isempty(obj) || obj == h.Burst.BurstSearchSelection_Popupmenu
             h.Burst.BurstSearchSelection_ANDOR_Popupmenu.Visible = 'off';
         case {2,4,6}
             % D/TCBS
-            h.Burst.BurstSearchSelection_Popupmenu.Position(3) = 0.6;
+            h.Burst.BurstSearchSelection_Popupmenu.Position(3) = 0.5;
             h.Burst.BurstSearchSelection_ANDOR_Popupmenu.Visible = 'on';
     end
 elseif obj == h.Burst.BurstSearchSmoothing_Popupmenu
@@ -7505,7 +7505,8 @@ elseif obj == h.Burst.BurstSearchSmoothing_Popupmenu
     % end
     LSUserValues(1);
     BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
-else
+elseif obj == h.Burst.BurstSearchSelection_ANDOR_Popupmenu
+    UserValues.BurstSearch.LogicalGate = obj.String{obj.Value};
     BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
 end
 %set parameter for the edit boxes
@@ -7835,6 +7836,7 @@ h.Burst.Button.ForegroundColor = UserValues.Look.Fore;
 
 BAMethod = UserValues.BurstSearch.Method;
 SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
+DCBS_logical_gate = UserValues.BurstSearch.LogicalGate;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
 Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
@@ -7919,7 +7921,7 @@ for i = find(PamMeta.Selected_MT_Patches)'
                 M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
             end
         end
     elseif any(BAMethod == [3,4])
@@ -7978,7 +7980,7 @@ for i = find(PamMeta.Selected_MT_Patches)'
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L,DCBS_logical_gate);
             end
         end
     elseif any(BAMethod == [5,6]) %2 color no MFD
@@ -8013,11 +8015,12 @@ for i = find(PamMeta.Selected_MT_Patches)'
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
                 [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
             elseif BAMethod == 6 %DCBS 2 Color-noMFD
-                T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+                T = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2),...
+                    UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(6)];
                 M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
             end
         end
     end
@@ -8618,9 +8621,22 @@ if ~from_BurstIDs
     %%% the used burst search and smoothing method
     BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
     BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
+    if any(BAMethod == [2,4,6])
+        % DCBS was used, store the logical gating used
+        BurstSearchParameters.DCBS_logical_gate = DCBS_logical_gate;
+    end
     switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
         case 1 %%% Sliding time window
-            BurstSearchParameters.TimeWindow = T;
+            if numel(T) == 1
+                BurstSearchParameters.TimeWindow = T;
+            elseif numel(T) == 2
+                BurstSearchParameters.TimeWindowGX = T(1);
+                BurstSearchParameters.TimeWindowRR = T(2);
+            elseif numel(T) == 3
+                BurstSearchParameters.TimeWindowBX = T(1);
+                BurstSearchParameters.TimeWindowGX = T(2);
+                BurstSearchParameters.TimeWindowRR = T(2);
+            end
             if numel(M) == 1
                 BurstSearchParameters.PhotonsPerTimewindow = M;
             elseif numel(M) == 2
@@ -8632,7 +8648,16 @@ if ~from_BurstIDs
                 BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
             end
         case 2 %%% Interphoton time with Lee filter
-            BurstSearchParameters.SmoothingWindow = T;
+            if numel(T) == 1
+                BurstSearchParameters.SmoothingWindow = T;
+            elseif numel(T) == 2
+                BurstSearchParameters.SmoothingWindowGX = T(1);
+                BurstSearchParameters.SmoothingWindowRR = T(2);
+            elseif numel(T) == 3
+                BurstSearchParameters.SmoothingWindowBX = T(1);
+                BurstSearchParameters.SmoothingWindowGX = T(2);
+                BurstSearchParameters.SmoothingWindowRR = T(2);
+            end
             if numel(M) == 1
                 BurstSearchParameters.InterphotonTimeThreshold = M;
             elseif numel(M) == 2
@@ -8644,7 +8669,16 @@ if ~from_BurstIDs
                 BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
             end
         case 3 % CUSUM burst search
-            BurstSearchParameters.BackgroundSignal = T;
+            if numel(T) == 1
+                BurstSearchParameters.BackgroundSignal = T;
+            elseif numel(T) == 2
+                BurstSearchParameters.BackgroundSignalGX = T(1);
+                BurstSearchParameters.BackgroundSignalRR = T(2);
+            elseif numel(T) == 3
+                BurstSearchParameters.BackgroundSignalBX = T(1);
+                BurstSearchParameters.BackgroundSignalGX = T(2);
+                BurstSearchParameters.BackgroundSignalRR = T(2);
+            end
             if numel(M) == 1
                 BurstSearchParameters.IntensityThreshold = M;
             elseif numel(M) == 2
@@ -8811,11 +8845,23 @@ function save_burst_info(BurstData)
 fid = fopen([BurstData.FileName(1:end-3) 'txt'],'w');
 fprintf(fid,'Burst search settings:\n\n');
 fprintf(fid,'Burst search method:\t\t%s\n',BurstData.BurstSearchParameters.BurstSearch);
+if isfield(BurstData.BurstSearchParameters,'DCBS_logical_gate')
+    fprintf(fid,'Logical gate:\t\t%s\n',BurstData.BurstSearchParameters.DCBS_logical_gate);
+end
 fprintf(fid,'Smoothing method:\t\t%s\n',BurstData.BurstSearchParameters.BurstSearchSmoothingMethod);
 fprintf(fid,'Minimum burst size:\t\t%d photons\n',BurstData.BurstSearchParameters.BurstMinimumLength);
 switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
     case 'Sliding Time Window' %%% Sliding time window
-        fprintf(fid,'Time window:\t\t%d\n',BurstData.BurstSearchParameters.TimeWindow);
+        if isfield(BurstData.BurstSearchParameters,'TimeWindow')
+            fprintf(fid,'Time window:\t\t%d\n',BurstData.BurstSearchParameters.TimeWindow);
+        elseif ~isfield(BurstData.BurstSearchParameters,'TimeWindowBX')
+            fprintf(fid,'Time window GX:\t%d\n',BurstData.BurstSearchParameters.TimeWindowGX);
+            fprintf(fid,'Time window RR:\t%d\n',BurstData.BurstSearchParameters.TimeWindowRR);
+        else
+            fprintf(fid,'Time window BX:\t%d\n',BurstData.BurstSearchParameters.TimeWindowBX);
+            fprintf(fid,'Time window GX:\t%d\n',BurstData.BurstSearchParameters.TimeWindowGX);
+            fprintf(fid,'Time window RR:\t%d\n',BurstData.BurstSearchParameters.TimeWindowRR);
+        end
         if isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindow')
             fprintf(fid,'Photons per time window:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindow);
         elseif ~isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindowBX')
@@ -8827,7 +8873,16 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
             fprintf(fid,'Photons per time window RR:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowRR);
         end
     case 'Interphoton Time with Lee Filter' %%% Interphoton time with Lee filter
-        fprintf(fid,'Smoothing window:\t\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
+        if isfield(BurstData.BurstSearchParameters,'SmoothingWindow')
+            fprintf(fid,'Smoothing window:\t\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
+        elseif ~isfield(BurstData.BurstSearchParameters,'SmoothingWindowBX')
+            fprintf(fid,'Smoothing window GX:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindowGX);
+            fprintf(fid,'Smoothing window RR:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindowRR);
+        else
+            fprintf(fid,'Smoothing window BX:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindowBX);
+            fprintf(fid,'Smoothing window GX:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindowGX);
+            fprintf(fid,'Smoothing window RR:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindowRR);
+        end
         if isfield(BurstData.BurstSearchParameters,'InterphotonTimeThreshold')
             fprintf(fid,'Interphoton time threshold [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'InterphotonTimeThresholdBX')
@@ -8839,7 +8894,16 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
             fprintf(fid,'Interphoton time threshold RR [mus]:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
         end
     case 'CUSUM'
-        fprintf(fid,'Background signal [kHz]:\t\t%d\n',BurstData.BurstSearchParameters.BackgroundSignal);
+        if isfield(BurstData.BurstSearchParameters,'BackgroundSignal')
+            fprintf(fid,'Background signal [kHz]:\t\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignal);
+        elseif ~isfield(BurstData.BurstSearchParameters,'BackgroundSignalBX')
+            fprintf(fid,'Background signal GX:\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignalGX);
+            fprintf(fid,'Background signal RR:\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignalRR);
+        else
+            fprintf(fid,'Background signal BX:\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignalBX);
+            fprintf(fid,'Background signal GX:\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignalGX);
+            fprintf(fid,'Background signal RR:\t%.2f\n',BurstData.BurstSearchParameters.BackgroundSignalRR);
+        end
         if isfield(BurstData.BurstSearchParameters,'IntensityThreshold')
             fprintf(fid,'Intensity threshold [kHz]:\t%d\n',BurstData.BurstSearchParameters.IntensityThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'IntensityThresholdBX')
@@ -9096,22 +9160,38 @@ PamMeta.BurstData = BurstData;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [start, stop, Number_of_Photons] = Perform_BurstSearch(Photons,Channel,type,T,M,L)
+function [start, stop, Number_of_Photons] = Perform_BurstSearch(Photons,Channel,type,T,M,L,logical_gate)
+% Input parameters:
+% logical_gate: for DCBS, specifies if AND, OR or XOR is used
+if nargin < 7
+    logical_gate = 'AND';
+end
 
 switch type
     case 'APBS'
         %All-Photon Burst Search
         [start, stop, Number_of_Photons] = APBS(Photons,T,M,L);
-    case 'DCBS'
+    case {'DCBS','DCBS-noMFD'}
         %Dual Channel Burst Search
         %Get GX and RR photon streams
-        %1,2 = GG12
-        %3,4 = GR12
-        %5,6 = RR12
-        PhotonsD = Photons(Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4);
-        PhotonsA = Photons(Channel == 5 | Channel == 6);
-        indexD = find((Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4));
-        indexA = find((Channel == 5 | Channel == 6));
+        switch type
+            case 'DCBS' % MFD
+                %1,2 = GG12
+                %3,4 = GR12
+                %5,6 = RR12
+                PhotonsD = Photons(Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4);
+                PhotonsA = Photons(Channel == 5 | Channel == 6);
+                indexD = find((Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4));
+                indexA = find((Channel == 5 | Channel == 6));
+            case 'DCBS-noMFD'
+                %1 = GG
+                %2 = GR
+                %3 = RR
+                PhotonsD = Photons((Channel == 1 | Channel == 2));
+                PhotonsA = Photons(Channel == 3);
+                indexD = find((Channel == 1 | Channel == 2));
+                indexA = find(Channel == 3);
+        end
         
         %do burst search on each channel
         MD = M(1);
@@ -9127,63 +9207,109 @@ switch type
         startA = indexA(startA);
         stopA = indexA(stopA);
         
-        validA = zeros(1,numel(startA));
-        for i = 1:numel(startA)
-            current = find(stopD-startA(i) > 0,1,'first');
-            if startD(current) < stopA(i)
-                startA(i) = max([startD(current) startA(i)]);
-                stopA(i) = min([stopD(current) stopA(i)]);
-                validA(i) = 1;
-            end
+        % AND, OR or XOR?
+        switch logical_gate
+            case 'AND'
+                validA = zeros(1,numel(startA));
+                for i = 1:numel(startA)
+                    % find stop of closest burst in other channel
+                    current = find(stopD-startA(i) > 0,1,'first');
+                    if startD(current) < stopA(i)
+                        % bursts are overlapping, truncate to overlapping region
+                        startA(i) = max([startD(current) startA(i)]);
+                        stopA(i) = min([stopD(current) stopA(i)]);
+                        validA(i) = 1;
+                    end
+                end
+                start = startA(validA == 1);
+                stop = stopA(validA == 1);
+            case {'OR (merge)','OR (no merge)'}
+                % combine start/stops
+                start = [startD; startA];
+                [start, ix] = sort(start);
+                stop =  [stopD; stopA];
+                stop = stop(ix);
+                if strcmp(logical_gate,'OR (merge)')
+                    % merge overlapping bursts
+                    valid = true(1,numel(start));
+                    for i = 1:numel(start)-1
+                        if start(i+1) < stop(i)
+                            % merge burst i+1 with i
+                            % set start of merged burst at position i+1 to start of burst i
+                            start(i+1) = start(i);
+                            if stop(i) > stop(i+1)
+                                % if stop of burst i is after burst i+1, overwrite
+                                stop(i+1) = stop(i);
+                            end
+                            % mark burst i for deletion
+                            valid(i) = false;
+                        end
+                    end
+                    start = start(valid);
+                    stop = stop(valid);
+                end
+            case 'XOR'
+                % exclusive OR
+                validA = true(size(startA));
+                validD = true(size(startD));
+                for i = 1:numel(startA)
+                    % find start of next burst in other channel
+                    current = find(stopD-startA(i) > 0,1,'first');
+                    if startD(current) < stopA(i)
+                        % bursts are overlapping, truncate to exclude overlapping region
+                        if startD(current) < startA(i) && stopD(current) > stopA(i)
+                            % burst in other channels starts before and ends after
+                            validA(i) = false; % remove burst
+                            % split burst in other channel
+                            % add the second half as new burst
+                            startD(end+1) = stopA(i);
+                            stopD(end+1) = stopD(current);
+                            validD(end+1) = true;
+                            % truncate the first half
+                            stopD(current) = startA(i);
+                        elseif startD(current) < startA(i) && stopD(current) < stopA(i)
+                            % burst in other channel starts before and ends during
+                            stopD_current = stopD(current); % temporary storage
+                            % truncate the burst in the other channel                            
+                            stopD(current) = startA(i);
+                            % shift start of burst
+                            startA(i) = stopD_current;
+                        elseif startD(current) > startA(i) && stopD(current) > stopA(i)
+                            % burst in other channel starts during and ends after
+                            stopAi = stopA(i); % temporary storage
+                            % truncate burst in this channel
+                            stopA(i) = startD(current);
+                            % shift start of burst in other channel
+                            startD(current) = stopAi;
+                        elseif startD(current) > startA(i) && stopD(current) < stopA(i)
+                            % burst in other channel starts during and ends during
+                            validD(current) = false; % remove burst
+                            % split burst in this channel
+                            % add the second half as new burst
+                            startA(end+1) = stopD(current);
+                            stopA(end+1) = stopA(i);
+                            validA(end+1) = true;
+                            % truncate the first half
+                            stopA(i) = startD(current);
+                        end                        
+                    end
+                end
+                % remove invalid bursts
+                startA = startA(validA);
+                stopA = stopA(validA);
+                startD = startD(validD);
+                stopD = stopD(validD);
+                % combine start/stops
+                start = [startD; startA];
+                [start, ix] = sort(start);
+                stop =  [stopD; stopA];
+                stop = stop(ix);
         end
-        start = startA(validA == 1);
-        stop = stopA(validA == 1);
         
         Number_of_Photons = stop-start+1;
         start(Number_of_Photons<L)=[];
         stop(Number_of_Photons<L)=[];
-        Number_of_Photons(Number_of_Photons<L)=[];
-    case 'DCBS-noMFD'
-        %Dual Channel Burst Search for non MFD setups
-        %Get GX and RR photon streams
-        %1 = BB1/GG1
-        %2 = BG1/GR1
-        %3 = GG1/RR1
-        PhotonsD = Photons((Channel == 1 | Channel == 2));
-        PhotonsA = Photons(Channel == 3);
-        indexD = find((Channel == 1 | Channel == 2));
-        indexA = find(Channel == 3);
-        
-        %do burst search on each channel
-        MD = M(1);
-        MA = M(2);
-        TD = T(1);
-        TA = T(2);
-        %ACBS(Photons,T,M,L), don't specify L for no cutting!
-        [startD, stopD, ~] = APBS(PhotonsD,TD,MD);
-        [startA, stopA, ~] = APBS(PhotonsA,TA,MA);
-        
-        startD = indexD(startD);
-        stopD = indexD(stopD);
-        startA = indexA(startA);
-        stopA = indexA(stopA);
-        
-        validA = zeros(1,numel(startA));
-        for i = 1:numel(startA)
-            current = find(stopD-startA(i) > 0,1,'first');
-            if startD(current) < stopA(i)
-                startA(i) = max([startD(current) startA(i)]);
-                stopA(i) = min([stopD(current) stopA(i)]);
-                validA(i) = 1;
-            end
-        end
-        start = startA(validA == 1);
-        stop = stopA(validA == 1);
-        
-        Number_of_Photons = stop-start+1;
-        start(Number_of_Photons<L)=[];
-        stop(Number_of_Photons<L)=[];
-        Number_of_Photons(Number_of_Photons<L)=[];
+        Number_of_Photons(Number_of_Photons<L)=[];    
     case 'TCBS'
         %Triple Channel Burst Search
         %Get BX, GX and RR photon streams
@@ -9471,6 +9597,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     T_preview = 60*ChunkSize/FileInfo.ClockPeriod;
     BAMethod = UserValues.BurstSearch.Method;
     SmoothingMethod =  UserValues.BurstSearch.SmoothingMethod;%h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+    DCBS_logical_gate = UserValues.BurstSearch.LogicalGate;
     
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons
@@ -9487,7 +9614,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         clear AllPhotons_unsort
         %get colors of photons
         chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))...
-            4*ones(1,numel(Photons{4})) 5*ones(1,numel(Photons{5})) 6*ones(1,numel(Photons{6}))]);
+            4*ones(1,numel(Photons{4})) 5*ones(1,numel(Photons{5})) 6*ones(1,numel(Photons{6}))])';
         Channel = chan_temp(index);
         clear index chan_temp
         
@@ -9502,7 +9629,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
+            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
         end
     elseif any(BAMethod == [3,4])
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',1,ChunkSize);
@@ -9525,7 +9652,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))...
             4*ones(1,numel(Photons{4})) 5*ones(1,numel(Photons{5})) 6*ones(1,numel(Photons{6}))...
             7*ones(1,numel(Photons{7})) 8*ones(1,numel(Photons{8})) 9*ones(1,numel(Photons{9}))...
-            10*ones(1,numel(Photons{10})) 11*ones(1,numel(Photons{11})) 12*ones(1,numel(Photons{12}))]);
+            10*ones(1,numel(Photons{10})) 11*ones(1,numel(Photons{11})) 12*ones(1,numel(Photons{12}))])';
         Channel = chan_temp(index);
         clear index chan_temp
         
@@ -9540,7 +9667,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
+            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L,DCBS_logical_gate);
         end
         
     elseif any(BAMethod == [5,6]) %2 color no MFD
@@ -9554,7 +9681,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         [AllPhotons, index] = sort(AllPhotons_unsort);
         clear AllPhotons_unsort
         %get colors of photons
-        chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))]);
+        chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))])';
         Channel = chan_temp(index);
         %do search
         if BAMethod == 5 %ACBS 2 Color-noMFD
@@ -9568,7 +9695,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L);
+            [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
         end
     end
     
