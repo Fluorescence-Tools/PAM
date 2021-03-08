@@ -7835,6 +7835,7 @@ ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
 Channel_dummy = cell(Number_of_Chunks,1);
+detected_channel_dummy = cell(Number_of_Chunks,1);
 
 if UserValues.BurstSearch.SaveTotalPhotonStream
     start_all = cell(Number_of_Chunks,1);
@@ -7911,7 +7912,7 @@ for i = find(PamMeta.Selected_MT_Patches)'
                 M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
+                [start, stop, Number_of_Photons,detected_channel_dummy{i}] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
             end
         end
     elseif any(BAMethod == [3,4])
@@ -8010,7 +8011,7 @@ for i = find(PamMeta.Selected_MT_Patches)'
                 M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                     UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
                 L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-                [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
+                [start, stop, Number_of_Photons,detected_channel_dummy{i}] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
             end
         end
     end
@@ -8056,6 +8057,7 @@ end
 Macrotime = vertcat(Macrotime_dummy{:});
 Microtime = vertcat(Microtime_dummy{:});
 Channel = vertcat(Channel_dummy{:});
+detected_channel = vertcat(detected_channel_dummy{:});
 
 if UserValues.BurstSearch.SaveTotalPhotonStream
     start = [];
@@ -8538,6 +8540,11 @@ elseif any (BAMethod == [5,6])
         'Number of Photons (GR)',...
         'Number of Photons (RR)'...
         };
+end
+%%% append information about detected channel if DCBS burst search is used
+if any(BAMethod == [2,6]) && exist('detected_channel','var') % not implemented for TCBS yet
+    BurstData.DataArray = [BurstData.DataArray, detected_channel];
+    BurstData.NameArray{end+1} = 'Detected Channel';
 end
 
 %%% Append other important parameters/values to BurstData structure
@@ -9150,17 +9157,20 @@ PamMeta.BurstData = BurstData;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [start, stop, Number_of_Photons, channel_start_stop] = Perform_BurstSearch(Photons,Channel,type,T,M,L,logical_gate)
+function [start, stop, Number_of_Photons, detected_channel] = Perform_BurstSearch(Photons,Channel,type,T,M,L,logical_gate)
 % Input parameters:
-% logical_gate: for DCBS, specifies if AND, OR or XOR is used
+% logical_gate - for DCBS, specifies if AND, OR or XOR is used
+% Output parameters:
+% detected_channel - encodes in which channel a burst was detected. "0" means the burst was detected in APBS or merged.
 if nargin < 7
     logical_gate = 'AND';
 end
-channel_start_stop = [];
+detected_channel = [];
 switch type
     case 'APBS'
         %All-Photon Burst Search
         [start, stop, Number_of_Photons] = APBS(Photons,T,M,L);
+        detected_channel = zeros(size(start));
     case {'DCBS','DCBS-noMFD'}
         %Dual Channel Burst Search
         %Get GX and RR photon streams
@@ -9213,6 +9223,7 @@ switch type
                 end
                 start = startA(validA == 1);
                 stop = stopA(validA == 1);
+                detected_channel = zeros(size(start)); % all bursts are detected in both channels
             case {'OR (merge)','OR (no merge)'}
                 % combine start/stops
                 start = [startD; startA];
@@ -9235,9 +9246,18 @@ switch type
                             valid(i) = false;
                         end
                     end
+                    % bursts are either in channel 1 or 2
+                    detected_channel = ismember(start,startD)+2*ismember(start,startA);
+                    % or they have been merged ("0")
+                    merged = find(~valid)+1; % every burst after is merged
+                    detected_channel(merged) = 0;
+                    
                     start = start(valid);
                     stop = stop(valid);
-                end
+                    detected_channel = detected_channel(valid);
+                else % no merging
+                    detected_channel = ismember(start,startD)+2*ismember(start,startA); % all bursts are either in channel 1 or 2
+                end                
             case 'XOR'
                 % exclusive OR
                 validA = true(size(startA));
@@ -9294,14 +9314,15 @@ switch type
                 [start, ix] = sort(start);
                 stop =  [stopD; stopA];
                 stop = stop(ix);
+                
+                detected_channel = ismember(start,startD)+2*ismember(start,startA); % all bursts are either in channel 1 or 2
         end
         
         Number_of_Photons = stop-start+1;
         start(Number_of_Photons<L)=[];
         stop(Number_of_Photons<L)=[];
+        detected_channel(Number_of_Photons<L)=[];
         Number_of_Photons(Number_of_Photons<L)=[];
-        
-        channel_start_stop = {startD,stopD;startA,stopA};
     case 'TCBS'
         %Triple Channel Burst Search
         %Get BX, GX and RR photon streams
