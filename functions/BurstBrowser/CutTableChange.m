@@ -23,7 +23,7 @@ if isnan(NewData)
 end
 %%% Update Cuts of all selected species
 for i = 1:numel(file_n)
-    UpdateCutState(NewData,index,ChangedParameterName,file_n(i),[species_n(i),subspecies_n(i)]);
+    UpdateCutState(NewData,eventdata.PreviousData,index,ChangedParameterName,file_n(i),[species_n(i),subspecies_n(i)]);
 end
 
 %%% Update GUI elements
@@ -47,7 +47,7 @@ switch h.Main_Tab.SelectedTab
         end     
 end
 
-function UpdateCutState(NewData,index,ChangedParameterName,file,species)
+function UpdateCutState(NewData,PreviousData,index,ChangedParameterName,file,species)
 global BurstData
 
 %%% check if the parameter exists
@@ -64,7 +64,7 @@ switch index(2)
     case {1} %min boundary was changed
         %%% if upper boundary is lower than new min boundary -> reject
         if BurstData{file}.Cut{species(1),species(2)}{index(1)}{3} < NewData
-            NewData = eventdata.PreviousData;
+            NewData = PreviousData;
         end
         if species(2) ~= 1
             %%% if new lower boundary is lower than global lower boundary -->
@@ -85,7 +85,7 @@ switch index(2)
     case {2} %max boundary was changed
         %%% if lower boundary is higher than new upper boundary --> reject
         if BurstData{file}.Cut{species(1),species(2)}{index(1)}{2} > NewData
-            NewData = eventdata.PreviousData;
+            NewData = PreviousData;
         end
         if species(2) ~= 1
             %%% if new upper boundary is higher than global upper boundary -->
