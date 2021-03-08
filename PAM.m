@@ -9642,7 +9642,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, ~,channel_start_stop] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
+            [start, stop, ~,detected_channel] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L,DCBS_logical_gate);
         end
     elseif any(BAMethod == [3,4])
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',1,ChunkSize);
@@ -9708,7 +9708,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
                 UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
             L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
-            [start, stop, ~,channel_start_stop] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
+            [start, stop, ~,detected_channel] = Perform_BurstSearch(AllPhotons,Channel,'DCBS-noMFD',T,M,L,DCBS_logical_gate);
         end
     end
     
@@ -9968,8 +9968,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     if region_plot
         %%% use area plot
         facealpha = 0.2;
-        % special case for DCBS burst searches using "OR (no merge)" or XOR
-        if ~(any(BAMethod == [2,4,6]) && any(strcmp(DCBS_logical_gate,{'XOR','OR (no merge)'})))
+        % special case for DCBS burst searches using "OR (no merge)", "OR (merge)" or "XOR"
+        if ~(any(BAMethod == [2,4,6]) && ~any(strcmp(DCBS_logical_gate,{'AND'})))
             % APBS-type burst searches (or DCBS with AND or merge)
             % no distinction between colors is made
             
@@ -9994,22 +9994,26 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             % --> plot the different selections in different colors
             %
             % convert start/stop to photon arrival times (i.e. burst range)
-            colors = {[0 0.8 0], [0.8 0 0]};
-            for k = 1:size(channel_start_stop,1)
-                x = [];
-                y = [];
-                for i = 1:numel(channel_start_stop{k,1})
-                    x = [x,AllPhotons(channel_start_stop{k,1}(i)),AllPhotons(channel_start_stop{k,1}(i)),...
-                        AllPhotons(channel_start_stop{k,2}(i)),AllPhotons(channel_start_stop{k,2}(i))];
-                    y = [y,0,1,1,0];
+            colors = {[0,0,0],[0 0.8 0], [0.8 0 0]};
+            for k = 0:2
+                if sum(detected_channel==k) > 0
+                    x = [];
+                    y = [];
+                    start_channel = start(detected_channel==k);
+                    stop_channel = stop(detected_channel==k);
+                    for i = 1:numel(start_channel)
+                        x = [x,AllPhotons(start_channel(i)),AllPhotons(start_channel(i)),...
+                            AllPhotons(stop_channel(i)),AllPhotons(stop_channel(i))];
+                        y = [y,0,1,1,0];
+                    end
+                    % intensity plot
+                    max_int = max([max(ch1) max(ch2)])./bin_time_ms;
+                    h.Plots.BurstPreview.SearchResult.Channel1(k+1) = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k+1});
+                    % interphoton time plot
+                    y = y*max(dT);
+                    y(y==0) = eps;
+                    h.Plots.BurstPreview.SearchResult.Interphot(k+1) = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k+1});
                 end
-                % intensity plot
-                max_int = max([max(ch1) max(ch2)])./bin_time_ms;
-                h.Plots.BurstPreview.SearchResult.Channel1(k) = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k});
-                % interphoton time plot
-                y = y*max(dT);
-                y(y==0) = eps;
-                h.Plots.BurstPreview.SearchResult.Interphot(k) = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k});
             end
         end
     else % old way of plotting as circles in the binned data
