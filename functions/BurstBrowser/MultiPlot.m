@@ -81,10 +81,14 @@ miny = zeros(num_species,1);
 maxx = zeros(num_species,1);
 maxy = zeros(num_species,1);
 for i = 1:num_species
-    minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
-    miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
-    maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
-    maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+    if ~isempty(datatoplot{i})
+        minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+        miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+        maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+        maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+    else
+        minx(i) = NaN; miny(i) = NaN; maxx(i) = NaN; maxy(i) = NaN;
+    end
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
@@ -97,7 +101,13 @@ if ~exist('limits','var')
         file =file_n(i);
         species = [species_n(i),subspecies_n(i)];
         NameArray = BurstData{file}.NameArray;
-
+        
+        % empty data
+        if isempty(datatoplot{i})
+            xlimits{i} = [NaN NaN];
+            ylimits{i} = [NaN NaN];
+            continue;
+        end
         %%% set limits
         xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
         ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
