@@ -846,8 +846,8 @@ switch (Type)
                 
                 %%% create actual image and line times
                 FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart./scaling+MaxMT)'*FileInfo.ClockPeriod];
-                disp('time per frame');
-                disp(diff(FileInfo.ImageTimes)); % this should be constant
+                %fprintf('Time per frame: %.2f s',);
+                %disp(diff(FileInfo.ImageTimes)); % this should be constant
                 
                 lstart = reshape((Header.LineStart./scaling+MaxMT),[],f)'*FileInfo.ClockPeriod;
                 lstop = reshape((Header.LineStop./scaling+MaxMT),[],f)'*FileInfo.ClockPeriod;
