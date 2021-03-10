@@ -247,7 +247,12 @@ switch TTResultFormat_TTTRRecType
             Header.PixResol = ImgHdr_PixResol; end
         if exist ('ImgHdr_SinCorrection', 'var')
             Header.SinCorrection = ImgHdr_SinCorrection; end
-        
+        if exist('ImgHdr_X0','var')
+            Header.X0 = ImgHdr_X0; end
+        if exist('ImgHdr_Y0','var')
+            Header.Y0 = ImgHdr_Y0; end
+        if exist('ImgHdr_Z0','var')
+            Header.Z0 = ImgHdr_Z0; end
         % marker bit locations, when acquired by Leuven homebuilt LSM
         if strcmp(CreatorSW_Name,'HydraHarp AcqUI')
             % Select the custom Leuven_PTU read-in routine and custom datatype!
@@ -261,7 +266,9 @@ switch TTResultFormat_TTTRRecType
             if exist('ImgHdr_LineStart','var')
                 Header.LineStartMarker = ImgHdr_LineStart;
                 Header.LineStopMarker = ImgHdr_LineStop;
-                Header.FrameStartMarker = ImgHdr_Frame;
+                if exist('ImgHdr_Frame','var')
+                    Header.FrameStartMarker = ImgHdr_Frame;                
+                end
             end
         end
         
@@ -354,11 +361,22 @@ switch TTResultFormat_TTTRRecType
         if ~isempty(Header.FrameStartMarker)
             Header.FrameStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.FrameStartMarker));
         end
-        if ~isempty(Header.LineStartMarker)
-            Header.LineStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStartMarker));
+        if ~(Header.LineStartMarker == Header.LineStopMarker)
+            if ~isempty(Header.LineStartMarker)
+                Header.LineStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStartMarker));
+            end
+            if ~isempty(Header.LineStopMarker)
+                Header.LineStop = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStopMarker));
+            end
+        elseif ~isempty(Header.LineStartMarker)
+            % line start and stop are in one array
+            LineMarker = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStartMarker));
+            Header.LineStart = LineMarker(1:2:end-1);
+            Header.LineStop = LineMarker(2:2:end);
         end
-        if ~isempty(Header.LineStopMarker)
-            Header.LineStop = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStopMarker));
+        if ~isfield('Header','FrameStart') && ~isempty(Header.LineStartMarker) && ~isempty(Header.LineStopMarker)
+            % only one frame recorded
+            Header.FrameStart = Header.LineStart(1);
         end
         
         % photon timetags
