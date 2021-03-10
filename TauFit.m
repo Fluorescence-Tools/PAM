@@ -2110,7 +2110,7 @@ else %%% clicked Load Data button, load from PAM
             else %%% Set channel to 4 if no MFD channel was selected
                 chan = 4;
             end
-        elseif UserValues.BurstSearch.Method == 5
+        elseif any(UserValues.BurstSearch.Method == [5,6])
             chan = 4;
         end
         % old method:
