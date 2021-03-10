@@ -247,7 +247,12 @@ switch TTResultFormat_TTTRRecType
             Header.PixResol = ImgHdr_PixResol; end
         if exist ('ImgHdr_SinCorrection', 'var')
             Header.SinCorrection = ImgHdr_SinCorrection; end
-        
+        if exist('ImgHdr_X0','var')
+            Header.X0 = ImgHdr_X0; end
+        if exist('ImgHdr_Y0','var')
+            Header.Y0 = ImgHdr_Y0; end
+        if exist('ImgHdr_Z0','var')
+            Header.Z0 = ImgHdr_Z0; end
         % marker bit locations, when acquired by Leuven homebuilt LSM
         if strcmp(CreatorSW_Name,'HydraHarp AcqUI')
             % Select the custom Leuven_PTU read-in routine and custom datatype!

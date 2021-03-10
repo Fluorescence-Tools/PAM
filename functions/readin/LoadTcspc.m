@@ -803,6 +803,9 @@ switch (Type)
                     FileInfo.MI_Bins = Header.MI_Bins;
                 end
             end
+            %%% store the header in FileInfo
+            FileInfo.Header{i} = Header;
+            
             %%% Concaternates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
