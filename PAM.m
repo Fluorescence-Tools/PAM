@@ -4437,6 +4437,7 @@ end
 %%% Updates image
 if any(mode==3)
     h.Image.Axes.DataAspectRatio=[1 1 1];
+    h.Image.Axes.YDir = 'normal';
     switch h.Image.Type.Value        
         %%% Intensity image        
         case 1            
