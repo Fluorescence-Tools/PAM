@@ -6674,7 +6674,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Creates new Tab with axes
                 if numel(h.Cor.Individual_Tab)<i
                     h.Cor.Individual_Tab{i} = copyobj(h.Cor.Individual_Tab{i-1}, h.Cor.Correlations_Tabs);
-                    h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children;
+                    h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children(strcmp('axes',get(h.Cor.Individual_Tab{i}.Children,'Type')));
                 end
                 %%% make current tab this one
                 h.Cor.Correlations_Tabs.SelectedTab = h.Cor.Individual_Tab{i};
@@ -11269,6 +11269,8 @@ switch mode
         h.Export.TIFF.Enable = 'on';
         h.Export.Save.Enable = 'on';
         h.Export.MicrotimePattern.Enable = 'on';
+        h.Export.Correlate.Enable = 'on';
+        h.Export.Burst.Enable = 'on';
     case 4 %% Save complete database
         [File, Path] = uiputfile({'*.edb', 'Database file'}, 'Save export database', UserValues.File.Path);
         if all(File==0)
