@@ -47,7 +47,7 @@ h.TauFit = figure(...
     'OuterPosition',[0.075 0.05 0.85 0.85],...
     'CloseRequestFcn',@CloseWindow,...
     'KeyPressFcn',@TauFit_KeyPress,...
-    'Visible','on');
+    'Visible','off');
 %%% Sets background of axes and other things
 whitebg(Look.Axes);
 %%% Changes background; must be called after whitebg
@@ -711,7 +711,7 @@ if exist('ph','var')
                 %%% User Clicks Burstwise Lifetime button in Pam, Burst
                 %%% Analysis button in Pam with lifetime checkbox checked or
                 %%% Burst Analysis on database tab in Pam, with lifetime
-                %%% checkbox checked
+                %%% checkbox checked                
                 h.ChannelSelect_Text = uicontrol(...
                     'Parent',h.PIEChannel_Panel,...
                     'Style','Text',...
@@ -1723,14 +1723,16 @@ end
 Method_Selection(h.FitMethod_Popupmenu,[]);
 %%% User clicked 'Burst Analysis' button on the Burst or Batch analysis tab
 %%% when 'Fit Lifetime' checkbox was checked.
-if exist('ph','var')
-    if isobject(obj)
-        switch obj
-            case ph.Burst.Button
-                BurstWise_Fit(ph.Burst.Button,[])
-                close(h.TauFit);
-        end
-    end
+if exist('ph','var') && isobject(obj) && obj == ph.Burst.Button
+    h.TauFit.Visible = 'off'; % hide figure
+    % reassign progress bar to PAM progress bar
+    h.Progress_Text = ph.Progress.Text;
+    h.Progress_Axes = ph.Progress.Axes;
+    % do burstwise fit with preset parameters
+    BurstWise_Fit(ph.Burst.Button,[])
+    close(h.TauFit);
+else
+    h.TauFit.Visible = 'on';
 end
 
 function ChangeScale(obj,~)
@@ -2399,10 +2401,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
         h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}]) 10/9*max([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}])];
     catch
         % if there is no data, disable channel and stop
-        h.IncludeChannel_checkbox.Value = 0;
-        UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = 0;
-        LSUserValues(1);
-        return
+        %h.IncludeChannel_checkbox.Value = 0;
+        %UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = 0;
+        %LSUserValues(1);
+        %return
     end
     %%% Define the Slider properties
     %%% Values to consider:
@@ -2880,7 +2882,7 @@ elseif h.ShowDecaySum_radiobutton.Value == 1
     h.Microtime_Plot.YLim(1) = 0;
     h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
 end
-axes(h.Microtime_Plot);
+set(h.TauFit,'CurrentAxes',h.Microtime_Plot); %axes(h.Microtime_Plot);
 xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 
 %%% Update Ignore Plot

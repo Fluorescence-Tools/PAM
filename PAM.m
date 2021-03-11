@@ -8085,6 +8085,10 @@ clear Macrotime_dummy Microtime_dummy Channel_dummy BID_dummy
 Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 
 Number_of_Bursts = numel(Macrotime);
+if Number_of_Bursts == 0 % no bursts were found
+    disp('No bursts detected.');
+    return;
+end
 
 Number_of_Photons = cellfun(@numel,Macrotime);
 Mean_Macrotime = cellfun(@mean,Macrotime)*FileInfo.ClockPeriod;
@@ -8354,8 +8358,6 @@ elseif any(BAMethod == [5,6]) %only 3 channels
     for i = 1:3
         Countrate_per_Color(:,i) = Number_of_Photons_per_Color(:,i)./Duration_per_Color(:,i);
     end
-    
-    
 end
 
 Countrate = Number_of_Photons./Duration;
