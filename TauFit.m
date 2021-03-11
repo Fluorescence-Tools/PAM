@@ -7796,6 +7796,8 @@ switch obj
                 res = [res, [num2cell(TauFitData.ConfInt);{NaN,NaN}]];
             end
         end
+        %%% add chi2
+        res(end+1,:) = {'red. Chi2',TauFitData.Chi2,'',''};
         Mat2clip(res);
     case {h.PlotDynamicFRETLine, h.PlotDynamicFRETLine_Sigma}
         %%% get tau values and plot dynamic FRET line in Burst Browser
