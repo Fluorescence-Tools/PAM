@@ -61,6 +61,9 @@ if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no
         biny(biny == 0) = 1;
         bin_out(valid,:) = [biny,binx];
     end
+    if isempty(h) % fix empty output
+        h = zeros(size(h,1),1);
+    end
     H = reshape(h, Yn, Xn);
     
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
