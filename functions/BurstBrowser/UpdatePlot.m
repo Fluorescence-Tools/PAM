@@ -229,6 +229,10 @@ if ~advanced
     else
         HH = H;
     end
+    %%% fix NaN values
+    if all(isnan(HH(:)))
+        HH = zeros(size(HH));
+    end
     %%% Update Image Plot and Contour Plot
     BurstMeta.Plots.Main_Plot(1).XData = xbins;
     BurstMeta.Plots.Main_Plot(1).YData = ybins;
