@@ -1290,7 +1290,7 @@ if strcmp(Caller.Tag, 'Pam')
     Shift_Detector([],[],'load')
     %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
     %%% this needs not be done if database is used for batch processing
-    if ~any(gcbo==[h.Export.Correlate h.Export.Burst])
+    if ~(any(gcbo==[h.Export.Correlate h.Export.Burst])) || (gcbo==h.Export.Correlate && h.Cor.AfterPulsingCorrection.Value) % PamMeta.MI_Hist is needed for afterpulsing correction!
         Update_Data([],[],0,0);
         Update_Display([],[],0);
     end
