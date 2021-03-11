@@ -192,15 +192,17 @@ switch BurstData{file}.BAMethod
         % scatter for parallel is set to the combined scatter, as this value is most commonly used
         UserValues.TauFit.FitParams{2}(8) = f_sc;
         
-        %%% Donly
-        %%% DD
-        I_decay = sum(TauFitData.hMI_Par{4});
-        f_sc = dur_donly.*1000.*BurstData{file}.Background.Background_GGpar./I_decay;
-        fprintf('Donly: %.4f\n',f_sc);
-        %%% Update UserValues
-        % scatter for parallel is set to the combined scatter, as this value is most commonly used
-        UserValues.TauFit.FitParams{4}(8) = f_sc;
-        UserValues.TauFit.FitParams{1}(9) = f_sc;
+        if numel(TauFitData.hMI_Par) > 3
+            %%% Donly
+            %%% DD
+            I_decay = sum(TauFitData.hMI_Par{4});
+            f_sc = dur_donly.*1000.*BurstData{file}.Background.Background_GGpar./I_decay;
+            fprintf('Donly: %.4f\n',f_sc);
+            %%% Update UserValues
+            % scatter for parallel is set to the combined scatter, as this value is most commonly used
+            UserValues.TauFit.FitParams{4}(8) = f_sc;
+            UserValues.TauFit.FitParams{1}(9) = f_sc;
+        end
         LSUserValues(1);
 end
 
