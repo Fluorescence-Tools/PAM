@@ -114,8 +114,8 @@ if ~exist('limits','var')
         
         % empty data
         if sum(isfinite(datatoplot{i}(:,x{i}))) == 0 % no valid data
-            xlimits{i} = [NaN NaN];
-            ylimits{i} = [NaN NaN];
+            xlimits{i} = [0 1];
+            ylimits{i} = [0 1];
             continue;
         end
         %%% set limits

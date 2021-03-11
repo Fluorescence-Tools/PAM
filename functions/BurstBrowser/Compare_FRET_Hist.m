@@ -414,7 +414,9 @@ switch mode
             case 2 % all beneath another                
                 for i = 1:numel(P)
                     if valid(i)
-                        H{i} = histcounts(P{i},xP);                        
+                        H{i} = histcounts(P{i},xP);
+                    else
+                        H{i} = zeros(1,numel(xP)-1);
                     end
                 end
                 color = lines(numel(H));
@@ -428,7 +430,7 @@ switch mode
                 ax_width = f_width - offset_x1 - offset_x2;
                 ax_height = (f_height-offset_y1 - offset_y2)/numel(H);
                 legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
-                legend_entries = legend_entries(valid);
+                %legend_entries = legend_entries(valid);
                 for i = 1:numel(H)
                     ax(i) = axes(f,'Units','pixel','Position',[offset_x1, offset_y1+(i-1)*ax_height, ax_width, ax_height],'TickDir','in',...
                         'Box','on');
@@ -457,6 +459,7 @@ switch mode
                     ax(i).YLim(2) = max(H{i})*1.1;
                     ax(i).XLim = xlim;
                     ax(i).Layer = 'top';
+                    ax(i).Color = [1,1,1];
                     hl(i) = legend(legend_entries(i),'fontsize',12,'Box','off','Location','northwest');
                 end
                 linkaxes(ax,'x');

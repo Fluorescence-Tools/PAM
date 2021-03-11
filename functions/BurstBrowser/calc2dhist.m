@@ -21,6 +21,14 @@ if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
+% fix NaN boundaries
+if any(isnan(limx))
+    limx = [0,1];
+end
+if any(isnan(limy))
+    limy = [0,1];
+end
+
 %%% fix limits for inf boundary
 if ~isfinite(limx(2))
     limx(2) = max(x(isfinite(x)));
@@ -28,9 +36,6 @@ end
 if ~isfinite(limy(2))
     limy(2) = max(y(isfinite(y)));
 end
-% set NaN boundaries to 0
-limx(isnan(limx)) = 0;
-limy(isnan(limy)) = 0;
 
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
