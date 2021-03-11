@@ -293,7 +293,10 @@ if ~advanced
         %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
         binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
-        n_per_species_cum = cumsum([1,(n_per_species-1)]);
+        % cumulative index
+        n_per_species_temp = n_per_species;
+        n_per_species_temp(n_per_species_temp > 0) = n_per_species_temp(n_per_species_temp > 0) - 1;
+        n_per_species_cum = cumsum([1,n_per_species_temp]);
         for i = 1:numel(n_per_species_cum)-1
             hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
             hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
