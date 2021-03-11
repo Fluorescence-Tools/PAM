@@ -28,6 +28,9 @@ end
 if ~isfinite(limy(2))
     limy(2) = max(y(isfinite(y)));
 end
+% set NaN boundaries to 0
+limx(isnan(limx)) = 0;
+limy(isnan(limy)) = 0;
 
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
