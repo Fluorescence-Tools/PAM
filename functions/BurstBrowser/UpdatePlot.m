@@ -576,14 +576,72 @@ else
     h.axes_1d_y_text.Visible = 'off';
 end
 
-% Update axis labels if log option is used
 %%% logarithmic plot option
+
 if UserValues.BurstBrowser.Display.logX
-    h.axes_general.XLabel.String = [h.axes_general.XLabel.String ' log'];
-    h.axes_1d_x.XLabel.String = [h.axes_1d_x.XLabel.String ' log'];
+    try
+        % Update tick labels if log option is used
+        % major labels at each decade
+        xlimits = h.axes_general.XLim;
+        major_ticks = 10.^(floor(xlimits(1)):1:ceil(xlimits(2)));
+        % 10 minor ticks for each decade
+        minor_ticks = major_ticks(1);
+        for i = 1:numel(major_ticks)-1
+            minor_ticks = [minor_ticks, 2*major_ticks(i):major_ticks(i):major_ticks(i+1)];
+        end
+        major_ticks_label = cellstr(num2str(round(log10(major_ticks(:))), '10^{%d}'));
+        %major_ticks_label(strcmp(major_ticks_label,'10^0')) = {'1'}; 
+        h.axes_general.XTick = log10(major_ticks);
+        h.axes_general.XTickLabels = major_ticks_label;
+        h.axes_general.XRuler.MinorTickValues = log10(minor_ticks);
+        h.axes_general.XMinorTick = 'on';
+        h.axes_1d_x.XTick = log10(major_ticks);
+        h.axes_1d_x.XTickLabels = major_ticks_label;
+        h.axes_1d_x.XRuler.MinorTickValues = log10(minor_ticks);
+        h.axes_1d_x.XMinorTick = 'on';
+    catch % add "log" to parameter name
+        h.axes_general.XLabel.String = [h.axes_general.XLabel.String ' log'];
+        h.axes_1d_x.XLabel.String = [h.axes_1d_x.XLabel.String ' log'];
+    end
+else
+    h.axes_general.XTickMode = 'auto';
+    h.axes_general.XTickLabelMode = 'auto';
+    h.axes_general.XMinorTick = 'off';
+    h.axes_1d_x.XTickMode = 'auto';
+    h.axes_1d_x.XTickLabelMode = 'auto';
+    h.axes_1d_x.XMinorTick = 'off';
 end
 if UserValues.BurstBrowser.Display.logY
-    h.axes_general.YLabel.String = [h.axes_general.YLabel.String ' log'];
+    try
+        % Update tick labels if log option is used
+        % major labels at each decade
+        ylimits = h.axes_general.YLim;
+        major_ticks = 10.^(floor(ylimits(1)):1:ceil(ylimits(2)));
+        % 10 minor ticks for each decade
+        minor_ticks = major_ticks(1);
+        for i = 1:numel(major_ticks)-1
+            minor_ticks = [minor_ticks, 2*major_ticks(i):major_ticks(i):major_ticks(i+1)];
+        end
+        major_ticks_label = cellstr(num2str(round(log10(major_ticks(:))), '10^{%d}'));
+        %major_ticks_label(strcmp(major_ticks_label,'10^0')) = {'1'}; 
+        h.axes_general.YTick = log10(major_ticks);
+        h.axes_general.YTickLabels = major_ticks_label;
+        h.axes_general.YRuler.MinorTickValues = log10(minor_ticks);
+        h.axes_general.YMinorTick = 'on';
+        h.axes_1d_y.XTick = log10(major_ticks);
+        h.axes_1d_y.XTickLabels = major_ticks_label;
+        h.axes_1d_y.XRuler.MinorTickValues = log10(minor_ticks);
+        h.axes_1d_y.XMinorTick = 'on';
+    catch % add "log" to parameter name
+        h.axes_general.YLabel.String = [h.axes_general.YLabel.String ' log'];
+    end
+else
+    h.axes_general.YTickMode = 'auto';
+    h.axes_general.YTickLabelMode = 'auto';
+    h.axes_general.YMinorTick = 'off';
+    h.axes_1d_y.XTickMode = 'auto';
+    h.axes_1d_y.XTickLabelMode = 'auto';
+    h.axes_1d_y.XMinorTick = 'off';
 end
 %% Gaussian fitting
 if obj == h.Fit_Gaussian_Button
