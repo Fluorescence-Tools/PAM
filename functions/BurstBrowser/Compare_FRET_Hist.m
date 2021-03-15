@@ -126,6 +126,11 @@ elseif  obj.Parent == h.Param_comp_Loaded_Menu
         if ~isempty(p)
             P{i} = BurstData{file}.DataCut(:,p);
         end
+        if UserValues.BurstBrowser.Display.logX % convert to log10
+            val = P{i} > 0; % avoid complex numbers
+            P{i}(val) = log10(P{i}(val));
+            P{i}(~val) = NaN;
+        end
     end
     BurstMeta.SelectedFile = sel_file;
 elseif obj.Parent == h.Param_comp_selected_Menu
@@ -153,6 +158,11 @@ elseif obj.Parent == h.Param_comp_selected_Menu
         if ~isempty(p)
             [~, Data] = UpdateCuts([species(i),subspecies(i)],file);
             P{i} = Data(:,p);
+        end
+        if UserValues.BurstBrowser.Display.logX % convert to log10
+            val = P{i} > 0; % avoid complex numbers
+            P{i}(val) = log10(P{i}(val));
+            P{i}(~val) = NaN;
         end
     end
     BurstMeta.SelectedFile = sel_file;
@@ -464,6 +474,21 @@ switch mode
                 end
                 linkaxes(ax,'x');
                 set(ax,'Units','norm');
+        end
+        if UserValues.BurstBrowser.Display.logX
+            % Update tick labels if log option is used
+            % major labels at each decade
+            major_ticks = 10.^(floor(xlim(1)):1:ceil(xlim(2)));
+            % 10 minor ticks for each decade
+            minor_ticks = major_ticks(1);
+            for i = 1:numel(major_ticks)-1
+                minor_ticks = [minor_ticks, 2*major_ticks(i):major_ticks(i):major_ticks(i+1)];
+            end
+            major_ticks_label = cellstr(num2str(round(log10(major_ticks(:))), '10^{%d}'));            
+            ax(1).XTick = log10(major_ticks);
+            ax(1).XTickLabels = major_ticks_label;
+            ax(1).XRuler.MinorTickValues = log10(minor_ticks);
+            ax(1).XMinorTick = 'on';
         end
         FigureName = ['Comp_' h.ParameterListX.String{h.ParameterListX.Value}];
         FigureName = strrep(FigureName,' ','_');
