@@ -9568,13 +9568,10 @@ if nargin < 5
 end
 ix = ix_start;
 S = 0;
-s = [];
 while S < h && ix < numel(dt)
     S = max([S+log(fT(dt(ix)+1))-log(fB(dt(ix)+1)),0]);
-    s(end+1) = S;
     ix = ix + 1;
 end
-ix;
 
 function ix = SPRT(dt,A,B,fB,fT,ix_start)
 % estimate the burst end using SPRT
