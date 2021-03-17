@@ -5598,9 +5598,9 @@ if any(mode==5)
                     mask = MIAData.TICS.FreehandMask;
                 end
                 % median filter the mask to make the mask look more logical
-                if h.Mia_TICS.Median.Value
-                    mask = medfilt2(mask, filtsize, 'symmetric');
-                end
+%                 if h.Mia_TICS.Median.Value
+%                     mask = medfilt2(mask, filtsize, 'symmetric');
+%                 end
                 G1a{i} = G1;
                 halflifea{i} = halflife;
                 countsa{i} = counts;
