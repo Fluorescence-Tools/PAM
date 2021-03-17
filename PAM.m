@@ -7831,8 +7831,13 @@ SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 DCBS_logical_gate = UserValues.BurstSearch.LogicalGate;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
-Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
-ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
+if FileInfo.MeasurementTime > 600 % Measurement was less than 10 minutes
+    Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
+    ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
+else % short measurement, only use one chunk
+    Number_of_Chunks = 1;
+    ChunkSize = FileInfo.MeasurementTime; 
+end
 %%% Preallocation
 Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
@@ -8088,6 +8093,7 @@ Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters..
 Number_of_Bursts = numel(Macrotime);
 if Number_of_Bursts == 0 % no bursts were found
     disp('No bursts detected.');
+    Progress(1,h.Progress.Axes, h.Progress.Text, 'Done');
     return;
 end
 
