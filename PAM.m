@@ -9992,7 +9992,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
                 y = [y,0,1,1,0];
             end
             % intensity plot
-            max_int = max([max(ch1) max(ch2)])./bin_time_ms;
+            max_int = 1.1*max([max(ch1) max(ch2)])./bin_time_ms;
             h.Plots.BurstPreview.SearchResult.Channel1 = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
             % interphoton time plot
             y = y*max(dT);
