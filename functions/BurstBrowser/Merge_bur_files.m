@@ -1,13 +1,48 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Merge_bur_files(~,~)
+function Merge_bur_files(obj,~)
 h = guidata(gcbo);
 global UserValues
 
-%%% Select files
-Files = GetMultipleFiles({'*.bur','*.bur file'}, 'Choose a file', UserValues.File.BurstBrowserPath);
-
+switch obj
+    case h.Merge_Files_Menu
+        %%% Select files
+        Files = GetMultipleFiles({'*.bur','*.bur file'}, 'Choose a file', UserValues.File.BurstBrowserPath);
+    case h.Merge_Files_From_Folder_Menu
+        %%% Select folder
+        pathname = uigetdir(UserValues.File.BurstBrowserPath,'Select a folder');
+        % get all bur files from subfolders
+        if pathname == 0
+            return;
+        end
+        subdir = dir(pathname);
+        subdir = subdir([subdir.isdir]);
+        subdir = subdir(3:end); %%% remove '.' and '..' folders
+        if isempty(subdir) %%% no subfolders
+            return;
+        end
+        FileName = cell(0);
+        PathName = cell(0);
+        for i = 1:numel(subdir)
+            files = dir([pathname filesep subdir(i).name]);
+            if ~isempty(files) %%% ensure that there are files in this subfolder
+                for j = 1:numel(files)
+                    if ~( strcmp(files(j).name,'.') || strcmp(files(j).name,'..') )
+                        if ~files(j).isdir
+                            if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
+                                FileName{end+1} = files(j).name;
+                                PathName{end+1} = [pathname filesep subdir(i).name];
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        % format into "Files" cell array
+        Files(:,1) = FileName;
+        Files(:,2) = PathName;
+end
 if size(Files,1) < 2
     m = msgbox('Select more than one file!');
     pause(1);
