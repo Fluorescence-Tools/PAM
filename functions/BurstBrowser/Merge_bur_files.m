@@ -135,6 +135,11 @@ for i =2:numel(MergeData)
     Merged.DataArray = [Merged.DataArray;MergeData{i}.BurstData.DataArray];
 end
 
+%%% Concatenate BID array
+for i =2:numel(MergeData)
+    Merged.BID = [Merged.BID; MergeData{i}.BurstData.BID];
+end
+
 %%% Add a new parameter (file number);
 Merged.NameArray{end+1} = 'File Number';
 filenumber = [];
