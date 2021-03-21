@@ -9417,7 +9417,7 @@ if BurstIdentification == 1
     valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.ClockPeriod;
     
     % and find start and stop of bursts
-    start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
+    start = find(valid(1:end-1)-valid(2:end)==-1) + 1 + floor(M/2); % +1 is necessary
     stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
     
 elseif BurstIdentification == 2
