@@ -7833,9 +7833,11 @@ DCBS_logical_gate = UserValues.BurstSearch.LogicalGate;
 %chunk
 if FileInfo.MeasurementTime > 600 % Measurement was less than 10 minutes
     Number_of_Chunks = numel(find(PamMeta.Selected_MT_Patches));
+    chunks_to_use = find(PamMeta.Selected_MT_Patches)';
     ChunkSize = FileInfo.MeasurementTime/numel(PamMeta.Selected_MT_Patches)/60;
 else % short measurement, only use one chunk
     Number_of_Chunks = 1;
+    chunks_to_use = 1;
     ChunkSize = FileInfo.MeasurementTime; 
 end
 %%% Preallocation
@@ -7872,7 +7874,7 @@ else
     from_BurstIDs = false;
 end
 
-for i = find(PamMeta.Selected_MT_Patches)'
+for i = chunks_to_use
     Progress((i-1)/Number_of_Chunks,h.Progress.Axes, h.Progress.Text,'Performing Burst Search...');
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons

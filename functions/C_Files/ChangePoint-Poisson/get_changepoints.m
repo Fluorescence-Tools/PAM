@@ -52,8 +52,8 @@ N_splits = ceil(numel(dt)./split_photons);
 result = cell(N_splits,1);
 pid = cell(N_splits,1);
 fprintf('Detecting change points...\n'); b = 0;
-for i = 1:(N_splits-1)
-    if i == N_splits-1 % combine the last two bins to avoid too small intervals
+for i = 1:N_splits
+    if i == N_splits % last bin, go up to end
         dt_temp = dt((i-1)*split_photons+1 : end);
     else
         dt_temp = dt((i-1)*split_photons+1 : i*split_photons);
@@ -75,7 +75,7 @@ for i = 1:(N_splits-1)
         pid{i} = id{end-1};
     end
     %%% update progress bar
-    p = floor(100*i/(N_splits-1)); % the progress in %
+    p = floor(100*i/N_splits); % the progress in %
     fprintf(repmat('\b',1,b));
     text = sprintf(['|' repmat('-',1,p) repmat(' ',1,100-p) '| %i%%\n'],p);
     fprintf(['|' repmat('-',1,p) repmat(' ',1,100-p) '| %i%%\n'],p);
@@ -95,7 +95,7 @@ for i = 1:numel(pid)
 end
 fprintf('Done.\n');
 
-for i = 1:(N_splits-1)
+for i = 1:N_splits
     try
         r = struct;
         for f = 1:numel(file_ext)
