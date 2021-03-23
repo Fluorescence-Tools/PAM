@@ -609,6 +609,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.FCSFit was incomplete');
     end
     P.FCSFit = [];
+    %%% Checks if FCSFit.FileType subfield exists
+    if ~isfield(S.FCSFit, 'FileType')
+        S.FCSFit.FileType = 1;
+        disp('UserValues.FCSFit.FileType was incomplete');
+    end
+    P.FCSFit.FileType = S.FCSFit.FileType;
     %%% Checks if FCSFit.Fit_Min subfield exists
     if ~isfield(S.FCSFit, 'Fit_Min') || numel(S.FCSFit.Fit_Min)~=1 || ~isnumeric(S.FCSFit.Fit_Min)
         S.FCSFit.Fit_Min = 0;

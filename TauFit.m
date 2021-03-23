@@ -1889,10 +1889,14 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     h.TauFit.Name = ['TauFit - Loaded file: ' FileName{1}];
                 case {h.Menu.OpenDecayDOnlyData_PQ,h.Menu.OpenIRFData_PQ,h.Menu.OpenDecayData_PQ}
                     %%% loading PQ data
-                    filetypes = {'*.dat','PQ decay file (*.dat)';'*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)'};
-                    if UserValues.TauFit.FileTypeTXT == 2
-                        filetypes = flipud(filetypes);
-                    end
+                    filetypes = {'*.dat','PQ decay file (*.dat)';...
+                        '*.txt;*.csv;*.dat','Tab-separated text file (*.txt;*.csv;*.dat)';...
+                        '*.pqres','PQRES file from SymphoTime software (*.pqres)'};
+                    order = 1:size(filetypes,1);
+                    temp = order(UserValues.TauFit.FileTypeTXT); order(temp) = [];
+                    order = [temp order];
+                    filetypes = filetypes(order,:);
+ 
                     [FileName, PathName, FilterIndex] = uigetfile_with_preview(filetypes,'Choose data file...',UserValues.File.TauFitPath);
                     if isempty(FileName)
                         return;
@@ -1900,10 +1904,9 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                     if FilterIndex == 0
                         return;
                     end
-                    if UserValues.TauFit.FileTypeTXT == 2
-                        %%% switch again
-                        FilterIndex = 3-FilterIndex; % 1->2, 2->1
-                    end
+                    %%% switch again
+                    FilterIndex = order(FilterIndex);
+                    
                     UserValues.TauFit.FileTypeTXT  = FilterIndex;
                     UserValues.File.TauFitPath = PathName;
                     if ~iscell(FileName)
@@ -1950,6 +1953,18 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
                                 end
                                 time = (1:size(data,1)).*TACChannelWidth;
                             end
+                        case 3 %%% pqres data
+                            data = Read_PicoQuant_PQRES(fullfile(PathName,FileName{1}));
+                            TACChannelWidth = data{1}(2,1)/1e-9;
+                            MI_Bins = max(cell2mat(cellfun(@(x) size(x,1),data,'UniformOutput',false)));
+                            TAC = TACChannelWidth*MI_Bins;
+                            time = (1:MI_Bins)*TACChannelWidth;
+                            decay = zeros(MI_Bins,numel(data));
+                            for k = 1:numel(data)
+                                decay(1:size(data{k},1),k) = data{k}(:,2);
+                            end
+                            % only take first decay for now
+                            decay = decay(:,1);
                     end
                     
                     switch obj
