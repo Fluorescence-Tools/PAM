@@ -136,8 +136,9 @@ for i =2:numel(MergeData)
 end
 
 %%% Concatenate BID array
+Merged.BID = {Merged.BID};
 for i =2:numel(MergeData)
-    Merged.BID = [Merged.BID; MergeData{i}.BurstData.BID];
+    Merged.BID{end+1,1} = MergeData{i}.BurstData.BID;
 end
 
 %%% Add a new parameter (file number);
