@@ -7183,7 +7183,7 @@ switch mode
             Active_Axes.Children(i).Marker = '.';
         end
     case 4 %%% Save selected correlations
-        Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children;
+        Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children(strcmp('axes',get(h.Cor.Correlations_Tabs.SelectedTab.Children,'Type')));
         Data = Active_Axes.UserData;
         Current_FileName = Data{1};
         Header = Data{2}; %#ok<NASGU>

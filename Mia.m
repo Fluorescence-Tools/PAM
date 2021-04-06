@@ -4827,7 +4827,7 @@ if any(mode==1)
             %%% Also sets AlphaData to right size
             h.Plots.Image(i,2).AlphaData = ~isnan(Image);
             if Frame>0 %%% For one frame, use manual selection and arbitrary region
-                if ~isempty(MIAData.AR) 
+                if ~isempty(MIAData.AR) && ~isempty(MIAData.AR{i,1})
                     h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,1}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
                 elseif ~all(all(MIAData.MS{1}))
                     % AROI was imported without further ado
@@ -4836,7 +4836,7 @@ if any(mode==1)
                     h.Plots.Image(i,2).AlphaData = 1;
                 end
             else %%% For all frames, only use manual selection
-                if ~isempty(MIAData.AR)
+                if ~isempty(MIAData.AR) && ~isempty(MIAData.AR{i,1})
                     h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,2}(:,:) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
                 elseif ~all(all(MIAData.MS{1}))
                     % AROI was imported without further ado
@@ -5598,9 +5598,9 @@ if any(mode==5)
                     mask = MIAData.TICS.FreehandMask;
                 end
                 % median filter the mask to make the mask look more logical
-                if h.Mia_TICS.Median.Value
-                    mask = medfilt2(mask, filtsize, 'symmetric');
-                end
+%                 if h.Mia_TICS.Median.Value
+%                     mask = medfilt2(mask, filtsize, 'symmetric');
+%                 end
                 G1a{i} = G1;
                 halflifea{i} = halflife;
                 countsa{i} = counts;
