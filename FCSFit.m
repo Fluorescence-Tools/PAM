@@ -759,6 +759,9 @@ else
     for i = 1:numel(FileName)
         PathName{i} = path;
     end
+    %%% switch order of filetypes again and store
+    Type = order(Type);
+    UserValues.FCSFit.FileType = Type;
 end
 
 
@@ -766,9 +769,7 @@ end
 if all(FileName{1}==0)
     return
 end
-%%% switch order of filetypes again and store
-Type = order(Type);
-UserValues.FCSFit.FileType = Type;
+
 %%% Saves pathname to uservalues
 UserValues.File.FCSPath=PathName{1};
 LSUserValues(1);
