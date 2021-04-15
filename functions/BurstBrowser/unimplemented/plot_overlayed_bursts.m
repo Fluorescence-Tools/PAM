@@ -1,11 +1,17 @@
-function plot_overlayed_bursts(mode)
+function plot_overlayed_bursts(mode,range)
 global BurstData PhotonStream BurstMeta
 %h = guidata(finobj('Tag','BurstBrowser'));
-% mode: 1 - normalize to mean
-%       2 - normalize to half (start+stop)/2
-%       3 - normalize to start
+% mode:  1 - normalize to mean
+%        2 - normalize to half (start+stop)/2
+%        3 - normalize to start
+% range: the time +/- to include in ms
+
 if nargin == 0
     mode = 1;
+    range = 50;
+end
+if nargin == 1
+    range = 50;
 end
 %%% Set Up Progress Bar
 %Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
@@ -34,8 +40,8 @@ end
 start = PhotonStream{file}.start(BurstData{file}.Selected);
 stop = PhotonStream{file}.stop(BurstData{file}.Selected);
 
-time_before = 50E-3/BurstData{file}.SyncPeriod; % ms time before
-time_after = 50E-3/BurstData{file}.SyncPeriod; % ms time after
+time_before = range*1E-3/BurstData{file}.SyncPeriod; % ms time before
+time_after = range*1E-3/BurstData{file}.SyncPeriod; % ms time after
 max_dur = max(PhotonStream{file}.Macrotime(stop)-PhotonStream{file}.Macrotime(start))+time_after;
 normalized_bursts = cell(numel(start),1);
 fprintf('0.00');
@@ -70,7 +76,7 @@ end
 fprintf('\n');
 a = vertcat(normalized_bursts{:});
 binning = 0.01; % 10 µs binning
-[h,xh] = histcounts(a*BurstData{file}.SyncPeriod*1000,-50:binning:50);
+[h,xh] = histcounts(a*BurstData{file}.SyncPeriod*1000,-range:binning:range);
 xh = xh(1:end-1) + min(diff(xh))/2;
 h = h./numel(start)*(1./binning); % convert to average countrate in kHz
 
@@ -89,12 +95,19 @@ plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2);
 xlabel('time (ms)');
 ylabel('count rate [kHz]');
 set(gca,'LineWidth',2,'FontSize',18,'Box','on','Color',[1,1,1]);
-xlim([-10,10]);
+xlim([-range,range]);
 
 subplot(1,2,2); hold on;
 plot(-xh(ix_peak:-1:1),h(ix_peak:-1:1),'LineWidth',2,'Color',[color(1,:),1]);
 plot(xh(ix_peak+1:end),h(ix_peak+1:end),'LineWidth',2,'Color',[color(2,:),1]);
-xlabel('time difference to mean arrival time (ms)');
+switch mode
+    case 1
+        xlabel('time difference to mean arrival time (ms)');
+    case 2
+        xlabel('time difference to burst mean time (ms)');
+    case 3
+        xlabel('time difference to burst start (ms)');
+end
 ylabel('count rate [kHz]');
 set(gca,'XScale','log','LineWidth',2,'FontSize',18,'Box','on','Color',[1,1,1]);
 
