@@ -537,7 +537,11 @@ set(h.axes_1d_y,'YTick',yticks(2:end));
 
 if (h.axes_1d_x.XLim(2) - h.axes_1d_x.XTick(end))/(h.axes_1d_x.XLim(2)-h.axes_1d_x.XLim(1)) < 0.02
     %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
-    h.axes_1d_x.XTickLabel{end} = '';
+    if numel(h.axes_1d_x.XTickLabel) > 1
+        h.axes_1d_x.XTickLabel{end} = '';
+    else 
+        h.axes_1d_x.XTickLabel = h.axes_general.XTickLabel;
+    end
 else
     h.axes_1d_x.XTickLabel = h.axes_general.XTickLabel;
 end
