@@ -6342,7 +6342,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     
     Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')
     h.Progress.Axes.Color=UserValues.Look.Control;
-    drawnow;
+    %drawnow;
     
     %%% For every active combination
     for i=1:numel(Cor_A)
