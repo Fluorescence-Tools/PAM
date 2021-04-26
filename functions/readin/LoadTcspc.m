@@ -1321,5 +1321,5 @@ if strcmp(Caller.Tag, 'Pam')
 
     %%% Fix situation where the PIE channel range is larger than the number
     %%% of microtime bins
-    UserValues.PIE.To(UserValues.PIE.To > FileInfo.MI_Bins) = FileInfo.MI_Bins;
+    %UserValues.PIE.To(UserValues.PIE.To > FileInfo.MI_Bins) = FileInfo.MI_Bins;
 end
