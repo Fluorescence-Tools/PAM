@@ -6671,27 +6671,29 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     fclose(FileID);                    
                 end
                 %% Plots Data
-                %%% Creates new Tab with axes
-                if numel(h.Cor.Individual_Tab)<i
-                    h.Cor.Individual_Tab{i} = copyobj(h.Cor.Individual_Tab{i-1}, h.Cor.Correlations_Tabs);
-                    h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children(strcmp('axes',get(h.Cor.Individual_Tab{i}.Children,'Type')));
+                if gcbo ~= h.Export.Correlate % skip plotting if using database
+                    %%% Creates new Tab with axes
+                    if numel(h.Cor.Individual_Tab)<i
+                        h.Cor.Individual_Tab{i} = copyobj(h.Cor.Individual_Tab{i-1}, h.Cor.Correlations_Tabs);
+                        h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children(strcmp('axes',get(h.Cor.Individual_Tab{i}.Children,'Type')));
+                    end
+                    %%% make current tab this one
+                    h.Cor.Correlations_Tabs.SelectedTab = h.Cor.Individual_Tab{i};
+                    %%% Changes Tab Name
+                    h.Cor.Individual_Tab{i}.Title = [PIE_Name1 '_x_' PIE_Name2];
+                    lgd_str = cell(size(Cor_Array,2),1); % generate legend strings
+                    for j = 1:size(Cor_Array,2)
+                        h.Cor.Individual_Axes{i}.Children(j).XData = Cor_Times;
+                        h.Cor.Individual_Axes{i}.Children(j).YData = Cor_Array(:,j);
+                        h.Cor.Individual_Axes{i}.Children(j).ButtonDownFcn ={@Cor_Selection,1};
+                        lgd_str{j} = ['Block #' num2str(j)];
+                    end
+                    %%% Enable legend
+                    legend(h.Cor.Individual_Axes{i},lgd_str);
+                    %%% Saves filename in axes
+                    h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
+                    h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;
                 end
-                %%% make current tab this one
-                h.Cor.Correlations_Tabs.SelectedTab = h.Cor.Individual_Tab{i};
-                %%% Changes Tab Name
-                h.Cor.Individual_Tab{i}.Title = [PIE_Name1 '_x_' PIE_Name2];
-                lgd_str = cell(size(Cor_Array,2),1); % generate legend strings
-                for j = 1:size(Cor_Array,2)
-                    h.Cor.Individual_Axes{i}.Children(j).XData = Cor_Times;
-                    h.Cor.Individual_Axes{i}.Children(j).YData = Cor_Array(:,j);
-                    h.Cor.Individual_Axes{i}.Children(j).ButtonDownFcn ={@Cor_Selection,1};
-                    lgd_str{j} = ['Block #' num2str(j)];
-                end
-                %%% Enable legend
-                legend(h.Cor.Individual_Axes{i},lgd_str);
-                %%% Saves filename in axes
-                h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
-                h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;
                 Progress((i)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')
             case {2,3} %%% Pair correlation
                 Bins=str2double(h.Cor.Pair_Bins.String);
@@ -10899,7 +10901,7 @@ h=guidata(findobj('Tag','Pam'));
 h.Progress.Text.String = 'Calculating detector calibration';
 h.Progress.Axes.Color=[1 0 0];
 
-drawnow;
+%drawnow;
 if nargin<3 % calculate the shift
     if ~isempty(UserValues.Detector.Shift{h.MI.Calib_Det.Value})
         msgbox('A shift for this detector already exists in UserValues. Press the Clear shift button, Open data again in Pam, and press Calculate correction again!')
