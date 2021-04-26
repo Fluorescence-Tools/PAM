@@ -101,7 +101,6 @@ else
     %%% Added: Change Mouse Pointer to Wheel
     set(gcbf, 'pointer', 'watch'); drawnow;
 end
-drawnow
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Convert a time measurement from seconds into a human readable string %%
