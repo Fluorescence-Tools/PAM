@@ -6346,7 +6346,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Progress(0,h.Progress.Axes,h.Progress.Text,'Correlating :')
     h.Progress.Axes.Color=UserValues.Look.Control;
     
-    
     %%% For every active combination
     for i=1:numel(Cor_A)
         %%% Findes all needed PIE channels
