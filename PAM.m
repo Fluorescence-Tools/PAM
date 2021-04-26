@@ -6319,7 +6319,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
         otherwise
             FileName = FileInfo.FileName{1}(1:end-4);
     end
-    drawnow;
+    %drawnow;
     
     %%% Removes individual Correlation Tabs
     for i=2:numel(h.Cor.Individual_Tab)
