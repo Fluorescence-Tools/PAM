@@ -6319,30 +6319,33 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
         otherwise
             FileName = FileInfo.FileName{1}(1:end-4);
     end
-    %drawnow;
+   
     
-    %%% Removes individual Correlation Tabs
-    for i=2:numel(h.Cor.Individual_Tab)
-        delete(h.Cor.Individual_Tab{i})
+    if (gcbo ~= h.Export.Correlate) || (gcbo == h.Export.Correlate && ~strcmp(h.Cor.Individual_Tab{1}.Title,'No data'))
+        drawnow;
+        %%% Removes individual Correlation Tabs
+        for i=2:numel(h.Cor.Individual_Tab)
+            delete(h.Cor.Individual_Tab{i})
+        end
+        h.Cor.Individual_Tab = h.Cor.Individual_Tab(1);
+        h.Cor.Individual_Axes = h.Cor.Individual_Axes(1);
+        if ~isempty(h.Cor.Individual_Axes{1}.Children)
+            delete(h.Cor.Individual_Axes{1}.Children);
+        end
+        %%% Creates plots for all macrotime patches
+        for i=1:numel(Valid)
+            line('Parent',h.Cor.Individual_Axes{1},...
+                'X',[3e-7 1],...
+                'Y',[0 0],...
+                'Color',rand(3,1));
+        end
+
+        h.Cor.Individual_Tab{1}.Title = 'No data';
+        drawnow;
     end
-    h.Cor.Individual_Tab = h.Cor.Individual_Tab(1);
-    h.Cor.Individual_Axes = h.Cor.Individual_Axes(1);
-    if ~isempty(h.Cor.Individual_Axes{1}.Children)
-        delete(h.Cor.Individual_Axes{1}.Children);
-    end
-    %%% Creates plots for all macrotime patches
-    for i=1:numel(Valid);
-        line('Parent',h.Cor.Individual_Axes{1},...
-            'X',[3e-7 1],...
-            'Y',[0 0],...
-            'Color',rand(3,1));
-    end
-    
-    h.Cor.Individual_Tab{1}.Title = 'No data';
-    
-    Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')
+    Progress(0,h.Progress.Axes,h.Progress.Text,'Correlating :')
     h.Progress.Axes.Color=UserValues.Look.Control;
-    %drawnow;
+    
     
     %%% For every active combination
     for i=1:numel(Cor_A)
