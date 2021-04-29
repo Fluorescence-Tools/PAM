@@ -374,7 +374,7 @@ switch TTResultFormat_TTTRRecType
             Header.LineStart = LineMarker(1:2:end-1);
             Header.LineStop = LineMarker(2:2:end);
         end
-        if ~isfield(Header,'FrameStart') && ~isempty(Header.LineStartMarker) && ~isempty(Header.LineStopMarker)
+        if ~isfield(Header,'FrameStart') || isempty(Header.FrameStart) && ~isempty(Header.LineStartMarker) && ~isempty(Header.LineStopMarker)
             % only one frame recorded
             Header.FrameStart = Header.LineStart(1);
         end
