@@ -10095,9 +10095,9 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     %%% enable slider
     h.Burst.BurstSearchPreview_Slider.Enable = 'on';
     h.Burst.BurstSearchPreview_Slider.Min = 0;
-    h.Burst.BurstSearchPreview_Slider.Max = min([ChunkSize*60,floor(FileInfo.MeasurementTime)])-1;
+    h.Burst.BurstSearchPreview_Slider.Max = min([ChunkSize*60,ceil(FileInfo.MeasurementTime)])-1;
     h.Burst.BurstSearchPreview_Slider.Value = min([PamMeta.Burst.Preview.Second, h.Burst.BurstSearchPreview_Slider.Max]);
-    h.Burst.BurstSearchPreview_Slider.SliderStep = [1,10]./h.Burst.BurstSearchPreview_Slider.Max;
+    h.Burst.BurstSearchPreview_Slider.SliderStep = [1,10]./max([1,h.Burst.BurstSearchPreview_Slider.Max]);
     PamMeta.Burst.Preview.Second = h.Burst.BurstSearchPreview_Slider.Value;
 else %%% < or > was pressed
     obj.Value = floor(obj.Value);
