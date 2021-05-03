@@ -124,7 +124,10 @@ for i = 1:numel(result)
         intensities = result{i}.(sprintf('em%i',Nstates));
         intensities = intensities(:,2)/1000; % intenisites in kHz
         levels = unique(intensities);
-
+        if N_splits == 1
+            %%% inform about detected intensity levels
+            disp('Intensity levels: [kHz]'); fprintf('%f\n',levels);
+        end
         if any(levels > threshold)
             % find all start/stop of levels above threshold
             valid_regions = intensities > threshold;
