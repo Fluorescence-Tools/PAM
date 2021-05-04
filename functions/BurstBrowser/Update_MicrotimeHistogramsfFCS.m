@@ -765,7 +765,7 @@ BurstMeta.fFCS.MetaData.TotalSpecies.Name = BurstData{file}.SpeciesNames{species
 Cut = BurstData{file}.Cut{species(1),1};
 BurstMeta.fFCS.MetaData.TotalSpecies.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'});
 % get current selection
-if synthetic_species1
+if synthetic_species(1)
     BurstMeta.fFCS.MetaData.Species1 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species1}];
 else
     BurstMeta.fFCS.MetaData.Species1.Name = [BurstData{file}.SpeciesNames{species1(1)} ' - ' BurstData{file}.SpeciesNames{species1(2)}];
@@ -773,7 +773,7 @@ else
     BurstMeta.fFCS.MetaData.Species1.Cut = cell2table(vertcat(Cut{:}),'VariableNames',{'Parameter','LB','UB','Active','Delete'});
 end
 
-if synthetic_species2
+if synthetic_species(2)
     BurstMeta.fFCS.MetaData.Species2 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species2}];
 else
     BurstMeta.fFCS.MetaData.Species2.Name = [BurstData{file}.SpeciesNames{species2(1)} ' - ' BurstData{file}.SpeciesNames{species2(2)}];
@@ -782,7 +782,7 @@ else
 end
 
 if use_species3
-    if synthetic_species3
+    if synthetic_species(3)
         BurstMeta.fFCS.Result.MetaData.Species3 = ['Synthetic: ' BurstMeta.fFCS.syntheticpatterns_names{synthetic_species3}];
     else
         BurstMeta.fFCS.MetaData.Species3.Name = [BurstData{file}.SpeciesNames{species3(1)} ' - ' BurstData{file}.SpeciesNames{species3(2)}];
