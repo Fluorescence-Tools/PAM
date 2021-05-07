@@ -87,14 +87,45 @@ for i = 1:N_splits
     b = numel(text);
 end
 
-fprintf('Waiting 10 seconds for subprocesses to finish...\n');
-pause(10); % wait for all processes to finish
-% kill all processes (routine sometimes hangs)
-for i = 1:numel(pid)
-    if ~isempty(pid{i})
-        [status,~] = system(['kill ' pid{i}]);
-        if status == 0
-            fprintf('Killed process with id %s before completion.\n',pid{i});
+
+if ispc
+    tic;
+    while ~all(cellfun(@isempty,pid)) % some processes still run
+        %%% loop through all processes and check status
+        for i = 1:numel(pid)
+            if ~isempty(pid{i})
+                if toc > 10 %%% more than 10 seconds passed, kill
+                    [status,~] = system(['taskkill /F /PID ' pid{i}]);
+                     if status == 0
+                         fprintf('Killed process with id %s before completion.\n',pid{i});
+                     end
+                else %%% check and update status
+                    [~,cmdout] = system(['tasklist | find /i "' pid{i} '"']);
+                    if isempty(cmdout) %%% process not active anymore
+                        pid{i} = [];
+                    end
+                end
+            end
+        end
+    end
+elseif isunix
+    tic;
+    while ~all(cellfun(@isempty,pid)) % some processes still run
+        %%% loop through all processes and check status
+        for i = 1:numel(pid)
+            if ~isempty(pid{i})
+                if toc > 10 %%% more than 10 seconds passed, kill
+                    [status,~] = system(['kill ' pid{i}]);
+                     if status == 0
+                         fprintf('Killed process with id %s before completion.\n',pid{i});
+                     end
+                else %%% check and update status
+                    [~,cmdout] = system(['kill -0 ' pid{i}]);
+                    if contains(cmdout,'no such process')
+                        pid{i} = [];
+                    end
+                end
+            end
         end
     end
 end
