@@ -87,9 +87,8 @@ for i = 1:N_splits
     b = numel(text);
 end
 
-
+tic;
 if ispc
-    tic;
     while ~all(cellfun(@isempty,pid)) % some processes still run
         %%% loop through all processes and check status
         for i = 1:numel(pid)
@@ -106,7 +105,7 @@ if ispc
                     end
                 end
             end
-        end
+        end        
     end
 elseif isunix
     tic;
