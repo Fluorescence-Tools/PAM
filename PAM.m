@@ -871,9 +871,12 @@ h.Burst.Axes_Interphot.YLabel.Color=Look.Fore;
 h.Burst.Axes_Interphot.XLim = [0 1];
 h.Burst.Axes_Interphot.YLim = [0 1];
 
-h.Plots.BurstPreview.Channel1_Interphot = plot([0 1],[0 0],'g');
-h.Plots.BurstPreview.Channel2_Interphot = plot([0 1],[0 0],'r');
-h.Plots.BurstPreview.Channel3_Interphot = plot([0 1],[0 0],'b');
+h.Plots.BurstPreview.Channel1_Interphot = plot([0 1],[0 0],'.g','MarkerSize',1);
+h.Plots.BurstPreview.Channel1_Interphot_Smooth = plot([0 1],[0 0],'-g');
+h.Plots.BurstPreview.Channel2_Interphot = plot([0 1],[0 0],'.r','Visible','off','MarkerSize',1);
+h.Plots.BurstPreview.Channel2_Interphot_Smooth = plot([0 1],[0 0],'-r','Visible','off');
+h.Plots.BurstPreview.Channel3_Interphot = plot([0 1],[0 0],'.b','Visible','off','MarkerSize',1);
+h.Plots.BurstPreview.Channel3_Interphot_Smooth = plot([0 1],[0 0],'-b','Visible','off');
 h.Plots.BurstPreview.Interphoton_Threshold_ch1 = plot([0 1],[0 0],'--g','Visible','off');
 h.Plots.BurstPreview.Interphoton_Threshold_ch2 = plot([0 1],[0 0],'--r','Visible','off');
 h.Plots.BurstPreview.Interphoton_Threshold_ch3 = plot([0 1],[0 0],'--b','Visible','off');
@@ -9615,7 +9618,10 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     %%% Set Progress Bar
     h.Progress.Text.String = 'Calculating Burst Search Preview...';
     drawnow;
-    
+    %%% hide plots initially
+    set([h.Plots.BurstPreview.Channel2_Interphot,h.Plots.BurstPreview.Channel2_Interphot_Smooth,...
+        h.Plots.BurstPreview.Channel3_Interphot, h.Plots.BurstPreview.Channel3_Interphot_Smooth,],...
+        'Visible','off');
     PamMeta.Burst.Preview.InterphotonTime_Smoothed = [];
     
     %bintime for display, based on the time window used for the burst analysis
@@ -9873,44 +9879,71 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
                 h.Plots.BurstPreview.Intensity_Threshold_ch3.YData = M(3)*ones(1,numel(PamMeta.Burst.Preview.x));
             end
     end
-    %% Plot Interphoton time trace (just from all photons here...)
+    %% Plot Interphoton time trace
+    %%% read photons
+    switch BAMethod
+        case {1,3,5}    % APBS            
+            % we just take all photons
+            PhotonsChannel = {AllPhotons};
+        case {2}    % DCBS MFD
+            PhotonsChannel{1} = sort([Photons{1}; Photons{2}; Photons{3}; Photons{4}]);
+            PhotonsChannel{2} = sort([Photons{5}; Photons{6}]);           
+        case {6} % DCBS noMFD
+            PhotonsChannel{1} =sort([Photons{1}; Photons{2}]);
+            PhotonsChannel{2} = Photons{3};
+        case {4} % TCBS MFD
+            PhotonsChannel{1} = sort([Photons{1}; Photons{2}; Photons{3}; Photons{4}; Photons{5}; Photons{6}]);
+            PhotonsChannel{2} = sort([Photons{7}; Photons{8}; Photons{9}; Photons{10}]);
+            PhotonsChannel{3} = sort([Photons{11}; Photons{12}]);
+    end
+
     %%% Smooth with Lee Filter
     if SmoothingMethod == 2
         m = T;
     else
-        m = 30;
-    end
-    % Smooth the interphoton time trace
-    dT =[AllPhotons(1);diff(AllPhotons)];
-    dT_m = zeros(size(dT,1),size(dT,2));
-    dT_s = zeros(size(dT,1),size(dT,2));
-    % Apply Lee Filter with window 2m+1
-    sig_0 = std(dT); %%% constant filter parameter is the noise variance, set to standard devitation of interphoton time
-    dT_cumsum = cumsum(dT);
-    dT_cumsum = [0; dT_cumsum];
-    for i = m+1:numel(dT)-m
-        dT_m(i) = (2*m+1)^(-1)*(dT_cumsum(i+m+1)-dT_cumsum(i-m));
-    end
-    dT_sq_cumsum = cumsum((dT-dT_m).^2);
-    dT_sq_cumsum = [0;dT_sq_cumsum];
-    for i = 2*m:numel(dT)-2*m
-        dT_s(i) = (2*m+1)^(-1)*(dT_sq_cumsum(i+m+1)-dT_sq_cumsum(i-m));
+        m = 30*ones(1,numel(PhotonsChannel));
     end
     
-    %filtered data
-    dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);
-    
-    h.Plots.BurstPreview.Channel1_Interphot.Visible = 'on';
-    h.Plots.BurstPreview.Channel1_Interphot.Color = [0.4 0.4 0.4];
-    h.Plots.BurstPreview.Channel1_Interphot.LineStyle = 'none';
-    h.Plots.BurstPreview.Channel1_Interphot.Marker = '.';
-    h.Plots.BurstPreview.Channel1_Interphot.MarkerSize = 1;
-    h.Plots.BurstPreview.Channel1_Interphot.XData = AllPhotons.*FileInfo.ClockPeriod;
-    h.Plots.BurstPreview.Channel1_Interphot.YData = dT.*FileInfo.ClockPeriod*1E6;
-    h.Plots.BurstPreview.Channel2_Interphot.Visible = 'on';
-    h.Plots.BurstPreview.Channel2_Interphot.Color = [0 0 0];
-    h.Plots.BurstPreview.Channel2_Interphot.XData = AllPhotons.*FileInfo.ClockPeriod;
-    h.Plots.BurstPreview.Channel2_Interphot.YData = dT_f.*FileInfo.ClockPeriod*1E6;
+    dt_smoothed = cell(numel(m),1);
+    dt = cell(numel(m),1);
+    for i = 1:numel(m)
+         [dt_smoothed{i}, dt{i}] = smooth_interphoton_time_trace(PhotonsChannel{i},m(i));
+    end
+    switch BAMethod
+        case {1,3,5}    % APBS, gray plots       
+            h.Plots.BurstPreview.Channel1_Interphot.Color = [0.4 0.4 0.4];
+            h.Plots.BurstPreview.Channel1_Interphot.XData = PhotonsChannel{1}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel1_Interphot.YData = dt{1}.*FileInfo.ClockPeriod*1E6;
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.Color = [0 0 0];
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.XData = PhotonsChannel{1}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.YData = dt_smoothed{1}.*FileInfo.ClockPeriod*1E6;
+        case {2,4,6} % D/TCBS, red and green (and blue)
+            h.Plots.BurstPreview.Channel1_Interphot.Color = [0.3922 0.8314 0.0745];
+            h.Plots.BurstPreview.Channel1_Interphot.XData = PhotonsChannel{1}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel1_Interphot.YData = dt{1}.*FileInfo.ClockPeriod*1E6;
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.Color = [0 .8 0];
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.XData = PhotonsChannel{1}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel1_Interphot_Smooth.YData = dt_smoothed{1}.*FileInfo.ClockPeriod*1E6;
+            
+            h.Plots.BurstPreview.Channel2_Interphot.Visible = 'on';
+            h.Plots.BurstPreview.Channel2_Interphot.Color = [0.6353 0.0784 0.1843];
+            h.Plots.BurstPreview.Channel2_Interphot.XData = PhotonsChannel{2}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel2_Interphot.YData = dt{2}.*FileInfo.ClockPeriod*1E6;
+            h.Plots.BurstPreview.Channel2_Interphot_Smooth.Visible = 'on';
+            h.Plots.BurstPreview.Channel2_Interphot_Smooth.Color = [1 0 0];
+            h.Plots.BurstPreview.Channel2_Interphot_Smooth.XData = PhotonsChannel{2}.*FileInfo.ClockPeriod;
+            h.Plots.BurstPreview.Channel2_Interphot_Smooth.YData = dt_smoothed{2}.*FileInfo.ClockPeriod*1E6;
+            if BAMethod == 4
+                h.Plots.BurstPreview.Channel3_Interphot.Visible = 'on';
+                h.Plots.BurstPreview.Channel3_Interphot.Color = [0.0745 0.6235 1.0000];
+                h.Plots.BurstPreview.Channel3_Interphot.XData = PhotonsChannel{3}.*FileInfo.ClockPeriod;
+                h.Plots.BurstPreview.Channel3_Interphot.YData = dt{3}.*FileInfo.ClockPeriod*1E6;
+                h.Plots.BurstPreview.Channel3_Interphot_Smooth.Visible = 'on';
+                h.Plots.BurstPreview.Channel3_Interphot_Smooth.Color = [0 0 1];
+                h.Plots.BurstPreview.Channel3_Interphot_Smooth.XData = PhotonsChannel{3}.*FileInfo.ClockPeriod;
+                h.Plots.BurstPreview.Channel3_Interphot_Smooth.YData = dt_smoothed{3}.*FileInfo.ClockPeriod*1E6;
+            end
+    end
     
     %%% plot threshold as well
     switch BAMethod
@@ -10004,11 +10037,11 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             max_int = 1.1*max([max(ch1) max(ch2)])./bin_time_ms;
             h.Plots.BurstPreview.SearchResult.Channel1 = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
             % interphoton time plot
-            y = y*max(dT);
+            y = y*max(cellfun(@max,dt));
             y(y==0) = eps;
             h.Plots.BurstPreview.SearchResult.Interphot = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
         else
-            % bursts detected in different channels are kept separete (i.e. not merged)
+            % bursts detected in different channels are kept separate (i.e. not merged)
             % applies to DCBS "OR (no merge)" and "XOR"   
             % --> plot the different selections in different colors
             %
@@ -10029,7 +10062,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
                     max_int = max([max(ch1) max(ch2)])./bin_time_ms;
                     h.Plots.BurstPreview.SearchResult.Channel1(k+1) = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k+1});
                     % interphoton time plot
-                    y = y*max(dT);
+                    y = y*max(cellfun(@max,dt));
                     y(y==0) = eps;
                     h.Plots.BurstPreview.SearchResult.Interphot(k+1) = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',colors{k+1});
                 end
@@ -10115,6 +10148,31 @@ guidata(h.Pam,h);
 %%% Update Display
 Update_Display([],[],1);
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Smoothes interphoton time trace with Lee filter, used in Burst Preview %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [dT_f, dT] = smooth_interphoton_time_trace(Photons,m)
+% Smooth the interphoton time trace
+dT =[Photons(1);diff(Photons)];
+dT_m = zeros(size(dT,1),size(dT,2));
+dT_s = zeros(size(dT,1),size(dT,2));
+% Apply Lee Filter with window 2m+1
+sig_0 = std(dT); %%% constant filter parameter is the noise variance, set to standard devitation of interphoton time
+dT_cumsum = cumsum(dT);
+dT_cumsum = [0; dT_cumsum];
+for i = m+1:numel(dT)-m
+    dT_m(i) = (2*m+1)^(-1)*(dT_cumsum(i+m+1)-dT_cumsum(i-m));
+end
+dT_sq_cumsum = cumsum((dT-dT_m).^2);
+dT_sq_cumsum = [0;dT_sq_cumsum];
+for i = 2*m:numel(dT)-2*m
+    dT_s(i) = (2*m+1)^(-1)*(dT_sq_cumsum(i+m+1)-dT_sq_cumsum(i-m));
+end
+
+%filtered data
+dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function grouping operations concerning the IRF or Scatter pattern %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
