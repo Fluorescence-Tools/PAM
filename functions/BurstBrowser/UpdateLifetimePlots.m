@@ -131,7 +131,11 @@ Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
 Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
-BurstMeta.Plots.EvsTauGG(2).LevelList = max(H(:)).*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+H_max = max(H(:));
+if isnan(H_max)
+    H_max = 1;
+end
+BurstMeta.Plots.EvsTauGG(2).LevelList = H_max.*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
@@ -240,7 +244,11 @@ Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
 Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
-BurstMeta.Plots.EvsTauRR(2).LevelList = max(H(:)).*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+H_max = max(H(:));
+if isnan(H_max)
+    H_max = 1;
+end
+BurstMeta.Plots.EvsTauRR(2).LevelList = H_max.*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
@@ -309,8 +317,8 @@ else
     ylim(h.axes_EvsTauRR,'auto');
 end
 h.axes_EvsTauRR.CLimMode = 'auto';
-h.axes_EvsTauRR.CLim(1) = max(H(:))*offset;
-try;h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
+h.axes_EvsTauRR.CLim(1) = H_max*offset;
+try;h.axes_EvsTauRR.CLim(2) = H_max*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     switch BurstData{file}.BAMethod
         case {1,2,5} %2color
