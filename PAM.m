@@ -41,6 +41,7 @@ warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
 warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
+warning('off','MATLAB:gui:array:InvalidArrayShape');
 %%% Loads user profile
 Profiles=LSUserValues(0);
 for i = 1:numel(Profiles)
@@ -3005,7 +3006,7 @@ h.Database.Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0 0 1 1]);
+    'Position',[0 0 1 1]);    
 %%% Database list
 % generate string
 dbstring = cell(size(UserValues.File.FileHistory.PAM,1),1);
@@ -3028,7 +3029,8 @@ h.Database.List = uicontrol(...
     'List of recently loaded files<br>',...
     '<i>"return"</i>: Loads selected files<br>',...
     '<I>"delete"</i>: Removes selected files from list</b>'],...
-    'Position',[0.01 0.01 0.98 0.98]);
+    'Position',[0.01 0.01 0.98 0.98],...
+    'UserData',[]); % UserData stores the selection order
 %% Export tab
 s.ProgressRatio = 0.9;
 h.Export.Tab= uitab(...
@@ -3060,7 +3062,8 @@ h.Export.List = uicontrol(...
     'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
-    'Position',[0.01 0.61 0.98 0.38]);
+    'Position',[0.01 0.61 0.98 0.38],...
+    'UserData',[]); % UserData stores the selection order
 %%% Table containig the PIE channels to export
 h.Export.PIE = uitable(...
     'Parent',h.Export.Panel,...
@@ -11692,6 +11695,18 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'open' %%% double click
                     mode = 7;
             end
+            %%% store the order of clicks
+            if numel(h.Database.List.Value) == 1
+                %%% reset
+                h.Database.List.UserData = h.Database.List.Value;
+            elseif numel(h.Database.List.Value) > numel(h.Database.List.UserData)
+                %%% additional elements selected, store in correct order
+                h.Database.List.UserData = [h.Database.List.UserData,...
+                    h.Database.List.Value(~ismember(h.Database.List.Value,h.Database.List.UserData))];
+            elseif numel(h.Database.List.Value) < numel(h.Database.List.UserData)
+                %%% objects were deselected, remove
+                h.Database.List.UserData = h.Database.List.UserData(ismember(h.Database.List.UserData,h.Database.List.Value));
+            end            
     end
 end
 
@@ -11773,8 +11788,10 @@ switch mode
         UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
         LSUserValues(1);
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
-            PamMeta.Database(h.Database.List.Value,1),...   %file
-            PamMeta.Database{h.Database.List.Value(1),3});     %type
+            PamMeta.Database(h.Database.List.UserData,1),...   %file
+            PamMeta.Database{h.Database.List.UserData(1),3});     %type
+            %PamMeta.Database(h.Database.List.Value,1),...   %file
+            %PamMeta.Database{h.Database.List.Value(1),3});     %type
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -11801,6 +11818,18 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'open' %%% double click
                     mode = 9;
             end
+            %%% store the order of clicks
+            if numel(h.Export.List.Value) == 1
+                %%% reset
+                h.Export.List.UserData = h.Export.List.Value;
+            elseif numel(h.Export.List.Value) > numel(h.Export.List.UserData)
+                %%% additional elements selected, store in correct order
+                h.Export.List.UserData = [h.Export.List.UserData,...
+                    h.Export.List.Value(~ismember(h.Export.List.Value,h.Export.List.UserData))];
+            elseif numel(h.Export.List.Value) < numel(h.Export.List.UserData)
+                %%% objects were deselected, remove
+                h.Export.List.UserData = h.Export.List.UserData(ismember(h.Export.List.UserData,h.Export.List.Value));
+            end            
     end
 end
 
@@ -12085,8 +12114,10 @@ switch mode
         LSUserValues(1);
         
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
-            [PamMeta.Export{h.Export.List.Value,1}],...   %file
-            PamMeta.Export{h.Export.List.Value(1),3});     %type
+            [PamMeta.Export{h.Export.List.UserData,1}],...   %file
+            PamMeta.Export{h.Export.List.UserData(1),3});     %type
+            %[PamMeta.Export{h.Export.List.Value,1}],...   %file
+            %PamMeta.Export{h.Export.List.Value(1),3});     %type
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
