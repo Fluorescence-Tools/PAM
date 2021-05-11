@@ -78,9 +78,15 @@ if all(~cellfun('isempty', regexp(FileName, '_0.spc$')))
     %%% Sorts based on date and time modified
     [datenum, index] = sort([FileProperty.datenum]);
     FileName = FileName(index);
-else
-%%% Sorts files of other types by alphabetical order
-    FileName=sort(FileName);
+else    
+    if nargin<9 
+        %%% called from file open dialog
+        %%% Sorts files of other types by alphabetical order
+        FileName=sort(FileName);
+    else
+        %%% called from Database or Recent Files list
+        %%% keep file order
+    end
 end
 
 %%% Clears previously loaded data
