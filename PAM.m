@@ -9515,7 +9515,10 @@ START = [];
 STOP = [];
 % convert photons to delay times
 dt = diff(Photons);
-
+if any(~isinteger(dt))
+    disp('Warning: Non-integer macrotimes found. Interphoton times will be rounded.');
+    dt = round(dt);
+end
 % parameters (all count rates are given in kHz and need to be converted to
 % the used clock period)
 IB = IB*1E3*FileInfo.ClockPeriod; % background count rate per clock period
