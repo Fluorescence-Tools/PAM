@@ -74,7 +74,9 @@ switch obj
         %%% Set XLabel
         xlabel(BurstData{file}.NameArray{h.ParameterListX.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
-        axes_copy.XTickLabelMode = 'auto';
+        if ~UserValues.BurstBrowser.Display.logX
+            axes_copy.XTickLabelMode = 'auto';
+        end
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
         %%%remove text
@@ -158,7 +160,9 @@ switch obj
         %%% Set XLabel
         xlabel(BurstData{file}.NameArray{h.ParameterListY.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
-        axes_copy.XTickLabelMode = 'auto';
+        if ~UserValues.BurstBrowser.Display.logY 
+            axes_copy.XTickLabelMode = 'auto';
+        end
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
         %%%remove text
@@ -306,7 +310,9 @@ switch obj
                     panel_copy.Children(i).Layer = 'top';
                     yticks = get(panel_copy.Children(i),'YTick');
                     set(panel_copy.Children(i),'YTick',yticks(2:end));
-                    panel_copy.Children(i).XTickLabelMode = 'auto';
+                    if ~UserValues.BurstBrowser.Display.logX
+                        panel_copy.Children(i).XTickLabelMode = 'auto';
+                    end
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];

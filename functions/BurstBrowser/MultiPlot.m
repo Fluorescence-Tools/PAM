@@ -81,10 +81,24 @@ miny = zeros(num_species,1);
 maxx = zeros(num_species,1);
 maxy = zeros(num_species,1);
 for i = 1:num_species
-    minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
-    miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
-    maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
-    maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+    if ~isempty(datatoplot{i})
+        if sum(isfinite(datatoplot{i}(:,x{i}))) > 0 % contains valid data
+            minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+            maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+        else
+            minx(i) = NaN;
+            maxx(i) = NaN;
+        end
+        if sum(isfinite(datatoplot{i}(:,y{i}))) > 0 % contains valid data
+            miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+            maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+        else
+            miny(i) = NaN;
+            maxy(i) = NaN;
+        end
+    else
+        minx(i) = NaN; miny(i) = NaN; maxx(i) = NaN; maxy(i) = NaN;
+    end
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
@@ -97,7 +111,13 @@ if ~exist('limits','var')
         file =file_n(i);
         species = [species_n(i),subspecies_n(i)];
         NameArray = BurstData{file}.NameArray;
-
+        
+        % empty data
+        if sum(isfinite(datatoplot{i}(:,x{i}))) == 0 % no valid data
+            xlimits{i} = [0 1];
+            ylimits{i} = [0 1];
+            continue;
+        end
         %%% set limits
         xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
         ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
@@ -140,10 +160,6 @@ if ~exist('limits','var')
                 %%% set to min max
                 ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
             end
-            %%% fix infinite value
-            if ~isfinite(ylimits{i}(2))
-                ylimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
-            end  
             if isempty(xlimits{i})
                 %selection is empty
                 xlimits{i} = [0,1];
@@ -152,6 +168,10 @@ if ~exist('limits','var')
                 %selection is empty
                 ylimits{i} = [0,1];
             end
+            %%% fix infinite value
+            if ~isfinite(ylimits{i}(2))
+                ylimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+            end  
             if sum(xlimits{i} == [0,0]) == 2
                 xlimits{i} = [0 1];
             end

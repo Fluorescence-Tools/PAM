@@ -33,8 +33,14 @@ CorrMat = h.Correlation_Table.Data;
 NumChans = size(CorrMat,1);
 NCor = sum(sum(CorrMat));
 
+afterpulsing_correction = UserValues.Settings.Pam.AfterpulsingCorrection;                    
+if obj == h.FullCorrelation_Menu
+    disp('Full correlation is not compatible with afterpusling correction.');
+    afterpulsing_correction = 0;
+end
+
 switch obj
-    case {h.Correlate_Button, h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu}
+    case {h.Correlate_Button, h.Burstwise_nsFCS_linear_Menu, h.FullCorrelation_Menu}
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
         Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
         if isempty(BurstTCSPCData{file})
@@ -56,6 +62,10 @@ switch obj
                 MT{k} = double(MT{k})*BurstData{file}.FileInfo.MI_Bins + ...
                     double(MI{k});
             end
+        end
+        % assign microtime if afterpulsing correction is to be performed
+        if afterpulsing_correction
+            MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
         end
     case {h.CorrelateWindow_Button, h.BurstwiseDiffusionTime_Menu}
         if isempty(PhotonStream{file})
@@ -127,6 +137,9 @@ switch obj
                 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 MT = cell(sum(use),1);
                 CH = cell(sum(use),1);
+                if afterpulsing_correction
+                    MI = cell(sum(use),1);
+                end
                 k=1;
                 for i = 1:numel(start_tw)
                     if use(i)
@@ -134,6 +147,10 @@ switch obj
                         MT{k} = PhotonStream{file}.Macrotime(range);
                         MT{k} = MT{k}-MT{k}(1) +1;
                         CH{k} = PhotonStream{file}.Channel(range);
+                        %%% read out MI if afterpulsing correction is to be performed
+                        if afterpulsing_correction
+                            MI{k} = PhotonStream{file}.Microtime(range);
+                        end
                         %val = (PhotonStream{file}.MT_bin > start_tw(i)) & (PhotonStream{file}.MT_bin < stop_tw(i) );
                         %MT{k} = PhotonStream{file}.Macrotime(val);
                         %MT{k} = MT{k}-MT{k}(1) +1;
@@ -154,6 +171,10 @@ switch obj
 
                 for k = 1:numel(MT)
                     MT{k} = MT{k}-MT{k}(1) +1;
+                end
+                %%% read out MI if afterpulsing correction is to be performed
+                if UserValues.Settings.Pam.AfterpulsingCorrection
+                    MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
                 end
             end
         else
@@ -214,14 +235,25 @@ for i=1:NumChans
         if CorrMat(i,j)
             MT1 = cell(numel(MT),1);
             MT2 = cell(numel(MT),1);
+            if afterpulsing_correction
+                MI1 = cell(numel(MT),1);
+                MI2 = cell(numel(MT),1);
+            end
             for k = 1:numel(MT)
                 MT1{k} = MT{k}(ismember(CH{k},Chan{i}));
                 MT2{k} = MT{k}(ismember(CH{k},Chan{j}));
+                if afterpulsing_correction
+                     MI1{k} = MI{k}(ismember(CH{k},Chan{i}));
+                     MI2{k} = MI{k}(ismember(CH{k},Chan{j}));
+                end
             end
             %%% find empty bursts
             inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
             %%% exclude empty bursts
-            MT1 = MT1(~inval); MT2 = MT2(~inval);            
+            MT1 = MT1(~inval); MT2 = MT2(~inval); 
+            if afterpulsing_correction
+                 MI1 = MI1(~inval); MI2 = MI2(~inval);
+            end
             %%% Applies divider to data
             if UserValues.Settings.Pam.Cor_Divider > 1
                 for k=1:numel(MT1)
@@ -235,9 +267,43 @@ for i=1:NumChans
                 case {h.Correlate_Button,h.CorrelateWindow_Button,h.Burstwise_nsFCS_linear_Menu,h.FullCorrelation_Menu}
                     switch obj
                         case {h.Correlate_Button,h.CorrelateWindow_Button,h.FullCorrelation_Menu}
-                            %%% Do Correlation
-                            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-                            if obj == h.FullCorrelation_Menu % resolution is micerotime resolution
+                            if ~afterpulsing_correction || i~=j %%% no afterpulsing correction
+                                %%% Do Correlation
+                                [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);                                
+                            elseif afterpulsing_correction
+                                if any(obj==[h.Correlate_Button,h.CorrelateWindow_Button]) % only works for these selections
+                                    %%% do after pulse correction if same detector is selected
+                                    %%% suppress afterpulsing by FLCS
+                                    
+                                    %%% get microtime histogram
+                                    mi = vertcat(MI1{:});
+                                    Decay = histcounts(mi,0:1:max(mi));
+                                    %%% avoid zeros in Decay
+                                    Decay(Decay==0) = 1;
+                                    %%% afterpulsing baseline taken as minimum value of microtime histogram
+                                    afterpulsing = min(smooth(Decay,ceil(250e-12/(BurstData{file}.FileInfo.TACRange/BurstData{file}.FileInfo.MI_Bins))));
+                                    Decay_pure = Decay-afterpulsing; %%% "pure" decay
+                                    %%% calculate FLCS filter
+                                    diag_Decay = zeros(numel(Decay));
+                                    for k = 1:numel(Decay)
+                                        diag_Decay(k,k) = 1./Decay(k);
+                                    end
+                                    MI_species = [Decay_pure'./sum(Decay_pure), ones(numel(Decay),1)./numel(Decay)];
+                                    filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+                                    % we only need the filter for the "pure" decay
+                                    filter = filters_temp(:,1);
+                                    % filters(UserValues.PIE.From(Cor_A(i)):UserValues.PIE.To(Cor_A(i)),2) = filters_temp(:,2);
+                                    %%% assign the weights
+                                    Weights1 = cell(numel(MT1),1); Weights2 = cell(numel(MT2),1);
+                                    for k = 1:numel(MT1)
+                                        Weights1{k} = filter(MI1{k},1);
+                                        Weights2{k} = filter(MI2{k},1);
+                                    end
+                                    %%% Do the autocorrelation with weights
+                                    [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
+                                end
+                            end
+                            if obj == h.FullCorrelation_Menu % resolution is microtime resolution
                                 Cor_Times = Cor_Times*(BurstData{file}.FileInfo.TACRange/BurstData{file}.FileInfo.MI_Bins)*UserValues.Settings.Pam.Cor_Divider;
                             else
                                 Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
@@ -256,7 +322,7 @@ for i=1:NumChans
                             Cor_Average = Cor_Array;
                             Cor_SEM = ones(size(Cor_Average));
                     end
-
+                    
                     %%% Save the correlation file
                     %%% Generates filename
                     filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);

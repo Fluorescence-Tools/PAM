@@ -13,6 +13,20 @@ if obj == h.Secondary_Tab_Correlation_Divider_Menu
         end
         UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));
     end
+elseif obj == h.Secondary_Tab_Correlation_Afterpulsing_Menu
+    if strcmp(h.Secondary_Tab_Correlation_Afterpulsing_Menu.Checked,'on')
+        h.Secondary_Tab_Correlation_Afterpulsing_Menu.Checked = 'off';
+        UserValues.Settings.Pam.AfterpulsingCorrection = 0;
+    else
+        h.Secondary_Tab_Correlation_Afterpulsing_Menu.Checked = 'on';
+        UserValues.Settings.Pam.AfterpulsingCorrection = 1;
+    end
+    %%% check if PAM is open, update value there
+    hPAM = findobj('Tag','Pam');
+    if ~isempty(hPAM)   
+        hPAM = guidata(hPAM);
+        hPAM.Cor.AfterPulsingCorrection.Value = UserValues.Settings.Pam.AfterpulsingCorrection;
+    end
 elseif obj == h.Secondary_Tab_Correlation_Standard2CMFD_Menu
     h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
     switch BurstData{BurstMeta.SelectedFile}.BAMethod

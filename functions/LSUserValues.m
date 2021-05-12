@@ -480,6 +480,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
     end
     P.Settings.Pam.Cor_Divider = S.Settings.Pam.Cor_Divider;
+    %%% Checks, if Pam.AfterpulsingCorrection subfield exists
+    if ~isfield(S.Settings.Pam, 'AfterpulsingCorrection')
+        S.Settings.Pam.AfterpulsingCorrection=0;
+        disp('UserValues.Settings.Pam.AfterpulsingCorrection was incomplete');
+    end
+    P.Settings.Pam.AfterpulsingCorrection = S.Settings.Pam.AfterpulsingCorrection;
     %%% Checks if Pam.Cor_Selection subfield exists
     if ~isfield(S.Settings.Pam, 'Cor_Selection')
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
@@ -1145,6 +1151,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SmoothingMethod was incomplete');
     end
     P.BurstSearch.SmoothingMethod = S.BurstSearch.SmoothingMethod;
+    %%% Checks, if BurstSearch.LogicalGate subfield exists
+    if ~isfield(S.BurstSearch,'LogicalGate')
+        S.BurstSearch.LogicalGate='AND';
+        disp('UserValues.BurstSearch.LogicalGate was incomplete');
+    end
+    P.BurstSearch.LogicalGate = S.BurstSearch.LogicalGate;
     %%% Checks, if BurstSearch.PIEChannelSelection exists
     %%% (This field contains the PIEChannel Selection (as a String) for every
     %%% Burst Search Method)
@@ -1172,6 +1184,19 @@ if Mode==0 %%% Loads user values
     if size(S.BurstSearch.SearchParameters,2) < 6
         S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5];...
             [100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
+    if size(S.BurstSearch.SearchParameters,1) < 3
+        S.BurstSearch.SearchParameters(3,1:6)={[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10],[100,1,10,10,10]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
+    if size(S.BurstSearch.SearchParameters,1) < 4
+        S.BurstSearch.SearchParameters(4,1:6)={[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
+    end
+    if any(cellfun(@numel,S.BurstSearch.SearchParameters(:)) < 6)
+        %%% added an additional parameter, append to all arrays
+        S.BurstSearch.SearchParameters = cellfun(@(x) [x,x(2)], S.BurstSearch.SearchParameters,'UniformOutput',false);
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
