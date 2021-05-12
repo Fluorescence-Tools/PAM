@@ -60,10 +60,16 @@ switch BurstData{file}.BAMethod
     case 5
         c{1} = [1,1];
         c{2} = [3,3];
+        c{3} = [2,2];
+        % check if donor only exists
+        [MI_total_donor_only, CH_total_donor_only, valid_donly] = donor_only_cuts();
+        if ~isempty(MI_total_donor_only)
+            c{4} = [1,1];
+        end
 end
 for chan = 1:size(c,2)
     switch BurstData{file}.BAMethod
-        case {1,2}
+        case {1,2,5}
             if chan == 4
                 %%% for donor-only species, update valid and overwrite
                 %%% MI_total and CH_total
@@ -168,6 +174,36 @@ switch BurstData{file}.BAMethod
         LSUserValues(1);
     case {3,4}
     case {5}
+        %%% DD
+        I_decay = sum(TauFitData.hMI_Par{1});
+        f_sc = dur.*1000.*BurstData{file}.Background.Background_GGpar./I_decay;        
+        fprintf('DD: %.4f\n',f_sc);
+        %%% Update UserValues
+        % scatter for parallel is set to the combined scatter, as this value is most commonly used
+        UserValues.TauFit.FitParams{1}(8) = f_sc;
+        % scatter for perpendicular is set to the combined scatter of donor
+        % only, as used in the global fit models (below)
+        
+        %%% AA
+        I_decay = sum(TauFitData.hMI_Par{2});
+        f_sc = dur.*1000.*BurstData{file}.Background.Background_RRpar./I_decay;
+        fprintf('AA: %.4f\n',f_sc);
+        %%% Update UserValues
+        % scatter for parallel is set to the combined scatter, as this value is most commonly used
+        UserValues.TauFit.FitParams{2}(8) = f_sc;
+        
+        if numel(TauFitData.hMI_Par) > 3
+            %%% Donly
+            %%% DD
+            I_decay = sum(TauFitData.hMI_Par{4});
+            f_sc = dur_donly.*1000.*BurstData{file}.Background.Background_GGpar./I_decay;
+            fprintf('Donly: %.4f\n',f_sc);
+            %%% Update UserValues
+            % scatter for parallel is set to the combined scatter, as this value is most commonly used
+            UserValues.TauFit.FitParams{4}(8) = f_sc;
+            UserValues.TauFit.FitParams{1}(9) = f_sc;
+        end
+        LSUserValues(1);
 end
 
 TauFit(obj,[]);

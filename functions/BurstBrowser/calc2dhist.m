@@ -21,6 +21,14 @@ if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
+% fix NaN boundaries
+if any(isnan(limx))
+    limx = [0,1];
+end
+if any(isnan(limy))
+    limy = [0,1];
+end
+
 %%% fix limits for inf boundary
 if ~isfinite(limx(2))
     limx(2) = max(x(isfinite(x)));
@@ -57,6 +65,9 @@ if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no
         binx(binx == 0) = 1;
         biny(biny == 0) = 1;
         bin_out(valid,:) = [biny,binx];
+    end
+    if isempty(h) % fix empty output
+        h = zeros(size(h,1),1);
     end
     H = reshape(h, Yn, Xn);
     
