@@ -69,7 +69,7 @@ for i = 1:N_splits
         % call the function through the command line instead
         % first, write the temporarily to the disc
         temp_filename_unique = [temp_filename(1:end-4) '_' num2str(i) temp_filename(end-3:end)];
-        dlmwrite(temp_filename_unique,[0;dt_temp],'precision','%i');
+        dlmwrite(temp_filename_unique,dt_temp,'precision','%i');
         %%% we use different version of the program between mac and windows
         if ispc
             [~,cmd_out] = system(['"' exe_loc '" "' temp_filename_unique '" ' sprintf(' -d=%d --alpha=%.2f --beta=%.2f --Ngmax=%i',SyncPeriod,alpha,ci,Nstates) ' >> "' logfile_loc '" & echo $!']);
@@ -167,14 +167,15 @@ for i = 1:numel(result)
             % find all start/stop of levels above threshold
             valid_regions = intensities > threshold;
             d = diff(valid_regions);
-            start_idx = d == 1;
-            stop_idx = d == -1;
+            start_idx = (d == 1);
+            stop_idx = (d == -1);
+            %%% Note: +1 is added to move from interphoton time to photon index
             if ~include_sigma
-                start{i} = result{i}.cp(start_idx,1)+(i-1)*split_photons;
-                stop{i} = result{i}.cp(stop_idx,1)+(i-1)*split_photons;
+                start{i} = result{i}.cp(start_idx,1)+(i-1)*split_photons+1;
+                stop{i} = result{i}.cp(stop_idx,1)+(i-1)*split_photons+1;
             else % extend range to include the sigma boundaries
-                start{i} = result{i}.cp(start_idx,2)+(i-1)*split_photons;
-                stop{i} = result{i}.cp(stop_idx,3)+(i-1)*split_photons;
+                start{i} = result{i}.cp(start_idx,2)+(i-1)*split_photons+1;
+                stop{i} = result{i}.cp(stop_idx,3)+(i-1)*split_photons+1;
             end
         end
     end
