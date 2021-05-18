@@ -1198,6 +1198,22 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.SearchParameters(4,1:6)={[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10],[100,10,10,10,10]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
+    if any(cellfun(@isempty,S.BurstSearch.SearchParameters(:)))
+        [row,col] = find(cellfun(@isempty,S.BurstSearch.SearchParameters));
+        for i = 1:numel(row)
+            switch row(i) %%% fill based on burst search type
+                case 1
+                    missing_data = [100,500,5,5,5];
+                case 2
+                    missing_data = [100,30,160,160,160];
+                case 3
+                    missing_data = [100,1,10,10,10];
+                case 4
+                    missing_data = [100,10,10,10,10];
+            end
+            S.BurstSearch.SearchParameters{row(i),col(i)} = missing_data;
+        end
+    end
     if any(cellfun(@numel,S.BurstSearch.SearchParameters(:)) < 6)
         %%% added an additional parameter, append to all arrays
         S.BurstSearch.SearchParameters = cellfun(@(x) [x,x(2)], S.BurstSearch.SearchParameters,'UniformOutput',false);
