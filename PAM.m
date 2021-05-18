@@ -10062,7 +10062,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             max_int = 1.1*max([max(ch1) max(ch2)])./bin_time_ms;
             h.Plots.BurstPreview.SearchResult.Channel1 = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
             % interphoton time plot
-            y = y*max(cellfun(@max,dt));
+            y = y*max(cellfun(@max,dt(~cellfun(@isempty,dt))));
             y(y==0) = eps;
             h.Plots.BurstPreview.SearchResult.Interphot = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
         else
@@ -10178,6 +10178,11 @@ Update_Display([],[],1);
 %%% Smoothes interphoton time trace with Lee filter, used in Burst Preview %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [dT_f, dT] = smooth_interphoton_time_trace(Photons,m)
+if isempty(Photons)
+    dT_f = [];
+    dT = [];
+    return;
+end
 % Smooth the interphoton time trace
 dT =[Photons(1);diff(Photons)];
 dT_m = zeros(size(dT,1),size(dT,2));
