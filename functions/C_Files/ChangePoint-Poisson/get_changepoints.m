@@ -22,7 +22,9 @@ file_ext = {'cp','ah','bic'};
 for i = 2:Nstates
     file_ext{end+1} = sprintf('em.%i',i);
 end
-
+if ispc %%% different version on windows, generates additional files
+    file_ext = [file_ext {'cp0','asc'}];
+end
 % get exe location
 if ispc
     exe_loc = [PathToApp filesep 'functions' filesep 'C_Files' filesep 'ChangePoint-Poisson' filesep 'changepoint_win.exe'];
@@ -153,6 +155,9 @@ for i = 1:numel(result)
     if ~isempty(result{i})
         intensities = result{i}.(sprintf('em%i',Nstates));
         intensities = intensities(:,2)/1000; % intenisites in kHz
+        if ispc %%% intensities have to be corrected, a SyncPeriod of 50 ns is assumed and cannot be changed
+            intensities = intensities*(50E-9/SyncPeriod);
+        end
         levels = unique(intensities);
         if N_splits == 1
             %%% inform about detected intensity levels
