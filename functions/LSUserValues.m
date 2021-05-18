@@ -303,6 +303,10 @@ if Mode==0 %%% Loads user values
     end
     P.File.FileHistory.PAM = S.File.FileHistory.PAM;
     
+    if ~isfield(S.File.FileHistory,'PAM_Export')
+        S.File.FileHistory.PAM_Export=[];
+    end
+    P.File.FileHistory.PAM_Export = S.File.FileHistory.PAM_Export;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
