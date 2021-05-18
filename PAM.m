@@ -4566,6 +4566,8 @@ if any(mode==3)
     h.Image.Axes.XLim(2)= size(PamMeta.Image{Sel},2)+0.5;
     h.Image.Axes.YLim(1)= 0.5;
     h.Image.Axes.YLim(2)= size(PamMeta.Image{Sel},1)+0.5;
+else % clear image
+    h.Plots.Image.CData = [];
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
