@@ -3047,6 +3047,7 @@ h.Export.Panel = uibuttongroup(...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
     'Position',[0 0 1 1]);
+
 %%% Database list
 % generate string
 dbstring = cell(size(UserValues.File.FileHistory.PAM_Export,1),1);
@@ -3616,6 +3617,13 @@ PamMeta.Det_Calib=[];
 PamMeta.Burst.Preview = [];
 PamMeta.Database = UserValues.File.FileHistory.PAM;
 PamMeta.BurstData = [];
+%%% read previous database from UserValues into PamMeta structure
+if isempty(UserValues.File.FileHistory.PAM_Export)
+    %create export database
+    PamMeta.Export = cell(0,3);
+else
+    PamMeta.Export = UserValues.File.FileHistory.PAM_Export;
+end
 
 TcspcData=[];
 TcspcData.MI=cell(1);
