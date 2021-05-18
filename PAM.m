@@ -4207,6 +4207,8 @@ if any(mode==3)
     % if it's not imaging data, don't calculate the image
     if isempty(FileInfo.Lines) || FileInfo.Lines < 2 || isempty(FileInfo.Pixels) || FileInfo.Pixels < 2 || ~h.MT.Use_Image.Value
         mode(mode == 3) = [];
+        % clear image
+        h.Plots.Image.CData = [];
     end
 end
 
@@ -4566,8 +4568,6 @@ if any(mode==3)
     h.Image.Axes.XLim(2)= size(PamMeta.Image{Sel},2)+0.5;
     h.Image.Axes.YLim(1)= 0.5;
     h.Image.Axes.YLim(2)= size(PamMeta.Image{Sel},1)+0.5;
-else % clear image
-    h.Plots.Image.CData = [];
 end
 
 %% All microtime plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
