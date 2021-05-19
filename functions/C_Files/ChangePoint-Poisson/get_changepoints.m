@@ -72,7 +72,7 @@ for i = 1:N_splits
         dlmwrite(temp_filename_unique,dt_temp,'precision','%i');
         %%% we use different version of the program between mac and windows
         if ispc
-            [~,cmd_out] = system(['"' exe_loc '" "' temp_filename_unique '" ' sprintf(' -d=%d --alpha=%.2f --beta=%.2f --Ngmax=%i',SyncPeriod,alpha,ci,Nstates) ' >> "' logfile_loc '" & echo $!']);
+            [~,cmd_out] = system(['"' exe_loc '"' sprintf(' -d=%d --alpha=%.2f --beta=%.2f --ngmax=%i',SyncPeriod,alpha,ci,Nstates) ' "' temp_filename_unique '" ' ' >> "' logfile_loc '" & echo $!']);
         elseif ismac
             [~,cmd_out] = system([exe_loc ' ' temp_filename_unique sprintf(' %d %.2f %.2f %i',SyncPeriod,alpha,ci,Nstates) ' >> ' logfile_loc ' & echo $!']);
         end
@@ -154,10 +154,7 @@ start = cell(0); stop = cell(0);
 for i = 1:numel(result)
     if ~isempty(result{i})
         intensities = result{i}.(sprintf('em%i',Nstates));
-        intensities = intensities(:,2)/1000; % intenisites in kHz
-        if ispc %%% intensities have to be corrected, a SyncPeriod of 50 ns is assumed and cannot be changed
-            intensities = intensities*(50E-9/SyncPeriod);
-        end
+        intensities = intensities(:,2)/1000; % intenisites in kHz        
         levels = unique(intensities);
         if N_splits == 1
             %%% inform about detected intensity levels
