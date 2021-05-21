@@ -12003,7 +12003,7 @@ switch mode
                     PamMeta.Export{i,3});     %type
                 Pam_Export([],event,Sel,1)
                 % set filename color to green
-                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+                h.Export.List.String{i} = ['<HTML><FONT color=64D413>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             catch
                 h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             end
@@ -12049,7 +12049,7 @@ switch mode
             else
                 num_files = numel(PamMeta.Export{i,1}{1});
             end
-            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            h.Export.List.String{i} = ['<HTML><FONT color=64D413>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
 
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
@@ -12081,9 +12081,9 @@ switch mode
                 % set filename color to green
                 String = h.Export.List.String{i};
                 if size(String,2)<25 || ~strcmp(String(1:6),'<HTML>')
-                    h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' String '</Font></html>'];
+                    h.Export.List.String{i} = ['<HTML><FONT color=64D413>' String '</Font></html>'];
                 else
-                    String(19:24)='00FF00';
+                    String(19:24)='64D413';
                     h.Export.List.String{i} = String;
                 end
             catch
@@ -12115,9 +12115,9 @@ switch mode
                 % set filename color to green
                 String = h.Export.List.String{i};
                 if size(String,2)<25 || ~strcmp(String(1:6),'<HTML>')
-                    h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' String '</Font></html>'];
+                    h.Export.List.String{i} = ['<HTML><FONT color=64D413>' String '</Font></html>'];
                 else
-                    String(19:24)='00FF00';
+                    String(19:24)='64D413';
                     h.Export.List.String{i} = String;
                 end
             catch exception
