@@ -4349,7 +4349,7 @@ if any(mode==2)
     if ~isempty(gcbo)
         if any(gcbo == [h.Trace.Trace_Export_Menu,h.Trace.Trace_ExportFRETTrace_Menu])
             hfig = figure('Visible','on','Units','pixel',...
-                'Position',[100,100,750*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
+                'Position',[100,100,600*h.Trace.Axes.Position(3),450*h.Trace.Axes.Position(4)],...
                 'Name',FileInfo.FileName{1});
             switch gcbo
                 case h.Trace.Trace_Export_Menu
@@ -4396,8 +4396,11 @@ if any(mode==2)
                     xlabel('Time [s]');
             end
             hfig.Color = [1,1,1];
-            set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
-                'FontSize',h.Progress.Text.FontSize,'Layer','top');
+            set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1.5,'Units','pixel',...
+                'FontSize',h.Progress.Text.FontSize*1.5,'Layer','top');
+            set(ax.Children,'LineWidth',1.5);
+            ax.Position(2) = ax.Position(2) + 20;
+            ax.Position(4) = ax.Position(4) - 20;
             colormap(h.Pam.Colormap);
             ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
             hfig.Position(4) = hfig.Position(4)+25;
@@ -4409,6 +4412,7 @@ if any(mode==2)
                     ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';                
                     ax.YLim = [0,1];
             end
+            ax.Title.FontSize = 0.75*ax.Title.FontSize;
         end
     end
 end
