@@ -879,11 +879,11 @@ h.Burst.Axes_Interphot.YLabel.Color=Look.Fore;
 h.Burst.Axes_Interphot.XLim = [0 1];
 h.Burst.Axes_Interphot.YLim = [0 1];
 
-h.Plots.BurstPreview.Channel1_Interphot = plot([0 1],[0 0],'.g','MarkerSize',5);
+h.Plots.BurstPreview.Channel1_Interphot = plot([0 1],[0 0],'.g','MarkerSize',2);
 h.Plots.BurstPreview.Channel1_Interphot_Smooth = plot([0 1],[0 0],'-g');
-h.Plots.BurstPreview.Channel2_Interphot = plot([0 1],[0 0],'.r','Visible','off','MarkerSize',5);
+h.Plots.BurstPreview.Channel2_Interphot = plot([0 1],[0 0],'.r','Visible','off','MarkerSize',2);
 h.Plots.BurstPreview.Channel2_Interphot_Smooth = plot([0 1],[0 0],'-r','Visible','off');
-h.Plots.BurstPreview.Channel3_Interphot = plot([0 1],[0 0],'.b','Visible','off','MarkerSize',5);
+h.Plots.BurstPreview.Channel3_Interphot = plot([0 1],[0 0],'.b','Visible','off','MarkerSize',2);
 h.Plots.BurstPreview.Channel3_Interphot_Smooth = plot([0 1],[0 0],'-b','Visible','off');
 h.Plots.BurstPreview.Interphoton_Threshold_ch1 = plot([0 1],[0 0],'--g','Visible','off');
 h.Plots.BurstPreview.Interphoton_Threshold_ch2 = plot([0 1],[0 0],'--r','Visible','off');
@@ -10082,11 +10082,15 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             end
             % intensity plot
             max_int = 1.1*max([max(ch1) max(ch2)])./bin_time_ms;
+            if any(BAMethod == [3,4])
+                max_int = max([max_int,max(ch3)./bin_time_ms]);
+            end
             h.Plots.BurstPreview.SearchResult.Channel1 = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
             % interphoton time plot
             y = y*max(cellfun(@max,dt(~cellfun(@isempty,dt))));
-            y(y==0) = eps;
-            h.Plots.BurstPreview.SearchResult.Interphot = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
+            y(y==0) = 1;
+            y = y*FileInfo.ClockPeriod*1E6;
+            h.Plots.BurstPreview.SearchResult.Interphot = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',min(y),'EdgeColor','none','FaceAlpha',facealpha,'FaceColor','k');
         else
             % bursts detected in different channels are kept separate (i.e. not merged)
             % applies to DCBS "OR (no merge)" and "XOR"   
@@ -10106,13 +10110,17 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
                             AllPhotons(stop_channel(i)),AllPhotons(stop_channel(i))];
                         y = [y,0,1,1,0];
                     end
-                    % intensity plot
+                    % intensity plot                    
                     max_int = max([max(ch1) max(ch2)])./bin_time_ms;
+                    if any(BAMethod == [3,4])
+                        max_int = max([max_int,max(ch3)./bin_time_ms]);
+                    end
                     h.Plots.BurstPreview.SearchResult.Channel1(k+1) = area(h.Burst.Axes_Intensity,x*FileInfo.ClockPeriod,y*max_int,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',channel_colors(k+1,:));
                     % interphoton time plot
                     y = y*max(cellfun(@max,dt(~cellfun(@isempty,dt))));
-                    y(y==0) = eps;
-                    h.Plots.BurstPreview.SearchResult.Interphot(k+1) = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',eps,'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',channel_colors(k+1,:));
+                    y(y==0) = 1;
+                    y = y*FileInfo.ClockPeriod*1E6;
+                    h.Plots.BurstPreview.SearchResult.Interphot(k+1) = area(h.Burst.Axes_Interphot,x*FileInfo.ClockPeriod,y,'BaseValue',min(y),'EdgeColor','none','FaceAlpha',facealpha,'FaceColor',channel_colors(k+1,:));
                 end
             end
         end
@@ -10160,6 +10168,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     %%% Update the x-axis limits of Burst_Axes
     h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
     h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
+    %%% store the maximum intensity
+    PamMeta.Burst.Preview.max_int = max_int;
     %%% flip order to put area plots behind lines
     for i = 1:numel(h.Burst.Axes_Intensity.Children)
         if strcmp(h.Burst.Axes_Intensity.Children(i).Type,'area')
@@ -10187,11 +10197,18 @@ else %%% < or > was pressed
     h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
     h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 end
-h.Burst.Axes_Intensity.YLim(2) = 1.1*max([max(h.Plots.BurstPreview.Channel1.YData(h.Plots.BurstPreview.Channel1.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1.XData <= PamMeta.Burst.Preview.Second+1)),...
-        max(h.Plots.BurstPreview.Channel2.YData(h.Plots.BurstPreview.Channel2.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel2.XData <= PamMeta.Burst.Preview.Second+1))]);
-h.Burst.Axes_Interphot.YLim(1) = 0.9*min(h.Plots.BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
-h.Burst.Axes_Interphot.YLim(2) = 1.1*max(h.Plots.BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
-
+h.Burst.Axes_Intensity.YLimMode = 'auto';
+h.Burst.Axes_Interphot.YLimMode = 'auto';
+% h.Burst.Axes_Intensity.YLim(2) = 1.1*max([max(h.Plots.BurstPreview.Channel1.YData(h.Plots.BurstPreview.Channel1.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1.XData <= PamMeta.Burst.Preview.Second+1)),...
+%         max(h.Plots.BurstPreview.Channel2.YData(h.Plots.BurstPreview.Channel2.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel2.XData <= PamMeta.Burst.Preview.Second+1))]);
+% h.Burst.Axes_Interphot.YLim(1) = 0.9*min(h.Plots.BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
+% h.Burst.Axes_Interphot.YLim(2) = 1.1*max(h.Plots .BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
+if h.Burst.Axes_Intensity.YLim(2) > PamMeta.Burst.Preview.max_int % set to maximum intensity
+    h.Burst.Axes_Intensity.YLim(2) = PamMeta.Burst.Preview.max_int;
+end
+if h.Burst.Axes_Interphot.YLim(1) < FileInfo.ClockPeriod*1E6  % set to minimum interphoton time
+    h.Burst.Axes_Interphot.YLim(1) = FileInfo.ClockPeriod*1E6;
+end
 guidata(h.Pam,h);
 %%% Update Display
 Update_Display([],[],1);
