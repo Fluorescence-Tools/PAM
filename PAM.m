@@ -4405,7 +4405,11 @@ if any(mode==2)
             hfig.Color = [1,1,1];
             set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1.5,'Units','pixel',...
                 'FontSize',h.Progress.Text.FontSize*1.5,'Layer','top');
-            set(ax.Children,'LineWidth',1.5);
+            if ismac
+                set(ax.Children,'LineWidth',1.5);
+            else
+                set(ax.Children,'LineWidth',1.25);
+            end
             ax.Position(2) = ax.Position(2) + 20;
             ax.Position(4) = ax.Position(4) - 20;
             colormap(h.Pam.Colormap);
