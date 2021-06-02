@@ -1418,8 +1418,9 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
             end
         end
     end
-        
+    %%% fill in parameters
     FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
+    
     %%% Updates table to new model
     Update_Table([],[],0);
     %%% Updates model text
@@ -1471,12 +1472,12 @@ switch mode
         Rows=cell(numel(FCSData.Data)+3,1);
         tmp = FCSData.FileName;
         for i = 1:numel(tmp)
-            tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
+            tmp{i} = ['<HTML><font color="#000000"><b>' tmp{i} '</b>'];
         end
         Rows(1:numel(FCSData.Data))=deal(tmp);
-        Rows{end-2}='<HTML><b>ALL</b>';
-        Rows{end-1}='<HTML><b>Lower bound</b>';
-        Rows{end}='<HTML><b>Upper bound</b>';
+        Rows{end-2}='<HTML><font color="#000000"><b>ALL</b>';
+        Rows{end-1}='<HTML><font color="#000000"><b>Lower bound</b>';
+        Rows{end}='<HTML><font color="#000000"><b>Upper bound</b>';
         h.Fit_Table.RowName=[];         
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
@@ -1497,6 +1498,12 @@ switch mode
                 Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
             end
         end
+        %%% special case for background correction models
+        if ~isempty(strfind(FCSMeta.Model.Name,'_Background'))
+            %%% set first parameter (Count rate) to measured count rate by
+            %%% default
+            FCSMeta.Params(1,:) = cellfun(@str2double,Data(1:end-3,2));
+        end
         Data(1:end-3,4:3:end-1)=deal(num2cell(FCSMeta.Params)');
         Data(end-2,4:3:end-1)=deal(num2cell(FCSMeta.Model.Value)');
         Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
@@ -1512,7 +1519,7 @@ switch mode
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
         h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
-        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnWidth(1) = {7.25*max(cellfun('prodofsize',cellfun(@(x) regexprep(x,'<.*?>',''),Rows,'UniformOutput',false)))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 1 %%% Updates tables when new data is loaded
@@ -1520,12 +1527,13 @@ switch mode
         %%% Sets row names to file names
         Rows=cell(numel(FCSData.Data)+3,1);
         tmp = FCSData.FileName;
-
+        for i = 1:numel(tmp)
+            tmp{i} = ['<HTML><font color="#000000"><b>' tmp{i} '</b>'];
+        end
         Rows(1:numel(tmp))=deal(tmp);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
-        %h.Fit_Table.RowName=Rows;
+        Rows{end-2}='<HTML><font color="#000000"><b>ALL</b>';
+        Rows{end-1}='<HTML><font color="#000000"><b>Lower bound</b>';
+        Rows{end}='<HTML><font color="#000000"><b>Upper bound</b>';
         
         Data=cell(numel(Rows),size(h.Fit_Table.Data,2)-1);
         %%% Set last 3 row to ALL, lb and ub
@@ -1546,8 +1554,15 @@ switch mode
                 Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
             end
         end
+        %%% special case for background correction models
+        if ~isempty(strfind(FCSMeta.Model.Name,'_Background'))
+            %%% set first parameter (Count rate) to measured count rate by
+            %%% default
+            FCSMeta.Params(1,:) = cellfun(@str2double,Data(1:end-3,2));
+            Data(1:end-3,4) = Data(1:end-3,2);
+        end
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnWidth(1) = {7*max(cellfun('prodofsize',Rows))};
+        h.Fit_Table.ColumnWidth(1) = {7.25*max(cellfun('prodofsize',cellfun(@(x) regexprep(x,'<.*?>',''),Rows,'UniformOutput',false)))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 2 %%% Updates table after fit
