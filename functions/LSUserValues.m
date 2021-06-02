@@ -760,6 +760,40 @@ if Mode==0 %%% Loads user values
     end
     P.FCSFit.Export_Residuals = S.FCSFit.Export_Residuals;
     
+    %%% field for default fit parameters (focal volume, diffusion coefficient, ratio of wz/wr)
+    if ~isfield(S.FCSFit,'FitParameters')
+        S.FCSFit.FitParameters = [];
+        disp('UserValues.FCSFit.FitParameters was incomplete');
+    end
+    P.FCSFit.FitParameters = S.FCSFit.FitParameters;
+    
+    % omega_r
+    if ~isfield(S.FCSFit.FitParameters,'wr')
+        S.FCSFit.FitParameters.wr = 0.25;
+        disp('UserValues.FCSFit.FitParameters.wr was incomplete');
+    end
+    P.FCSFit.FitParameters.wr = S.FCSFit.FitParameters.wr;
+    
+    % omega_z
+    if ~isfield(S.FCSFit.FitParameters,'wz')
+        S.FCSFit.FitParameters.wz = 2;
+        disp('UserValues.FCSFit.FitParameters.wz was incomplete');
+    end
+    P.FCSFit.FitParameters.wz = S.FCSFit.FitParameters.wz;
+    
+    % p = omega_z/omega_r
+    if ~isfield(S.FCSFit.FitParameters,'p')
+        S.FCSFit.FitParameters.p = 5;
+        disp('UserValues.FCSFit.FitParameters.p was incomplete');
+    end
+    P.FCSFit.FitParameters.p = S.FCSFit.FitParameters.p;
+    
+    % D
+    if ~isfield(S.FCSFit.FitParameters,'D')
+        S.FCSFit.FitParameters.D = 400;
+        disp('UserValues.FCSFit.FitParameters.D was incomplete');
+    end
+    P.FCSFit.FitParameters.D = S.FCSFit.FitParameters.D;
     %% MIAFit
     %%% Checks, if MIAFit subfield exists
     if ~isfield(S, 'MIAFit')

@@ -1406,8 +1406,20 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
             FCSMeta.Model.State(i) = 1;
         end
     end    
+    %%% replace standard parameters with values stored in UserValues
+    stored_parameters = [UserValues.FCSFit.FitParameters.D,UserValues.FCSFit.FitParameters.wr,...
+        UserValues.FCSFit.FitParameters.wz,UserValues.FCSFit.FitParameters.p];
+    stored_parameters_names = {'D[&mu;m<sup>2</sup>/s]','w<sub>r</sub>[&mu;m]',...
+        'w<sub>z</sub>[&mu;m]','p'};
+    for i = 1:numel(stored_parameters)
+        for j = 1:numel(FCSMeta.Model.Params)
+            if strcmp(FCSMeta.Model.Params{j},stored_parameters_names{i})
+                FCSMeta.Model.Value(j) = stored_parameters(i);
+            end
+        end
+    end
+        
     FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
-    
     %%% Updates table to new model
     Update_Table([],[],0);
     %%% Updates model text
@@ -1423,7 +1435,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Table(~,e,mode)
 h = guidata(findobj('Tag','FCSFit'));
-global FCSMeta FCSData
+global FCSMeta FCSData UserValues
 switch mode
     case 0 %%% Updates whole table (Load Fit etc.)
         
@@ -1672,6 +1684,20 @@ end
 
 %%% Updates plots to changes models
 Update_Plots;
+
+%%% Updates stored parameters in UserValues
+if numel(FCSData.Data) > 0
+    loaded_parameters_names = {'D[&mu;m<sup>2</sup>/s]','w<sub>r</sub>[&mu;m]',...
+        'w<sub>z</sub>[&mu;m]','p'};
+    stored_parameters_names = {'D','wr','wz','p'};
+    for i = 1:numel(loaded_parameters_names)
+        for j = 1:numel(FCSMeta.Model.Params)
+            if strcmp(FCSMeta.Model.Params{j},loaded_parameters_names{i})
+                UserValues.FCSFit.FitParameters.(stored_parameters_names{i}) = FCSMeta.Params(j,1); % take parameter from first file
+            end
+        end
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes plotting style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
