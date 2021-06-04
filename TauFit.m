@@ -698,6 +698,8 @@ h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Four 
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime with independent anisotropy)'...
     };
+% special fit methods for setups without polarized detection
+h.FitMethods_noMFD = {'Single Exponential (polarization mixing)','Biexponential (polarization mixing)'};
 if exist('ph','var')
     if isobject(obj)
         switch obj
@@ -1323,7 +1325,7 @@ h.FitPar_Table = uitable(...
     'BackgroundColor', [Look.Table1;Look.Table2],...
     'ForegroundColor', Look.TableFore);
 %%% Get the values of the table and the RowNames from UserValues
-[h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData(1, 1);
+[h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData();
 try
     h.FitPar_Table.TooltipString = Tooltip;
 catch %%% in newer version, this is now just called "Tooltip"
@@ -2257,7 +2259,7 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
     if h.FitMethod_Popupmenu.Value > 9
         h.FitMethod_Popupmenu.Value = 1;
     end
-    h.FitMethod_Popupmenu.String = h.FitMethods(1:9);
+    h.FitMethod_Popupmenu.String = [h.FitMethods(1:9),h.FitMethods_noMFD]; % remove par/per fitting, add polarization mixing
     [h.FitPar_Table.Data, h.FitPar_Table.RowName, Tooltip] = GetTableData(h.FitMethod_Popupmenu.Value, chan);
     try
         h.FitPar_Table.TooltipString = Tooltip;
@@ -3181,7 +3183,7 @@ switch obj
         TauFitData.ConfInt = NaN(numel(x0),2);
         
         switch TauFitData.FitType
-            case 'Single Exponential'
+            case {'Single Exponential'}
                 %%% Parameter:
                 %%% taus    - Lifetimes
                 %%% scatter - Scatter Background (IRF pattern)
@@ -4014,221 +4016,6 @@ switch obj
                     sprintf('R(<E>) = %.2f\t/\t%.2f A',R_mE1,R_mE2);...
                     sprintf('<tauD(A)>F = %.2f\t/\t%.2f ns',tauF1,tauF2)};
             case 'Distribution Fit - Global Model' %%% currently only enabled for burstwise data
-                switch TauFitData.Who
-                    case {'BurstBrowser','Burstwise'}
-                        switch TauFitData.BAMethod
-                            case {3,4,5}
-                                disp('Not implemented for this data type yet.');
-                                return;
-                        end
-                        switch h.DonorOnlyReference_Popupmenu.Value
-                            %%% origin of donor-only reference
-                            case 1 %%% from donor-only population of burst data
-                                %%% read out the donor-only pattern, which should be chan == 4
-                                donly_par = TauFitData.hMI_Par{4};
-                                donly_per = TauFitData.hMI_Per{4};
-                            case 2 %%% use stored reference from BurstData
-                                donor_chan = [1,2];
-                                donly_par = TauFitData.DonorOnlyReference{donor_chan(1)}';
-                                donly_per = TauFitData.DonorOnlyReference{donor_chan(2)}';
-                                if isempty(donly_par) || isempty(donly_per)
-                                    disp('No donor-only reference found.');
-                                    return;
-                                end
-                        end
-                        %%% since we can't just read the plots, we have to shift the data here
-                        %%% using the shift applied to the DA sample
-                        donly_par = donly_par((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
-                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{1});
-                        donly_per = tmp((TauFitData.StartPar{1}+1):TauFitData.Length{1})';
-                        %%% combine to summed decay
-                        Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
-                        sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
-                    case {'TauFit','External'}                           
-                        PIE_1 = h.PIEChannelPar_Popupmenu.Value;
-                        PIE_2 = h.PIEChannelPer_Popupmenu.Value;
-                        switch TauFitData.Who
-                            case 'External'
-                                %%% check if donly is defined and read out
-                                if ~isempty(TauFitData.External.Donly{PIE_1})
-                                    donly_par = TauFitData.External.Donly{PIE_1}';
-                                    donly_per = TauFitData.External.Donly{PIE_2}';                                   
-                                else
-                                    disp('No Donor only sample loaded.');
-                                    return;
-                                end
-                            case 'TauFit'
-                                %%% read donor only from UserValues
-                                donly_par = UserValues.PIE.DonorOnlyReference{PIE_1}';
-                                donly_per = UserValues.PIE.DonorOnlyReference{PIE_2}';
-                                if isempty(donly_par) || isempty(donly_per)
-                                    disp('No donor only reference defined.');
-                                    return;
-                                end
-                        end
-                        %%% since we can't just read the plots, we have to shift the data here
-                        %%% using the shift applied to the DA sample
-                        donly_par = donly_par((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
-                        tmp = shift_by_fraction(donly_per, TauFitData.ShiftPer{chan});
-                        donly_per = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
-
-                        if PIE_1 == PIE_2
-                            Decay_donly = donly_par;
-                            sigma_est_donly = sqrt(Decay_donly); sigma_est_donly(sigma_est_donly==0) = 1;
-                        else
-                            %%% combine to summed decay
-                            Decay_donly = G*(1-3*l2)*donly_par+(2-3*l1)*donly_per;
-                            sigma_est_donly = get_error_combined_decay(donly_par,donly_per,G,l1,l2);
-                        end
-                end
-                if size(Decay_donly,1) > size(Decay_donly,2)
-                    Decay_donly = Decay_donly';
-                    sigma_est_donly = sigma_est_donly';                    
-                end
-                
-                I0_donly = 2*max(Decay_donly);
-                x0(end+1) = I0_donly;
-                lb(end+1) = 0;
-                ub(end+1) = Inf;
-                fixed(end+1) = false;
-                %%% Parameter:
-                %%% Center R1
-                %%% sigmaR1
-                %%% Center R2
-                %%% sigmaR2
-                %%% Fraction 1
-                %%% Fraction D only
-                %%% Scatter
-                %%% Background
-                %%% R0
-                %%% Donor lifetime used for R0 determination
-                %%% Donor only lifetime1
-                %%% Donor only lifetime2
-                %%% Fraction Donor only lifetime1
-                %%% Scatter Donly
-                %%% Background Donly
-                %%% IRF shift
-                %%% I0(DA)
-                %%% I0(DOnly)
-                
-                
-                %%% Convert Lifetimes
-                lifetimes = [10,11,12];
-                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
-                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
-                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
-                
-                %%% define model function
-                ModelFun = @(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata);
-                
-                %%% Prepare data as vector
-                Decay_DA = Decay;                
-                Decay =  [Decay_DA(ignore:end); Decay_donly(ignore:end)];
-                Decay_stacked = [Decay_DA(ignore:end) Decay_donly(ignore:end)];
-                Decay_FitRange = Decay_stacked;
-                %%% estimate error assuming Poissonian statistics
-                if UserValues.TauFit.use_weighted_residuals
-                    sigma_est_fit = [sigma_est(ignore:end) sigma_est_donly(ignore:end)];
-                else
-                    sigma_est_fit = ones(1,numel(Decay_stacked));
-                end
-                if fit
-                    %%% Update Progressbar
-                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,ignore,Conv_Type};
-                    if ~poissonian_chi2
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
-                    else
-                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2dist_donly_global(interlace(x0,x,fixed),xdata),Decay_stacked),...
-                            x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
-                    end
-                    x = interlace(x0,x,fixed);
-                    chi2 = sum(residuals.^2)/(numel(Decay(:,ignore:end))-sum(~fixed));
-                    %%% calculate separate chi2 for DA and DO decays
-                    chi2_DA = sum(residuals(1:(numel(residuals)/2)).^2)/(numel(Decay(1,ignore:end))-sum(~fixed));
-                    chi2_D0 = sum(residuals((numel(residuals)/2+1):end).^2)/(numel(Decay(1,ignore:end))-sum(~fixed));
-                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
-                else % plot only
-                    x = {x0};
-                end
-                
-                %%% remove ignore range from decay
-                Decay = [Decay_DA; Decay_donly];
-                Decay_stacked = [Decay_DA Decay_donly];
-                FitFun = fitfun_2dist_donly_global(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,G,Conv_Type});
-                Decay = Decay_stacked;
-                if ~poissonian_chi2
-                    wres = (Decay_stacked-FitFun);
-                    if UserValues.TauFit.use_weighted_residuals
-                        wres = wres./[sigma_est sigma_est_donly];
-                    end
-                else
-                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
-                end
-                %%% ignore plotting is not implemented here yet!
-                FitFun_ignore = FitFun;
-                wres_ignore = wres;
-                Decay_ignore = Decay;
-                Length = numel(Decay);
-                
-                %%% Update FitResult
-                FitResult = num2cell(x');
-                %%% Convert Lifetimes to Nanoseconds
-                for i = 1:numel(lifetimes)
-                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
-                end
-                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
-                h.FitPar_Table.Data(:,1) = FitResult(1:end-2);
-                TauFitData.I0 = FitResult{end-1};
-                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
-                if save_fix
-                    UserValues.TauFit.FitFix{chan}(21) = fix(1);
-                    UserValues.TauFit.FitFix{chan}(22) = fix(2);
-                    UserValues.TauFit.FitFix{chan}(26) = fix(3);
-                    UserValues.TauFit.FitFix{chan}(27) = fix(4);
-                    UserValues.TauFit.FitFix{chan}(5) = fix(5);
-                    UserValues.TauFit.FitFix{chan}(23) = fix(6);
-                    UserValues.TauFit.FitFix{chan}(8) = fix(7);
-                    UserValues.TauFit.FitFix{chan}(10) = fix(8);
-                    UserValues.TauFit.FitFix{chan}(13) = fix(9);
-                    UserValues.TauFit.FitFix{chan}(28) = fix(10); % TauD(R0)
-                    UserValues.TauFit.FitFix{chan}(14) = fix(11);
-                    UserValues.TauFit.FitFix{chan}(2) = fix(12); %TauD02->Tau2
-                    UserValues.TauFit.FitFix{chan}(6) = fix(13); %F_TauD01->F2
-                    UserValues.TauFit.FitFix{chan}(9) = fix(14); %Sc_Donly->Sc_Per
-                    UserValues.TauFit.FitFix{chan}(11) = fix(15); %BG_Donly->Bg_Per
-                    UserValues.TauFit.FitFix{chan}(12) = fix(16);
-                end
-                UserValues.TauFit.FitParams{chan}(21) = FitResult{1};
-                UserValues.TauFit.FitParams{chan}(22) = FitResult{2};
-                UserValues.TauFit.FitParams{chan}(26) = FitResult{3};
-                UserValues.TauFit.FitParams{chan}(27) = FitResult{4};
-                UserValues.TauFit.FitParams{chan}(5) = FitResult{5};
-                UserValues.TauFit.FitParams{chan}(23) = FitResult{6};
-                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
-                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
-                UserValues.TauFit.FitParams{chan}(13) = FitResult{9};
-                UserValues.TauFit.FitParams{chan}(28) = FitResult{10};
-                UserValues.TauFit.FitParams{chan}(14) = FitResult{11};
-                UserValues.TauFit.FitParams{chan}(2) = FitResult{12};
-                UserValues.TauFit.FitParams{chan}(6) = FitResult{13};
-                UserValues.TauFit.FitParams{chan}(9) = FitResult{14};
-                UserValues.TauFit.FitParams{chan}(11) = FitResult{15};
-                UserValues.TauFit.IRFShift{chan} = FitResult{16};
-                
-                h.PlotDynamicFRETLine.Visible = 'on';
-                h.PlotDynamicFRETLine_Sigma.Visible = 'on';
-                
-                [R_mE1, mE1] = calc_RDA_E(x(1),x(2),FitResult{9});
-                [R_mE2, mE2] = calc_RDA_E(x(3),x(4),FitResult{9});
-                tauF1 = calc_tauf(x(1),x(2),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
-                tauF2 = calc_tauf(x(3),x(4),FitResult{9},[FitResult{11},FitResult{12},x(13),FitResult{10}]);
-                % Also update status text
-                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end});...
-                    sprintf('<E> = %.4f\t/\t%.4f',mE1,mE2);...
-                    sprintf('R(<E>) = %.2f\t/\t%.2f A',R_mE1,R_mE2);...
-                    sprintf('<tauD(A)>F = %.2f\t/\t%.2f ns',tauF1,tauF2)};
             case 'Fit Anisotropy'
                 %%% Parameter
                 %%% Lifetime
@@ -4959,6 +4746,190 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{15};
                 h.l1_edit.String = num2str(FitResult{13});
                 h.l2_edit.String = num2str(FitResult{14});
+            case 'Single Exponential (polarization mixing)'
+                %%% Parameter:
+                %%% tau    - Lifetime
+                %%% rho    - Rotational correlation time
+                %%% r0     - Fundamental anisotropy
+                %%% r_inf  - Residual anisotropy                
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% bg     - constant background
+                %%% l1,l2  - correction factors for polarization mixing by the objective lens
+                
+                %%% Convert Lifetimes
+                lifetimes = [1,2];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_1exp_noMFD(interlace(x0,x,fixed),xdata);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est_fit = sigma_est(ignore:end);
+                else
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
+                end
+                if fit
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_1exp_noMFD(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp_noMFD(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
+                    end
+                    x = interlace(x0,x,fixed);
+                    chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                end
+                
+                FitFun = fitfun_1exp_noMFD(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sigma_est;
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                %%% Update FitResult
+                FitResult = num2cell(x');
+                %%% Convert Lifetimes to Nanoseconds
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                    UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                    UserValues.TauFit.FitFix{chan}(17) = fix(2);
+                    UserValues.TauFit.FitFix{chan}(19) = fix(3);
+                    UserValues.TauFit.FitFix{chan}(20) = fix(4);
+                    UserValues.TauFit.FitFix{chan}(8) = fix(5);
+                    UserValues.TauFit.FitFix{chan}(10) = fix(6);
+                    UserValues.TauFit.FitFix{chan}(15) = fix(7);
+                    UserValues.TauFit.FitFix{chan}(16) = fix(8);
+                end
+                UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{8};
+                UserValues.TauFit.IRFShift{chan} = FitResult{9};
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+                
+                h.SetDonorOnlyLifetime_Menu.Visible = 'on';
+            case 'Biexponential (polarization mixing)'
+                %%% Parameter:
+                %%% taus    - Lifetimes
+                %%% rhos    - Rotational correlation times
+                %%% r0     - Fundamental anisotropy
+                %%% r_inf  - Residual anisotropy                
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% bg     - constant background
+                %%% l1,l2  - correction factors for polarization mixing by the objective lens
+                
+                %%% Convert Lifetimes
+                lifetimes = [1,2,4];
+                x0(lifetimes) = x0(lifetimes)/TauFitData.TACChannelWidth;
+                lb(lifetimes) = lb(lifetimes)/TauFitData.TACChannelWidth;
+                ub(lifetimes) = ub(lifetimes)/TauFitData.TACChannelWidth;
+                %%% define model function
+                ModelFun = @(x,xdata) fitfun_2exp_noMFD(interlace(x0,x,fixed),xdata);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est_fit = sigma_est(ignore:end);
+                else
+                    sigma_est_fit = ones(1,numel(Decay(ignore:end)));
+                end
+                if fit
+                    %%% Update Progressbar
+                    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),0,ignore,Conv_Type};
+                    if ~poissonian_chi2
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqcurvefit(@(x,xdata) fitfun_2exp_noMFD(interlace(x0,x,fixed),xdata)./sigma_est_fit,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est_fit,lb(~fixed),ub(~fixed),opts.lsqcurvefit);
+                    else
+                        [x, ~, residuals, ~,~,~, jacobian] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp_noMFD(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed),opts.lsqnonlin);
+                    end
+                    x = interlace(x0,x,fixed);
+                    chi2 =sum(residuals.^2)/(numel(Decay(ignore:end))-sum(~fixed));
+                    TauFitData.ConfInt(~fixed,:) = nlparci(x(~fixed),residuals,'jacobian',jacobian,'alpha',alpha);
+                else % plot only
+                    x = {x0};
+                end
+                
+                FitFun = fitfun_2exp_noMFD(x,{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,0,1,Conv_Type});
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sigma_est;
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
+                end
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                %%% Update FitResult
+                FitResult = num2cell(x');
+                %%% Convert Lifetimes to Nanoseconds
+                for i = 1:numel(lifetimes)
+                    FitResult{lifetimes(i)} = FitResult{lifetimes(i)}.*TauFitData.TACChannelWidth;
+                end
+                TauFitData.ConfInt(lifetimes,:) = TauFitData.ConfInt(lifetimes,:).*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult(1:end-1);
+                TauFitData.I0 = FitResult{end};
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                    UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                    UserValues.TauFit.FitFix{chan}(2) = fix(2);
+                    UserValues.TauFit.FitFix{chan}(5) = fix(3);
+                    UserValues.TauFit.FitFix{chan}(17) = fix(4);
+                    UserValues.TauFit.FitFix{chan}(19) = fix(5);
+                    UserValues.TauFit.FitFix{chan}(20) = fix(6);
+                    UserValues.TauFit.FitFix{chan}(8) = fix(7);
+                    UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                    UserValues.TauFit.FitFix{chan}(15) = fix(9);
+                    UserValues.TauFit.FitFix{chan}(16) = fix(10);
+                end
+                UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(5) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(19) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(20) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(10) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{10};
+                UserValues.TauFit.IRFShift{chan} = FitResult{11};
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('I0: %.2f',FitResult{end})};
+                
+                h.SetDonorOnlyLifetime_Menu.Visible = 'on';
         end
         LSUserValues(1)
         %%% Update IRFShift in Slider and Edit Box
@@ -6981,6 +6952,17 @@ function [startpar, names, tooltipstring] = GetTableData(model, chan)
 % model is the selected fit model in the popupmenu
 % chan is the selected (burst or PIE pair) channel
 global UserValues
+if nargin == 0 % called on startup, return default
+    model = 1; chan = 1;
+else
+    h = guidata(findobj('Tag','TauFit'));
+    %%% find out correct universal model number
+    model_names = [h.FitMethods,h.FitMethods_noMFD];
+    if isnumeric(model) %%% number supplied, get string
+        model = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
+    end
+    model = find(strcmp(model_names,model));
+end
 Parameters = cell(14,1);
 Parameters{1} = {'Tau [ns]','Scatter','Background','IRF Shift'};
 Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Scatter','Background','IRF Shift'};
@@ -6996,7 +6978,8 @@ Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infini
 Parameters{12} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{13} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{14} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-
+Parameters{15} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter','Background', 'l1','l2','IRF Shift'};
+Parameters{16} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter','Background', 'l1','l2','IRF Shift'};
 %%% ToolTipString
 ToolTip = cell(14,1);
 ToolTip{1} = '';
@@ -7013,6 +6996,8 @@ ToolTip{11} = '';
 ToolTip{12} = '';
 ToolTip{13} = '';
 ToolTip{14} = '';
+ToolTip{15} = '';
+ToolTip{16} = '';
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -7094,6 +7079,8 @@ StartPar{13} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rh
     ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
 StartPar{14} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,Inf,ScatParf;ScatPer,0,Inf,ScatPerf...
     ;BackPar,0,Inf,BackParf;BackPer,0,Inf,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{15} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
+StartPar{16} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,Inf,ScatParf;BackPar,0,Inf,BackParf;l1,0,1,l1f;l2,0,1,l2f;IRF,-Inf,Inf,IRFf};
 
 startpar = StartPar{model};
 names = Parameters{model};
@@ -7251,7 +7238,7 @@ switch UserValues.TauFit.LineStyle
             'Marker','.','LineStyle','none');
 end
 
-function IncludeChannel(obj,~)
+function IncludeChannel(~,~)
 global UserValues
 h = guidata(findobj('Tag','TauFit'));
 LSUserValues(0);
