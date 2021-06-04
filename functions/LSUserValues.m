@@ -1195,6 +1195,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.LogicalGate was incomplete');
     end
     P.BurstSearch.LogicalGate = S.BurstSearch.LogicalGate;
+    %%% Checks, if BurstSearch.ChangePointIncludeSigma subfield exists
+    if ~isfield(S.BurstSearch,'ChangePointIncludeSigma')
+        S.BurstSearch.ChangePointIncludeSigma=0;
+        disp('UserValues.BurstSearch.ChangePointIncludeSigma was incomplete');
+    end
+    P.BurstSearch.ChangePointIncludeSigma = S.BurstSearch.ChangePointIncludeSigma;    
     %%% Checks, if BurstSearch.PIEChannelSelection exists
     %%% (This field contains the PIEChannel Selection (as a String) for every
     %%% Burst Search Method)

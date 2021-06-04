@@ -1,5 +1,5 @@
 function [start,stop] = get_changepoints(Photons,threshold)
-global FileInfo PathToApp
+global FileInfo PathToApp UserValues
 %%% Wrapper function to run the changepoint detection algorithm
 %%% The C code outputs text files with the result into a temp directory
 %%% This functions passes the arguments to the C code and reads the data
@@ -9,7 +9,7 @@ SyncPeriod = FileInfo.SyncPeriod;
 Nstates = 5; % the number of intensity levels
 alpha = 0.01; % Type-I error rate alpha
 ci = 0.69; % selection confidence interval of 69%
-include_sigma = true; % extend the burst range to include the confidence interval
+include_sigma = UserValues.BurstSearch.ChangePointIncludeSigma; % extend the burst range to include the confidence interval
 
 temp_dir = fullfile(PathToApp,'functions','temp');
 if ~exist(temp_dir,'dir')
