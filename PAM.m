@@ -10224,10 +10224,16 @@ else %%% < or > was pressed
     h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
     h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 end
-h.Burst.Axes_Intensity.YLimMode = 'auto';
+%%% set YLimits
+h.Burst.Axes_Intensity.YLim(1) = 0;
+c = h.Burst.Axes_Intensity.Children(strcmp(get(h.Burst.Axes_Intensity.Children,'Type'),'line'));
+ylim2 = 0;
+for i = 1:numel(c)
+    ylim2 = max([ylim2,...
+        max(c(i).YData(c(i).XData >= PamMeta.Burst.Preview.Second & c(i).XData <= PamMeta.Burst.Preview.Second+1))]);
+end
+h.Burst.Axes_Intensity.YLim(2) = 1.1*ylim2;
 h.Burst.Axes_Interphot.YLimMode = 'auto';
-% h.Burst.Axes_Intensity.YLim(2) = 1.1*max([max(h.Plots.BurstPreview.Channel1.YData(h.Plots.BurstPreview.Channel1.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1.XData <= PamMeta.Burst.Preview.Second+1)),...
-%         max(h.Plots.BurstPreview.Channel2.YData(h.Plots.BurstPreview.Channel2.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel2.XData <= PamMeta.Burst.Preview.Second+1))]);
 % h.Burst.Axes_Interphot.YLim(1) = 0.9*min(h.Plots.BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
 % h.Burst.Axes_Interphot.YLim(2) = 1.1*max(h.Plots .BurstPreview.Channel1_Interphot.YData(h.Plots.BurstPreview.Channel1_Interphot.XData >= PamMeta.Burst.Preview.Second & h.Plots.BurstPreview.Channel1_Interphot.XData <= PamMeta.Burst.Preview.Second+1));
 if h.Burst.Axes_Intensity.YLim(2) > PamMeta.Burst.Preview.max_int % set to maximum intensity
