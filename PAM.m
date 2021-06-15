@@ -2214,10 +2214,16 @@ h.Trace.Log = uimenu(...
 h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
+    'Seperator','on',...
     'Callback',{@Update_Display,2});
 h.Trace.Trace_ExportFRETTrace_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Extract FRET efficiency trace',...
+    'Seperator','on',...
+    'Callback',{@Update_Display,2});
+h.Trace.Trace_ExportAnisotropyTrace_Menu = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Extract Anisotropy trace',...
     'Callback',{@Update_Display,2});
 h.Trace.Axes.UIContextMenu = h.Trace.Menu;
 
@@ -4373,7 +4379,7 @@ if any(mode==2)
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
     if ~isempty(gcbo)
-        if any(gcbo == [h.Trace.Trace_Export_Menu,h.Trace.Trace_ExportFRETTrace_Menu])
+        if any(gcbo == [h.Trace.Trace_Export_Menu,h.Trace.Trace_ExportFRETTrace_Menu,h.Trace.Trace_ExportAnisotropyTrace_Menu])
             hfig = figure('Visible','on','Units','pixel',...
                 'Position',[100,100,600*h.Trace.Axes.Position(3),450*h.Trace.Axes.Position(4)],...
                 'Name',FileInfo.FileName{1});
@@ -4420,6 +4426,18 @@ if any(mode==2)
                     ax = gca;
                     ylabel('FRET Efficiency (uncorrected)');
                     xlabel('Time [s]');
+            case h.Trace.Trace_ExportAnisotropyTrace_Menu
+                    %%% get par/per channels as selected first and second
+                    %%% PIE channel
+                    sel = h.PIE.List.Value;
+                    par_trace = PamMeta.Trace{sel(1)};
+                    per_trace = PamMeta.Trace{sel(2)};
+                    %%% calculate anisotropy
+                    r_trace = (par_trace-per_trace)./(par_trace+2*per_trace);
+                    plot(PamMeta.TimeBins,r_trace,'LineWidth',1);
+                    ax = gca;
+                    ylabel('Anisotropy r (uncorrected)');
+                    xlabel('Time [s]');
             end
             hfig.Color = [1,1,1];
             set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1.5,'Units','pixel',...
@@ -4441,6 +4459,9 @@ if any(mode==2)
                 case h.Trace.Trace_ExportFRETTrace_Menu
                     ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';                
                     ax.YLim = [0,1];
+                case h.Trace.Trace_ExportAnisotropyTrace_Menu
+                    ax.Title.String = ['Anisotropy trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';    
+                    ax.YLim = [-0.1,0.5];
             end
             ax.Title.FontSize = 0.75*ax.Title.FontSize;
         end
