@@ -30,6 +30,7 @@ CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 xProx = linspace(-0.1,1.1,UserValues.BurstBrowser.Display.NumberOfBinsX+1);
 timebin = 1E-3*str2num(UserValues.BurstBrowser.Settings.TimeWindow_TimeBin); %{10E-3,5E-3,2E-3,1E-3,0.5E-3,0.25E-3};
 Hist = cell(numel(timebin),1);
+Number_of_TimeWindows = zeros(numel(timebin),1);
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
@@ -96,6 +97,8 @@ for t = 1:numel(timebin)
     Prox = NF./(BurstData{1, 1}.Corrections.Gamma_GR.*NG+NF);
     
     Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
+    
+    Number_of_TimeWindows(t) = sum(valid);
     Progress(t/numel(timebin),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 end
 
@@ -132,3 +135,10 @@ ylabel('time bin [ms]');
 ax.YTick = 1:numel(timebin);
 ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),num2cell(timebin),'UniformOutput',false)');
 Progress(1,h.Progress_Axes,h.Progress_Text);
+
+
+%%% print the number of timewindows per histogram
+fprintf('Number of data points per time window:\n');
+for i = 1:numel(timebin)
+    fprintf('%g ms\t%d\n',timebin(i)*1000,Number_of_TimeWindows(i));
+end
