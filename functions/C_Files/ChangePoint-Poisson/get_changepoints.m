@@ -49,6 +49,8 @@ end
 
 % run analysis
 dt = diff(Photons);
+% remove zero time lags
+dt(dt == 0) = 1;
 split_photons = 25000;
 N_splits = ceil(numel(dt)./split_photons);
 result = cell(N_splits,1);
@@ -59,7 +61,7 @@ for i = 1:N_splits
         dt_temp = dt((i-1)*split_photons+1 : end);
     else
         dt_temp = dt((i-1)*split_photons+1 : i*split_photons);
-    end    
+    end
     if 0
         % use the mex function (sometimes crashes, which is not
         % recoverable)
