@@ -9659,11 +9659,11 @@ function ix = CUSUM(dt,h,fB,fT,ix_start)
 if nargin < 5
     ix_start = 1;
 end
-ix = ix_start;
+ix = ix_start-1; % go one back because we increase the counter in the while loop before evaluating the S function
 S = 0;
 while S < h && ix < numel(dt)
-    S = max([S+log(fT(dt(ix)+1))-log(fB(dt(ix)+1)),0]);
     ix = ix + 1;
+    S = max([S+log(fT(dt(ix)+1))-log(fB(dt(ix)+1)),0]);
 end
 
 function ix = SPRT(dt,A,B,fB,fT,ix_start)
