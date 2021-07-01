@@ -9504,7 +9504,7 @@ if nargin < 5
 end
 if BurstIdentification == 1
     %All-Photon Burst Search based on Nir Paper (2006)
-    valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.ClockPeriod;
+    valid=(Photons(1+M-1:end)-Photons(1:end-M+1)) < T*1e-6/FileInfo.ClockPeriod;
     
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1) + 1 + floor(M/2); % +1 is necessary
