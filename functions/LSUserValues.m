@@ -1308,6 +1308,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.DonorOnlyReference was incomplete');
     end
     P.BurstSearch.DonorOnlyReference = S.BurstSearch.DonorOnlyReference;
+    %%% Checks if BurstSearch.SlidingTimeWindowLegacy subfield exists
+    if ~isfield(S.BurstSearch, 'SlidingTimeWindowLegacy')
+        S.BurstSearch.SlidingTimeWindowLegacy=1;
+        disp('UserValues.BurstSearch.SlidingTimeWindowLegacy was incomplete');
+    end
+    P.BurstSearch.SlidingTimeWindowLegacy = S.BurstSearch.SlidingTimeWindowLegacy;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield(S,'TauFit')

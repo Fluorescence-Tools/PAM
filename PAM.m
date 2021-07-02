@@ -1179,6 +1179,18 @@ h.Burst.BurstSearchSmoothing_Popupmenu = uicontrol(...
     'Callback',@Update_BurstGUI,...
     'Position',[0.05 0.75 0.9 0.08],...
     'TooltipString',sprintf(''));
+h.Burst.BurstSearch_SlidingTimeWindowLegacy_Menu = uicontextmenu;
+h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem = uimenu(...
+    'Parent',h.Burst.BurstSearch_SlidingTimeWindowLegacy_Menu,...
+    'Label','Legacy mode (Uses only central photon of time window)',...
+    'Callback',@BurstSearchParameterUpdate);
+if UserValues.BurstSearch.SlidingTimeWindowLegacy
+    h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem.Checked = 'on';
+else
+    h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem.Checked = 'off';
+end
+h.Burst.BurstSearchSmoothing_Popupmenu.UIContextMenu = h.Burst.BurstSearch_SlidingTimeWindowLegacy_Menu;
+h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem.Visible = 'off';
 
 h.Burst.BurstSearchSelection_Text = uicontrol(...
     'Style','text',...
@@ -7598,6 +7610,8 @@ h.Burst.BurstParameter2_Text.Visible = 'on';
 h.Burst.BurstParameter2_Edit.Visible = 'on';
 h.Burst.BurstParameter6_Edit.Visible = 'off';
 h.Burst.BurstParameter2_Checkbox.Visible = 'off';
+h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem.Visible = 'off';
+
 h.Burst.BurstParameter2_Edit.Position(3) = 0.2;
 switch UserValues.BurstSearch.SmoothingMethod
     case 1 %Sliding Time Window
@@ -7648,6 +7662,7 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter6_Edit.Visible = 'on';
                 h.Burst.BurstParameter2_Edit.Position(3) = 0.1;
         end
+        h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem.Visible = 'on'; % show legacy popupmenu
     case 2 % Interphoton time with Lee filter
         h.Burst.BurstParameter2_Text.String = 'Smoothing Window (2*N+1):';
         switch BAMethod %%% define which Burst Search Parameters are to be displayed
@@ -7802,6 +7817,14 @@ if obj == h.Burst.BurstPIE_Table %change in PIE channel selection
     UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method} = obj.Data;
 elseif obj == h.Burst.BurstParameter2_Checkbox
     UserValues.BurstSearch.ChangePointIncludeSigma = h.Burst.BurstParameter2_Checkbox.Value;
+elseif obj == h.Burst.BurstSearch_SlidingTimeWindowLegacy_MenuItem
+    if UserValues.BurstSearch.SlidingTimeWindowLegacy == 1 % switch off
+        obj.Checked = 'off';
+        UserValues.BurstSearch.SlidingTimeWindowLegacy = 0;
+    else % switch on
+        obj.Checked = 'on';
+        UserValues.BurstSearch.SlidingTimeWindowLegacy = 1;
+    end
 else %change in edit boxes
     UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method} = [str2double(h.Burst.BurstParameter1_Edit.String),...
         str2double(h.Burst.BurstParameter2_Edit.String), str2double(h.Burst.BurstParameter3_Edit.String), str2double(h.Burst.BurstParameter4_Edit.String),...
@@ -9497,7 +9520,7 @@ end
 %%% Subroutine a for All-Photon BurstSearch  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L,BurstIdentification)
-global FileInfo
+global FileInfo UserValues
 if nargin < 5
     h = guidata(findobj('Tag','Pam'));
     BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
@@ -9507,9 +9530,17 @@ if BurstIdentification == 1
     valid=(Photons(1+M-1:end)-Photons(1:end-M+1)) < T*1e-6/FileInfo.ClockPeriod;
     
     % and find start and stop of bursts
-    start = find(valid(1:end-1)-valid(2:end)==-1) + 1 + floor(M/2); % +1 is necessary
-    stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
-    
+    if UserValues.BurstSearch.SlidingTimeWindowLegacy
+        % legacy implementation before 07/2021
+        % we take only the middle photon of a time window to belong to a burst
+        start = find(valid(1:end-1)-valid(2:end)==-1) + 1 + floor(M/2); % +1 is necessary
+        stop = find(valid(1:end-1)-valid(2:end)==1) + floor(M/2);
+        %disp('Using legacy mode.');
+    else
+        % instead, all photons of the time window are considered to be part of the burst
+        start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
+        stop = find(valid(1:end-1)-valid(2:end)==1) + M - 1; % last photon and the M-1 following ones are included
+    end
 elseif BurstIdentification == 2
     % Seidel-Type burstsearch based on interphoton time and Lee Filter
     m = T;
