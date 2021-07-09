@@ -317,7 +317,7 @@ else
     ylim(h.axes_EvsTauRR,'auto');
 end
 h.axes_EvsTauRR.CLimMode = 'auto';
-h.axes_EvsTauRR.CLim(1) = H_max*offset;
+try;h.axes_EvsTauRR.CLim(1) = H_max*offset;end;
 try;h.axes_EvsTauRR.CLim(2) = H_max*UserValues.BurstBrowser.Display.PlotCutoff/100;end;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     switch BurstData{file}.BAMethod
