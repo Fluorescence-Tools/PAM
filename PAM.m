@@ -9661,7 +9661,7 @@ while start_next < numel(dt) % we have not reached the end
     
     % estimate the end of burst using SPRT
     stop_est = SPRT(dt,A,B,fB,fT,start);
-    if stop_est > start+5 % require an offest of at least 5 photons
+    if stop_est > start+5 % require an offset of at least 5 photons
         % find the next edge using CUSUM
         start_next = CUSUM(dt,h,fB,fT,stop_est);
 
@@ -9719,7 +9719,7 @@ if nargin < 7
     offset = 10; % offset necessary because if we start in the burst, the threshold is crossed in the beginning already.
 end
 dt_b = dt(ix_next-offset:-1:ix_start);
-ix = ix_next-offset-CUSUM(dt_b,h,fB,fT);
+ix = ix_next-offset-CUSUM(dt_b,h,fB,fT)+1; % plus one needed to correctly invert the index
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
