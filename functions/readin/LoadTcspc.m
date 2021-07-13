@@ -1114,6 +1114,7 @@ switch (Type)
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
+        
     case 9 %%% Confocor3 raw data files (*.raw)
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'Confocor3';
@@ -1232,10 +1233,253 @@ switch (Type)
         for i=2:size(FileInfo.LineTimes,1)
             FileInfo.LineTimes(i,:)=FileInfo.LineTimes(i,:)+FileInfo.ImageTimes(i);
         end
-
+        
         FileInfo.Lines=size(FileInfo.LineTimes,2)-1;
         FileInfo.Pixels=FileInfo.Lines;
-    case 10 %%% Custom Read-In types
+    case 10 %%% Zeiss CZI unified file format (*.czi)
+        % Only works for line scanning data to be used in PCF Analysis!
+        % Currently only works for a single file!
+        %%% todo: still create separate small UI in PAM to specify the
+        %%% imaging info for loading, like on the Options tab in Mia
+        
+                %%% Usually, here no Imaging Information is needed
+        FileInfo.FileType = 'CZI';
+        %%% General FileInfo
+        FileInfo.NumberOfFiles=numel(FileName);
+        FileInfo.Type=Type;
+        FileInfo.MI_Bins=[];
+        FileInfo.MeasurementTime=[];
+        FileInfo.ImageTimes = [];
+        FileInfo.SyncPeriod = [];
+        FileInfo.ClockPeriod = [];
+        FileInfo.Resolution = [];
+        FileInfo.TACRange = [];
+        FileInfo.Lines=10;
+        FileInfo.Pixels=10;
+        FileInfo.LineTimes=[];
+        FileInfo.ScanFreq=1000;
+        FileInfo.FileName=FileName;
+        FileInfo.Path=Path;
+        
+        %%% Spectral range to be used for channel 1
+        Channel1 = 1; %e.g. 1:11
+        %%% Spectral Bins to be used for channel 2
+        Channel2 = []; %e.g. 12:23
+        %the range of Zplanes the user wants to load 
+        Zplane = 1; 
+        
+        if isempty(Channel1) %%% No valid bins were set for channel 1
+            msgbox('No valid bins selected for channel 1')
+            return;
+        end
+  
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName)
+            FileName={FileName};
+        end        
+
+        %% Loads all frames for channels
+        Spectrum = cell(1,1);
+        Spectral_Range = cell(1,1);
+
+            %%% Reads MetaData
+            FileInf  = czifinfo(fullfile(Path,FileName{1}));
+            Info = FileInf.metadataXML;
+            
+            
+            %%%FrameTime
+            Start = strfind(Info,'<FrameTime>');
+            Stop = strfind(Info,'</FrameTime>');    
+            FrameTime = str2double(Info(Start+11:Stop-1));
+            
+            %%%LineTime => seems to be off, so I don't read it in
+%              Start = strfind(Info,'<LineTime>');
+%              Stop = strfind(Info,'</LineTime>');            
+%              h.Mia_Image.Settings.Image_Line.String = Info(Start+10:Stop-1);
+%              h.Mia_ICS.Fit_Table.Data(15,:) = {Info(Start+10:Stop-1);};
+           
+            %%%PixelTime
+            Start = strfind(Info,'<PixelTime>');
+            Stop = strfind(Info,'</PixelTime>');  
+            PixelTime = str2double(Info(Start+11:Stop-1))*10^6;
+            FrameTicks = round(FrameTime/PixelTime*10^6);        
+            %%%PixelSize
+            Start = strfind(Info,'<Scaling>');
+            Stop = strfind(Info,'</Scaling>');
+            Scaling = Info(Start+10:Stop-1);
+            Start = strfind(Scaling,'<Value>');
+            Stop = strfind(Scaling,'</Value>');
+            PixSize = round(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
+            
+            Data = bfopen(fullfile(Path,FileName{1}),h.Progress.Axes,h.Progress.Text,1,numel(FileName));
+%             for j = 1:size(Data{1,1},1) %flip x and y axes
+%                 Data{1,1}{j,1} = Data{1,1}{j,1}';
+%             end
+            %%% Finds positions of plane/channel/time seperators
+            Sep = strfind(Data{1,1}{1,2},';');
+            
+            if numel(Sep) == 4 %%% Z stack with channels and > 1 frame
+                %%% Determines number of frames
+                F_Sep = strfind(Data{1,1}{1,2}(Sep(4):end),'/');
+                N_F = str2double(Data{1,1}{1,2}(Sep(4)+F_Sep:end));
+                
+                %%% Determines number of channels
+                C_Sep = strfind(Data{1,1}{1,2}(Sep(3):(Sep(4)-1)),'/');
+                N_C = str2double(Data{1,1}{1,2}(Sep(3)+C_Sep:(Sep(4)-1)));
+                
+                %%% Determines number of Z planes
+                Z_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
+                N_Z = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
+            
+            elseif numel(Sep) == 3 %%% Normal mode
+                %%% Determines number of frames
+                F_Sep = strfind(Data{1,1}{1,2}(Sep(3):end),'/');
+                N_F = str2double(Data{1,1}{1,2}(Sep(3)+F_Sep:end));
+                
+                %%% Determines number of channels
+                C_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
+                N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
+                
+                N_Z = 1;
+            elseif numel(Sep) == 2 %%% Single Frame or Single Channel
+                
+                if isempty(strfind(Data{1,1}{1,2}(Sep(2):end),'C')) %%% Single Color
+                    %%% Determines number of channels
+                    F_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
+                    N_F = str2double(Data{1,1}{1,2}(Sep(2)+F_Sep:end));
+                    N_C  = 1;
+                    N_Z = 1;
+                else %%% Single Frame
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
+                    N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
+                    N_Z = 1;
+                end
+            elseif isempty(Sep)  %%% This is a transmisson-only image
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = 1;
+                    N_C = 1;
+                    N_Z = 1;
+            else
+                msgbox('Invalid data type')
+                return;
+            end
+            
+            %%%Spectral range
+            Start = strfind(Info,'<DetectorWavelengthRange>');
+            Stop = strfind(Info,'</DetectorWavelengthRange>');
+            if ~isempty(Start) && ~isempty(Stop)
+                RangeInfo = Info(Start+25:Stop-1);
+                Range(1) = str2double(RangeInfo(strfind(RangeInfo,'<WavelengthStart>')+17:strfind(RangeInfo,'</WavelengthStart>')-1))*10^9;
+                Range(2) = str2double(RangeInfo(strfind(RangeInfo,'<WavelengthEnd>')+15:strfind(RangeInfo,'</WavelengthEnd>')-1))*10^9;
+                Bin_Width = (Range(2)-Range(1))/N_C;
+                Spectral_Range{1} = linspace(Range(1)+0.5*Bin_Width,Range(2)-0.5*Bin_Width,N_C);
+            else
+                Spectral_Range{1}=1:N_C;
+            end
+            
+                %%% Adds data to global variable
+                totalF = 0;
+                Data1 = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F*numel(Zplane),'uint16');
+                if ~isempty(Channel2) && min(Channel2)<=N_C
+                    Data2 = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F*numel(Zplane),'uint16');
+                end
+            
+            Spectrum{1} = zeros(N_C,1);
+            zz=1;
+            for z=Zplane %loop through all z-planes user wants to load
+                Z = 0;
+                for j=1:size(Data{1,1},1)
+                    %%% the order of the data (frame-channel-z) is
+                    %%% 111 121 ... 1c1 112 ... 1c2 ... ... 1nz 211 ... ... fnz
+                    %%% the code currently only loads 1 particular z plane
+                    %%% because Mia has no option for displaying different Z
+                    %%% planes. Also the data format on Mia is not compatible
+                    %%% with it yet.
+                    
+                    %%% Current channel
+                    C = mod(j-1,N_C)+1;
+                    %%% Current frame
+                    F = floor((j-1)/(N_C*N_Z))+1;
+                    % for every next file, frames have to be added to the end :
+                    F = F + totalF;
+                    %%% current Z position
+                    if C == 1
+                        Z = Z+1;
+                        if Z > N_Z
+                            Z = 1;
+                        end
+                    end
+                    
+                    %%% Adds data to channel 1
+                    if ~isempty(intersect(Channel1,C))
+                        if ~isempty(intersect(z,Z))
+                            Data1(:,:,F+(zz-1)*N_F) = Data1(:,:,F+(zz-1)*N_F)+uint16(Data{1,1}{j,1});
+                        end
+                    end
+                    %%% Adds data to channel 2
+                    if ~isempty(intersect(Channel2,C))
+                        if ~isempty(intersect(z,Z))
+                            Data2(:,:,F+(zz-1)*N_F) = Data2(:,:,F+(zz-1)*N_F)+uint16(Data{1,1}{j,1});
+                        end
+                    end
+                    
+                    %%% Calculates averaged spectrum for displaying
+                    Spectrum{1}(C)=Spectrum{1}(C)+sum(double(Data{1,1}{j,1}(:)));
+                    
+                end
+                zz = zz+1;
+            end
+            % time trace with 'n.o. pixels per line' * 'n.o. frames samples' at
+            % 'pixel dwell time' time resolution
+            
+            % reshape data to pixels x lines (intensity carpet)
+            Data1 = reshape(Data1,[size(Data1,2),size(Data1,3)]); 
+            Frames = size(Data1,2);
+            Pixels = size(Data1,1);
+            % define a macrotime lookup table taking the retraction time into account
+            mtLUT = zeros(size(Data1));
+            p = 1:size(Data1, 1); % pixels on a line
+            for k = 1:size(Data1, 2)
+                mtLUT(:,k) = p;
+                p = p+FrameTicks;
+            end
+            
+            % reshape to a linear array
+            Data1 = reshape(Data1, [size(Data1,1)*size(Data1,2),1]); %n.o photons per pixel
+            mtLUT = reshape(mtLUT, [size(mtLUT,1)*size(mtLUT,2),1]); %cumulative tick clock
+            
+            %remove pixels having no photons
+            mtLUT(Data1==0) = [];
+            Data1(Data1==0) = []; 
+            
+            Data1 = double(Data1);
+            
+            %define the actual MT vector with one entry per photon
+            MT = zeros(sum(Data1),1); 
+            p = 0;p=double(p);
+            for k = 1:size(Data1) %loop through all pixels
+                MT(p+1:p+Data1(k))=mtLUT(k);
+                p = p + Data1(k); %cumulative photon count
+            end
+            MI = zeros(sum(Data1),1)+100; %set MI equal to 100, no TCSPC anyway
+            
+            TcspcData.MT{1,1} = MT;
+            TcspcData.MI{1,1} = MI;
+            FileInfo.SyncPeriod = PixelTime/10^6; %for linescanning files, the pixel dwell time is the sync clock
+            FileInfo.Resolution = 1;
+            FileInfo.ClockPeriod = PixelTime/10^6;
+            FileInfo.TACRange = FileInfo.SyncPeriod;
+            FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+            FileInfo.ImageTimes = FrameTime; % in seconds
+            FileInfo.LineTimes  = zeros(Frames, 1);
+            FileInfo.LineTimes(:)  = FrameTime; %since the image is a line, the frametime is the linetime
+            FileInfo.Lines=Frames;
+            FileInfo.Pixels=Pixels;
+    case 11 %%% Custom Read-In types
         %%% The User can select which Read-Ins to display an use
         %%% This will allow easier, modular implementation of custom file types (esp. for scanning) 
         if ~exist('Custom','var') %%% If it was called from the database etc.
