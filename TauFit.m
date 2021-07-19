@@ -2021,7 +2021,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
             end
         case h.LoadData_Button
             PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
-            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;           
+            PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;            
     end
     
     %%% set the channel variable
@@ -2070,6 +2070,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
 else %%% clicked Load Data button, load from PAM
     % Load Data button was pressed
     % User called TauFit from Pam
+    TauFitData.FileInfo = FileInfo;
     try
         TauFitData.TACRange = FileInfo.TACRange; % in seconds
     catch %%% This occurs when user loads Fabsurf file from Waldi
@@ -2077,6 +2078,7 @@ else %%% clicked Load Data button, load from PAM
         TauFitData.TACRange = str2double(inputdlg({'TAC Range in ns:'},'Please provide the TAC Range',1,{'40'}));
     end
     TauFitData.MI_Bins = FileInfo.MI_Bins;
+    TauFitData.PIE = UserValues.PIE;
     if ~isfield(FileInfo,'Resolution')
         % in nanoseconds/microtime bin
         TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
@@ -7618,11 +7620,24 @@ switch obj
                 case 5
             end
         else
-            for i = 1:numel(chan_names)
-                range = TauFitData.PIE.From(i):TauFitData.PIE.To(i);
-                microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI{i};
-                microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF{i};
-                microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat{i};
+            if isfield(TauFitData,'hMI')
+                for i = 1:numel(chan_names)
+                    range = TauFitData.PIE.From(i):TauFitData.PIE.To(i);
+                    microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI{i};
+                    microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF{i};
+                    microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat{i};
+                end
+            elseif isfield(TauFitData,'hMI_Par')
+                % only save the two displayed channels
+                microtimeHistograms = microtimeHistograms(:,1:6);
+                range_par = TauFitData.PIE.From(h.PIEChannelPar_Popupmenu.Value):TauFitData.PIE.To(h.PIEChannelPar_Popupmenu.Value);
+                range_per = TauFitData.PIE.From(h.PIEChannelPer_Popupmenu.Value):TauFitData.PIE.To(h.PIEChannelPer_Popupmenu.Value);
+                microtimeHistograms(range_par,1) = TauFitData.hMI_Par{TauFitData.chan};
+                microtimeHistograms(range_par,2) = TauFitData.hIRF_Par{TauFitData.chan};
+                microtimeHistograms(range_par,3) = TauFitData.hScat_Par{TauFitData.chan};
+                microtimeHistograms(range_per,4) = TauFitData.hMI_Per{TauFitData.chan};
+                microtimeHistograms(range_per,5) = TauFitData.hIRF_Per{TauFitData.chan};
+                microtimeHistograms(range_per,6) = TauFitData.hScat_Per{TauFitData.chan};
             end
         end
         %filename = [filename '.dec'];
