@@ -9619,7 +9619,7 @@ START = [];
 STOP = [];
 % convert photons to delay times
 dt = diff(Photons);
-if any(~isinteger(dt))
+if any(mod(dt,1)~=0)
     disp('Warning: Non-integer macrotimes found. Interphoton times will be rounded.');
     dt = round(dt);
 end
