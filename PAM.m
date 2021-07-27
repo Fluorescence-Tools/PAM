@@ -9714,7 +9714,7 @@ if nargin < 7
     offset = 10; % offset necessary because if we start in the burst, the threshold is crossed in the beginning already.
 end
 dt_b = dt(ix_next-offset:-1:ix_start);
-ix = ix_next-offset-CUSUM(dt_b,h,fB,fT)+1; % plus one needed to correctly invert the index
+ix = ix_next-(offset-1)-CUSUM(dt_b,h,fB,fT)+1; % plus one needed to correctly invert the index
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
