@@ -9540,7 +9540,7 @@ elseif BurstIdentification == 2
     % Seidel-Type burstsearch based on interphoton time and Lee Filter
     m = T;
     T = M;
-    if M>1
+    if m>1
         % Smooth the interphoton time trace
         dT =[Photons(1);diff(Photons)];
         dT_m = zeros(size(dT,1),size(dT,2));
