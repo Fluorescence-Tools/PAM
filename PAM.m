@@ -9564,12 +9564,12 @@ elseif BurstIdentification == 2
         % threshold
         valid = dT_f < T*1e-6/FileInfo.ClockPeriod;
         
-    elseif M == 1
+    elseif m == 1
         % threshold
         valid = [Photons(1); diff(Photons)] < T*1e-6/FileInfo.ClockPeriod;
     end
     % and find start and stop of bursts
-    start = find(valid(1:end-1)-valid(2:end)==-1);
+    start = find(valid(1:end-1)-valid(2:end)==-1)+1;
     stop = find(valid(1:end-1)-valid(2:end)==1);
 elseif BurstIdentification == 3
     IT = M; % threshold in kHz
