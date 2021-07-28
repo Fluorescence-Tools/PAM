@@ -9562,7 +9562,7 @@ elseif BurstIdentification == 2
         dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);
         
         % threshold
-        valid = dT_f < T*1e-6/FileInfo.ClockPeriod;
+        valid = dT_f < T*1e-6/FileInfo.ClockPeriod & dT_f > 0;
         
     elseif m == 1
         % threshold
