@@ -100,8 +100,11 @@ if ispc
                 if toc > 10 %%% more than 10 seconds passed, kill
                     [status,~] = system(['taskkill /F /PID ' pid{i}]);
                      if status == 0
-                         fprintf('Killed process with id %s before completion.\n',pid{i});
-                     end
+                        fprintf('Killed process with id %s before completion.\n',pid{i});
+                        pid{i} = [];
+                     elseif isempty(cmdout) %%% process not active anymore
+                        pid{i} = [];
+                     end     
                 else %%% check and update status
                     [~,cmdout] = system(['tasklist | find /i "' pid{i} '"']);
                     if isempty(cmdout) %%% process not active anymore
@@ -119,11 +122,14 @@ elseif isunix
                 if toc > 10 %%% more than 10 seconds passed, kill
                     [status,~] = system(['kill ' pid{i}]);
                      if status == 0
-                         fprintf('Killed process with id %s before completion.\n',pid{i});
-                     end
+                        fprintf('Killed process with id %s before completion.\n',pid{i});
+                        pid{i} = [];
+                     elseif contains(cmdout,'no such process') %%% process not active anymore
+                        pid{i} = [];
+                     end   
                 else %%% check and update status
                     [~,cmdout] = system(['kill -0 ' pid{i}]);
-                    if contains(cmdout,'no such process')
+                    if contains(cmdout,'no such process') %%% process not active anymore
                         pid{i} = [];
                     end
                 end
