@@ -9533,8 +9533,30 @@ if BurstIdentification == 1
         %disp('Using legacy mode.');
     else
         % instead, all photons of the time window are considered to be part of the burst
+        % old way, results in overlapping bursts
         start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
         stop = find(valid(1:end-1)-valid(2:end)==1) + M - 1; % last photon and the M-1 following ones are included
+        
+        % remove overlapping bursts which occur because "valid" only stores
+        % the first photon of each burst
+        while any(start(2:end)-stop(1:end-1) <= 0)
+            overlap = find(start(2:end)-stop(1:end-1) <= 1); % next start is before current stop
+            start(overlap+1) = [];
+            stop(overlap) = [];
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% alternative overlap removal for testing purposes %%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %
+        %%% modifiy "valid" array to include all photons in the burst
+        % stop = find(valid(1:end-1)-valid(2:end)==1);
+        % for i = 1:numel(stop)
+        %    valid(stop(i):min(stop(i)+M-1,end)) = true;
+        % end
+        %%% re-find start/stop based on corrected "valid" array
+        % start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
+        % stop = find(valid(1:end-1)-valid(2:end)==1); % last photon and the M-1 following ones are included
     end
 elseif BurstIdentification == 2
     % Seidel-Type burstsearch based on interphoton time and Lee Filter
