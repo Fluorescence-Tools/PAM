@@ -97,7 +97,7 @@ if ispc
         %%% loop through all processes and check status
         for i = 1:numel(pid)
             if ~isempty(pid{i})
-                if toc > 10 %%% more than 10 seconds passed, kill
+                if toc > 30 %%% more than 10 seconds passed, kill
                     [status,~] = system(['taskkill /F /PID ' pid{i}]);
                      if status == 0
                         fprintf('Killed process with id %s before completion.\n',pid{i});
@@ -119,7 +119,7 @@ elseif isunix
         %%% loop through all processes and check status
         for i = 1:numel(pid)
             if ~isempty(pid{i})
-                if toc > 10 %%% more than 10 seconds passed, kill
+                if toc > 30 %%% more than 10 seconds passed, kill
                     [status,~] = system(['kill ' pid{i}]);
                      if status == 0
                         fprintf('Killed process with id %s before completion.\n',pid{i});
