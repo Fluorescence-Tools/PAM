@@ -9533,7 +9533,6 @@ if BurstIdentification == 1
         %disp('Using legacy mode.');
     else
         % instead, all photons of the time window are considered to be part of the burst
-        % old way, results in overlapping bursts
         start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
         stop = find(valid(1:end-1)-valid(2:end)==1) + M - 1; % last photon and the M-1 following ones are included
         
