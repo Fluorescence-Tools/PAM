@@ -72,7 +72,7 @@ for i = 1:length(positionIdx)
     RPC = [RPC; ir+1 ip+1 ich ];
 end
 if isempty(RPC)
-    RPC = ones(length(positionIdx),3);
+    RPC = [(1:length(positionIdx)-1)', ones(length(positionIdx)-1,2)];
 end
 % index for measurements is based on repetition or measured points
 idxR = 2;
