@@ -9536,6 +9536,12 @@ if BurstIdentification == 1
         start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
         stop = find(valid(1:end-1)-valid(2:end)==1) + M - 1; % last photon and the M-1 following ones are included
         
+        % make sure we have the same number of starts and stops
+        if numel(start) < numel(stop)
+            stop(1) = [];
+        elseif numel(start) > numel(stop)
+            start(end) = [];
+        end
         % remove overlapping bursts which occur because "valid" only stores
         % the first photon of each burst
         while any(start(2:end)-stop(1:end-1) <= 0)
