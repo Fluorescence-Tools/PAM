@@ -71,8 +71,9 @@ for i = 1:length(positionIdx)
     end
     RPC = [RPC; ir+1 ip+1 ich ];
 end
-
-
+if isempty(RPC)
+    RPC = ones(length(positionIdx),3);
+end
 % index for measurements is based on repetition or measured points
 idxR = 2;
 if max(RPC(:,1))>1
@@ -81,7 +82,6 @@ end
 if max(RPC(:,2))>1
     idxR = 2;
 end
-
 
 %%
 %Index where correlation data starts
