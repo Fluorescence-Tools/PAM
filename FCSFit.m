@@ -755,6 +755,10 @@ else
     if ~iscell(FileName)
         FileName = {FileName};
     end
+    %%% Abort if no file was selected
+    if all(FileName{1}==0)
+        return
+    end
     %%% assign path to each filename
     for i = 1:numel(FileName)
         PathName{i} = path;
@@ -765,7 +769,7 @@ else
 end
 
 
-%%% Only esecutes, if at least one file was selected
+%%% Only executes, if at least one file was selected
 if all(FileName{1}==0)
     return
 end
