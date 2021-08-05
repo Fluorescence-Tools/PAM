@@ -4646,7 +4646,11 @@ if any(mode==4)
     if FileInfo.MI_Bins == 1 % T2 workaround
         h.MI.All_Axes.XLim = [0 FileInfo.MI_Bins];
     else
-        h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins]; 
+        try
+            h.MI.All_Axes.XLim = [1 FileInfo.MI_Bins]; 
+        catch
+            h.MI.All_Axes.XLim = [0 1];
+        end
     end
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
@@ -9536,6 +9540,12 @@ if BurstIdentification == 1
         start = find(valid(1:end-1)-valid(2:end)==-1) + 1; % +1 is necessary
         stop = find(valid(1:end-1)-valid(2:end)==1) + M - 1; % last photon and the M-1 following ones are included
         
+        % make sure we have the same number of starts and stops
+        if numel(start) < numel(stop)
+            stop(1) = [];
+        elseif numel(start) > numel(stop)
+            start(end) = [];
+        end
         % remove overlapping bursts which occur because "valid" only stores
         % the first photon of each burst
         while any(start(2:end)-stop(1:end-1) <= 0)
