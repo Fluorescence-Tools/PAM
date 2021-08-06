@@ -973,12 +973,12 @@ switch Type
         switch Type
             case 6
                 FCSMeta.DataType = 'FCS averaged';
-            case 5
+            case 7
                 FCSMeta.DataType = 'FCS individual';
         end
         for i=1:numel(FileName)
             %%% Reads file (file contains all sub-measurements)
-            [AC, mCountRate, Duration] = read_zeiss_fcs_file(fullfile(PathName{i},FileName{i}));
+            [AC, mCountRate, Duration, Countrate] = read_zeiss_fcs_file(fullfile(PathName{i},FileName{i}));
             %%% convert the data into FCSFit data structure
             % AC contains for each measurement: time, AC1, AC1_std, AC2, AC2_std, CC, CC_std
             % std (i.e. error) is 1 for all since it is not computed by the
@@ -1010,6 +1010,7 @@ switch Type
                 Data.Counts = repmat(mean(Counts),[1,2]);
                 Data.Valid = ones(1,size(Cor_Array,2));
                 Data.Header = '';
+                Data.Countrate = Countrate;
                 %%% add file to file history
                 h.FileHistory.add_file(fullfile(PathName{i},FileName{i}));
                 %%% Updates global parameters
@@ -1051,11 +1052,24 @@ switch Type
                         FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
                     case 7
                         %%% Creates entry for each individual curve
+                        % split the data structure
+                        Data_split = cell(size(Data.Cor_Array,2),1);
+                        for j = 1:size(Data.Cor_Array,2)
+                            Data_split{j} = struct;
+                            Data_split{j}.Cor_Times = Data.Cor_Times;
+                            Data_split{j}.Cor_Average = Data.Cor_Array(:,j);
+                            Data_split{j}.Cor_Array = Data.Cor_Array(:,j);
+                            Data_split{j}.Cor_SEM = Data.Cor_SEM;
+                            Data_split{j}.Counts = [mean(Data.Countrate{j}(:,2)) mean(Data.Countrate{j}(:,2))]/1000;
+                            Data_split{j}.Valid = 1;
+                            Data_split{j}.Header = Data.Header;
+                            Data_split{j}.Countrate = Data.Countrate{j};
+                        end
                         for j=1:size(Data.Cor_Array,2)
-                            FCSData.Data{end+1} = Data;              
+                            FCSData.Data{end+1} = Data_split{j};              
                             FCSData.FileName{end+1} = [ch ' - ' FileName{i}(1:end-4) ' Curve ' num2str(j)];
                             FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
-                            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
+                            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array;
                             FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
                             %%% Creates new plots
                             FCSMeta.Plots{end+1,1} = errorbar(...

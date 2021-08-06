@@ -1,4 +1,4 @@
-function [AC, mCountRate, duration] = read_zeiss_fcs_file(fname)
+function [AC, mCountRate, duration, CountRatel] = read_zeiss_fcs_file(fname)
 % read_zeiss_fcs_file reads AC data that has been stored in a Zeiss ZEN software *.fcs file and returns a
 % cell arrays for autocorrelations and mean count rates
 %   read_zeiss_fcs_file(fname) - read data in fname where fname is path to the .fcs file
@@ -114,12 +114,14 @@ end
 CountRate_idx = find(strncmp(C{1}, 'CountRateArray =',16)); %this reads all entries for CountRate
 % contains only mean of countrate rest is not needed 
 mCountRate = cell(1,max(max(RPC(:,1:2))));
+% store the countrate trace also
+CountRatel = cell(1,max(max(RPC(:,1:2))));
 %last entry is fitting etc.
 for i=1:length(CountRate_idx)
     dim = str2num(C{1}{CountRate_idx(i)}(17:end));
     if dim(1) > 0
-        CountRatel = cell2mat(cellfun(@str2num, C{1}(CountRate_idx(i)+1:CountRate_idx(i)+dim(1)), 'un', 0));
-        mCountRatel = mean(CountRatel(:,2));
+        CountRatel{i} = cell2mat(cellfun(@str2num, C{1}(CountRate_idx(i)+1:CountRate_idx(i)+dim(1)), 'un', 0));
+        mCountRatel = mean(CountRatel{i}(:,2));
 
         idx = RPC(i, idxR);
         if isempty(mCountRate{idx})
