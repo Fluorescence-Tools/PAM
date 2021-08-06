@@ -35,20 +35,29 @@ nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
-    if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-        colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
-    else
-        if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+else
+    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+end
+
+if UserValues.BurstBrowser.Display.ColorMapFromWhite
+    if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+        if UserValues.BurstBrowser.Display.ColorMapInvert
+            colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap,true));
+        else
             colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
-        else %%% jet is a special case, use jetvar colormap
+        end
+    else %%% jet is a special case, use jetvar colormap
+        if UserValues.BurstBrowser.Display.ColorMapInvert
+            colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap,true));
+        else
             colormap(h.BurstBrowser,jetvar);
         end
     end
 else
-    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
-end
-if UserValues.BurstBrowser.Display.ColorMapInvert
-    colormap(h.BurstBrowser,flipud(colormap(h.BurstBrowser)));
+    if UserValues.BurstBrowser.Display.ColorMapInvert
+        colormap(h.BurstBrowser,flipud(colormap(h.BurstBrowser)));
+    end
 end
 h.colorbar.Visible = 'on';
 %%% Disable/Enable respective plots

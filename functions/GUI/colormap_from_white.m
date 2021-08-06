@@ -1,4 +1,4 @@
-function out = colormap_from_white(cmap_string,m)
+function out = colormap_from_white(cmap_string,flip,m)
 % Usage: OUT = colormap_from_white(cmap_string,m)
 %
 % This returns an M-by-3 matrix containing a variant of the input colormap.
@@ -11,8 +11,10 @@ function out = colormap_from_white(cmap_string,m)
 %
 % Outputs:
 %   -OUT: M-by-3 colormap.
-
 if nargin < 2
+    flip = false;
+end
+if nargin < 3
     m = size(get(gcf, 'colormap'), 1);
 end
 n = floor(m/10);
@@ -22,6 +24,10 @@ catch
     disp('Invalid colormap name provided.');
     out = get(gcf, 'colormap');
     return;
+end
+% flip
+if flip
+    out = flipud(out);
 end
 % fill offset from white to the starting color
 c = out(1,:);
