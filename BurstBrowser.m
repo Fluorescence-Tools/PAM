@@ -3651,7 +3651,7 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'HorizontalAlignment','center');
     
-    Colormaps_String = {'jet','parula','spectral','batlow','roma','hot','gray','redblue','lapaz',... % standard maps for BurstBrowser
+    Colormaps_String = {'jet','parula','spectral','batlow','roma','hot','gray','redblue','lapaz','vik',... % standard maps for BurstBrowser
         'inferno','magma','plasma','viridis',... % Matplotlib type colormaps
         'seidel','grayfromgray',... % Seidel type colormap
         'grayC','lajolla','bamako','nuuk','hawaii','buda','imola','bilbao','tokyo','turku','devon','davos','oslo','acton',...% ScientificColourMaps6 colormaps
