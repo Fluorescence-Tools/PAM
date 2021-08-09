@@ -4683,7 +4683,11 @@ if any(mode==4)
             if FileInfo.MI_Bins == 1 % T2 workaround
                 h.Plots.MI_Ind{i}.Parent.XLim = [0 FileInfo.MI_Bins];
             else
-                h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
+                try
+                    h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
+                catch 
+                    h.Plots.MI_Ind{i}.Parent.XLim = [0 1];
+                end
             end
         end
     end
@@ -4724,7 +4728,11 @@ if any(mode == 4)
         end
     else
         %%% switch back to TCSPC channels
-        TimetoTAC = 1/(1E9*FileInfo.TACRange/FileInfo.MI_Bins);
+        try
+            TimetoTAC = 1/(1E9*FileInfo.TACRange/FileInfo.MI_Bins);
+        catch
+            TimetoTAC = 1/(1E9*40E-9/4096);
+        end
         h.MI.All_Axes.XLabel.String = 'TCSPC channel';
         h.MI.All_Axes.XTickMode = 'auto';
         h.MI.All_Axes.XTickLabelMode = 'auto';
@@ -10172,6 +10180,11 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     if region_plot
         %%% use area plot
         facealpha = 0.2;
+        % find max intensity
+        max_int =  1.1*max([max(ch1) max(ch2)])./bin_time_ms;
+        if any(BAMethod == [3,4])
+            max_int = max([max_int,max(ch3)./bin_time_ms]);
+        end
         % special case for DCBS burst searches using "OR (no merge)", "OR (merge)" or "XOR"
         if ~(any(BAMethod == [2,4,6]) && ~any(strcmp(DCBS_logical_gate,{'AND'}))) || BAMethod == 4 % last entry added because TCBS not properly implemented yet
             % APBS-type burst searches (or DCBS with AND or merge)
