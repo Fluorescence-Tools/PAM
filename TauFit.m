@@ -5079,8 +5079,8 @@ switch obj
                 dper = Decay_per - UserValues.TauFit.FitParams{chan}(11) - sc_per;
                 fpar = Fit_par - UserValues.TauFit.FitParams{chan}(10) - sc_par;
                 fper = Fit_per - UserValues.TauFit.FitParams{chan}(11) - sc_per;
-                r_meas = (G*dpar-dper)./(G*dpar+2*dper);
-                r_fit = (G*fpar-fper)./(G*fpar+2*fper);
+                r_meas = (G*dpar-dper)./(G*(1-3*l2)*dpar+(2-3*l1)*dper);
+                r_fit = (G*fpar-fper)./(G*(1-3*l2)*fpar+(2-3*l1)*fper);
                 x_r = (1:numel(Decay)/2).*TACtoTime;
                 
                 % update plots
